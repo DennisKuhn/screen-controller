@@ -1,0 +1,14 @@
+{
+  "name": "electron-wallpaper-screen-controller",
+  "version": "0.0.1",
+  "description": "Manages browsers on each display/monitor.",
+  "main": "main.js",
+  "scripts": {
+    "lint": "eslint lib example && cpplint --linelength=120 --recursive src",
+    "start": "electron ."
+  
+  },
+  "dependencies": {
+    "electron-wallpaper": "file:../electron-wallpaper"
+  }
+}
