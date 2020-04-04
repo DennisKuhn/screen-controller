@@ -43,8 +43,9 @@ class BrowserManager {
         });
     }
 
-    /** triggered by app.whenReady to  start setupDisplays and createMainWindow */
+    /** triggered by app.whenReady to start electronWallpaper, setupDisplays and createMainWindow */
     start() {
+        electronWallpaper.init();
         this.setupDisplays();
         this.createMainWindow();
     }

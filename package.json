@@ -9,6 +9,5 @@
   
   },
   "dependencies": {
-    "electron-wallpaper": "file:../electron-wallpaper"
   }
 }
