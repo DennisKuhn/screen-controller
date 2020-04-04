@@ -84,9 +84,8 @@ class BrowserManager {
         browser.once('show', () => {
             console.log(`${display.id}: Once show`);
             try {
-                browser.webContents.openDevTools();
-
-                // electronWallpaper.attachWindow(browser);
+                browser.webContents.openDevTools({ mode: 'detach', activate: false});
+                electronWallpaper.attachWindowToDisplay(display.id, browser);
                 this.browsers[display.id] = browser;
             } catch (error) {
                 console.error(error);
