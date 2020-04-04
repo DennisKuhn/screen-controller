@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Svg Vector Icons : http://www.onlinewebfonts.com/icon -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 32 32"
+   enable-background="new 0 0 1000 1000"
+   xml:space="preserve"
+   id="svg12"
+   sodipodi:docname="wm_rotate_ccw.svg"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
+   width="32"
+   height="32"><defs
+   id="defs16" /><sodipodi:namedview
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1"
+   objecttolerance="10"
+   gridtolerance="10"
+   guidetolerance="10"
+   inkscape:pageopacity="0"
+   inkscape:pageshadow="2"
+   inkscape:window-width="2560"
+   inkscape:window-height="1417"
+   id="namedview14"
+   showgrid="false"
+   inkscape:zoom="15.104"
+   inkscape:cx="12.367176"
+   inkscape:cy="18.941742"
+   inkscape:window-x="-8"
+   inkscape:window-y="-8"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="svg12" />
+<metadata
+   id="metadata2"> Svg Vector Icons : http://www.onlinewebfonts.com/icon <rdf:RDF><cc:Work
+     rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+       rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata>
+<g
+   id="g1923"
+   inkscape:label="Inside"
+   style=""><path
+     sodipodi:nodetypes="ccc"
+     inkscape:label="Arrow"
+     inkscape:connector-curvature="0"
+     id="path827"
+     d="m 17.171751,5.9065268 -6.912201,4.6177202 6.882618,4.558905"
+     style="fill:none;" /></g><g
+   id="g837"
+   inkscape:label="Outside"
+   transform="translate(0,1.0166341)"
+   style=""><path
+     style="fill:none;"
+     d="M 5.8418423,18.056613 C 5.6605843,28.474056 16.51464,30.522203 21.767144,26.25562 26.582383,22.344226 27.301895,11.92045 17.481749,9.4727454"
+     id="path832"
+     inkscape:connector-curvature="0"
+     inkscape:label="Circle"
+     sodipodi:nodetypes="csc" /></g>
+</svg>

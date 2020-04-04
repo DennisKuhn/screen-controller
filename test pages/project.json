@@ -1,0 +1,1448 @@
+{
+	"contentrating" : "Everyone",
+	"description" : "A simple audio effect that is applied to shapes. These can be one of the built in shapes/patterns, something you draw, or importing one of the svg examples.\n\n\n[h1]Tips[/h1]\n[list]\n[*] To draw, find the \"enable drawing\" option lower down. If you really want to draw a lot, set \"detail\" setting to low and avoid the fill option :)\n[*] Importing SVG requires the draw optoin to be enabled. Find the \"enable drawing\" option lower down. Then hold the mouse down on the screen for 1 second and a menu should popup. Select Import and try one of the SVG's listed in the related discussion. ( linked below )\n[*] There is a CPU usage warning in the wallpaper, but it needs to know how many cpu cores you have to calculate the estimate somewhat accurately :) You can find those setings that at the bottom if its bothering you.\n[*]Made a mistake? Hold left mouse button down on the line and select \"select\" when menu pops up. Then click delete button :)\n[/list]\n\n[h1]Options[/h1]\n[list]\n[*] Render audio as a bunch of different shapes\n[*] Draw your own shapes ( won't store atm tho )\n[*] Position/Scale options\n[*] Background image/color\n[*] Some tweak settings\n[*] CPU usage warning in case you set your settings to high ;)\n[*] 3 slots for saving/loading drawings. This will only save the the screen, not the wallpaper settings like rotation/position/colors etc. \n[/list]\n\n[h1]Additional Examples[/h1]\nEbsolas wallpaper animated: https://media.giphy.com/media/l3q2I8HfvRWpo5fzi/source.gif\n\n[h1]SVG importing[/h1]\nDetails of limitations and how to create a nice svg from a black and white image here: http://steamcommunity.com/workshop/filedetails/discussion/850923796/135507548128855923/\n\n2 SVG examples can be found in %steam%\\steamapps\\workshop\\content\\431960\\850923796\\svg-examples\n\nI made a list for other svg files here ( If you made an svg, please share so we can add it to the list of compatible svgs.  ) : \nhttp://steamcommunity.com/workshop/filedetails/discussion/850923796/135507548129231622/\n\nThe example in the screenshot it the thunderdome logo. Can be found in the list above. Ebsolas has a discussion explaining how to make his example screenshot.\n\n\n\n[h1]Wishlist[/h1]\n[i]I am not actively working on this wallpaper anymore. I will do maintenance and bugfixes. The wishlist is mostly here for me to keep track of ideas just in case I do get around to them.[/i]\n[list]\n[*] Add a feature that the user can add pictures on top of the visualizer that they can move/resize\n[*] Make it so the background has smoke as well like Smoke Bomb by:MKVBD but with audio Scratchboard?\n[/list]\n\n[h1]Updates[/h1]\n[list]\n[*] .. removed older updated ..\n[/list]\n[list]\n[*]Adjusted height scale to have more detail on the lower values. So the \"height\" might seem lower than it used to be after you got the update.\n[*]Can fade background image to background color. Implemented to darken background images for example.\n[*]Added very basic svg import .. Discussion detailing and explaining a bit coming soon. There is also a bug where you might get an extra line after importing. I couldn't find the cause ( maybe just how sloppy and how fast ive been adding things ), but believe I have patched it until I can find the real cause.\n[*]Fixed bug with selecting items when position wasn't set to 0,0. There are still a few situations where it might not properly select ( within loops or just outside the edge ), but in general it should help.\n[/list]\n[list]\n[*]Added option that adjusts the detail per line segment based on its length, so it will give longer lines more detail than shorter ones. It is on by default. This will also automatically increase the detail if you enlarge the drawing with the size option. This gives more balanced visuals, but you can turn it off if you want.\n[*]Re-did menu. It's not perfect but wanted to release the new one as it does fix issues with where the menu items would be outside of the screen. \n[*]Filename is now automatically removed after import so you can reselect the same file easier when testing your SVG's\n[/list]\n[list]\n[*]SVG import should center the imports better now. \n[/list]\n[list]\n[*]Added global rotation option, allows rotating your imports a bit for example. \n[*]Correct label for Color Rotation ( was mistakenly Color Gradient )\n[*]Added option to adjust height of idle animation. The setting is still tied in with the height thought.\n[*]Lowered the details when using \"Detail - length based\" a little. \n[/list]\n[list]\n[*]moved \"select\" option to top of menu\n[*]loading svg now shows a progress bar \n[/list]\n[list]\n[*]Fixed drawing straight lines not working\n[*]Think i finally fixed the problem with it drawing while the SVG panel was open. \n[*]Relabeled \"circle patterns\" to \"circles\" to make the number readable. \n[*]Added 6 built in patterns spiral galaxy type swirl 3 ( ccw and cw ) , and a more denser variation swirl 4( ccw and cw ), and mixes of those as circles 5 & 6.\n[*]Redid the frequency scaling again after I figured out it was still not correctly balanced. \n[*]Added  animations that slowly moves the frequency scaling back and forther for some movement. It can be cpu intensive if you use this combined with a high detail value. I can't use precalculated positions anymore when its turned on and have to recalculate them each frame, combine that with the detail options that cause even more positions to be calculated and we have a cpu hog.\n[*]Added some extra % to my cpu usage calculation as it seemed to be off in certain situations ( probably related to the time i cant measure in chromium ). Rather have it warn a little sooner.\n[/list]\n[list]\n[*]Added square and rectangle option. The center point ( where the bass frequencies are on default ) can be at the top or bottom depending on in which direction you drew it.\n[*]Oval has the same top/bottom center positioning as rectangles above, not always on the bottom anymore.\n[*]Circles now position the center point ( bass frequencies ) where you release the mouse button, not always on the bottom anymore.\n[/list]\n[list]\n[*]Fixed bug that crept in last update related to previous updated\n[*]Added 2 new \"render methods\". Both based on zigzagging the outline from one side to the other creating peaks. \n[/list]\n[list]\n[*]Replace Background Transparency, with Background Opacity.\n[*]Adding in background slideshow. \n[*]Moved background settings down in the settings panel, and moved back shape options up. Wanted the available premade shapes to be more visible. \n[/list]\n[list]\n[*]Added background size options ( cover/fit )\n[/list]\n[list]\n[*]Several bug fixes in the slideshow code\n[*]Added possibility to enable/disable individual slideshow transitions.\n[*]Added 3 save slots for the drawing ( will not save settings, just the drawing itself )\n[/list]\n[list]\n[*]Fixed problem with import importing too many details and causing autosave to fail due to the large amount of data by removing short/small details. Result is almost identical image but a lot less data to save and perform calculations on.\n[*]Added option to disable autosave at bottom of settings.\n[/list]\n[list]\n[*] Added \"hide visuals\" option to the \"animate when silent\" settings\n[*] Adding 7 extra save slots and a storage usage indication\n[*] Added foreground_ image option\n[*] Added background options including background video\n[*] Rearraged settings a little\n[/list]\n[list]\n[*] Fixed background size property not working\n[/list]",
+	"file" : "index.html",
+	"general" : 
+	{
+		"properties" : 
+		{
+			"RendererColors" : 
+			{
+				"condition" : "Shape.value == true",
+				"order" : 127,
+				"text" : "<h4>Colors <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"FacebookProducer_weight" : 
+			{
+				"condition" : "background.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 155,
+				"text" : "Facebook weight",
+				"type" : "slider",
+				"value" : 1
+			},
+			"LocalImageProducer_excludeFilter" : 
+			{
+				"condition" : "background.value == true && LocalImageProducer_folder.value",
+				"order" : 163,
+				"text" : "Exclude (e.g. /Thumbs/)",
+				"type" : "textinput"
+			},
+			"LocalImageProducer_folder" : 
+			{
+				"condition" : "background.value == true",
+				"fileType" : "image",
+				"mode" : "ondemand",
+				"order" : 161,
+				"text" : "Images folder",
+				"type" : "directory"
+			},
+			"LocalImageProducer_weight" : 
+			{
+				"condition" : "background.value == true && LocalImageProducer_folder.value",
+				"max" : 100,
+				"min" : 0,
+				"order" : 162,
+				"text" : "Images weight",
+				"type" : "slider",
+				"value" : 1
+			},
+			"LocalVideoProducer_excludeFilter" : 
+			{
+				"condition" : "background.value == true && LocalVideoProducer_folder.value",
+				"order" : 166,
+				"text" : "Exclude (e.g. /Preview/)",
+				"type" : "textinput"
+			},
+			"LocalVideoProducer_folder" : 
+			{
+				"condition" : "background.value == true",
+				"fileType" : "video",
+				"mode" : "ondemand",
+				"order" : 164,
+				"text" : "Videos folder",
+				"type" : "directory"
+			},
+			"LocalVideoProducer_weight" : 
+			{
+				"condition" : "background.value == true && LocalVideoProducer_folder.value",
+				"max" : 100,
+				"min" : 0,
+				"order" : 165,
+				"text" : "Videos weight",
+				"type" : "slider",
+				"value" : 1
+			},
+			"Locale_code" : 
+			{
+				"order" : 100,
+				"text" : "Locale, e.g. en-NZ, en-US, en-Gb",
+				"type" : "textinput"
+			},
+			"PexelsProducer_weight" : 
+			{
+				"condition" : "background.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 156,
+				"text" : "Pexels weight",
+				"type" : "slider",
+				"value" : 1
+			},
+			"PexelsProducer_method" : 
+			{
+				"condition" : "PexelsProducer_weight.value > 0 && background.value == true",
+				"options" : 
+				[
+					{
+						"label" : "Curated",
+						"value" : "curated"
+					},
+					{
+						"label" : "Search",
+						"value" : "search"
+					}
+				],
+				"order" : 156.1,
+				"text" : "Method",
+				"type" : "combo",
+				"value" : "curated"
+			},
+			"PexelsProducer_term" : 
+			{
+				"condition" : "( PexelsProducer_weight.value > 0 ) && (PexelsProducer_method.value == 'search')  && background.value == true",
+				"order" : 156.2,
+				"text" : "Search term",
+				"type" : "textinput",
+				"value" : ""
+			},
+			"PixabayProducer_weight" : 
+			{
+				"condition" : "background.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 157,
+				"text" : "Pixabay weight",
+				"type" : "slider",
+				"value" : 1
+			},
+			"Shape" : 
+			{
+				"order" : 101,
+				"text" : "<h4>Shape <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"WallpaperAbyssProducer_method" : 
+			{
+				"condition" : "WallpaperAbyssProducer_weight.value > 0 && background.value == true",
+				"options" : 
+				[
+					{
+						"label" : "Highest rated",
+						"value" : "highest_rated"
+					},
+					{
+						"label" : "Newest",
+						"value" : "newest"
+					},
+					{
+						"label" : "Popular",
+						"value" : "popular"
+					},
+					{
+						"label" : "Views",
+						"value" : "by_views"
+					},
+					{
+						"label" : "Favorites",
+						"value" : "by_favorites"
+					},
+					{
+						"label" : "Category",
+						"value" : "category"
+					},
+					{
+						"label" : "Collection",
+						"value" : "collection"
+					},
+					{
+						"label" : "Group",
+						"value" : "group"
+					},
+					{
+						"label" : "Sub category",
+						"value" : "sub_category"
+					},
+					{
+						"label" : "Featured",
+						"value" : "featured"
+					},
+					{
+						"label" : "Tag",
+						"value" : "tag"
+					},
+					{
+						"label" : "User",
+						"value" : "user"
+					},
+					{
+						"label" : "Search",
+						"value" : "search"
+					},
+					{
+						"label" : "Random",
+						"value" : "random"
+					},
+					{
+						"label" : "Search",
+						"value" : "search"
+					}
+				],
+				"order" : 159,
+				"text" : "Method",
+				"type" : "combo",
+				"value" : "popular"
+			},
+			"WallpaperAbyssProducer_sort" : 
+			{
+				"condition" : "( WallpaperAbyssProducer_weight.value > 0 ) && (WallpaperAbyssProducer_method.value == 'category' || WallpaperAbyssProducer_method.value == 'collection' || WallpaperAbyssProducer_method.value == 'group' || WallpaperAbyssProducer_method.value == 'sub_category' || WallpaperAbyssProducer_method.value == 'featured' || WallpaperAbyssProducer_method.value == 'popular' || WallpaperAbyssProducer_method.value == 'tag' || WallpaperAbyssProducer_method.value == 'user' || WallpaperAbyssProducer_method.value == 'search' || WallpaperAbyssProducer_method.value == 'random')  && background.value == true",
+				"options" : 
+				[
+					{
+						"label" : "Newest",
+						"value" : "newest"
+					},
+					{
+						"label" : "Rating",
+						"value" : "rating"
+					},
+					{
+						"label" : "Views",
+						"value" : "views"
+					},
+					{
+						"label" : "Favorites",
+						"value" : "favorites"
+					}
+				],
+				"order" : 160,
+				"text" : "Sort",
+				"type" : "combo",
+				"value" : "newest"
+			},
+			"WallpaperAbyssProducer_term" : 
+			{
+				"condition" : "( WallpaperAbyssProducer_weight.value > 0 ) && (WallpaperAbyssProducer_method.value == 'search')  && background.value == true",
+				"order" : 160.1,
+				"text" : "Search term",
+				"type" : "textinput",
+				"value" : ""
+			},
+			"WallpaperAbyssProducer_weight" : 
+			{
+				"condition" : "background.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 158,
+				"text" : "WallpaperAbyss weight",
+				"type" : "slider",
+				"value" : 1
+			},
+			"Weight_description" : 
+			{
+				"condition" : "background.value == true",
+				"order" : 154,
+				"text" : "<strong>Content producers</strong><small>Are used according to their weight. E.g. if all producers have the same weight, e.g. 1, then they all produce the same ratio of content. If facebooks weight is 2, pixabays weight is 4 and local video is 2 and all others 0, then out of 4 content, 1 is from facebook, 2 from pixabay and 1 from the local video folder.</small>",
+				"type" : "text"
+			},
+			"analogClock_OffsetX" : 
+			{
+				"condition" : "analogClock_Visible.value == true && clock.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 146.114,
+				"text" : "X Pos. (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"analogClock_OffsetY" : 
+			{
+				"condition" : "analogClock_Visible.value == true && clock.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 146.115,
+				"text" : "Y Pos. (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"analogClock_ShowMarkers" : 
+			{
+				"condition" : "analogClock_Visible.value == true && clock.value == true",
+				"order" : 146.116,
+				"text" : "Markers",
+				"type" : "bool",
+				"value" : true
+			},
+			"analogClock_ShowSeconds" : 
+			{
+				"condition" : "analogClock_Visible.value == true && clock.value == true",
+				"order" : 146.117,
+				"text" : "Seconds hand",
+				"type" : "bool",
+				"value" : true
+			},
+			"analogClock_Size" : 
+			{
+				"condition" : "analogClock_Visible.value == true && clock.value == true",
+				"max" : 200,
+				"min" : 0,
+				"order" : 146.113,
+				"text" : "Size (%)",
+				"type" : "slider",
+				"value" : 75
+			},
+			"analogClock_Visible" : 
+			{
+				"condition" : "clock.value == true",
+				"order" : 146.112,
+				"text" : "<strong>Analog clock</strong>",
+				"type" : "bool",
+				"value" : true
+			},
+			"audioFrame_ampFactor" : 
+			{
+				"condition" : "Shape.value == true",
+				"max" : 100,
+				"min" : 1,
+				"order" : 105,
+				"text" : "Height (%)",
+				"type" : "slider",
+				"value" : 50
+			},
+			"audioFrame_animateWhenSilent" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"options" : 
+				[
+					{
+						"label" : "Do Nothing",
+						"value" : false
+					},
+					{
+						"label" : "Animate",
+						"value" : true
+					},
+					{
+						"label" : "Hide Audio Visuals",
+						"value" : 2
+					}
+				],
+				"order" : 145,
+				"text" : "Animate when Silent",
+				"type" : "combo",
+				"value" : true
+			},
+			"audioFrame_animateWhenSilentHeight" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"max" : 100,
+				"min" : 1,
+				"order" : 146,
+				"text" : "Animate when Silent Height (%)",
+				"type" : "slider",
+				"value" : 50
+			},
+			"audioFrame_eqFreq1" : 
+			{
+				"condition" : "eq.value == true",
+				"max" : 160,
+				"min" : 0,
+				"order" : 201,
+				"text" : "Band 1 Freq.",
+				"type" : "slider",
+				"value" : 10
+			},
+			"audioFrame_eqFreq1Strength" : 
+			{
+				"condition" : "eq.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 202,
+				"text" : "Band 1 Strength",
+				"type" : "slider",
+				"value" : 100
+			},
+			"audioFrame_eqFreq2" : 
+			{
+				"condition" : "eq.value == true",
+				"max" : 160,
+				"min" : 0,
+				"order" : 203,
+				"text" : "Band 2 Freq.",
+				"type" : "slider",
+				"value" : 40
+			},
+			"audioFrame_eqFreq2Strength" : 
+			{
+				"condition" : "eq.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 204,
+				"text" : "Band 2 Strength",
+				"type" : "slider",
+				"value" : 100
+			},
+			"audioFrame_eqFreq3" : 
+			{
+				"condition" : "eq.value == true",
+				"max" : 160,
+				"min" : 0,
+				"order" : 205,
+				"text" : "Band 3 Freq.",
+				"type" : "slider",
+				"value" : 140
+			},
+			"audioFrame_eqFreq3Strength" : 
+			{
+				"condition" : "eq.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 206,
+				"text" : "Band 3 Strength",
+				"type" : "slider",
+				"value" : 100
+			},
+			"audioFrame_eqStrength" : 
+			{
+				"condition" : "eq.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 208,
+				"text" : "Global Strength",
+				"type" : "slider",
+				"value" : 35
+			},
+			"audioFrame_eqWidth" : 
+			{
+				"condition" : "eq.value == true",
+				"max" : 30,
+				"min" : 1,
+				"order" : 207,
+				"text" : "Width",
+				"type" : "slider",
+				"value" : 27
+			},
+			"audioFrame_heightCutoffFactor" : 
+			{
+				"condition" : "Shape.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 106,
+				"text" : "Height Cutoff (%)",
+				"type" : "slider",
+				"value" : 6
+			},
+			"audioFrame_motionBlurFactor" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 138,
+				"text" : "Responsiveness (%)",
+				"type" : "slider",
+				"value" : "50"
+			},
+			"audioFrame_powerOf" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"options" : 
+				[
+					{
+						"label" : "6",
+						"value" : 8
+					},
+					{
+						"label" : "5",
+						"value" : 6
+					},
+					{
+						"label" : "4",
+						"value" : 4
+					},
+					{
+						"label" : "3",
+						"value" : 3
+					},
+					{
+						"label" : "2",
+						"value" : 2
+					},
+					{
+						"label" : "1",
+						"value" : 1.5
+					},
+					{
+						"label" : "No Change",
+						"value" : 1
+					},
+					{
+						"label" : "-1",
+						"value" : 0.66000000000000003
+					},
+					{
+						"label" : "-2",
+						"value" : 0.5
+					},
+					{
+						"label" : "-3",
+						"value" : 0.25
+					}
+				],
+				"order" : 139,
+				"text" : "Volume Scale",
+				"type" : "combo",
+				"value" : 3
+			},
+			"audioFrame_reverseFreq" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"order" : 140,
+				"text" : "Reverse Frequencies",
+				"type" : "bool",
+				"value" : false
+			},
+			"audioShapeRender_freqScaleAdjustment" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"max" : 100,
+				"min" : -100,
+				"order" : 141,
+				"text" : "Freq. Distribution",
+				"type" : "slider",
+				"value" : 0
+			},
+			"audioShapeRender_freqScaleAdjustmentAnim" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"order" : 142,
+				"text" : "Freq. Distribution Anim<br><small>CPU intensive when combined with high detail settings or many lines because it turns off a certain optimization and does a lot of extra calculations per frame.</small>",
+				"type" : "bool",
+				"value" : false
+			},
+			"background" : 
+			{
+				"order" : 147,
+				"text" : "<h4>Background <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"backgroundColors" : 
+			{
+				"condition" : "background.value == true",
+				"order" : 188,
+				"text" : "<h4>Background Colors <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"backgroundGradient_color0" : 
+			{
+				"condition" : "backgroundGradient_colorCount.value > 0 && background.value == true && backgroundColors.value == true",
+				"order" : 190,
+				"text" : "Background Color",
+				"type" : "color",
+				"value" : "0 0 0"
+			},
+			"backgroundGradient_color1" : 
+			{
+				"condition" : "backgroundGradient_colorCount.value > 1 && background.value == true && backgroundColors.value == true",
+				"order" : 191,
+				"text" : "Background Color 2",
+				"type" : "color",
+				"value" : "0.125 0.125 0.150"
+			},
+			"backgroundGradient_color2" : 
+			{
+				"condition" : "backgroundGradient_colorCount.value > 2 && background.value == true && backgroundColors.value == true",
+				"order" : 192,
+				"text" : "Background Color 3",
+				"type" : "color",
+				"value" : "0 0 0"
+			},
+			"backgroundGradient_colorCount" : 
+			{
+				"condition" : "background.value == true && backgroundColors.value == true",
+				"max" : 3,
+				"min" : 1,
+				"order" : 189,
+				"text" : "Use # Background Colors",
+				"type" : "slider",
+				"value" : 3
+			},
+			"backgroundGradient_style" : 
+			{
+				"condition" : "backgroundGradient_colorCount.value > 1 && background.value == true && backgroundColors.value == true",
+				"options" : 
+				[
+					{
+						"label" : "horizontal",
+						"value" : "linear,left"
+					},
+					{
+						"label" : "vertical",
+						"value" : "linear,top"
+					},
+					{
+						"label" : "circle",
+						"value" : "radial,center center,circle cover"
+					},
+					{
+						"label" : "ellipse",
+						"value" : "radial,center center,ellipse cover"
+					}
+				],
+				"order" : 193,
+				"text" : "Gradient Type",
+				"type" : "combo",
+				"value" : "radial,center center,circle cover"
+			},
+			"background_interval" : 
+			{
+				"condition" : "background.value == true",
+				"max" : 120,
+				"min" : 1,
+				"order" : 152,
+				"text" : "Image Interval",
+				"type" : "slider",
+				"value" : 5
+			},
+			"background_intervalMultiplier" : 
+			{
+				"condition" : "background.value == true",
+				"options" : 
+				[
+					{
+						"label" : "seconds",
+						"value" : 1
+					},
+					{
+						"label" : "minutes",
+						"value" : 60
+					},
+					{
+						"label" : "hour",
+						"value" : 3600
+					}
+				],
+				"order" : 153,
+				"text" : "Image Interval Units",
+				"type" : "combo",
+				"value" : 60
+			},
+			"background_opacity" : 
+			{
+				"condition" : "background.value == true",
+				"max" : 100,
+				"min" : 0,
+				"order" : 149,
+				"text" : "Background Opacity (%)",
+				"type" : "slider",
+				"value" : 100
+			},
+			"background_size" : 
+			{
+				"condition" : "background.value == true",
+				"options" : 
+				[
+					{
+						"label" : "Cover",
+						"value" : "cover"
+					},
+					{
+						"label" : "Fit",
+						"value" : "contain"
+					}
+				],
+				"order" : 148,
+				"text" : "Background Size",
+				"type" : "combo",
+				"value" : "cover"
+			},
+			"background_transitionDuration" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && (true)",
+				"max" : 10,
+				"min" : 0,
+				"order" : 170,
+				"text" : "Transition Duration",
+				"type" : "slider",
+				"value" : 2
+			},
+			"background_transitionFade" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 173,
+				"text" : "Fade",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionMoveBottom" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 183,
+				"text" : "Move From Bottom",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionMoveLeft" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 180,
+				"text" : "Move From Left",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionMoveRight" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 181,
+				"text" : "Move From Right",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionMoveTop" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 182,
+				"text" : "Move From Top",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionShuffleBottom" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 187,
+				"text" : "Shuffle From Bottom",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionShuffleLeft" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 184,
+				"text" : "Shuffle From Left",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionShuffleRight" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 185,
+				"text" : "Shuffle From Right",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionShuffleTop" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 186,
+				"text" : "Shuffle From Top",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionZoomHorzIn" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 176,
+				"text" : "Zoom Horz In",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionZoomHorzOut" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 177,
+				"text" : "Zoom Horz Out",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionZoomIn" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 174,
+				"text" : "Zoom In",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionZoomOut" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 175,
+				"text" : "Zoom Out",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionZoomVertIn" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 178,
+				"text" : "Zoom Vert In",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_transitionZoomVertOut" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 179,
+				"text" : "Zoom Vert Out",
+				"type" : "bool",
+				"value" : true
+			},
+			"background_useTransitions" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true",
+				"order" : 169,
+				"text" : "Use Transitions<br><small>Will increase cpu/gpu usage a little for the duration of each transition.</small>",
+				"type" : "bool",
+				"value" : false
+			},
+			"background_volume" : 
+			{
+				"condition" : "background.value == true && LocalVideoProducer_folder.value",
+				"max" : 100,
+				"min" : 0,
+				"order" : 167,
+				"text" : "Background Video Volume",
+				"type" : "slider",
+				"value" : 0
+			},
+			"clock" : 
+			{
+				"order" : 146.111,
+				"text" : "<h4>Clocks <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"colorGlow0" : 
+			{
+				"condition" : "Shape.value == true &&RendererColors.value == true",
+				"order" : 133,
+				"text" : "<strong>Glow</strong><br><small>Glow has a small impact on cpu and gpu usage. Set size to 0 to disable.</small>",
+				"type" : "text"
+			},
+			"cpu" : 
+			{
+				"order" : 209,
+				"text" : "<h4>CPU Warning Settings <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : true
+			},
+			"cpu_description" : 
+			{
+				"condition" : "cpu.value == true",
+				"order" : 210,
+				"text" : "<small>Set the amount of cores your CPU has and I can adjust the processing time to a cpu usage estimation. Set the warning to 100% if you never want to see a warning.</small>",
+				"type" : "text",
+				"value" : ""
+			},
+			"digiDate_OffsetX" : 
+			{
+				"condition" : "digiDate_Visible.value == true && clock.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 146.120,
+				"text" : "X Pos. (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"digiDate_OffsetY" : 
+			{
+				"condition" : "digiDate_Visible.value == true && clock.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 146.121,
+				"text" : "Y Pos. (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"digiDate_Size" : 
+			{
+				"condition" : "digiDate_Visible.value == true && clock.value == true",
+				"max" : 200,
+				"min" : 0,
+				"order" : 146.119,
+				"text" : "size (%)",
+				"type" : "slider",
+				"value" : 25
+			},
+			"digiDate_Visible" : 
+			{
+				"condition" : "clock.value == true",
+				"order" : 146.118,
+				"text" : "<strong>Date</strong>",
+				"type" : "bool",
+				"value" : true
+			},
+			"digiTime_OffsetX" : 
+			{
+				"condition" : "digiTime_Visible.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 146.124,
+				"text" : "X Pos. (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"digiTime_OffsetY" : 
+			{
+				"condition" : "digiTime_Visible.value == true && clock.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 146.125,
+				"text" : "Y Pos. (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"digiTime_Size" : 
+			{
+				"condition" : "digiTime_Visible.value == true && clock.value == true",
+				"max" : 200,
+				"min" : 0,
+				"order" : 146.123,
+				"text" : "size (%)",
+				"type" : "slider",
+				"value" : 25
+			},
+			"digiTime_Visible" : 
+			{
+				"condition" : "clock.value == true",
+				"order" : 146.122,
+				"text" : "<strong>Time</strong>",
+				"type" : "bool",
+				"value" : true
+			},
+			"drawController_enabled" : 
+			{
+				"order" : 126,
+				"text" : "<h4>Mouse drawing</he>",
+				"type" : "bool",
+				"value" : true
+			},
+			"eq" : 
+			{
+				"order" : 199,
+				"text" : "<h4>Equalizer <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"eq_description" : 
+			{
+				"condition" : "eq.value == true",
+				"order" : 200,
+				"text" : "<small>Equaliser exists of 3 frequency bands to tweak the responds for certain frequencies to either focus on certain frequencies or create a more even distribution. Changing values will show the current EQ graph and resulting values in green.<br><br>Freq. values are frequency multiplied 100. So a value of 15 will result in 1500hz.</small>",
+				"type" : "text"
+			},
+			"foregroundImage_heading":
+			{
+				"condition" : "foreground_image.value",
+				"order" : 193.99,
+				"text" : "<h4>Foreground Image <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"foreground_image" : 
+			{
+				"condition" : "(! foreground_image.value) || foregroundImage_heading.value == true",
+				"order" : 194,
+				"text" : "Foreground Image file",
+				"type" : "file"
+			},
+			"foreground_offsetX" : 
+			{
+				"condition" : "foreground_image.value && foregroundImage_heading.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 195,
+				"text" : "Offset X (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"foreground_offsetY" : 
+			{
+				"condition" : "foreground_image.value && foregroundImage_heading.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 196,
+				"text" : "OffsetY (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"foreground_rotation" : 
+			{
+				"condition" : "foreground_image.value && foregroundImage_heading.value == true",
+				"max" : 180,
+				"min" : -180,
+				"order" : 197,
+				"text" : "Rotation (deg)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"foreground_scale" : 
+			{
+				"condition" : "foreground_image.value && foregroundImage_heading.value == true",
+				"max" : 400,
+				"min" : 1,
+				"order" : 198,
+				"text" : "Scale (%)",
+				"type" : "slider",
+				"value" : 100
+			},
+			"mainMenu_storageSlots" : 
+			{
+				"condition" : "Shape.value == true",
+				"max" : 20,
+				"min" : 0,
+				"order" : 103,
+				"text" : "Storeage slots",
+				"type" : "slider",
+				"value" : 3
+			},
+			"multiShow_columns" : 
+			{
+				"condition" : "background.value == true",
+				"max" : 25,
+				"min" : 1,
+				"order" : 150,
+				"text" : "Content columns",
+				"type" : "slider",
+				"value" : 2
+			},
+			"multiShow_rows" : 
+			{
+				"condition" : "background.value == true",
+				"max" : 25,
+				"min" : 1,
+				"order" : 151,
+				"text" : "Content rows",
+				"type" : "slider",
+				"value" : 2
+			},
+			"other" : 
+			{
+				"condition" : "Shape.value == true",
+				"order" : 136,
+				"text" : "<h4>Audio render details <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			},
+			"performanceMonitor_cpuCores" : 
+			{
+				"condition" : "cpu.value == true",
+				"max" : 16,
+				"min" : 1,
+				"order" : 211,
+				"text" : "CPU Cores",
+				"type" : "slider",
+				"value" : 4
+			},
+			"performanceMonitor_cpuWarningAt" : 
+			{
+				"condition" : "cpu.value == true",
+				"max" : 100,
+				"min" : 1,
+				"order" : 212,
+				"text" : "CPU Warning At (%)",
+				"type" : "slider",
+				"value" : 10
+			},
+			"position" : 
+			{
+				"condition" : "Shape.value == true",
+				"order" : 107,
+				"text" : "<strong>Position & Rotation</strong><small>Click accurately and press/hold arrow keys.</small>",
+				"type" : "text"
+			},
+			"renderer_color1" : 
+			{
+				"condition" : "Shape.value == true && RendererColors.value == true",
+				"order" : 128,
+				"text" : "Color Gradient Start",
+				"type" : "color",
+				"value" : "1 0 0"
+			},
+			"renderer_color2" : 
+			{
+				"condition" : "Shape.value == true && RendererColors.value == true",
+				"order" : 129,
+				"text" : "Color Gradient Mid",
+				"type" : "color",
+				"value" : "0 1 0"
+			},
+			"renderer_color3" : 
+			{
+				"condition" : "Shape.value == true && RendererColors.value == true",
+				"order" : 130,
+				"text" : "Color Gradient End",
+				"type" : "color",
+				"value" : "0 0 1"
+			},
+			"renderer_colorGlow" : 
+			{
+				"condition" : "Shape.value == true && RendererColors.value == true",
+				"max" : 20,
+				"min" : 0,
+				"order" : 135,
+				"text" : "Glow Size",
+				"type" : "slider",
+				"value" : 0
+			},
+			"renderer_colorGlowStrength" : 
+			{
+				"condition" : "Shape.value == true && RendererColors.value == true",
+				"max" : 3,
+				"min" : 1,
+				"order" : 134,
+				"text" : "Glow Strength",
+				"type" : "slider",
+				"value" : 2
+			},
+			"renderer_colorGradient" : 
+			{
+				"condition" : "Shape.value == true && RendererColors.value == true",
+				"options" : 
+				[
+					{
+						"label" : "Solid Color",
+						"value" : 0
+					},
+					{
+						"label" : "Circular Gradient",
+						"value" : 1
+					},
+					{
+						"label" : "Horizontal Gradient",
+						"value" : 2
+					},
+					{
+						"label" : "Vertical Gradient",
+						"value" : 3
+					}
+				],
+				"order" : 131,
+				"text" : "Color Gradient",
+				"type" : "combo",
+				"value" : 1
+			},
+			"renderer_colorRotation" : 
+			{
+				"condition" : "Shape.value == true && RendererColors.value == true",
+				"order" : 132,
+				"text" : "Color Rotation",
+				"type" : "bool",
+				"value" : true
+			},
+			"renderer_interpolationBalanced" : 
+			{
+				"condition" : "Shape.value == true &&other.value == true",
+				"order" : 144,
+				"text" : "Detail - Length Based",
+				"type" : "bool",
+				"value" : true
+			},
+			"renderer_interpolationSteps" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"max" : 10,
+				"min" : 1,
+				"order" : 143,
+				"text" : "Detail",
+				"type" : "slider",
+				"value" : 3
+			},
+			"renderer_offsetX" : 
+			{
+				"condition" : "Shape.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 108,
+				"text" : "X Pos. (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"renderer_offsetY" : 
+			{
+				"condition" : "Shape.value == true",
+				"max" : 3000,
+				"min" : -3000,
+				"order" : 109,
+				"text" : "Y Pos. (px)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"renderer_renderMethod" : 
+			{
+				"condition" : "Shape.value == true && other.value == true",
+				"options" : 
+				[
+					{
+						"label" : "lines",
+						"value" : 1
+					},
+					{
+						"label" : "outline",
+						"value" : 2
+					},
+					{
+						"label" : "outline ( zigzag )",
+						"value" : 8
+					},
+					{
+						"label" : "lines & outline",
+						"value" : 3
+					},
+					{
+						"label" : "lines & outline ( zigzag )",
+						"value" : 9
+					},
+					{
+						"label" : "fill",
+						"value" : 4
+					}
+				],
+				"order" : 137,
+				"text" : "Render Method<br><small>Ordered by cpu usage</small>",
+				"type" : "combo",
+				"value" : 1
+			},
+			"renderer_rotation" : 
+			{
+				"condition" : "Shape.value == true",
+				"max" : 180,
+				"min" : -180,
+				"order" : 110,
+				"text" : "Rotation (deg)",
+				"type" : "slider",
+				"value" : 0
+			},
+			"schemecolor" : 
+			{
+				"order" : 0,
+				"text" : "Scheme color",
+				"type" : "color",
+				"value" : "0 0 0"
+			},
+			"shapeGeneratorFactory_defaultGeneratorName" : 
+			{
+				"condition" : "Shape.value == true",
+				"options" : 
+				[
+					{
+						"label" : "Circle",
+						"value" : "circle"
+					},
+					{
+						"label" : "Heart",
+						"value" : "heart"
+					},
+					{
+						"label" : "Butterfly",
+						"value" : "butterfly"
+					},
+					{
+						"label" : "Peace",
+						"value" : "peace"
+					},
+					{
+						"label" : "Pokeball",
+						"value" : "pokeball"
+					},
+					{
+						"label" : "Yin Yang",
+						"value" : "yinyang"
+					},
+					{
+						"label" : "Atom",
+						"value" : "atom"
+					},
+					{
+						"label" : "H. line",
+						"value" : "h-line"
+					},
+					{
+						"label" : "2x H. line ",
+						"value" : "h-line2"
+					},
+					{
+						"label" : "3x H. line ",
+						"value" : "h-line3"
+					},
+					{
+						"label" : "V. line",
+						"value" : "v-line"
+					},
+					{
+						"label" : "2x V. line",
+						"value" : "v-line2"
+					},
+					{
+						"label" : "3x V. line",
+						"value" : "v-line3"
+					},
+					{
+						"label" : "Plus",
+						"value" : "plus"
+					},
+					{
+						"label" : "Cross",
+						"value" : "cross"
+					},
+					{
+						"label" : "Cross 2",
+						"value" : "cross2"
+					},
+					{
+						"label" : "Diamond",
+						"value" : "diamond"
+					},
+					{
+						"label" : "Square",
+						"value" : "square"
+					},
+					{
+						"label" : "Swirl 1 ccw",
+						"value" : "swirl"
+					},
+					{
+						"label" : "Swirl 1 cw",
+						"value" : "swirl2"
+					},
+					{
+						"label" : "Swirl 2 ccw",
+						"value" : "swirl3"
+					},
+					{
+						"label" : "Swirl 2 cw",
+						"value" : "swirl4"
+					},
+					{
+						"label" : "Swirl 3 ccw",
+						"value" : "swirl5"
+					},
+					{
+						"label" : "Swirl 3 cw",
+						"value" : "swirl6"
+					},
+					{
+						"label" : "Swirl 4 ccw",
+						"value" : "swirl7"
+					},
+					{
+						"label" : "Swirl 4 cw",
+						"value" : "swirl8"
+					},
+					{
+						"label" : "Circles 1",
+						"value" : "circlePattern1"
+					},
+					{
+						"label" : "Circles 2",
+						"value" : "circlePattern2"
+					},
+					{
+						"label" : "Circles 3",
+						"value" : "circlePattern3"
+					},
+					{
+						"label" : "Circles 4",
+						"value" : "circlePattern4"
+					},
+					{
+						"label" : "Circles 5",
+						"value" : "circlePattern5"
+					},
+					{
+						"label" : "Circles 6",
+						"value" : "circlePattern6"
+					},
+					{
+						"label" : "Circles 7",
+						"value" : "circlePattern7"
+					},
+					{
+						"label" : "Hemp",
+						"value" : "cannabis"
+					},
+					{
+						"label" : "Biohazard",
+						"value" : "hazard"
+					},
+					{
+						"label" : "Pentagram",
+						"value" : "pentagram"
+					}
+				],
+				"order" : 102,
+				"text" : "Shape",
+				"type" : "combo",
+				"value" : "swirl"
+			},
+			"shapeList_radiusFactor" : 
+			{
+				"condition" : "Shape.value == true",
+				"max" : 1000,
+				"min" : 1,
+				"order" : 104,
+				"text" : "Size (%)<br><small>Bigger = more cpu usage</small>",
+				"type" : "slider",
+				"value" : 150
+			},
+			"shapeList_useAutosave" : 
+			{
+				"condition" : "troubleshooting.value == true",
+				"order" : 214,
+				"text" : "Enable Autosave",
+				"type" : "bool",
+				"value" : true
+			},
+			"slideshowShowTransitions" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && (true)",
+				"order" : 171,
+				"text" : "Choose Transitions",
+				"type" : "bool",
+				"value" : false
+			},
+			"slideshowTransitions_text" : 
+			{
+				"condition" : "background.value == true && slideshowTransitions.value == true && background_useTransitions.value && slideshowShowTransitions.value && (true)",
+				"order" : 172,
+				"text" : "<small>If you toggle an animation on, it will be used for the next transition.</small>",
+				"type" : "text"
+			},
+			"slideshowTransitions" : 
+			{
+				"condition" : "background.value == true",
+				"order" : 168,
+				"text" : "<h4>Background Transitions <small>settings</small></h4>",
+				"type" : "bool",
+				"value": false
+			},
+			"troubleshooting" : 
+			{
+				"order" : 213,
+				"text" : "<h4>Troubleshooting <small>settings</small></h4>",
+				"type" : "bool",
+				"value" : false
+			}
+		},
+		"supportsaudioprocessing" : true
+	},
+	"preview" : "preview.jpg",
+	"tags" : [ "Abstract", "Slideshow", "VU" ],
+	"title" : "Audio Snatchboard",
+	"type" : "web",
+	"visibility" : "public"
+}

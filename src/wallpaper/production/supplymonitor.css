@@ -1,0 +1,11 @@
+#SupplyMonitor {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(144, 238, 144, 0.75);
+}
+
+.SupplyMonitorCell {
+    width: 3em;
+    text-align: center;
+}

@@ -1,0 +1,333 @@
+@namespace svg url(http://www.w3.org/2000/svg);
+@namespace inkscape url(http://www.inkscape.org/namespaces/inkscape);
+@namespace html url(http://www.w3.org/1999/xhtml);
+
+#MainMenu-wmWrapper {   
+    position: absolute; 
+    top: 0; 
+    left: 15%;
+    width: 70%;
+    display: block;
+}
+
+#MainMenu-wmWrapper .wmContent {   
+    visibility: hidden;
+}
+
+#PopupMenu-FacebookConnectPopup-wmWrapper {   
+    position: absolute; 
+    top: 25%; 
+    left: 25%;
+    max-width: 50%;
+}
+
+#PopupMenu-FacebookConnectedPopup-wmWrapper {   
+    position: absolute; 
+    top: 25%; 
+    left: 25%;
+    max-width: 50%;
+}
+
+#PopupMenu-FacebookDisconnectedPopup-wmWrapper {   
+    position: absolute; 
+    top: 25%; 
+    left: 25%;
+    max-width: 50%;
+}
+
+#PopupMenu-ShapeEdit-wmWrapper {   
+    position: absolute; 
+    top: 50%; 
+    left: 0;
+    max-width: 17em;
+    display: none;
+}
+
+#PopupMenu-SvgImport-wmWrapper {
+    position: absolute; 
+    top: 0; 
+    left: 0;
+    max-width: 17em;
+    display: none;
+}
+
+.mdMenu {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+}
+
+.mdMenu .wmContent {   
+    visibility: hidden;
+}
+
+.wmContent {
+    display: flex;    
+    width: 100%;
+    height: 100%;
+}
+
+.wmTextList {
+    display: inline-flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+
+.wmTextListItem {
+    display: inline-block;  
+    font-size: 1em;
+    border-radius: 1em;  
+    padding: 0.5em;
+    margin: 5px;
+    color:whitesmoke;
+    background-color: rgb(17, 70, 112);
+    filter: drop-shadow(0.5em 0.5em 0.4em rgba(0,0,0,0.9));
+}
+
+.wmButtonList {
+    display: inline-flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+
+.wmButton { 
+    display: inline-block;  
+    font-size: 1em;
+    margin: 5px;
+    filter: drop-shadow(0.5em 0.5em 0.4em rgba(0,0,0,0.9));
+}
+
+.wmRadioList { 
+    display: inline-flex;  
+    flex-wrap: wrap;
+    flex-direction: row;
+    font-size: 1em;
+}
+
+.wmRadioContainer {
+    display: inline;
+    margin: 5px;
+    color:whitesmoke;
+    filter: drop-shadow(0.5em 0.5em 0.4em rgba(0,0,0,0.9));
+
+}
+
+.wmRadio { 
+    display: none;
+}
+
+/* When the radio button is checked, add a blue background */
+.wmRadioContainer input:checked ~ .wmIcon {
+    background-color: rgb(21, 96, 156);
+    pointer-events: none;
+}
+
+.wallmenuAction {
+    float: right;
+    margin-left: 1em;
+    color: whitesmoke;
+    background-color: #2196F3;
+}
+
+.wallmenuListIcon {
+    float: left;
+    margin-right: 1em;
+    color: whitesmoke;
+}
+
+.wmIconDisabled {
+    background-color: #2196F3;
+    stroke: darkgray;
+    fill: darkgray;
+    stroke-width: 1px;
+    pointer-events: none;
+}
+
+.wmIcon:active g {
+    stroke: lightblue;
+    fill: lightblue;
+}
+
+.wmIcon {
+    width: 2em;
+    height: 2em;
+    border-radius: 1em;  
+    padding: 0.5em;
+}
+
+
+.wbState0:hover g[ inkscape|label = "State0"] {
+    visibility: hidden;
+}
+.wbState0:hover g[ inkscape|label = "State1"] {
+    visibility: inherit;
+}
+
+
+.wbStateLast:hover g[ inkscape|label = "State0"] {
+    visibility: inherit;
+}
+
+.wbState0 g[ inkscape|label = "State0"] {
+    visibility: inherit;
+}
+.wbState1 g[ inkscape|label = "State1"] {
+    visibility: inherit;
+}
+g[ inkscape|label = "State0"] {
+    visibility: hidden;
+}
+
+.wbState1:hover g[ inkscape|label = "State1"] {
+    visibility: hidden;
+}
+.wbState1:hover g[ inkscape|label = "State2"] {
+    visibility: inherit;
+}
+g[ inkscape|label = "State1"] {
+    visibility: hidden;
+}
+
+.wbState2:hover g[ inkscape|label = "State2"] {
+    visibility: hidden;
+}
+.wbState2 g[ inkscape|label = "State2"] {
+    visibility: inherit;
+}
+g[ inkscape|label = "State2"] {
+    visibility: hidden;
+}
+
+
+.wmIcon:not(.wmIconDisabled) {
+    background-color: #2196F3;
+    stroke: whitesmoke;
+    fill: whitesmoke;
+    stroke-width: 1px;
+}
+
+
+.wmIcon:not(.wmIconDisabled) g[ inkscape|label = "Inside"] {
+    stroke: white;
+    fill: white;
+    stroke-width: 1.5px;
+}
+
+
+.wmIcon:hover,
+.wallmenuListIcon:hover,
+.wallmenuAction:hover { 
+    background-color: #0b7dda;
+    width: 2.6em;
+    height: 2.6em;
+    border-radius: 1em;  
+    padding: 0.2em;
+    box-shadow: 0 0 1em 0.5em rgb(180, 206, 226);
+}
+
+.wmIcon:hover > * {
+    transform: scale(0.769);
+    transform-origin: 50% 50%;
+}
+.wmIcon:hover g[ inkscape|label = "Inside"] {
+    transform: scale(1.5);
+    transform-origin: 50% 50%;
+}
+
+
+.wmIcon:active g[ inkscape|label = "Inside"] {
+    transform: scale(1.25);
+    transform-origin: 50% 50%;
+    stroke: rgb(241, 252, 255);
+    fill: rgb(241, 252, 255);
+    stroke-width: 1.5px;
+}
+
+
+.wmIcon-close {
+    float: right;
+}
+
+.wmIcon-close:not(.wmIconDisabled) {
+    stroke: black;
+}
+
+.wmIcon-close:not(.wmIconDisabled) g[ inkscape|label = "Inside"] {
+    stroke:black;
+    stroke-width: 1.5px;
+}
+
+.wmIcon-close:active g[ inkscape|label = "Inside"] {
+    transform: scale(1.25);
+    transform-origin: 50% 50%;
+    stroke: black;
+    stroke-width: 1.5px;
+}
+
+.wmList { 
+    display: inline-flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    font-size: 1em;
+}
+
+.wmListItem {
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: center;
+    padding-left: 0;
+    height: 3em;
+    min-width: 6em;
+    margin: 5px;
+    color: whitesmoke;
+    border-color: rgb(24, 93, 150);
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 1em;  
+    background-color: rgb(24, 98, 158);
+    filter: drop-shadow(0.5em 0.5em 0.5em rgba(0,0,0,0.75));
+}
+
+.wmListItemTextContainer {
+    display: flex;
+    align-content: center;
+    flex-direction: column;
+}
+
+.wmListItemTitle {
+    display: block;
+    min-width: 4em;
+    top: 0;
+    height: 1em;
+    font-size: 1em;
+    text-align: center;
+}
+
+.wmListItemDescription {
+    bottom: -1em;
+    font-size: 0.75em;
+    text-align: center;
+    width: 100%;
+    height: 1em;
+    position: relative;
+}
+
+
+.wmIconWrapper {
+    display: inline-block;
+    width: 100%;
+}
+
+.wbProgressWrapper {
+    width: 100%;
+    background-color: #800;
+    height: 20px;
+}
+
+.wbProgress {
+    background-color: #080;
+    height: 20px;
+    width: 0;
+}
+
