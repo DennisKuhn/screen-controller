@@ -1,6 +1,6 @@
 const url = require('url');
 
-const DirectoryCrawler = require('./directorycrawler');
+const DirectoryCrawler = require('src/infrastructure/directorycrawler');
 
 class CrawlersCenter {
 
@@ -38,8 +38,8 @@ class CrawlersCenter {
   }
 
   /**
-   * 
-   * @param {string} rootDirectory 
+   *
+   * @param {string} rootDirectory
    */
   start(rootDirectory) {
     this.root = url.pathToFileURL(rootDirectory);
@@ -50,8 +50,8 @@ class CrawlersCenter {
   }
 
   /**
-   * 
-   * @param {URL} folder 
+   *
+   * @param {URL} folder
    * @returns {boolean} true if started a crawler for the folder. Returns false if all crawler slots are active at the moment
    */
   spawnFolder(folder) {
@@ -66,7 +66,7 @@ class CrawlersCenter {
 
   /**
    * IF the last crawler has been removed, start again with spawnFolder(this.root)
-   * @param {DirectoryCrawler} crawler 
+   * @param {DirectoryCrawler} crawler
    */
   removeCrawler(crawler) {
     // console.log(`${this.constructor.name}.removeCrawler @${this.waitingNew.length} ${crawler.relativePath}`);
@@ -81,8 +81,8 @@ class CrawlersCenter {
   }
 
   /**
-   * 
-   * @param {string} file 
+   *
+   * @param {string} file
    * @returns {Promise}
    */
   addFile(file) {
@@ -110,7 +110,7 @@ class CrawlersCenter {
   }
 
   /**
-   * 
+   *
    * @returns {Promise}
    */
   getFile() {

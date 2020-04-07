@@ -1,4 +1,6 @@
-const createAndAppend = require('../src/utils/tools');
+const createAndAppend = require('../utils/tools');
+const fs = require('fs');
+
 /** */
 class ConfigEditor {
 
@@ -102,8 +104,9 @@ class ConfigEditor {
         const defaultLocation = file.substring(0, file.lastIndexOf('\\') + 1) + 'project.json';
         console.log(`${this.constructor.name}: ${this.configKey}: default: ${defaultLocation} file: ${file}`);
         try {
-            const response = await fetch(defaultLocation);
-            this.config = await response.json();
+            // const response = await fetch(defaultCLocation);
+            // const response =  fs.readFileSync(defaultLocation)
+            this.config = JSON.parse(fs.readFileSync(defaultLocation))
 
             this.userProperties = this.config.general.properties;
 

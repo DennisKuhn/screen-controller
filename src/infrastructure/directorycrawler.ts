@@ -1,7 +1,7 @@
 const fs = require('fs');
 const url = require('url');
 
-const CrawlersCenter = require('./crawlerscenter');
+const CrawlersCenter = require('src/infrastructure/crawlerscenter');
 
 
 class DirectoryCrawler {
@@ -31,10 +31,10 @@ class DirectoryCrawler {
     batchSize = 32;
 
     /**
-     * 
-     * @param {URL} root 
+     *
+     * @param {URL} root
      * @param {CrawlersCenter} center to deliver files and folder spawn request to
-     * @param {number} batchSize 
+     * @param {number} batchSize
      */
     constructor(root, center, batchSize) {
         this.center = center;
@@ -50,7 +50,7 @@ class DirectoryCrawler {
     }
 
     /**
-     * 
+     *
      */
     async processDirectory() {
         do {

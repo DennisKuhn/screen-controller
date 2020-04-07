@@ -2,7 +2,7 @@ const {
     app, ipcMain, BrowserWindow, screen
 } = require('electron');
 
-const electronWallpaper = require('electron-wallpaper');
+const electronWallpaper = require('node-win-wallpaper');
 
 /**
  * Creates and manages the mainwindow and all display windows
@@ -45,7 +45,6 @@ class BrowserManager {
 
     /** triggered by app.whenReady to start electronWallpaper, setupDisplays and createMainWindow */
     start() {
-        electronWallpaper.init();
         this.setupDisplays();
         this.createMainWindow();
     }

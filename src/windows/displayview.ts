@@ -7,7 +7,7 @@ const url = require('url');
 const crypto = require('crypto');
 
 const ConfigEditor = require('./configeditor');
-const createAndAppend = require('../src/utils/tools');
+const createAndAppend = require('../utils/tools');
 
 /** */
 class DisplayView {

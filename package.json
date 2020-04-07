@@ -2,12 +2,90 @@
   "name": "electron-wallpaper-screen-controller",
   "version": "0.0.1",
   "description": "Manages browsers on each display/monitor.",
-  "main": "main.js",
+  "main": ".webpack/main",
   "scripts": {
-    "lint": "eslint lib example && cpplint --linelength=120 --recursive src",
-    "start": "electron ."
-  
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts ."
+  },
+  "keywords": [],
+  "author": {
+    "name": "Corey Sewell",
+    "email": "corey@sewell.net.nz"
+  },
+  "license": "MIT",
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "my_new_app_ts"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ],
+      "plugins": [
+        [
+          "@electron-forge/plugin-webpack",
+          {
+            "mainConfig": "./webpack.main.config.js",
+            "renderer": {
+              "config": "./webpack.renderer.config.js",
+              "entryPoints": [
+                {
+                  "html": "./src/index.html",
+                  "js": "./src/renderer.ts",
+                  "name": "main_window"
+                }
+              ]
+            }
+          }
+        ]
+      ]
+    }
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "6.0.0-beta.50",
+    "@electron-forge/maker-deb": "6.0.0-beta.50",
+    "@electron-forge/maker-rpm": "6.0.0-beta.50",
+    "@electron-forge/maker-squirrel": "6.0.0-beta.50",
+    "@electron-forge/maker-zip": "6.0.0-beta.50",
+    "@electron-forge/plugin-webpack": "6.0.0-beta.50",
+    "@marshallofsound/webpack-asset-relocator-loader": "^0.5.0",
+    "@types/node": "12.0.12",
+    "@typescript-eslint/eslint-plugin": "^2.26.0",
+    "@typescript-eslint/parser": "^2.26.0",
+    "css-loader": "^3.0.0",
+    "electron": "8.2.0",
+    "eslint": "^6.8.0",
+    "eslint-plugin-import": "^2.20.0",
+    "fork-ts-checker-webpack-plugin": "^3.1.1",
+    "node-loader": "^0.6.0",
+    "style-loader": "^0.23.1",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
+    "@types/lodash": "^4.14.149",
+    "electron-squirrel-startup": "^1.0.0",
+    "lodash": "^4.17.15",
+    "node-win-wallpaper": "file:./../node-win-wallpaper"
   }
 }
