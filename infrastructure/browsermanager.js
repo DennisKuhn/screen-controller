@@ -25,7 +25,7 @@ class BrowserManager {
                 this.start();
             })
             .catch((reason) => {
-                console.log(`Error starting: ${reason}`, reason);
+                console.error(`Error starting: ${reason}`, reason);
             });
 
         app.on('window-all-closed', () => {
@@ -56,7 +56,6 @@ class BrowserManager {
      * @returns {Electron.BrowserWindow}
      *  */
     createBrowser(display) {
-        console.log(app.getAppPath());
         const windowProperties = {
             webPreferences: {
                 nodeIntegration: true,
@@ -76,25 +75,20 @@ class BrowserManager {
 
         // Called after file loaded
         browser.once('ready-to-show', () => {
-            console.log(`${display.id}: once ready-to-show`);
             browser.setBounds(display.workArea);
 
             // call here so on-move and on-show are emitted
             browser.show();
         });
         browser.once('show', () => {
-            console.log(`${display.id}: Once show`);
             try {
-                browser.webContents.openDevTools({ mode: 'detach', activate: false});
+                // browser.webContents.openDevTools({ mode: 'detach', activate: false});
                 electronWallpaper.attachWindowToDisplay(display.id, browser);
                 this.browsers[display.id] = browser;
             } catch (error) {
                 console.error(error);
                 browser.close();
             }
-        });
-        browser.once('move', () => {
-            console.log(`${display.id}: Once move`);
         });
 
         return browser;
@@ -130,9 +124,6 @@ class BrowserManager {
         }
         if (browser) {
             browser.loadFile(file)
-                .then(
-                    console.log(`${display.id}: loaded: ${file}`)
-                )
                 .catch(
                     (reason) => {
                         console.error(`${display.id}: Failed loading: ${reason}, file: ${file}`);

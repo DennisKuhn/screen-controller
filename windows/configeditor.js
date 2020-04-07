@@ -101,7 +101,6 @@ class ConfigEditor {
     async loadDefault(file) {
         const defaultLocation = file.substring(0, file.lastIndexOf('\\') + 1) + 'project.json';
         console.log(`${this.constructor.name}: ${this.configKey}: default: ${defaultLocation} file: ${file}`);
-
         try {
             const response = await fetch(defaultLocation);
             this.config = await response.json();
