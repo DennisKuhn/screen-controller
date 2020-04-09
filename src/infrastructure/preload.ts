@@ -1,5 +1,7 @@
-const ConfigManager = require('src/infrastructure/configmanager');
+import ConfigManager from './configmanager';
 
+let configManager;
+console.log('preload included')
 process.once('loaded', () => {
-  global.configManager = new ConfigManager();
+    configManager = new ConfigManager();
 });

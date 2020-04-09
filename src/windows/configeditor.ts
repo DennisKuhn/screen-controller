@@ -1,12 +1,12 @@
-const createAndAppend = require('../utils/tools');
-const fs = require('fs');
+import createAndAppend from '../utils/tools';
+import fs from 'fs';
 
 /** */
 class ConfigEditor {
 
     config;
     userProperties;
-    configKey;
+    configKey: string;
 
     /**
      *
@@ -14,7 +14,7 @@ class ConfigEditor {
      * @param {string} file path of the page
      * @param {string} configKey used to identify configuration slot
      */
-    constructor(parent, file, configKey) {
+    constructor(parent: Element, file: string, configKey: string) {
         this.configKey = configKey;
 
         const configString = localStorage.getItem(this.configKey);
@@ -53,18 +53,18 @@ class ConfigEditor {
      *
      * @param {Element} parent element to attach editor to
      */
-    createEditor(parent) {
-        const editor = createAndAppend('div', {
+    createEditor(parent: Element): void {
+        const editor = createAndAppend<HTMLDivElement>('div', {
             parent: parent,
             className: 'configEditor'
         });
 
         Object.entries(this.userProperties)
-            .sort(([keya, fielda], [keyb, fieldb]) => {
+            .sort(([, fielda], [, fieldb]) => {
                 return fielda.order - fieldb.order;
             })
-            .forEach(([key, field]) => {
-                const wrapper = createAndAppend('div', {
+            .forEach(([, field]) => {
+                const wrapper = createAndAppend<HTMLDivElement>('div', {
                     parent: editor,
                     className: 'field'
                 });
@@ -77,7 +77,7 @@ class ConfigEditor {
 
                 switch (field.type) {
                     case 'textinput': {
-                        const textInput = createAndAppend('input', {
+                        const textInput = createAndAppend<HTMLInputElement>('input', {
                             parent: wrapper,
                             className: 'editor'
                         });
@@ -100,13 +100,13 @@ class ConfigEditor {
      *
      * @param {string} file path
      */
-    async loadDefault(file) {
+    async loadDefault(file: string) {
         const defaultLocation = file.substring(0, file.lastIndexOf('\\') + 1) + 'project.json';
         console.log(`${this.constructor.name}: ${this.configKey}: default: ${defaultLocation} file: ${file}`);
         try {
             // const response = await fetch(defaultCLocation);
             // const response =  fs.readFileSync(defaultLocation)
-            this.config = JSON.parse(fs.readFileSync(defaultLocation))
+            this.config = JSON.parse(fs.readFileSync(defaultLocation).toString());
 
             this.userProperties = this.config.general.properties;
 
@@ -132,4 +132,4 @@ class ConfigEditor {
     }
 }
 
-module.exports = ConfigEditor;
+export default ConfigEditor;

@@ -1,4 +1,4 @@
-import {Display, remote} from 'electron'
+import { Display, remote } from 'electron';
 import DisplayView from './displayview';
 
 /**
@@ -6,20 +6,11 @@ import DisplayView from './displayview';
  */
 class ScreenManager {
 
-    /**
-     * @type {Electron.Display[]}
-     */
     displays: Display[] = [];
 
-    /**
-     * @type {DisplayView[]}
-     */
-    views: any = [];
+    views: DisplayView[] = [];
 
-    /**
-     * @type {Element}
-     */
-    screensWrapper = document.querySelector('[id = displayswrapper]');
+    screensWrapper: HTMLDivElement = document.querySelector<HTMLDivElement>('[id = displayswrapper]');
 
     /** */
     constructor() {

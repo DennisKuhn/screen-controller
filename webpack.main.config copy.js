@@ -4,11 +4,8 @@ module.exports = {
      * that runs in the main process.
      */
     entry: {
-        index: './src/index.ts',
-        preload: './src/infrastructure/preload.ts'
-    },
-    output: {
-        filename: '[name].js',
+        index:'./src/index.ts',
+        preload:'./src/preload.ts',
     },
     // Put your normal webpack config below here
     target: 'electron-renderer',

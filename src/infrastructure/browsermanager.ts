@@ -1,162 +1,124 @@
-const {
-    app, ipcMain, BrowserWindow, screen
-} = require('electron');
+import {BrowserWindow, ipcMain, screen} from 'electron';
+import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
+import path = require('path');
+import Display = Electron.Display;
 
-const electronWallpaper = require('node-win-wallpaper');
+declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 
-/**
- * Creates and manages the mainwindow and all display windows
- */
-class BrowserManager {
+export default class Main {
+    static mainWindow: Electron.BrowserWindow;
+    static application: Electron.App;
+    static ipc = ipcMain;
+    static windows: WallpaperWindow[] = [];
+    static BrowserWindow: typeof BrowserWindow;
 
-    ipc = ipcMain;
-    browsers = {};
-
-    /** @type {Electron.BrowserWindow} */
-    mainWindow;
-
-    /** Hooks to electron.app events. app.whenReady calls start calling setupDisplays and createMainWindow */
-    constructor() {
-        // This method will be called when Electron has finished
-        // initialization and is ready to create browser windows.
-        // Some APIs can only be used after this event occurs.
-        app.whenReady()
-            .then(() => {
-                this.start();
-            })
-            .catch((reason) => {
-                console.error(`Error starting: ${reason}`, reason);
-            });
-
-        app.on('window-all-closed', () => {
-            if (process.platform !== 'darwin') {
-                app.quit();
-            }
-        });
-
-        app.on('activate', () => {
-            // On macOS it's common to re-create a window in the app when the
-            // dock icon is clicked and there are no other windows open.
-            if (this.mainWindow === null) {
-                this.createMainWindow();
-            }
-        });
+    private static onWindowAllClosed(): void {
+        if (process.platform !== 'darwin') {
+            Main.application.quit();
+        }
     }
 
-    /** triggered by app.whenReady to start electronWallpaper, setupDisplays and createMainWindow */
-    start() {
-        this.setupDisplays();
-        this.createMainWindow();
+    private static onClose(): void {
+        // Dereference the window object.
+        Main.windows.forEach((w, i) => {
+            w.browserWindow.close();
+            Main.windows.splice(i, 1);
+        });
+        Main.mainWindow = null;
+    }
+
+    private static onReady(): void {
+        Main.setupDisplays();
+        Main.createMainWindow();
     }
 
     /**
      * Called by loadFile, ready-to-show sets initial bounds, calls show to trigger attaching to the desktop and adding to browsers
-     * @param {Electron.Display} display used for positioning
-     * @returns {Electron.BrowserWindow}
      *  */
-    createBrowser(display) {
+    static createWallpaperWindow(display: Display): WallpaperWindow {
         const windowProperties = {
             webPreferences: {
                 nodeIntegration: true,
-                preload: `${app.getAppPath()}\\infrastructure\\preload.js`,
+                // preload: `${Main.application.getAppPath()}\\src\\infrastructure\\preload.ts`,
+                preload: `${Main.application.getAppPath()}/.webpack/main/preload.js`,
+                //preload: './preloadLauncher.js',
                 additionalArguments: [`--displayid=${display.id}`]
             },
+            display: display,
             show: false,
             transparent: true,
-            frame: false,
-            x: display.workArea.x,
-            y: display.workArea.y,
-            width: display.workArea.width,
-            height: display.workArea.height
         };
-
-        const browser = new BrowserWindow(windowProperties);
-
-        // Called after file loaded
-        browser.once('ready-to-show', () => {
-            browser.setBounds(display.workArea);
-
-            // call here so on-move and on-show are emitted
-            browser.show();
-        });
-        browser.once('show', () => {
-            try {
-                // browser.webContents.openDevTools({ mode: 'detach', activate: false});
-                electronWallpaper.attachWindowToDisplay(display.id, browser);
-                this.browsers[display.id] = browser;
-            } catch (error) {
-                console.error(error);
-                browser.close();
-            }
-        });
-
-        return browser;
+        let window: WallpaperWindow;
+        try {
+            window = new WallpaperWindow(windowProperties);
+            window.browserWindow.once('ready-to-show', () => {
+                window.browserWindow.show();
+            });
+            window.browserWindow.once('show', () => {
+                Main.windows.push(window);
+            });
+        } catch (error) {
+            console.error(error);
+        }
+        return window;
     }
 
     /**
      * creates an IPC channel for each display and connects loadFile
      */
-    setupDisplays() {
-        // Screen is available when electron.app.whenReady is emited
-        screen.getAllDisplays().forEach(
-            (display) => {
-                this.ipc.on(`${display.id}-file`, (e, file) => {
-                    this.loadFile(display, file);
-                });
-            }
-        );
-    }
-
-    /**
-     * Connected by setupDisplays, called be ScreenManager. Maybe createBrowser(display), defintely browser[display.id].loadFile
-     * @param {Electron.Display} display display to load file for
-     * @param {string} file path to load
-     */
-    loadFile(display, file) {
-        /** @type {Electron.BrowserWindow} */
-        let browser;
-
-        if (display.id in this.browsers) {
-            browser = this.browsers[display.id];
-        } else {
-            browser = this.createBrowser(display);
-        }
-        if (browser) {
-            browser.loadFile(file)
-                .catch(
-                    (reason) => {
-                        console.error(`${display.id}: Failed loading: ${reason}, file: ${file}`);
-                    }
-                );
-        }
-    }
-
-    /**
-     * @summary Loads screenmanager.html and connets on-closed to close displays browsers
-     */
-    createMainWindow() {
-
-        const windowProperties = {
-            webPreferences: {
-                nodeIntegration: true
-            },
-            width: 800,
-            height: 600
-        };
-
-        this.mainWindow = new BrowserWindow(windowProperties);
-        this.mainWindow.loadFile('windows/screenmanager.html');
-
-        this.mainWindow.on('closed', () => {
-            Object.entries(this.browsers).forEach(([browserId, browser]) => {
-                browser.close();
-                Reflect.deleteProperty(this.browsers, browserId);
+    static setupDisplays(): void {
+        // Screen is available when electron.app.whenReady is emitted
+        screen.getAllDisplays().forEach((display) => {
+            Main.ipc.on(`${display.id}-file`, (e, file) => {
+                Main.loadFile(display, file);
             });
-            this.mainWindow = null;
         });
     }
+
+
+    static loadFile(display: Display, file: string): void {
+        let window = this.windows.find(w => w.display.id === display.id);
+
+        if (!window) {
+            window = Main.createWallpaperWindow(display);
+        }
+        if (window) {
+            window.browserWindow.loadFile(file)
+                .then(() => {
+                    console.log(`${display.id}: loaded: ${file}`);
+                })
+                .catch((reason) => {
+                    console.error(`${display.id}: Failed loading: ${reason}, file: ${file}`);
+                });
+        }
+    }
+
+    static createMainWindow(): void {
+        Main.mainWindow = new Main.BrowserWindow({
+            webPreferences: {
+                nodeIntegration: true,
+                preload: path.join(__dirname, 'preload.js')
+            },
+            width: 800,
+            height: 600,
+        });
+
+        Main.mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+        Main.mainWindow.on('closed', Main.onClose);
+
+        // Open the DevTools.
+        Main.mainWindow.webContents.openDevTools();
+    }
+
+    static run(app: Electron.App, browserWindow: typeof BrowserWindow): void {
+        // we pass the Electron.App object and the
+        // Electron.BrowserWindow into this function
+        // so this class has no dependencies. This
+        // makes the code easier to write tests for
+        Main.BrowserWindow = browserWindow;
+        Main.application = app;
+        Main.application.on('window-all-closed', Main.onWindowAllClosed);
+        app.whenReady().then(Main.onReady);
+
+    }
 }
-
-const browserManager = new BrowserManager();
-
-module.exports = browserManager;

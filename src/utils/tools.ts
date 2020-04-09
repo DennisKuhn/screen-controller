@@ -9,8 +9,10 @@
  * @param {{parent?: Node, className?: string, text?: string, html?: string}} [options]
  * @returns {HTMLElement}
  */
-const createAndAppend = (name, options) => {
-    const element = document.createElement(name);
+const createAndAppend = <T extends keyof HTMLElementTagNameMap>
+    (name: keyof HTMLElementTagNameMap, options: { parent?: Node; className?: string; text?: string; html?: string }): T => {
+
+    const element: T = document.createElement<T>(name);
 
     if (options) {
         if (options.className) {
@@ -27,6 +29,6 @@ const createAndAppend = (name, options) => {
         }
     }
     return element;
-}
+};
 
-module.exports = createAndAppend;
+export default createAndAppend;

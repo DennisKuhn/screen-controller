@@ -1,48 +1,48 @@
-const fs = require('fs');
-const url = require('url');
+import fs from 'fs';
+import url, { URL } from 'url';
 
-const CrawlersCenter = require('src/infrastructure/crawlerscenter');
+import CrawlersCenter from './crawlerscenter';
 
 
 class DirectoryCrawler {
 
-    /** @type {CrawlersCenter} */
-    center;
+    center: CrawlersCenter;
 
-    /** @type {URL} */
-    root;
+    root: URL;
 
-    /** @type {string} */
-    relativePath;
+    relativePath: string;
 
-    /** @type {fs.Dir} */
-    directory;
+    directory: fs.Dir;
 
-    /** @type {URL[]} */
-    directoriesQueue = [];
+    directoriesQueue: URL[] = [];
 
     /**
      * Directory entries buffer
-     * @type {fs.Dirent[]}
      */
-    entries = [];
+    entries: fs.Dirent[] = [];
 
     // Node opendir default=32
     batchSize = 32;
 
     /**
      *
-     * @param {URL} root
      * @param {CrawlersCenter} center to deliver files and folder spawn request to
      * @param {number} batchSize
      */
-    constructor(root, center, batchSize) {
+    constructor( center: CrawlersCenter, batchSize: number) {
         this.center = center;
-        this.root = root;
-        this.relativePath = this.root.pathname.substr(this.center.root.pathname.length);
-
 
         this.batchSize = batchSize ? batchSize : this.batchSize;
+    }
+
+    /**
+     *
+     * @param {URL} root
+     */
+    run(root: URL) {
+
+        this.root = root;
+        this.relativePath = this.root.pathname.substr(this.center.root.pathname.length);
 
         this.directoriesQueue.push(root);
         this.processDirectory()
@@ -52,16 +52,25 @@ class DirectoryCrawler {
     /**
      *
      */
-    async processDirectory() {
+    async processDirectory(): Promise<void> {
         do {
+            const directoryUrl = this.directoriesQueue.pop();
             try {
-                let directoryUrl = this.directoriesQueue.pop();
-
                 // console.log(`${this.constructor.name}[${this.relativePath}].processDirectory: open ${directoryUrl}`);
+                // eslint-disable-next-line
+                //@ts-ignore
                 this.directory = await fs.promises.opendir(directoryUrl, {
                     encoding: 'utf8',
                     bufferSize: this.batchSize
                 });
+            } catch (processDirectoryError) {
+                console.error(`${this.constructor.name}[${this.relativePath}].processDirectory: opendir fail: ${processDirectoryError}`, processDirectoryError);
+
+                if (this.root == directoryUrl) {
+                    throw processDirectoryError;
+                }
+            }
+            try {
                 // console.log(`${this.constructor.name}[${this.relativePath}].processDirectory: start looping`);
                 for await (const dirent of this.directory) {
                     if (this.entries.push(dirent) == this.batchSize) {
@@ -69,13 +78,15 @@ class DirectoryCrawler {
                     }
                 }
                 await this.processBatch();
-            } catch (processDirectoryError) {
-                console.error(`${this.constructor.name}[${this.relativePath}].processDirectory: fail: ${processDirectoryError}`, processDirectoryError);
+            } catch (processBatchError) {
+                console.error(`${this.constructor.name}[${this.relativePath}].processDirectory: read dir fail: ${processBatchError}`, processBatchError);
             }
         } while (this.directoriesQueue.length);
+
+        return;
     }
 
-    async processBatch() {
+    async processBatch(): Promise<void> {
         // console.log(`${this.constructor.name}[${this.relativePath}].processBatch`);
 
         for (const entry of this.entries) {
@@ -83,7 +94,7 @@ class DirectoryCrawler {
 
             // console.log(`${this.constructor.name}[${this.relativePath}]: isFile=${entry.isFile()} isDirectory=${entry.isDirectory()}`, entry);
             if (entry.isFile()) {
-                await this.center.addFile(entryUrl);
+                await this.center.addFile(entryUrl.href);
             } else if (entry.isDirectory()) {
                 if (this.center.spawnFolder(entryUrl) == false) {
                     this.directoriesQueue.push(entryUrl);
@@ -96,4 +107,4 @@ class DirectoryCrawler {
     }
 }
 
-module.exports = DirectoryCrawler;
+export default DirectoryCrawler;
