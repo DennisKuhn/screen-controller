@@ -24,6 +24,8 @@ class DirectoryCrawler {
     // Node opendir default=32
     batchSize = 32;
 
+    terminating= false;
+
     /**
      *
      * @param {CrawlersCenter} center to deliver files and folder spawn request to
@@ -39,14 +41,14 @@ class DirectoryCrawler {
      *
      * @param {URL} root
      */
-    run(root: URL) {
+    async run(root: URL): Promise<void> {
 
         this.root = root;
         this.relativePath = this.root.pathname.substr(this.center.root.pathname.length);
 
         this.directoriesQueue.push(root);
-        this.processDirectory()
-            .finally(() => this.center.removeCrawler(this));
+        
+        await this.processDirectory();
     }
 
     /**
@@ -70,18 +72,29 @@ class DirectoryCrawler {
                     throw processDirectoryError;
                 }
             }
+            if (this.terminating) {
+                return;
+            }
             try {
                 // console.log(`${this.constructor.name}[${this.relativePath}].processDirectory: start looping`);
                 for await (const dirent of this.directory) {
+                    if (this.terminating) {
+                        return;
+                    }
                     if (this.entries.push(dirent) == this.batchSize) {
                         await this.processBatch();
+                        if (this.terminating) {
+                            return;
+                        }
                     }
                 }
                 await this.processBatch();
             } catch (processBatchError) {
-                console.error(`${this.constructor.name}[${this.relativePath}].processDirectory: read dir fail: ${processBatchError}`, processBatchError);
+                console.error(
+                    `${this.constructor.name}[${this.relativePath}].processDirectory: read dir fail:[q=${this.directoriesQueue.length},t=${this.terminating}]`,
+                    processBatchError);
             }
-        } while (this.directoriesQueue.length);
+        } while (this.directoriesQueue.length && (this.terminating == false));
 
         return;
     }
@@ -92,11 +105,20 @@ class DirectoryCrawler {
         for (const entry of this.entries) {
             const entryUrl = url.pathToFileURL(this.directory.path + '\\' + entry.name);
 
+            if (this.terminating) {
+                return;
+            }
             // console.log(`${this.constructor.name}[${this.relativePath}]: isFile=${entry.isFile()} isDirectory=${entry.isDirectory()}`, entry);
             if (entry.isFile()) {
                 await this.center.addFile(entryUrl.href);
             } else if (entry.isDirectory()) {
-                if (this.center.spawnFolder(entryUrl) == false) {
+
+                if ( this.center.canSpan ) {
+                    this.center.spawnFolder(entryUrl)
+                        .catch(reason => {
+                            console.warn(`${this.constructor}[${this.relativePath}]@${entry.name}:.processBatch: spawnFolder threw: ${reason}`, reason);
+                        });
+                } else {
                     this.directoriesQueue.push(entryUrl);
                 }
             } else {
@@ -104,6 +126,11 @@ class DirectoryCrawler {
             }
         }
         this.entries.length = 0;
+    }
+
+    terminate(): void {
+        this.terminating = true;
+        this.directoriesQueue.length = 0;
     }
 }
 
