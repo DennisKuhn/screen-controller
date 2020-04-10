@@ -1,4 +1,5 @@
-import {BrowserWindow, ipcMain, screen} from 'electron';
+import { BrowserWindow, ipcMain, screen } from 'electron';
+import url, { URL } from 'url';
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import path = require('path');
 import Display = Electron.Display;
@@ -69,26 +70,29 @@ export default class Main {
     static setupDisplays(): void {
         // Screen is available when electron.app.whenReady is emitted
         screen.getAllDisplays().forEach((display) => {
-            Main.ipc.on(`${display.id}-file`, (e, file) => {
-                Main.loadFile(display, file);
+            Main.ipc.on(`${display.id}-file`, (e, file: string) => {
+                // console.log(`${display.id}: IPC on ${display.id}-file s=${file.toString()} ${JSON.stringify(file)}`);
+                Main.loadFile(display, url.parse(file,false,false));
             });
         });
     }
 
 
-    static loadFile(display: Display, file: string): void {
+    static loadFile(display: Display, file: URL): void {
         let window = this.windows.find(w => w.display.id === display.id);
 
         if (!window) {
             window = Main.createWallpaperWindow(display);
         }
         if (window) {
-            window.browserWindow.loadFile(file)
+            console.log(`${display.id}: loading: h=${file.href} f2p=${url.fileURLToPath(file.href)}`, file);
+            //window.browserWindow.loadURL(file.href)
+            window.browserWindow.loadFile(url.fileURLToPath( file.href ))
                 .then(() => {
-                    console.log(`${display.id}: loaded: ${file}`);
+                    // console.log(`${display.id}: loaded: h=${file.href} p=${file.pathname}`);
                 })
                 .catch((reason) => {
-                    console.error(`${display.id}: Failed loading: ${reason}, file: ${file}`);
+                    console.error(`${display.id}: Failed loading: ${reason}, h=${file.href} f2p=${url.fileURLToPath(file.href)}`);
                 });
         }
     }

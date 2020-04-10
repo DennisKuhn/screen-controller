@@ -1,5 +1,5 @@
 import createAndAppend from '../utils/tools';
-import fs from 'fs';
+import ConfigController from '../infrastructure/ConfigController';
 
 /** */
 class ConfigEditor {
@@ -11,42 +11,23 @@ class ConfigEditor {
     /**
      *
      * @param {Element} parent element to attach editor to
-     * @param {string} file path of the page
-     * @param {string} configKey used to identify configuration slot
+     * @param {URL} file path of the page
+     * @param {number} displayId id of the display
      */
-    constructor(parent: Element, file: string, configKey: string) {
-        this.configKey = configKey;
+    constructor(parent: Element, displayId: number, file: URL) {
 
-        const configString = localStorage.getItem(this.configKey);
-
-        if (configString) {
-            try {
-                this.config = JSON.parse(configString);
-            } catch (loadConfigError) {
+        ConfigController.getConfig(displayId, file)
+            .then(config => {
+                this.config = config;
+                this.userProperties = this.config.general.properties;
+                console.log(`${this.constructor.name}:${displayId}: got Config`, this.config);
+                this.createEditor(parent);
+            })
+            .catch((fileLoadError) => {
                 console.error(
-                    `${this.constructor.name}: ${this.configKey}: Error parsing config JSON:${loadConfigError}: ${configString} file: ${file}`,
-                    loadConfigError,
-                    configString);
-            }
-        }
-        if (!this.config || !this.config.general || !this.config.general.properties) {
-            this.loadDefault(file)
-                .then(() => {
-                    if (this.config) {
-                        console.log(`${this.constructor.name}:${configKey}: Loaded defaults`, this.config);
-                        this.createEditor(parent);
-                    }
-                })
-                .catch((fileLoadError) => {
-                    console.error(
-                        `${this.constructor.name}: ${this.configKey}: Error loading default config:${fileLoadError} file: ${file}`,
-                        fileLoadError);
-                });
-        } else {
-            console.log(`${this.constructor.name}:${configKey}: Loaded from storage`, this.config);
-            this.userProperties = this.config.general.properties;
-            this.createEditor(parent);
-        }
+                    `${this.constructor.name}: ${this.configKey}: Error loading default config:${fileLoadError} file: ${file}`,
+                    fileLoadError);
+            });
     }
 
     /**
@@ -94,41 +75,6 @@ class ConfigEditor {
                         });
                 }
             });
-    }
-
-    /**
-     *
-     * @param {string} file path
-     */
-    async loadDefault(file: string) {
-        const defaultLocation = file.substring(0, file.lastIndexOf('\\') + 1) + 'project.json';
-        console.log(`${this.constructor.name}: ${this.configKey}: default: ${defaultLocation} file: ${file}`);
-        try {
-            // const response = await fetch(defaultCLocation);
-            // const response =  fs.readFileSync(defaultLocation)
-            this.config = JSON.parse(fs.readFileSync(defaultLocation).toString());
-
-            this.userProperties = this.config.general.properties;
-
-            console.log(`${this.constructor.name}: ${this.configKey}: loaded default`, this.userProperties, this.config);
-        } catch (loadError) {
-            console.error(
-                `${this.constructor.name}: ${this.configKey}: ERROR loading default:${loadError}:${defaultLocation}`,
-                loadError,
-                defaultLocation);
-        }
-        if (this.config) {
-            try {
-                localStorage.setItem(this.configKey, JSON.stringify(this.config));
-
-                console.log(`${this.constructor.name}: ${this.configKey}: stored default`, this.config);
-            } catch (storeError) {
-                console.error(
-                    `${this.constructor.name}: ${this.configKey}: ERROR storing default:${storeError}:${defaultLocation}`,
-                    storeError,
-                    defaultLocation);
-            }
-        }
     }
 }
 

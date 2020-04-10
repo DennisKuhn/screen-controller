@@ -87,10 +87,10 @@ module.exports =
 /************************************************************************/
 /******/ ({
 
-/***/ "./src/infrastructure/configmanager.ts":
-/*!*********************************************!*\
-  !*** ./src/infrastructure/configmanager.ts ***!
-  \*********************************************/
+/***/ "./src/infrastructure/ConfigController.ts":
+/*!************************************************!*\
+  !*** ./src/infrastructure/ConfigController.ts ***!
+  \************************************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -138,88 +138,180 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var electron_1 = __webpack_require__(/*! electron */ "electron");
 var crypto_1 = __importDefault(__webpack_require__(/*! crypto */ "crypto"));
-/**
- * Loads configuration from storage and provides interface to configuration updates through channel.
- * @module
- */
-var ConfigManager = /** @class */ (function () {
-    /**
-     *
-     */
-    function ConfigManager() {
-        this.locationHref = window.location.href;
-        this.sourceId = crypto_1.default.createHash('md5').update(this.locationHref).digest('hex');
-        this.displayId = process.argv.find(function (arg) {
-            return /^--displayid=/.test(arg);
-        }).split('=')[1];
-        this.settingsId = this.displayId + "-" + this.sourceId + "-config";
-        console.log(this.constructor.name + "(): " + this.settingsId + " = " + this.displayId + " + " + this.sourceId + " (" + this.locationHref + ")");
-        this.loadConfig();
-        this.connectToWallpaper();
+var url_1 = __importDefault(__webpack_require__(/*! url */ "url"));
+var fs_1 = __importDefault(__webpack_require__(/*! fs */ "fs"));
+var ConfigOption = /** @class */ (function () {
+    function ConfigOption() {
     }
-    /**
-     * Exposes interface to wallpaper window, e.g. window.wallpaper.register(listeners)
-     */
-    ConfigManager.prototype.connectToWallpaper = function () {
-        var _this = this;
-        // Expose protected methods that allow the renderer process to use
-        // the ipcRenderer without exposing the entire object
-        window.wallpaper = {
-            register: function (listeners) {
-                console.log(_this.constructor.name + ": " + _this.settingsId + ": " + Object.keys(_this.userProperties).length + ": register", listeners, _this.userProperties);
-                if (listeners.user) {
-                    try {
-                        listeners.user(_this.userProperties);
-                    }
-                    catch (initialError) {
-                        console.error(_this.constructor.name + ": " + _this.settingsId + ": ERROR initial user setting:" + initialError + ":", initialError, _this.userProperties);
-                    }
-                    electron_1.ipcRenderer.on(_this.settingsId + '-userSettings', function (e, settingText) { return __awaiter(_this, void 0, void 0, function () {
-                        var changedSettings, settingsError_1;
-                        return __generator(this, function (_a) {
-                            switch (_a.label) {
-                                case 0:
-                                    _a.trys.push([0, 2, , 3]);
-                                    return [4 /*yield*/, JSON.parse(settingText)];
-                                case 1:
-                                    changedSettings = _a.sent();
-                                    listeners.user(changedSettings);
-                                    return [3 /*break*/, 3];
-                                case 2:
-                                    settingsError_1 = _a.sent();
-                                    console.error(this.constructor.name + ": " + this.settingsId + ": ERROR updating user setting:" + settingsError_1 + ":" + settingText, settingsError_1, settingText);
-                                    return [3 /*break*/, 3];
-                                case 3: return [2 /*return*/];
-                            }
-                        });
-                    }); });
-                }
-            }
-        };
-    };
+    return ConfigOption;
+}());
+var ConfigProperty = /** @class */ (function () {
+    function ConfigProperty() {
+    }
+    return ConfigProperty;
+}());
+var ConfigSettings = /** @class */ (function () {
     /**
      *
      */
-    ConfigManager.prototype.loadConfig = function () {
-        console.log(this.constructor.name + ": " + this.settingsId);
-        var configString = localStorage.getItem(this.settingsId);
+    function ConfigSettings(displayId, baseUrl) {
+        this.baseUrl = baseUrl; // url.pathToFileURL(file);
+        this.baseId = crypto_1.default.createHash('md5').update(this.baseUrl.href).digest('hex');
+        this.displayId = displayId;
+        this.configId = this.displayId + "-" + this.baseId + "-config";
+        console.log(this.constructor.name + "(): " + this.configId + " = " + this.displayId + " + " + this.baseId + " (" + this.baseUrl.href + ")");
+        this.loadConfig();
+    }
+    ConfigSettings.prototype.loadConfig = function () {
+        console.log(this.constructor.name + ": " + this.configId);
+        var configString = localStorage.getItem(this.configId);
         if (configString) {
             try {
                 this.config = JSON.parse(configString);
                 this.userProperties = this.config.general.properties;
-                console.log(this.constructor.name + ": " + this.settingsId + ": loaded config", this.userProperties, this.config);
+                console.log(this.constructor.name + ": " + this.configId + ": loaded config", this.userProperties, this.config);
             }
             catch (loadConfigError) {
-                console.error(this.constructor.name + ": " + this.settingsId + ": Error parsing config JSON:" + loadConfigError + ": " + configString + " file: " + this.locationHref, loadConfigError, configString);
+                console.error(this.constructor.name + ": " + this.configId + ": Error parsing config JSON:" + loadConfigError + ": " + configString + " file: " + this.baseUrl.href, loadConfigError, configString);
             }
         }
         else {
-            console.warn(this.constructor.name + ": " + this.settingsId + ": no config: " + this.locationHref);
+            console.warn(this.constructor.name + ": " + this.configId + ": no config: " + this.baseUrl.href);
         }
     };
-    return ConfigManager;
+    /**
+     *
+     * @param {string} file path
+     */
+    ConfigSettings.prototype.loadDefault = function () {
+        return __awaiter(this, void 0, Promise, function () {
+            var defaultLocation, defaultPath, buffer, loadError_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        defaultLocation = this.baseUrl.href.substring(0, this.baseUrl.href.lastIndexOf('/') + 1) + 'project.json';
+                        defaultPath = url_1.default.fileURLToPath(this.baseUrl.href.substring(0, this.baseUrl.href.lastIndexOf('/') + 1) + 'project.json');
+                        console.log(this.constructor.name + ": " + this.configId + ": defaultLocation: " + defaultLocation + " defaultPath: " + defaultPath + " file: " + this.baseUrl.href);
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 3, , 4]);
+                        return [4 /*yield*/, fs_1.default.promises.readFile(defaultPath)];
+                    case 2:
+                        buffer = _a.sent();
+                        this.config = JSON.parse(buffer.toString());
+                        this.userProperties = this.config.general.properties;
+                        console.log(this.constructor.name + ": " + this.configId + ": loaded default", this.userProperties, this.config);
+                        return [3 /*break*/, 4];
+                    case 3:
+                        loadError_1 = _a.sent();
+                        console.error(this.constructor.name + ": " + this.configId + ": ERROR loading default:" + loadError_1 + ":" + defaultLocation, loadError_1, defaultLocation);
+                        return [3 /*break*/, 4];
+                    case 4:
+                        if (this.config) {
+                            try {
+                                localStorage.setItem(this.configId, JSON.stringify(this.config));
+                                console.log(this.constructor.name + ": " + this.configId + ": stored default", this.config);
+                            }
+                            catch (storeError) {
+                                console.error(this.constructor.name + ": " + this.configId + ": ERROR storing default:" + storeError + ":" + defaultLocation, storeError, defaultLocation);
+                            }
+                        }
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    return ConfigSettings;
 }());
-exports.default = ConfigManager;
+/**
+ * Loads configuration from storage and provides interface to configuration updates through channel.
+ * @module
+ */
+var ConfigController = /** @class */ (function () {
+    /**
+     *
+     */
+    function ConfigController() {
+        console.error(this.constructor.name + "()");
+    }
+    ConfigController.getConfig = function (displayId, baseUrl) {
+        return __awaiter(this, void 0, Promise, function () {
+            var setting;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        setting = ConfigController.settings.find(function (candidate) { return candidate.displayId == displayId && candidate.baseUrl == baseUrl; });
+                        if (!!setting) return [3 /*break*/, 2];
+                        setting = new ConfigSettings(displayId, baseUrl);
+                        ConfigController.settings.push(setting);
+                        if (!!setting.config) return [3 /*break*/, 2];
+                        return [4 /*yield*/, setting.loadDefault()];
+                    case 1:
+                        _a.sent();
+                        _a.label = 2;
+                    case 2: return [2 /*return*/, setting.config];
+                }
+            });
+        });
+    };
+    ConfigController.start = function () {
+        // Get displayId from argV and url from window.locaiton.href
+        ConfigController.getConfig(Number(process.argv.find(function (arg) {
+            return /^--displayid=/.test(arg);
+        }).split('=')[1]), url_1.default.parse(window.location.href, false, false)).then(function () {
+            ConfigController.connectToWallpaper();
+        });
+    };
+    /**
+     * Exposes interface to wallpaper window, e.g. window.wallpaper.register(listeners)
+     */
+    ConfigController.connectToWallpaper = function () {
+        // Expose protected methods that allow the renderer process to use
+        // the ipcRenderer without exposing the entire object
+        window.wallpaper = {
+            register: ConfigController.registerPage
+        };
+    };
+    ConfigController.settings = [];
+    ConfigController.onNewSettings = function (e, settingText) { return __awaiter(void 0, void 0, Promise, function () {
+        var setting, changedSettings, settingsError_1;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    setting = ConfigController.settings[0];
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, JSON.parse(settingText)];
+                case 2:
+                    changedSettings = _a.sent();
+                    ConfigController.listeners.user(changedSettings);
+                    return [3 /*break*/, 4];
+                case 3:
+                    settingsError_1 = _a.sent();
+                    console.error("ConfigController: " + setting.configId + ": ERROR updating user setting:" + settingsError_1 + ":" + settingText, settingsError_1, settingText);
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
+            }
+        });
+    }); };
+    ConfigController.registerPage = function (listeners) {
+        var setting = ConfigController.settings[0];
+        ConfigController.listeners = listeners;
+        console.log("ConfigController: " + setting.configId + ": " + Object.keys(setting.userProperties).length + ": register", listeners, setting.userProperties);
+        if (ConfigController.listeners.user) {
+            try {
+                ConfigController.listeners.user(setting.userProperties);
+            }
+            catch (initialError) {
+                console.error("ConfigController: " + setting.configId + ": ERROR initial user setting:" + initialError + ":", initialError, setting.userProperties);
+            }
+            electron_1.ipcRenderer.on(setting.configId + '-userSettings', ConfigController.onNewSettings);
+        }
+    };
+    return ConfigController;
+}());
+exports.default = ConfigController;
 
 
 /***/ }),
@@ -237,11 +329,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var configmanager_1 = __importDefault(__webpack_require__(/*! ./configmanager */ "./src/infrastructure/configmanager.ts"));
-var configManager;
+var ConfigController_1 = __importDefault(__webpack_require__(/*! ./ConfigController */ "./src/infrastructure/ConfigController.ts"));
 console.log('preload included');
 process.once('loaded', function () {
-    configManager = new configmanager_1.default();
+    ConfigController_1.default.start();
 });
 
 
@@ -266,6 +357,28 @@ module.exports = require("crypto");
 /***/ (function(module, exports) {
 
 module.exports = require("electron");
+
+/***/ }),
+
+/***/ "fs":
+/*!*********************!*\
+  !*** external "fs" ***!
+  \*********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("fs");
+
+/***/ }),
+
+/***/ "url":
+/*!**********************!*\
+  !*** external "url" ***!
+  \**********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = require("url");
 
 /***/ })
 

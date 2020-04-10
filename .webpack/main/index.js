@@ -18639,20 +18639,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var electron_1 = __webpack_require__(/*! electron */ "electron");
 var BrowserManager_1 = __importDefault(__webpack_require__(/*! ./infrastructure/BrowserManager */ "./src/infrastructure/BrowserManager.ts"));
-var crawlerscenter_1 = __importDefault(__webpack_require__(/*! ./infrastructure/crawlerscenter */ "./src/infrastructure/crawlerscenter.ts"));
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (__webpack_require__(/*! electron-squirrel-startup */ "./node_modules/electron-squirrel-startup/index.js")) { // eslint-disable-line global-require
     electron_1.app.quit();
 }
+debugger;
 electron_1.app.allowRendererProcessReuse = true;
 BrowserManager_1.default.run(electron_1.app, electron_1.BrowserWindow);
-var crawlers = new crawlerscenter_1.default(6, 6, 32);
-crawlers.start('D:/Dennis/Projects');
-setInterval(function () {
-    // console.log(`main.Interval ....`);
-    // crawlers.getFile()
-    //     .then(f => console.log(`main.Interval: crawlers...gotFile() => ${f}`));
-}, 0);
 
 
 /***/ }),
@@ -18671,6 +18664,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var electron_1 = __webpack_require__(/*! electron */ "electron");
+var url_1 = __importDefault(__webpack_require__(/*! url */ "url"));
 var WallpaperWindow_1 = __importDefault(__webpack_require__(/*! ../ElectronWallpaperWindow/WallpaperWindow */ "./src/ElectronWallpaperWindow/WallpaperWindow.ts"));
 var path = __webpack_require__(/*! path */ "path");
 var Main = /** @class */ (function () {
@@ -18731,7 +18725,8 @@ var Main = /** @class */ (function () {
         // Screen is available when electron.app.whenReady is emitted
         electron_1.screen.getAllDisplays().forEach(function (display) {
             Main.ipc.on(display.id + "-file", function (e, file) {
-                Main.loadFile(display, file);
+                // console.log(`${display.id}: IPC on ${display.id}-file s=${file.toString()} ${JSON.stringify(file)}`);
+                Main.loadFile(display, url_1.default.parse(file, false, false));
             });
         });
     };
@@ -18741,12 +18736,14 @@ var Main = /** @class */ (function () {
             window = Main.createWallpaperWindow(display);
         }
         if (window) {
-            window.browserWindow.loadFile(file)
+            console.log(display.id + ": loading: h=" + file.href + " f2p=" + url_1.default.fileURLToPath(file.href), file);
+            //window.browserWindow.loadURL(file.href)
+            window.browserWindow.loadFile(url_1.default.fileURLToPath(file.href))
                 .then(function () {
-                console.log(display.id + ": loaded: " + file);
+                // console.log(`${display.id}: loaded: h=${file.href} p=${file.pathname}`);
             })
                 .catch(function (reason) {
-                console.error(display.id + ": Failed loading: " + reason + ", file: " + file);
+                console.error(display.id + ": Failed loading: " + reason + ", h=" + file.href + " f2p=" + url_1.default.fileURLToPath(file.href));
             });
         }
     };
@@ -18781,360 +18778,6 @@ var Main = /** @class */ (function () {
 exports.default = Main;
 
 /* WEBPACK VAR INJECTION */}.call(this, "src\\infrastructure"))
-
-/***/ }),
-
-/***/ "./src/infrastructure/crawlerscenter.ts":
-/*!**********************************************!*\
-  !*** ./src/infrastructure/crawlerscenter.ts ***!
-  \**********************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-var url_1 = __importDefault(__webpack_require__(/*! url */ "url"));
-var directorycrawler_1 = __importDefault(__webpack_require__(/*! ./directorycrawler */ "./src/infrastructure/directorycrawler.ts"));
-var CrawlersCenter = /** @class */ (function () {
-    function CrawlersCenter(crawlerCount, bufferSize, batchSize) {
-        this.filesBuffer = [];
-        /**
-         * Active Crawlers
-         */
-        this.crawling = [];
-        /**
-         * @type {{ resolve: () => void, reject: (reason:string) => void, file: string }[]}
-         */
-        this.waitingCrawlers = [];
-        /**
-         * @type {{ resolve: (file:string) => void, reject: (reason:string) => void }[]}
-         */
-        this.waitingConsumers = [];
-        this.maxCrawlers = crawlerCount;
-        this.maxFiles = bufferSize;
-        this.crawlerBatchSize = batchSize;
-    }
-    /**
-     *
-     * @param {string} rootDirectory
-     */
-    CrawlersCenter.prototype.start = function (rootDirectory) {
-        this.root = url_1.default.pathToFileURL(rootDirectory);
-        // console.log(`${this.constructor.name}.start: ${rootDirectory} => ${this.root}`, this.root);
-        this.spawnFolder(this.root);
-    };
-    /**
-     *
-     * @param {URL} folder
-     * @returns {boolean} true if started a crawler for the folder. Returns false if all crawler slots are active at the moment
-     */
-    CrawlersCenter.prototype.spawnFolder = function (folder) {
-        // console.log(`${this.constructor.name}.spawnFolder @${this.crawling.length} =? ${this.maxCrawlers} ${folder}`)
-        if (this.crawling.length == this.maxCrawlers) {
-            return false;
-        }
-        var crawler = new directorycrawler_1.default(this, this.crawlerBatchSize);
-        this.crawling.push(crawler);
-        // crawler.run(folder)
-        //     .finally(
-        //         () => this.removeCrawler(crawler)
-        //     );
-        return true;
-    };
-    /**
-     * IF the last crawler has been removed, start again with spawnFolder(this.root)
-     * @param {DirectoryCrawler} crawler
-     */
-    CrawlersCenter.prototype.removeCrawler = function (crawler) {
-        // console.log(`${this.constructor.name}.removeCrawler @${this.waitingNew.length} ${crawler.relativePath}`);
-        var i = this.crawling.indexOf(crawler);
-        // console.log(`${this.constructor.name}.removeCrawler found @${i} ${crawler.relativePath}`);
-        this.crawling.splice(i, 1);
-        if (this.crawling.length == 0) {
-            console.log(this.constructor.name + ".removeCrawler restarting at root");
-            this.spawnFolder(this.root);
-        }
-    };
-    /**
-     *
-     * @param {string} file
-     * @returns {Promise}
-     */
-    CrawlersCenter.prototype.addFile = function (file) {
-        var _this = this;
-        // console.log(`${this.constructor.name}.addFile @${this.filesBuffer.length},${this.waitingConsumers.length} = ${file}`);
-        return new Promise(function (resolve, reject) {
-            if (_this.waitingConsumers.length) {
-                // console.log(`${this.constructor.name}.addFile resolve waitingConsumer ${this.waitingConsumers.length} = ${file}`);
-                var waitingConsumer = _this.waitingConsumers.shift();
-                waitingConsumer.resolve(file);
-                resolve();
-            }
-            else {
-                if (_this.filesBuffer.length == _this.maxFiles) {
-                    //console.log(`${this.constructor.name}.addFile add to waitingCrawlers @${this.waitingCrawlers.length} == ${this.maxFiles} = ${file}`);
-                    _this.waitingCrawlers.push({ resolve: resolve, reject: reject, file: file });
-                }
-                else if (_this.filesBuffer.length >= _this.maxFiles) {
-                    console.error(_this.constructor.name + ".addFile add to waitingCrawlers @" + _this.waitingCrawlers.length + " > " + _this.maxFiles + " = " + file);
-                    _this.waitingCrawlers.push({ resolve: resolve, reject: reject, file: file });
-                }
-                else {
-                    //console.log(`${this.constructor.name}.addFile push filesBuffer, resolve @${this.filesBuffer.length} = ${file}`);
-                    _this.filesBuffer.push(file);
-                    resolve();
-                }
-            }
-        });
-    };
-    /**
-     *
-     * @returns {Promise}
-     */
-    CrawlersCenter.prototype.getFile = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            // console.log(`${this.constructor.name}.getFile waiting=${this.waitingConsumers.length} buffer=${this.filesBuffer.length} waitingCrawlers=${this.waitingCrawlers.length}`);
-            if (_this.filesBuffer.length == 0) {
-                // console.log(`${this.constructor.name}.getFile add to waitingConsumers @${this.waitingConsumers.length} @${this.filesBuffer.length} == 0`);
-                _this.waitingConsumers.push({ resolve: resolve, reject: reject });
-            }
-            else {
-                var file = _this.filesBuffer.shift();
-                // console.log(`${this.constructor.name}.getFile sclice filesBuffer, resolve @${this.filesBuffer.length}, waitingCrawlers=${this.waitingCrawlers.length} = ${file}`);
-                if (_this.waitingCrawlers.length) {
-                    var crawler = _this.waitingCrawlers.shift();
-                    _this.filesBuffer.push(crawler.file);
-                    crawler.resolve();
-                }
-                resolve(file);
-            }
-        });
-    };
-    return CrawlersCenter;
-}());
-exports.default = CrawlersCenter;
-
-
-/***/ }),
-
-/***/ "./src/infrastructure/directorycrawler.ts":
-/*!************************************************!*\
-  !*** ./src/infrastructure/directorycrawler.ts ***!
-  \************************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-};
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-var fs_1 = __importDefault(__webpack_require__(/*! fs */ "fs"));
-var url_1 = __importDefault(__webpack_require__(/*! url */ "url"));
-var DirectoryCrawler = /** @class */ (function () {
-    /**
-     *
-     * @param {CrawlersCenter} center to deliver files and folder spawn request to
-     * @param {number} batchSize
-     */
-    function DirectoryCrawler(center, batchSize) {
-        this.directoriesQueue = [];
-        /**
-         * Directory entries buffer
-         */
-        this.entries = [];
-        // Node opendir default=32
-        this.batchSize = 32;
-        this.center = center;
-        this.batchSize = batchSize ? batchSize : this.batchSize;
-    }
-    /**
-     *
-     * @param {URL} root
-     */
-    DirectoryCrawler.prototype.run = function (root) {
-        var _this = this;
-        this.root = root;
-        this.relativePath = this.root.pathname.substr(this.center.root.pathname.length);
-        this.directoriesQueue.push(root);
-        this.processDirectory()
-            .finally(function () { return _this.center.removeCrawler(_this); });
-    };
-    /**
-     *
-     */
-    DirectoryCrawler.prototype.processDirectory = function () {
-        var e_1, _a;
-        return __awaiter(this, void 0, Promise, function () {
-            var directoryUrl, _b, processDirectoryError_1, _c, _d, dirent, e_1_1, processBatchError_1;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
-                    case 0:
-                        directoryUrl = this.directoriesQueue.pop();
-                        _e.label = 1;
-                    case 1:
-                        _e.trys.push([1, 3, , 4]);
-                        // console.log(`${this.constructor.name}[${this.relativePath}].processDirectory: open ${directoryUrl}`);
-                        // eslint-disable-next-line
-                        //@ts-ignore
-                        _b = this;
-                        return [4 /*yield*/, fs_1.default.promises.opendir(directoryUrl, {
-                                encoding: 'utf8',
-                                bufferSize: this.batchSize
-                            })];
-                    case 2:
-                        // console.log(`${this.constructor.name}[${this.relativePath}].processDirectory: open ${directoryUrl}`);
-                        // eslint-disable-next-line
-                        //@ts-ignore
-                        _b.directory = _e.sent();
-                        return [3 /*break*/, 4];
-                    case 3:
-                        processDirectoryError_1 = _e.sent();
-                        console.error(this.constructor.name + "[" + this.relativePath + "].processDirectory: opendir fail: " + processDirectoryError_1, processDirectoryError_1);
-                        if (this.root == directoryUrl) {
-                            throw processDirectoryError_1;
-                        }
-                        return [3 /*break*/, 4];
-                    case 4:
-                        _e.trys.push([4, 19, , 20]);
-                        _e.label = 5;
-                    case 5:
-                        _e.trys.push([5, 11, 12, 17]);
-                        _c = __asyncValues(this.directory);
-                        _e.label = 6;
-                    case 6: return [4 /*yield*/, _c.next()];
-                    case 7:
-                        if (!(_d = _e.sent(), !_d.done)) return [3 /*break*/, 10];
-                        dirent = _d.value;
-                        if (!(this.entries.push(dirent) == this.batchSize)) return [3 /*break*/, 9];
-                        return [4 /*yield*/, this.processBatch()];
-                    case 8:
-                        _e.sent();
-                        _e.label = 9;
-                    case 9: return [3 /*break*/, 6];
-                    case 10: return [3 /*break*/, 17];
-                    case 11:
-                        e_1_1 = _e.sent();
-                        e_1 = { error: e_1_1 };
-                        return [3 /*break*/, 17];
-                    case 12:
-                        _e.trys.push([12, , 15, 16]);
-                        if (!(_d && !_d.done && (_a = _c.return))) return [3 /*break*/, 14];
-                        return [4 /*yield*/, _a.call(_c)];
-                    case 13:
-                        _e.sent();
-                        _e.label = 14;
-                    case 14: return [3 /*break*/, 16];
-                    case 15:
-                        if (e_1) throw e_1.error;
-                        return [7 /*endfinally*/];
-                    case 16: return [7 /*endfinally*/];
-                    case 17: return [4 /*yield*/, this.processBatch()];
-                    case 18:
-                        _e.sent();
-                        return [3 /*break*/, 20];
-                    case 19:
-                        processBatchError_1 = _e.sent();
-                        console.error(this.constructor.name + "[" + this.relativePath + "].processDirectory: read dir fail: " + processBatchError_1, processBatchError_1);
-                        return [3 /*break*/, 20];
-                    case 20:
-                        if (this.directoriesQueue.length) return [3 /*break*/, 0];
-                        _e.label = 21;
-                    case 21: return [2 /*return*/];
-                }
-            });
-        });
-    };
-    DirectoryCrawler.prototype.processBatch = function () {
-        return __awaiter(this, void 0, Promise, function () {
-            var _i, _a, entry, entryUrl;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        _i = 0, _a = this.entries;
-                        _b.label = 1;
-                    case 1:
-                        if (!(_i < _a.length)) return [3 /*break*/, 5];
-                        entry = _a[_i];
-                        entryUrl = url_1.default.pathToFileURL(this.directory.path + '\\' + entry.name);
-                        if (!entry.isFile()) return [3 /*break*/, 3];
-                        return [4 /*yield*/, this.center.addFile(entryUrl.href)];
-                    case 2:
-                        _b.sent();
-                        return [3 /*break*/, 4];
-                    case 3:
-                        if (entry.isDirectory()) {
-                            if (this.center.spawnFolder(entryUrl) == false) {
-                                this.directoriesQueue.push(entryUrl);
-                            }
-                        }
-                        else {
-                            console.warn(this.constructor.name + "[" + this.relativePath + "]@" + entry.name + ": handle entry type", entry);
-                        }
-                        _b.label = 4;
-                    case 4:
-                        _i++;
-                        return [3 /*break*/, 1];
-                    case 5:
-                        this.entries.length = 0;
-                        return [2 /*return*/];
-                }
-            });
-        });
-    };
-    return DirectoryCrawler;
-}());
-exports.default = DirectoryCrawler;
-
 
 /***/ }),
 

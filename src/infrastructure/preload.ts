@@ -1,7 +1,7 @@
-import ConfigManager from './configmanager';
+import ConfigController from './ConfigController';
 
-let configManager;
-console.log('preload included')
+console.log('preload included');
+
 process.once('loaded', () => {
-    configManager = new ConfigManager();
+    ConfigController.start();
 });

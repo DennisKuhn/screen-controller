@@ -2,8 +2,7 @@ import {
     ipcRenderer, remote
 } from 'electron';
 
-import url from 'url';
-import crypto from 'crypto';
+import url, { URL } from 'url';
 
 import ConfigEditor from './configeditor';
 import createAndAppend from '../utils/tools';
@@ -21,7 +20,7 @@ class DisplayView {
 
     fileStorageKey: string;
 
-    file: string;
+    file: URL;
 
     configStorageKey: string;
 
@@ -37,7 +36,11 @@ class DisplayView {
 
         this.display = display;
         this.fileStorageKey = `${this.display.id}-file`;
-        this.file = window.localStorage.getItem(this.fileStorageKey);
+        const fileRecord = window.localStorage.getItem(this.fileStorageKey);
+
+        if (fileRecord) {
+            this.file = url.parse(fileRecord, false, false);
+        }
 
         /** @type {HTMLDivElement} */
         this.container = createAndAppend<HTMLDivElement>('div', {
@@ -78,12 +81,11 @@ class DisplayView {
             className: 'displayfile',
             text: this.file
         });
-        this.fileDisplay.title = this.file;
+        this.fileDisplay.title = this.file ? this.file.pathname : '';
 
         if (this.file) {
-            this.configStorageKey = `${this.display.id}-${crypto.createHash('md5').update(url.pathToFileURL(this.file).href).digest('hex')}-config`;
-            this.ipc.send(this.fileStorageKey, this.file);
-            this.configEditor = new ConfigEditor(this.container, this.file, this.configStorageKey);
+            this.ipc.send(this.fileStorageKey, this.file.href);
+            this.configEditor = new ConfigEditor(this.container, this.display.id, this.file);
         }
     }
 
@@ -99,7 +101,7 @@ class DisplayView {
                     console.log(`${this.constructor.name}(${this.display.id}) Dialog: canceled=${result.canceled}`);
                 } else {
                     console.log(`${this.constructor.name}(${this.display.id}) Dialog: file=${result.filePaths[0]}`);
-                    this.setFile(result.filePaths[0]);
+                    this.setFile(url.pathToFileURL(result.filePaths[0]));
                 }
             }).catch((err) => {
                 console.error(`Error showing Open File Dialog: ${err}`, err);
@@ -113,7 +115,7 @@ class DisplayView {
     showDialog = (): Promise<Electron.OpenDialogReturnValue> => {
         return remote.dialog.showOpenDialog({
             properties: ['openFile'],
-            defaultPath: this.file ? this.file : remote.app.getPath('documents'),
+            defaultPath: this.file ? this.file.pathname : remote.app.getPath('documents'),
             filters: [
                 {
                     name: 'Web pages',
@@ -137,15 +139,14 @@ class DisplayView {
 
     /**
      * sets fileDisplay, stores the file URL and does IPC to the main thread to load the file
-     * @param {string} file URL
+     * @param {URL} file URL
      */
-    setFile(file: string) {
+    setFile(file: URL): void {
         this.file = file;
-        this.configStorageKey = `${this.display.id}-${crypto.createHash('md5').update(url.pathToFileURL(this.file).href).digest('hex')}-config`;
-        this.fileDisplay.textContent = this.file;
-        window.localStorage.setItem(this.fileStorageKey, this.file);
-        this.ipc.send(this.fileStorageKey, this.file);
-        this.configEditor = new ConfigEditor(this.container, this.file, this.configStorageKey);
+        this.fileDisplay.textContent = this.file.pathname;
+        window.localStorage.setItem(this.fileStorageKey, this.file.href);
+        this.ipc.send(this.fileStorageKey, this.file.href);
+        this.configEditor = new ConfigEditor(this.container, this.display.id, this.file);
     }
 }
 
