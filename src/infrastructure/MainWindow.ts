@@ -1,4 +1,5 @@
-import { ipcRenderer } from 'electron';
+import windowIpcRenderer from './Windows.ipc';
+import wallpapersIpcRenderer from './WallpapersManager.ipc';
 import Windows from './Windows';
 import WallpapersManager from './WallpapersManager';
 
@@ -10,12 +11,12 @@ class MainWindow {
         document.querySelectorAll('input').forEach(
             (windowCheck: HTMLInputElement) => {
                 windowCheck.addEventListener('change', () => {
-                    ipcRenderer.send( Windows.CHANNEL, windowCheck.id, windowCheck.checked ? 'show' : 'hide');
-                }
+                    windowIpcRenderer.send(Windows.CHANNEL, parseInt(windowCheck.id), windowCheck.checked ? 'show' : 'hide');
+                    }
                 );
             });
     }
-    
+
     private static loadWallpapers(): void {
         const storage = window.localStorage;
 
@@ -24,7 +25,7 @@ class MainWindow {
             if (key.endsWith(WallpapersManager.CHANNEL)) {
                 const fileRecord = storage.getItem(key);
                 console.log(`MainWindow.loadWallpapers(): ${key} = ${fileRecord}`);
-                ipcRenderer.send(key, fileRecord);
+                wallpapersIpcRenderer.send(key, fileRecord);
             }
         }
 
