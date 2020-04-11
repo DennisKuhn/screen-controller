@@ -8,6 +8,10 @@ class Windows {
 
     private static browserWindows: { [key: string]: BrowserWindow } = {};
 
+    /**
+     * Create IPC Windows.CHANNEL to show/hide windows
+     * Create MainWindow
+     */
     static start(): void {
         ipcMain.on( Windows.CHANNEL, Windows.onWindowMessage);
         Windows.createMainWindow();
