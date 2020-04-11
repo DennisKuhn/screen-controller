@@ -19,7 +19,7 @@ class ScreenManager {
         console.log(`${this.constructor.name}`);
     }
 
-    start(): void {
+    start(): ScreenManager {
         console.log(`${this.constructor.name}.start`);
         this.displays = remote.screen.getAllDisplays();
 
@@ -28,8 +28,8 @@ class ScreenManager {
                 this.views.push(new DisplayView(display, this.screensWrapper));
             }
         );
+        return this;
     }
 }
 
-const screenManager = new ScreenManager();
-screenManager.start();
+new ScreenManager().start();

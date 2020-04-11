@@ -2,43 +2,23 @@ import url, { Url } from 'url';
 
 import DirectoryCrawler from './directorycrawler';
 
+type RejectCallback = (reason: string) => void;
+
+interface WaitingCrawler {
+    resolve: () => void;
+    reject: RejectCallback;
+    file: string;
+}
+
+interface WaitingConsumer {
+    resolve: (file: string) => void;
+    reject: RejectCallback;
+}
+
 class CrawlersCenter {
 
     /** Start location */
     root: Url;
-
-    /** Maximum fileBuffer length */
-    maxFiles = 2;
-
-    filesBuffer: string[] = [];
-
-    /**
-     * Default node directory read block size is 32
-     */
-    crawlerBatchSize = 32;
-
-    /**
-     * More crawlers more random
-     *  @type {number} */
-    maxCrawlers = 6;
-
-    /**
-     * Active Crawlers
-     */
-    crawling: DirectoryCrawler[] = [];
-
-    /**
-     * @type {{ resolve: () => void, reject: (reason:string) => void, file: string }[]}
-     */
-    waitingCrawlers: { resolve: () => void; reject: (reason: string) => void; file: string }[] = [];
-
-
-    /**
-     * @type {{ resolve: (file:string) => void, reject: (reason:string) => void }[]}
-     */
-    waitingConsumers: { resolve: (file: string) => void; reject: (reason: string) => void }[] = [];
-
-    onTerminate: () => void;
 
     constructor(options: {
         crawlerCount?: number;
@@ -191,6 +171,39 @@ class CrawlersCenter {
             }
         });
     }
+
+    /** Maximum fileBuffer length */
+    private maxFiles = 2;
+
+    private filesBuffer: string[] = [];
+
+    /**
+     * Default node directory read block size is 32
+     */
+    private crawlerBatchSize = 32;
+
+    /**
+     * More crawlers more random
+     *  @type {number} */
+    private maxCrawlers = 6;
+
+    /**
+     * Active Crawlers
+     */
+    private crawling: DirectoryCrawler[] = [];
+
+    /**
+     * @type {WaitingCrawler[]}
+     */
+    private waitingCrawlers: WaitingCrawler[] = [];
+
+
+    /**
+     * @type {WaitingConsumer[]}
+     */
+    private waitingConsumers: WaitingConsumer[] = [];
+
+    private onTerminate: () => void;
 }
 
 

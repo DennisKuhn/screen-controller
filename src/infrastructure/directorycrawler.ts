@@ -6,26 +6,6 @@ import CrawlersCenter from './crawlerscenter';
 
 class DirectoryCrawler {
 
-    center: CrawlersCenter;
-
-    root: Url;
-
-    relativePath: string;
-
-    directory: fs.Dir;
-
-    directoriesQueue: Url[] = [];
-
-    /**
-     * Directory entries buffer
-     */
-    entries: fs.Dirent[] = [];
-
-    // Node opendir default=32
-    batchSize = 32;
-
-    terminating= false;
-
     /**
      *
      * @param {CrawlersCenter} center to deliver files and folder spawn request to
@@ -51,10 +31,35 @@ class DirectoryCrawler {
         await this.processDirectory();
     }
 
+    terminate(): void {
+        this.terminating = true;
+        this.directoriesQueue.length = 0;
+    }
+
+    private center: CrawlersCenter;
+
+    private root: Url;
+
+    private relativePath: string;
+
+    private directory: fs.Dir;
+
+    private directoriesQueue: Url[] = [];
+
+    /**
+     * Directory entries buffer
+     */
+    private entries: fs.Dirent[] = [];
+
+    // Node opendir default=32
+    private batchSize = 32;
+
+    private terminating= false;
+
     /**
      *
      */
-    async processDirectory(): Promise<void> {
+    private async processDirectory(): Promise<void> {
         do {
             const directoryUrl = this.directoriesQueue.pop();
             try {
@@ -99,7 +104,7 @@ class DirectoryCrawler {
         return;
     }
 
-    async processBatch(): Promise<void> {
+    private async processBatch(): Promise<void> {
         // console.log(`${this.constructor.name}[${this.relativePath}].processBatch`);
 
         for (const entry of this.entries) {
@@ -132,11 +137,6 @@ class DirectoryCrawler {
             }
         }
         this.entries.length = 0;
-    }
-
-    terminate(): void {
-        this.terminating = true;
-        this.directoriesQueue.length = 0;
     }
 }
 

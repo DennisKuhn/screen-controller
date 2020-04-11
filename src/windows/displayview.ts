@@ -6,6 +6,7 @@ import url, { Url } from 'url';
 
 import ConfigEditor from './configeditor';
 import createAndAppend from '../utils/tools';
+import WallpapersManager from '../infrastructure/WallpapersManager';
 
 /** */
 class DisplayView {
@@ -35,7 +36,7 @@ class DisplayView {
         console.log(`${this.constructor.name}(${display.id})`);
 
         this.display = display;
-        this.fileStorageKey = `${this.display.id}-file`;
+        this.fileStorageKey = this.display.id + WallpapersManager.CHANNEL;
         const fileRecord = window.localStorage.getItem(this.fileStorageKey);
 
         if (fileRecord) {
@@ -84,7 +85,6 @@ class DisplayView {
 
         if (this.file) {
             this.fileDisplay.title = this.file.pathname;
-            // this.ipc.send(this.fileStorageKey, this.file.href);
             this.configEditor = new ConfigEditor(this.container, this.display.id, this.file);
         }
     }

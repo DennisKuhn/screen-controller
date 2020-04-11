@@ -1,11 +1,11 @@
 import createAndAppend from '../utils/tools';
-import ConfigController, { ConfigProperties } from '../infrastructure/ConfigController';
+import ConfigController, { PaperConfig, ConfigProperties } from '../infrastructure/ConfigController';
 import { Url } from 'url';
 
 /** */
 class ConfigEditor {
 
-    config;
+    config: PaperConfig;
     userProperties: ConfigProperties;
     configKey: string;
 
@@ -42,9 +42,7 @@ class ConfigEditor {
         });
 
         Object.entries(this.userProperties )
-            .sort(([, fielda], [, fieldb]) => {
-                return fielda.order - fieldb.order;
-            })
+            .sort(([, fielda], [, fieldb]) => fielda.order - fieldb.order )
             .forEach(([, field]) => {
                 const wrapper = createAndAppend('div', {
                     parent: editor,

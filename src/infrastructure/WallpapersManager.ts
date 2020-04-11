@@ -6,23 +6,19 @@ import Display = Electron.Display;
 declare const WALLPAPER_PRELOAD_WEBPACK_ENTRY: string;
 
 export default class WallpapersManager {
-    static application: Electron.App;
-    static ipc = ipcMain;
-    static wallpapers: WallpaperWindow[] = [];
+    static CHANNEL = '-file';
 
-
-    public static CloseAllBrowsers(): void {
-        // Dereference the window object.
-        WallpapersManager.wallpapers.forEach((w, i) => {
-            w.browserWindow.close();
-            WallpapersManager.wallpapers.splice(i, 1);
-        });
+    static run(): void {
+        WallpapersManager.setupDisplays();
     }
+
+    private static ipc = ipcMain;
+    private static wallpapers: WallpaperWindow[] = [];
 
     /**
      * Called by loadFile, ready-to-show sets initial bounds, calls show to trigger attaching to the desktop and adding to browsers
      *  */
-    static createWallpaperWindow(display: Display): WallpaperWindow {
+    private static createWallpaperWindow(display: Display): WallpaperWindow {
         const wallpaperProperties = {
             webPreferences: {
                 nodeIntegration: true,
@@ -55,13 +51,11 @@ export default class WallpapersManager {
     /**
      * creates an IPC channel for each display and connects loadFile
      */
-    static setupDisplays(): void {
+    private static setupDisplays(): void {
         // Screen is available when electron.app.whenReady is emitted
         screen.getAllDisplays().forEach((display) => {
-            const fileStorageKey = `${display.id}-file`;
-
-            WallpapersManager.ipc.on(fileStorageKey, (e, file: string) => {
-                // console.log(`${display.id}: IPC on ${display.id}-file s=${file.toString()} ${JSON.stringify(file)}`);
+            WallpapersManager.ipc.on( display.id + WallpapersManager.CHANNEL , (e, file: string) => {
+                // console.log(`${display.id}: IPC on ${display.id}${WallpapersManager.CHANNEL} s=${file.toString()} ${JSON.stringify(file)}`);
                 WallpapersManager.loadFile(display, url.parse(file,false,false));
             });
         });
@@ -88,7 +82,4 @@ export default class WallpapersManager {
     }
 
 
-    static run(): void {
-        WallpapersManager.setupDisplays();
-    }
 }

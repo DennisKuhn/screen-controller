@@ -42,7 +42,7 @@ export interface ConfigProperty {
 class ConfigSettings {
 
     baseUrl: Url;
-    baseId: string;
+    private baseId: string;
     displayId: number;
 
     configId: string;
@@ -67,7 +67,7 @@ class ConfigSettings {
         this.loadConfig();
     }
 
-    loadConfig(): void {
+    private loadConfig(): void {
         console.log(`${this.constructor.name}: ${this.configId}`);
         const configString = localStorage.getItem(this.configId);
 
@@ -130,30 +130,11 @@ class ConfigSettings {
  * @module
  */
 class ConfigController {
-
-    static settings: ConfigSettings[] = [];
-
-    static async getConfig(displayId: number, baseUrl: Url): Promise<PaperConfig> {
-        let setting = ConfigController.settings.find(candidate => candidate.displayId == displayId && candidate.baseUrl == baseUrl);
-
-        if (!setting) {
-            setting = new ConfigSettings(displayId, baseUrl);
-            ConfigController.settings.push(setting);
-
-            if (!setting.config) {
-                await setting.loadDefault();
-            }
-        }
-        return setting.config;
-    }
+    static CHANNEL = '-userSettings';
 
     /**
-     * 
+     * Called by wallpaper-preloader to get initial config and updates
      */
-    constructor() {
-        console.error(`${this.constructor.name}()`);
-    }
-
     static start(): void {
         // Get displayId from argV and url from window.location.href
         ConfigController.getConfig(
@@ -169,9 +150,25 @@ class ConfigController {
         );
     }
 
-    static listeners: { user: (settings: ConfigProperties) => void };
+    static async getConfig(displayId: number, baseUrl: Url): Promise<PaperConfig> {
+        let setting = ConfigController.settings.find(candidate => candidate.displayId == displayId && candidate.baseUrl == baseUrl);
 
-    static onNewSettings = async (e, settingText: string): Promise<void> => {
+        if (!setting) {
+            setting = new ConfigSettings(displayId, baseUrl);
+            ConfigController.settings.push(setting);
+
+            if (!setting.config) {
+                await setting.loadDefault();
+            }
+        }
+        return setting.config;
+    }
+
+    private static settings: ConfigSettings[] = [];
+
+    private static listeners: { user: (settings: ConfigProperties) => void };
+
+    private static onNewSettings = async (e, settingText: string): Promise<void> => {
         const setting = ConfigController.settings[0];
 
         try {
@@ -185,7 +182,7 @@ class ConfigController {
         }
     }
 
-    static registerPage = (listeners: { user: (settings: ConfigProperties) => void }): void => {
+    private static registerPage = (listeners: { user: (settings: ConfigProperties) => void }): void => {
         const setting = ConfigController.settings[0];
         
         ConfigController.listeners = listeners;
@@ -203,14 +200,14 @@ class ConfigController {
                     initialError,
                     setting.userProperties);
             }
-            ipcRenderer.on(setting.configId + '-userSettings', ConfigController.onNewSettings);
+            ipcRenderer.on(setting.configId + ConfigController.CHANNEL, ConfigController.onNewSettings);
         }
     }
 
     /**
      * Exposes interface to wallpaper window, e.g. window.wallpaper.register(listeners)
      */
-    static connectToWallpaper(): void {
+    private static connectToWallpaper(): void {
         // Expose protected methods that allow the renderer process to use
         // the ipcRenderer without exposing the entire object
         window.wallpaper = {

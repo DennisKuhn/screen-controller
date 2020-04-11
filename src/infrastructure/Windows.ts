@@ -4,14 +4,16 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const SCREEN_MANAGER_WEBPACK_ENTRY: string;
 
 class Windows {
-    static browserWindows: { [key: string]: BrowserWindow } = {};
+    static CHANNEL = 'windows';
+
+    private static browserWindows: { [key: string]: BrowserWindow } = {};
 
     static start(): void {
-        ipcMain.on('windows', Windows.onWindowMessage);
+        ipcMain.on( Windows.CHANNEL, Windows.onWindowMessage);
         Windows.createMainWindow();
     }
 
-    static onWindowMessage(e, windowKey: string, command: string): void {
+    private static onWindowMessage(e, windowKey: string, command: string): void {
         if (!(windowKey in Windows.browserWindows)) {
             switch (windowKey) {
                 case 'screenManager':
@@ -37,7 +39,7 @@ class Windows {
         }
     }
 
-    static createMainWindow(): void {
+    private static createMainWindow(): void {
         const main = new BrowserWindow({
             webPreferences: {
                 nodeIntegration: true
@@ -52,7 +54,7 @@ class Windows {
         Windows.browserWindows['main'] = main;
     }
 
-    static createScreenManager(): void {
+    private static createScreenManager(): void {
         const screenManager = new BrowserWindow({
             webPreferences: {
                 nodeIntegration: true
@@ -64,9 +66,9 @@ class Windows {
 
         screenManager.loadURL(SCREEN_MANAGER_WEBPACK_ENTRY);
         Windows.browserWindows['screenManager'] = screenManager;
-        screenManager.on('closed', () => {
-            delete Windows.browserWindows['screenManager'];
-        });
+        screenManager.on('closed', () => 
+            delete Windows.browserWindows['screenManager']
+        );
     }
 
 }
