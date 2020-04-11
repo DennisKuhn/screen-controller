@@ -1,14 +1,34 @@
 import { ipcRenderer } from 'electron';
 import crypto from 'crypto';
-import url, { URL } from 'url';
+import url, { Url } from 'url';
 import fs from 'fs';
 
-class ConfigOption {
+export interface PaperConfig {
+    contentrating: string;
+    description: string;
+    file: string;
+    preview: string;
+    title: string;
+    type: string;
+    visibility: string;
+    tags: string[];
+    general: {
+        supportsaudioprocessing: boolean;
+        properties: ConfigProperties;
+    };
+}
+
+export interface ConfigProperties {
+    [key: string]: ConfigProperty;
+
+}
+
+export interface ConfigOption {
     label: string;
     value: string;
 }
 
-class ConfigProperty {
+export interface ConfigProperty {
     condition: string;
     order: number;
     text: string;
@@ -21,19 +41,19 @@ class ConfigProperty {
 
 class ConfigSettings {
 
-    baseUrl: URL;
+    baseUrl: Url;
     baseId: string;
     displayId: number;
 
     configId: string;
 
-    config;
-    userProperties;
+    config: PaperConfig;
+    userProperties: ConfigProperties;
 
     /**
      * 
      */
-    constructor(displayId: number, baseUrl: URL) {
+    constructor(displayId: number, baseUrl: Url) {
         this.baseUrl = baseUrl; // url.pathToFileURL(file);
 
         this.baseId = crypto.createHash('md5').update(this.baseUrl.href).digest('hex');
@@ -113,7 +133,7 @@ class ConfigController {
 
     static settings: ConfigSettings[] = [];
 
-    static async getConfig(displayId: number, baseUrl: URL): Promise<any> {
+    static async getConfig(displayId: number, baseUrl: Url): Promise<PaperConfig> {
         let setting = ConfigController.settings.find(candidate => candidate.displayId == displayId && candidate.baseUrl == baseUrl);
 
         if (!setting) {
@@ -135,7 +155,7 @@ class ConfigController {
     }
 
     static start(): void {
-        // Get displayId from argV and url from window.locaiton.href
+        // Get displayId from argV and url from window.location.href
         ConfigController.getConfig(
             Number(
                 process.argv.find((arg) => {
@@ -149,7 +169,7 @@ class ConfigController {
         );
     }
 
-    static listeners: { user: (settingText: string) => void};
+    static listeners: { user: (settings: ConfigProperties) => void };
 
     static onNewSettings = async (e, settingText: string): Promise<void> => {
         const setting = ConfigController.settings[0];
@@ -165,7 +185,7 @@ class ConfigController {
         }
     }
 
-    static registerPage = (listeners: { user: (settingText: string) => void }): void => {
+    static registerPage = (listeners: { user: (settings: ConfigProperties) => void }): void => {
         const setting = ConfigController.settings[0];
         
         ConfigController.listeners = listeners;

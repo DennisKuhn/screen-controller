@@ -1,13 +1,28 @@
-import {app, BrowserWindow} from 'electron';
-import Main from './infrastructure/BrowserManager';
+import {app} from 'electron';
+import WallpapersManager from './infrastructure/WallpapersManager';
+import Windows from './infrastructure/Windows';
 
-declare const MAIN_WINDOW_WEBPACK_ENTRY: any;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
     app.quit();
 }
 debugger;
-app.allowRendererProcessReuse = true;
-Main.run(app, BrowserWindow);
 
+app.allowRendererProcessReuse = true;
+
+app.whenReady().then(
+    () => {
+        // Create and listen to "<display>-file" IPC channels to load wallpapers
+        WallpapersManager.run();
+
+        // MainWindow feeds "<display>-file" IPC channels
+        Windows.start();
+    }
+);
+
+app.on('window-all-closed', (): void => {
+    if (process.platform !== 'darwin') {
+        WallpapersManager.application.quit();
+    }
+});

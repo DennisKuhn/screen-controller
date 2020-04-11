@@ -1,5 +1,5 @@
 import fs from 'fs';
-import url, { URL } from 'url';
+import url, { Url } from 'url';
 
 import CrawlersCenter from './crawlerscenter';
 
@@ -8,13 +8,13 @@ class DirectoryCrawler {
 
     center: CrawlersCenter;
 
-    root: URL;
+    root: Url;
 
     relativePath: string;
 
     directory: fs.Dir;
 
-    directoriesQueue: URL[] = [];
+    directoriesQueue: Url[] = [];
 
     /**
      * Directory entries buffer
@@ -39,9 +39,9 @@ class DirectoryCrawler {
 
     /**
      *
-     * @param {URL} root
+     * @param {Url} root
      */
-    async run(root: URL): Promise<void> {
+    async run(root: Url): Promise<void> {
 
         this.root = root;
         this.relativePath = this.root.pathname.substr(this.center.root.pathname.length);
@@ -103,7 +103,13 @@ class DirectoryCrawler {
         // console.log(`${this.constructor.name}[${this.relativePath}].processBatch`);
 
         for (const entry of this.entries) {
-            const entryUrl = url.pathToFileURL(this.directory.path + '\\' + entry.name);
+            const entryUrl = {
+                auth: null,
+                path: null,
+                slashes: null,
+                query: null,
+                ...url.pathToFileURL(this.directory.path + '\\' + entry.name)
+            };
 
             if (this.terminating) {
                 return;

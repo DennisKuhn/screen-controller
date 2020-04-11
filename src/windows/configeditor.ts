@@ -1,20 +1,21 @@
 import createAndAppend from '../utils/tools';
-import ConfigController from '../infrastructure/ConfigController';
+import ConfigController, { ConfigProperties } from '../infrastructure/ConfigController';
+import { Url } from 'url';
 
 /** */
 class ConfigEditor {
 
     config;
-    userProperties;
+    userProperties: ConfigProperties;
     configKey: string;
 
     /**
      *
      * @param {Element} parent element to attach editor to
-     * @param {URL} file path of the page
+     * @param {Url} file path of the page
      * @param {number} displayId id of the display
      */
-    constructor(parent: Element, displayId: number, file: URL) {
+    constructor(parent: Element, displayId: number, file: Url) {
 
         ConfigController.getConfig(displayId, file)
             .then(config => {
@@ -35,17 +36,17 @@ class ConfigEditor {
      * @param {Element} parent element to attach editor to
      */
     createEditor(parent: Element): void {
-        const editor = createAndAppend<HTMLDivElement>('div', {
+        const editor = createAndAppend('div', {
             parent: parent,
             className: 'configEditor'
         });
 
-        Object.entries(this.userProperties)
+        Object.entries(this.userProperties )
             .sort(([, fielda], [, fieldb]) => {
                 return fielda.order - fieldb.order;
             })
             .forEach(([, field]) => {
-                const wrapper = createAndAppend<HTMLDivElement>('div', {
+                const wrapper = createAndAppend('div', {
                     parent: editor,
                     className: 'field'
                 });
@@ -58,7 +59,7 @@ class ConfigEditor {
 
                 switch (field.type) {
                     case 'textinput': {
-                        const textInput = createAndAppend<HTMLInputElement>('input', {
+                        const textInput = createAndAppend('input', {
                             parent: wrapper,
                             className: 'editor'
                         });

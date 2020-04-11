@@ -1,10 +1,12 @@
+import './screenmanager.css';
+
 import { Display, remote } from 'electron';
 import DisplayView from './displayview';
 
 /**
  * Creates a DisplayView for each display in screen.getAllDisplays
  */
-class ScreenManager {
+class ScreenManager {    
 
     displays: Display[] = [];
 
@@ -15,6 +17,10 @@ class ScreenManager {
     /** */
     constructor() {
         console.log(`${this.constructor.name}`);
+    }
+
+    start(): void {
+        console.log(`${this.constructor.name}.start`);
         this.displays = remote.screen.getAllDisplays();
 
         this.displays.forEach(
@@ -25,4 +31,5 @@ class ScreenManager {
     }
 }
 
-(window as any).screenManager = new ScreenManager();
+const screenManager = new ScreenManager();
+screenManager.start();

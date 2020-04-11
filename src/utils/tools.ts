@@ -3,16 +3,17 @@
  * @module
  */
 
+interface CreateAndAppendOptions {
+    className?: string;
+    parent?: Element;
+    text?: string;
+    html?: string;
+}
 /**
  * Creates an element with tag name, optional attaches it to parent, sets className, sets textContent, sets innerHTML
- * @param {keyof HTMLElementTagNameMap} name of tag
- * @param {{parent?: Node, className?: string, text?: string, html?: string}} [options]
- * @returns {HTMLElement}
- */
-const createAndAppend = <T extends keyof HTMLElementTagNameMap>
-    (name: keyof HTMLElementTagNameMap, options: { parent?: Node; className?: string; text?: string; html?: string }): T => {
-
-    const element: T = document.createElement<T>(name);
+*/
+export default function <K extends keyof HTMLElementTagNameMap>(name: K, options: CreateAndAppendOptions): HTMLElementTagNameMap[K] {
+    const element = document.createElement(name);
 
     if (options) {
         if (options.className) {
@@ -29,6 +30,5 @@ const createAndAppend = <T extends keyof HTMLElementTagNameMap>
         }
     }
     return element;
-};
+}
 
-export default createAndAppend;

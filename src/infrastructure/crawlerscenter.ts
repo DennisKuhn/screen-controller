@@ -1,11 +1,11 @@
-import url, { URL } from 'url';
+import url, { Url } from 'url';
 
 import DirectoryCrawler from './directorycrawler';
 
 class CrawlersCenter {
 
     /** Start location */
-    root: URL;
+    root: Url;
 
     /** Maximum fileBuffer length */
     maxFiles = 2;
@@ -68,7 +68,13 @@ class CrawlersCenter {
      * @param {string} rootDirectory
      */
     async start(rootDirectory: string): Promise<void> {
-        this.root = url.pathToFileURL(rootDirectory);
+        this.root = {
+            auth: null,
+            path: null,
+            slashes: null,
+            query: null,
+            ...url.pathToFileURL(rootDirectory)
+        };
 
         // console.log(`${this.constructor.name}.start: ${rootDirectory} => ${this.root}`, this.root);
 
@@ -86,10 +92,10 @@ class CrawlersCenter {
 
     /**
      *
-     * @param {URL} folder
+     * @param {Url} folder
      * @returns {boolean} true if started a crawler for the folder. Returns false if all crawler slots are active at the moment
      */
-    async spawnFolder(folder: URL): Promise<void> {
+    async spawnFolder(folder: Url): Promise<void> {
         // console.log(`${this.constructor.name}.spawnFolder ${this.canSpan} ${this.crawling.length} =? ${this.maxCrawlers} ${folder}`);
         if (this.onTerminate) {
             throw new Error(`${this.constructor.name}: spawnFolder stopping`);

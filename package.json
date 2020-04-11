@@ -51,8 +51,18 @@
               "entryPoints": [
                 {
                   "html": "./src/index.html",
-                  "js": "./src/renderer.ts",
+                  "js": "./src/infrastructure/MainWindow.ts",
                   "name": "main_window"
+                },
+                {
+                  "html": "./src/windows/screenmanager.html",
+                  "js": "./src/windows/screenmanager.ts",
+                  "name": "screen_manager"
+                },
+                {
+                  "js": "./src/ElectronWallpaperWindow/renderer.ts",
+                  "preload": {"js": "./src/infrastructure/preload.ts"},
+                  "name": "wallpaper"
                 }
               ]
             }

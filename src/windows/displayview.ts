@@ -2,7 +2,7 @@ import {
     ipcRenderer, remote
 } from 'electron';
 
-import url, { URL } from 'url';
+import url, { Url } from 'url';
 
 import ConfigEditor from './configeditor';
 import createAndAppend from '../utils/tools';
@@ -20,7 +20,7 @@ class DisplayView {
 
     fileStorageKey: string;
 
-    file: URL;
+    file: Url;
 
     configStorageKey: string;
 
@@ -43,12 +43,12 @@ class DisplayView {
         }
 
         /** @type {HTMLDivElement} */
-        this.container = createAndAppend<HTMLDivElement>('div', {
+        this.container = createAndAppend('div', {
             parent: parent,
             className: 'display'
         });
 
-        const topRow = createAndAppend<HTMLDivElement>('div', {
+        const topRow = createAndAppend('div', {
             parent: this.container,
             className: 'row'
         });
@@ -65,26 +65,26 @@ class DisplayView {
             text: `${this.display.workAreaSize.width} * ${this.display.workAreaSize.height} @ ${this.display.workArea.x}, ${this.display.workArea.y}`
         });
 
-        const fileRow = createAndAppend<HTMLDivElement>('div', {
+        const fileRow = createAndAppend('div', {
             parent: this.container,
             className: 'row'
         });
 
-        createAndAppend<HTMLButtonElement>('button', {
+        createAndAppend('button', {
             parent: fileRow,
             className: 'button',
             text: 'Choose file'
         }).onclick = this.openFile;        
 
-        this.fileDisplay = createAndAppend<HTMLSpanElement>('span', {
+        this.fileDisplay = createAndAppend('span', {
             parent: fileRow,
             className: 'displayfile',
-            text: this.file
+            text: this.file ? this.file.pathname : ''
         });
-        this.fileDisplay.title = this.file ? this.file.pathname : '';
 
         if (this.file) {
-            this.ipc.send(this.fileStorageKey, this.file.href);
+            this.fileDisplay.title = this.file.pathname;
+            // this.ipc.send(this.fileStorageKey, this.file.href);
             this.configEditor = new ConfigEditor(this.container, this.display.id, this.file);
         }
     }
@@ -101,7 +101,15 @@ class DisplayView {
                     console.log(`${this.constructor.name}(${this.display.id}) Dialog: canceled=${result.canceled}`);
                 } else {
                     console.log(`${this.constructor.name}(${this.display.id}) Dialog: file=${result.filePaths[0]}`);
-                    this.setFile(url.pathToFileURL(result.filePaths[0]));
+                    const fileUrl = {
+                        auth: null,
+                        path: null,
+                        slashes: null,
+                        query: null,
+                        ...url.pathToFileURL(result.filePaths[0])
+                    };
+
+                    this.setFile(fileUrl);
                 }
             }).catch((err) => {
                 console.error(`Error showing Open File Dialog: ${err}`, err);
@@ -139,9 +147,9 @@ class DisplayView {
 
     /**
      * sets fileDisplay, stores the file URL and does IPC to the main thread to load the file
-     * @param {URL} file URL
+     * @param {Url} file URL
      */
-    setFile(file: URL): void {
+    setFile(file: Url): void {
         this.file = file;
         this.fileDisplay.textContent = this.file.pathname;
         window.localStorage.setItem(this.fileStorageKey, this.file.href);
