@@ -103,6 +103,10 @@ dist
 # TernJS port file
 .tern-port
 
-# webpack output
-.webpack/
+# IDE settings
 .vscode/launch.json
+.idea
+
+# webpack and build output
+.webpack
+out

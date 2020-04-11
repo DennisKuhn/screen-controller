@@ -1,7 +1,15 @@
-import { ipcRenderer } from 'electron';
+import {ipcRenderer} from 'electron';
 import crypto from 'crypto';
-import url, { Url } from 'url';
+import url, {Url} from 'url';
 import fs from 'fs';
+
+declare global {
+    interface Window {
+        wallpaper: {
+            register: (listeners: { user: (settings: ConfigProperties) => void }) => void
+        }
+    }
+}
 
 export interface PaperConfig {
     contentrating: string;
@@ -50,9 +58,6 @@ class ConfigSettings {
     config: PaperConfig;
     userProperties: ConfigProperties;
 
-    /**
-     * 
-     */
     constructor(displayId: number, baseUrl: Url) {
         this.baseUrl = baseUrl; // url.pathToFileURL(file);
 
@@ -88,10 +93,6 @@ class ConfigSettings {
         }
     }
 
-    /**
-     *
-     * @param {string} file path
-     */
     async loadDefault(): Promise<void> {
         const defaultLocation = this.baseUrl.href.substring(0, this.baseUrl.href.lastIndexOf('/') + 1) + 'project.json';
         const defaultPath = url.fileURLToPath(this.baseUrl.href.substring(0, this.baseUrl.href.lastIndexOf('/') + 1) + 'project.json');
@@ -184,7 +185,7 @@ class ConfigController {
 
     private static registerPage = (listeners: { user: (settings: ConfigProperties) => void }): void => {
         const setting = ConfigController.settings[0];
-        
+
         ConfigController.listeners = listeners;
 
         console.log(

@@ -4,7 +4,7 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const SCREEN_MANAGER_WEBPACK_ENTRY: string;
 
 class Windows {
-    static CHANNEL = 'windows';
+    static readonly CHANNEL = 'windows';
 
     private static browserWindows: { [key: string]: BrowserWindow } = {};
 
@@ -28,7 +28,7 @@ class Windows {
             }
         }
         const window = Windows.browserWindows[windowKey];
-        switch (command) {            
+        switch (command) {
             case 'show':
             case 'hide':
                 window[command]();
@@ -66,7 +66,7 @@ class Windows {
 
         screenManager.loadURL(SCREEN_MANAGER_WEBPACK_ENTRY);
         Windows.browserWindows['screenManager'] = screenManager;
-        screenManager.on('closed', () => 
+        screenManager.on('closed', () =>
             delete Windows.browserWindows['screenManager']
         );
     }

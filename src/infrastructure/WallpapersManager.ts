@@ -32,7 +32,7 @@ export default class WallpapersManager {
             show: false,
             transparent: true,
         };
-       
+
         let wallpaper: WallpaperWindow;
         try {
             wallpaper = new WallpaperWindow(wallpaperProperties);
@@ -80,6 +80,4 @@ export default class WallpapersManager {
                 });
         }
     }
-
-
 }

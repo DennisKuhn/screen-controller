@@ -23,6 +23,6 @@ app.whenReady().then(
 
 app.on('window-all-closed', (): void => {
     if (process.platform !== 'darwin') {
-        WallpapersManager.application.quit();
+        app.quit();
     }
 });

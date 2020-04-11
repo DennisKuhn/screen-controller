@@ -31,7 +31,7 @@ class WallpaperWindow {
     private attach(): void {
         if (!this._attached) {
             this.browserWindow.webContents.openDevTools({ mode: 'detach' });
-            
+
             const handle = this.browserWindow.getNativeWindowHandle();
             nodeWinWallpaper.attachWindow(handle);
             this._attached = true;
