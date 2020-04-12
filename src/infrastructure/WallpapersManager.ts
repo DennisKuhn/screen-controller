@@ -1,8 +1,8 @@
 import { ipcMain, screen } from 'electron';
-import Url, { href2Url, url2fs } from '../utils/Url';
+import Url, { url2fs } from '../utils/Url';
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import Display = Electron.Display;
-import { CHANNEL, Commands } from './WallpapersManager.ipc';
+import { CHANNEL, IpcArgs } from './WallpapersManager.ipc';
 
 declare const WALLPAPER_PRELOAD_WEBPACK_ENTRY: string;
 
@@ -62,16 +62,15 @@ export default class WallpapersManager {
         });
     }
 
-    private static onMessage(e, displayId: number, command: Commands, file?: string): void {
-        switch (command) {
+    private static onMessage(e, args: IpcArgs): void {
+        switch (args.command) {
             case 'load':
                 {
-                    const fileUrl = href2Url(file);
-                    WallpapersManager.loadFile(displayId, fileUrl);
+                    WallpapersManager.loadFile(args.displayId, args.file);
                 }
                 break;
             default:
-                throw new Error(`WallpapersManager: illegal command: ${command}! displayId: ${displayId}, file: ${file}`);
+                throw new Error(`WallpapersManager: illegal command: ${args.command}! displayId: ${args.displayId}, file: ${args.file}`);
         }
     }
 

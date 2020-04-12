@@ -1,12 +1,10 @@
-import {
-    remote
-} from 'electron';
+import { remote } from 'electron';
 
 import Url, {fs2Url, href2Url} from '../utils/Url';
 
 import ConfigEditor from './configeditor';
 import createAndAppend from '../utils/tools';
-import ipc, {CHANNEL, Display2StorageKey} from '../infrastructure/WallpapersManager.ipc';
+import ipc, {CHANNEL, Display2StorageKey, IpcArgs} from '../infrastructure/WallpapersManager.ipc';
 
 
 /** */
@@ -145,7 +143,14 @@ class DisplayView {
         this.file = file;
         this.fileDisplay.textContent = this.file.pathname;
         window.localStorage.setItem(this.fileStorageKey, this.file.href);
-        ipc.send(CHANNEL, this.display.id, 'load', this.file.href);
+
+        const loadPapaerArgs: IpcArgs = {
+            displayId: this.display.id,
+            command: 'load',
+            file: this.file
+        };
+
+        ipc.send(CHANNEL, loadPapaerArgs);
         this.configEditor = new ConfigEditor(this.container, this.display.id, this.file);
     }
 }

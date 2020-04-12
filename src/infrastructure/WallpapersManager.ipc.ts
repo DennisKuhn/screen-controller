@@ -1,6 +1,7 @@
+import Url from '../utils/Url';
 import * as electron from 'electron';
 
-type Channel = 'wallpapers';
+export type Channel = 'wallpapers';
 
 export const CHANNEL: Channel = 'wallpapers';
 export type Commands = 'load';
@@ -24,8 +25,14 @@ export const StorageKey2Display = (storageKey: string): number => {
 
 export const IsStorageKey = (storageKey: string): boolean => STORAGE_KEY_REGEX.test(storageKey);
 
+export interface IpcArgs {
+    displayId: number;
+    command: Commands;
+    file: Url;
+}
+
 interface WallpapersManagerIpcRenderer extends electron.IpcRenderer {
-    send(channel: Channel, displayId: number, command: Commands, file?: string): void;
+    send(channel: Channel, args: IpcArgs): void;
 }
 
 export default electron.ipcRenderer as WallpapersManagerIpcRenderer;

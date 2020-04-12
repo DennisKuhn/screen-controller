@@ -1,6 +1,6 @@
-import windowsIpc, { CHANNEL as windowsCHANNEL, Windows } from './Windows.ipc';
-import wallpapersIpc, { CHANNEL as wallpapersCHANNEL, IsStorageKey, StorageKey2Display } from './WallpapersManager.ipc';
-import { Debugger } from 'electron';
+import windowsIpc, { CHANNEL as windowsCHANNEL, Windows, IpcArgs as windowsIpcArgs } from './Windows.ipc';
+import wallpapersIpc, { CHANNEL as wallpapersCHANNEL, IsStorageKey, StorageKey2Display, IpcArgs as wallpapersIpcArgs} from './WallpapersManager.ipc';
+import { store2url } from '../utils/Url';
 
 class MainWindow {
 
@@ -12,7 +12,11 @@ class MainWindow {
         document.querySelectorAll('input').forEach(
             (windowCheck: HTMLInputElement) => {
                 windowCheck.addEventListener('change', () => {
-                    windowsIpc.send(windowsCHANNEL, windowCheck.id as Windows, windowCheck.checked ? 'show' : 'hide');
+                    const windowArgs: windowsIpcArgs = {
+                        window: windowCheck.id as Windows,
+                        command: windowCheck.checked ? 'show' : 'hide'
+                    };
+                    windowsIpc.send(windowsCHANNEL, windowArgs);
                 }
                 );
             });
@@ -25,13 +29,14 @@ class MainWindow {
             const key = storage.key(i);
             console.log(`MainWindow.loadWallpapers(): try #${i} ${key} = ${IsStorageKey(key)}`);
             if (IsStorageKey(key)) {
-                const fileRecord = storage.getItem(key);
-                console.log(`MainWindow.loadWallpapers(): ${key} = ${fileRecord}`);
-                wallpapersIpc.send(
-                    wallpapersCHANNEL,
-                    StorageKey2Display( key ),
-                    'load',
-                    fileRecord);
+                const loadPaperArgs: wallpapersIpcArgs = {
+                    displayId: StorageKey2Display(key),
+                    command: 'load',
+                    file: store2url(storage.getItem(key))
+                };
+                console.log(`MainWindow.loadWallpapers(): ${key}:`, loadPaperArgs);
+                wallpapersIpc.send( wallpapersCHANNEL, loadPaperArgs
+                );
             }
         }
 

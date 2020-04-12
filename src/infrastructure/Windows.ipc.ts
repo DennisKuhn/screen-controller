@@ -1,13 +1,18 @@
 import * as electron from 'electron';
 
-type Channel = 'windows';
+export type Channel = 'windows';
 
 export const CHANNEL: Channel = 'windows';
 export type Windows = 'ScreenManager' | 'MainWindow';
 export type Commands = 'show' | 'hide';
 
+export interface IpcArgs {
+    window: Windows;
+    command: Commands;
+}
+
 interface WindowIpcRenderer extends electron.IpcRenderer {
-    send(channel: Channel, window: Windows, command: Commands): void;
+    send(channel: Channel, args: IpcArgs): void;
 }
 
 export default electron.ipcRenderer as WindowIpcRenderer;

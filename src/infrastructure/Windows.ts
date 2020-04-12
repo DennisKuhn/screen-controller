@@ -1,5 +1,5 @@
 import { BrowserWindow, app, ipcMain } from 'electron';
-import { CHANNEL, Commands, Windows as WindowsKeys  } from './Windows.ipc';
+import { CHANNEL, Windows as WindowsKeys, IpcArgs  } from './Windows.ipc';
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const SCREEN_MANAGER_WEBPACK_ENTRY: string;
@@ -20,33 +20,34 @@ class Windows {
         Windows.createMainWindow();
     }
 
-    private static onWindowMessage(e, windowKey: WindowsKeys, command: Commands): void {
-        if (!(windowKey in Windows.browserWindows)) {
-            switch (windowKey) {
+    private static onWindowMessage(e, args: IpcArgs): void {
+        if (!(args.window in Windows.browserWindows)) {
+            switch (args.window) {
                 case 'ScreenManager':
                     Windows.createScreenManager();
                     break;
                 case 'MainWindow':
-                    console.error(`Windows.onWindowMessage(${e}, ${windowKey}, ${command}) not in ${Object.keys(Windows.browserWindows)}`);
+                    console.error(`Windows.onWindowMessage(${e}, ${args.window}, ${args.command}) not in ${Object.keys(Windows.browserWindows)}`);
                     break;
                 default:
-                    console.error(`Windows.onWindowMessage(${e}, ${windowKey}, ${command}) unkown key, exisiting: ${Object.keys(Windows.browserWindows)}`);
+                    console.error(`Windows.onWindowMessage(${e}, ${args.window}, ${args.command}) unkown key, exisiting: ${Object.keys(Windows.browserWindows)}`);
                     break;
             }
         }
-        const window = Windows.browserWindows[windowKey];
-        switch (command) {
+        const window = Windows.browserWindows[args.window];
+        switch (args.command) {
             case 'show':
             case 'hide':
-                window[command]();
+                window[args.command]();
                 break;
             default:
-                console.error(`Windows.onWindowMessage(${e}, ${windowKey}, ${command}) unkown command`);
+                console.error(`Windows.onWindowMessage(${e}, ${args.window}, ${args.command}) unkown command`);
                 break;
         }
     }
 
     private static createMainWindow(): void {
+        const windowKey: WindowsKeys = 'MainWindow';
         const main = new BrowserWindow({
             webPreferences: {
                 nodeIntegration: true
@@ -58,10 +59,11 @@ class Windows {
         main.webContents.openDevTools();
 
         main.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-        Windows.browserWindows['MainWindow'] = main;
+        Windows.browserWindows[windowKey] = main;
     }
 
     private static createScreenManager(): void {
+        const windowKey: WindowsKeys = 'ScreenManager';
         const screenManager = new BrowserWindow({
             webPreferences: {
                 nodeIntegration: true
@@ -72,9 +74,9 @@ class Windows {
         screenManager.webContents.openDevTools();
 
         screenManager.loadURL(SCREEN_MANAGER_WEBPACK_ENTRY);
-        Windows.browserWindows['ScreenManager'] = screenManager;
+        Windows.browserWindows[windowKey] = screenManager;
         screenManager.on('closed', () =>
-            delete Windows.browserWindows['ScreenManager']
+            delete Windows.browserWindows[windowKey]
         );
     }
 

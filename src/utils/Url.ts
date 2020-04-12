@@ -33,4 +33,12 @@ export const href2fs = (href: string): string => {
     return url2fs(href2Url(href));
 };
 
+export const url2store = (arg: Url): string => {
+    return arg.href;
+};
+
+export const store2url = (arg: string): Url => {
+    return url.parse(arg, false, false);
+};
+
 export default Url;
