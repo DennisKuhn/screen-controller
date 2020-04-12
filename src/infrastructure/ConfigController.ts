@@ -1,6 +1,6 @@
 import { ipcRenderer } from 'electron';
 import crypto from 'crypto';
-import url, { Url } from 'url';
+import Url, { href2Url, href2fs } from '../utils/Url';
 import fs from 'fs';
 
 declare global {
@@ -95,7 +95,8 @@ class ConfigSettings {
 
     async loadDefault(): Promise<void> {
         const defaultLocation = this.baseUrl.href.substring(0, this.baseUrl.href.lastIndexOf('/') + 1) + 'project.json';
-        const defaultPath = url.fileURLToPath(this.baseUrl.href.substring(0, this.baseUrl.href.lastIndexOf('/') + 1) + 'project.json');
+        const defaultPath = href2fs(defaultLocation);
+
         console.log(`${this.constructor.name}: ${this.configId}: defaultLocation: ${defaultLocation} defaultPath: ${defaultPath} file: ${this.baseUrl.href}`);
         try {
             // const buffer = await fs.promises.readFile(defaultLocation);
@@ -142,7 +143,7 @@ class ConfigController {
         // Get displayId from argV and url from window.location.href
         ConfigController.getConfig(
             displayId,
-            url.parse(window.location.href, false, false)
+            href2Url(window.location.href)
         ).then(
             () => {
                 ConfigController.connectToWallpaper();

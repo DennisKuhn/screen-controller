@@ -2,29 +2,12 @@ import {
     remote
 } from 'electron';
 
-import url, { Url } from 'url';
+import Url, {fs2Url, href2Url} from '../utils/Url';
 
 import ConfigEditor from './configeditor';
 import createAndAppend from '../utils/tools';
 import ipc, {CHANNEL, Display2StorageKey} from '../infrastructure/WallpapersManager.ipc';
 
-
-const URL2Url = (URLObject: url.URL): Url => {
-    return {
-        auth: null,
-        path: null,
-        slashes: null,
-        query: null,
-        hash: URLObject.hash,
-        host: URLObject.host,
-        hostname: URLObject.hostname,
-        href: URLObject.href,
-        pathname: URLObject.pathname,
-        protocol: URLObject.protocol,
-        search: URLObject.search,
-        port: URLObject.port
-    };
-};
 
 /** */
 class DisplayView {
@@ -56,7 +39,7 @@ class DisplayView {
         const fileRecord = window.localStorage.getItem(this.fileStorageKey);
 
         if (fileRecord) {
-            this.file = url.parse(fileRecord, false, false);
+            this.file = href2Url(fileRecord);
         }
 
         /** @type {HTMLDivElement} */
@@ -118,7 +101,7 @@ class DisplayView {
                 } else {
                     console.log(`${this.constructor.name}(${this.display.id}) Dialog: file=${result.filePaths[0]}`);
 
-                    this.setFile(URL2Url(url.pathToFileURL(result.filePaths[0])));
+                    this.setFile(fs2Url(result.filePaths[0]));
                 }
             }).catch((err) => {
                 console.error(`Error showing Open File Dialog: ${err}`, err);

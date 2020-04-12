@@ -1,5 +1,5 @@
 import { ipcMain, screen } from 'electron';
-import url, { Url } from 'url';
+import Url, { href2Url, url2fs } from '../utils/Url';
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import Display = Electron.Display;
 import { CHANNEL, Commands } from './WallpapersManager.ipc';
@@ -66,7 +66,7 @@ export default class WallpapersManager {
         switch (command) {
             case 'load':
                 {
-                    const fileUrl = url.parse(file, false, false);
+                    const fileUrl = href2Url(file);
                     WallpapersManager.loadFile(displayId, fileUrl);
                 }
                 break;
@@ -82,14 +82,14 @@ export default class WallpapersManager {
             WallpapersManager.createWallpaperWindow(wallpaper.display);
         }
 
-        console.log(`WallpapersManager[${displayId}] = ${url.fileURLToPath(file.href)}`);
+        console.log(`WallpapersManager[${displayId}] = ${url2fs(file)}`);
         //wallpaper.browserWindow.loadURL(file.href)
-        wallpaper.window.browserWindow.loadFile(url.fileURLToPath(file.href))
+        wallpaper.window.browserWindow.loadFile(url2fs(file))
             // .then(() => {
             //     console.log(`${displayId}: loaded: h=${file.href} p=${file.pathname}`);
             // })
             .catch((reason) => {
-                console.error(`${displayId}: Failed loading: ${reason}, h=${file.href} f2p=${url.fileURLToPath(file.href)}`);
+                console.error(`${displayId}: Failed loading: ${reason}, h=${file.href} f2p=${url2fs(file)}`);
             });
     }
 }

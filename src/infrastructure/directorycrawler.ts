@@ -1,24 +1,7 @@
 import fs from 'fs';
-import url, { Url } from 'url';
+import Url, { fs2Url } from '../utils/Url';
 
 import CrawlersCenter from './crawlerscenter';
-
-const URL2Url = (URLObject: url.URL): Url => {
-    return {
-        auth: null,
-        path: null,
-        slashes: null,
-        query: null,
-        hash: URLObject.hash,
-        host: URLObject.host,
-        hostname: URLObject.hostname,
-        href: URLObject.href,
-        pathname: URLObject.pathname,
-        protocol: URLObject.protocol,
-        search: URLObject.search,
-        port: URLObject.port
-    };
-};
 
 class DirectoryCrawler {
 
@@ -124,7 +107,7 @@ class DirectoryCrawler {
         // console.log(`${this.constructor.name}[${this.relativePath}].processBatch`);
 
         for (const entry of this.entries) {
-            const entryUrl =URL2Url(url.pathToFileURL(this.directory.path + '\\' + entry.name));
+            const entryUrl = fs2Url(this.directory.path + '\\' + entry.name);
 
             if (this.terminating) {
                 return;

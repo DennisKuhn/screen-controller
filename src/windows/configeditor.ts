@@ -1,6 +1,6 @@
 import createAndAppend from '../utils/tools';
 import ConfigController, { PaperConfig, ConfigProperties } from '../infrastructure/ConfigController';
-import { Url } from 'url';
+import Url from '../utils/Url';
 
 /** */
 class ConfigEditor {
