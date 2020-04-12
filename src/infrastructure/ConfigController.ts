@@ -1,7 +1,8 @@
 import { ipcRenderer } from 'electron';
 import crypto from 'crypto';
-import Url, { href2Url, href2fs } from '../utils/Url';
+import Url, { href2Url, href2fs, url2store, store2url } from '../utils/Url';
 import fs from 'fs';
+import { Display2StorageKey } from './WallpapersManager.ipc';
 
 declare global {
     interface Window {
@@ -132,24 +133,9 @@ class ConfigSettings {
  * @module
  */
 class ConfigController {
+    private static settings: ConfigSettings[] = [];
     static CHANNEL = '-userSettings';
 
-    /**
-     * Called by wallpaper-preloader to get initial config and updates
-     */
-    static start(): void {
-        const displayId = Number(
-            process.argv.find((arg) => /^--displayid=/.test(arg) ).split('=')[1]);
-        // Get displayId from argV and url from window.location.href
-        ConfigController.getConfig(
-            displayId,
-            href2Url(window.location.href)
-        ).then(
-            () => {
-                ConfigController.connectToWallpaper();
-            }
-        );
-    }
 
     static async getConfig(displayId: number, baseUrl: Url): Promise<PaperConfig> {
         let setting = ConfigController.settings.find(candidate => candidate.displayId == displayId && candidate.baseUrl == baseUrl);
@@ -165,10 +151,30 @@ class ConfigController {
         return setting.config;
     }
 
-    private static settings: ConfigSettings[] = [];
+    static setFile(displayId: number, file: Url): void {
+        const key = Display2StorageKey(displayId);
+        const storage = url2store(file);
 
-    private static listeners: { user: (settings: ConfigProperties) => void };
+        localStorage.setItem(key, storage);
+    }
 
+    static getFile(displayId: number): Url {
+        const key = Display2StorageKey(displayId);
+        const storage = localStorage.getItem(key);    
+        let fileUrl: Url;
+
+        if (storage) {
+            fileUrl = store2url(storage);
+        }
+
+        return fileUrl;
+    }
+
+
+
+    /**
+     * Triggered by a Wallpaper config editor IPC send
+     */
     private static onNewSettings = async (e, settingText: string): Promise<void> => {
         const setting = ConfigController.settings[0];
 
@@ -182,6 +188,25 @@ class ConfigController {
                 settingText);
         }
     }
+
+    /**
+     * Called by wallpaper-preloader to get initial config and updates
+     */
+    static start(): void {
+        const displayId = Number(
+            process.argv.find((arg) => /^--displayid=/.test(arg)).split('=')[1]);
+        
+        ConfigController.getConfig(
+            displayId,
+            href2Url(window.location.href)
+        ).then(
+            () => {
+                ConfigController.connectToWallpaper();
+            }
+        );
+    }
+
+    private static listeners: { user: (settings: ConfigProperties) => void };
 
     private static registerPage = (listeners: { user: (settings: ConfigProperties) => void }): void => {
         const setting = ConfigController.settings[0];

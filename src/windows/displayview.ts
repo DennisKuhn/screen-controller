@@ -1,10 +1,11 @@
 import { remote } from 'electron';
 
-import Url, {fs2Url, href2Url} from '../utils/Url';
+import Url, {fs2Url} from '../utils/Url';
 
 import ConfigEditor from './configeditor';
 import createAndAppend from '../utils/tools';
-import ipc, {CHANNEL, Display2StorageKey, IpcArgs} from '../infrastructure/WallpapersManager.ipc';
+import ipc, {CHANNEL, IpcArgs} from '../infrastructure/WallpapersManager.ipc';
+import ConfigController from '../infrastructure/ConfigController';
 
 
 /** */
@@ -33,12 +34,7 @@ class DisplayView {
         console.log(`${this.constructor.name}(${display.id})`);
 
         this.display = display;
-        this.fileStorageKey = Display2StorageKey( this.display.id );
-        const fileRecord = window.localStorage.getItem(this.fileStorageKey);
-
-        if (fileRecord) {
-            this.file = href2Url(fileRecord);
-        }
+        this.file = ConfigController.getFile(this.display.id);
 
         /** @type {HTMLDivElement} */
         this.container = createAndAppend('div', {
@@ -142,7 +138,7 @@ class DisplayView {
     setFile(file: Url): void {
         this.file = file;
         this.fileDisplay.textContent = this.file.pathname;
-        window.localStorage.setItem(this.fileStorageKey, this.file.href);
+        ConfigController.setFile(this.display.id, this.file);
 
         const loadPapaerArgs: IpcArgs = {
             displayId: this.display.id,

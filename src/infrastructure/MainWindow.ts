@@ -1,14 +1,23 @@
+import { remote } from 'electron';
+import wallpapersIpc, { CHANNEL as wallpapersCHANNEL, IpcArgs as wallpapersIpcArgs } from './WallpapersManager.ipc';
+import ConfigCotroller from './ConfigController';
+
+/** TEST */
 import windowsIpc, { CHANNEL as windowsCHANNEL, Windows, IpcArgs as windowsIpcArgs } from './Windows.ipc';
-import wallpapersIpc, { CHANNEL as wallpapersCHANNEL, IsStorageKey, StorageKey2Display, IpcArgs as wallpapersIpcArgs} from './WallpapersManager.ipc';
-import { store2url } from '../utils/Url';
+
 
 class MainWindow {
 
     static start(): void {
         MainWindow.loadWallpapers();
 
-        // MainWindow.loadWallpapers();
+        MainWindow.windowTest();
+    }
 
+    /**
+     * TEST
+     */
+    private static windowTest(): void {
         document.querySelectorAll('input').forEach(
             (windowCheck: HTMLInputElement) => {
                 windowCheck.addEventListener('change', () => {
@@ -22,23 +31,29 @@ class MainWindow {
             });
     }
 
+    /**
+     * WallpaperManager lives in Main-Thread and doesn't have access to local storage.
+     * For each display, get file-url and send to WallpaperMaanager.
+     */
     private static loadWallpapers(): void {
-        const storage = window.localStorage;
-        console.log(`MainWindow.loadWallpapers(): storages ${storage.length}`);
-        for (let i = 0; i < storage.length; i += 1) {
-            const key = storage.key(i);
-            console.log(`MainWindow.loadWallpapers(): try #${i} ${key} = ${IsStorageKey(key)}`);
-            if (IsStorageKey(key)) {
-                const loadPaperArgs: wallpapersIpcArgs = {
-                    displayId: StorageKey2Display(key),
-                    command: 'load',
-                    file: store2url(storage.getItem(key))
-                };
-                console.log(`MainWindow.loadWallpapers(): ${key}:`, loadPaperArgs);
-                wallpapersIpc.send( wallpapersCHANNEL, loadPaperArgs
-                );
+        const displays = remote.screen.getAllDisplays();
+        console.log(`MainWindow.loadWallpapers(): ${displays.length}`);
+
+        displays.forEach(
+            (display, i) => {
+                const displayFile = ConfigCotroller.getFile(display.id);
+
+                if (displayFile) {
+                    const loadPaperArgs: wallpapersIpcArgs = {
+                        displayId: display.id,
+                        command: 'load',
+                        file: displayFile
+                    };
+                    console.log(`MainWindow.loadWallpapers(): ${i}:`, loadPaperArgs);
+                    wallpapersIpc.send(wallpapersCHANNEL, loadPaperArgs);
+                }
             }
-        }
+        );
 
     }
 
