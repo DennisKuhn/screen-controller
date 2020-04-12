@@ -1,29 +1,32 @@
 import { BrowserWindow, app, ipcMain } from 'electron';
+import { CHANNEL, Commands, Windows as WindowsKeys  } from './Windows.ipc';
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const SCREEN_MANAGER_WEBPACK_ENTRY: string;
 
-class Windows {
-    static readonly CHANNEL = 'windows';
+type windowsMap = {
+    [key in WindowsKeys]?: BrowserWindow
+}
 
-    private static browserWindows: { [key: string]: BrowserWindow } = {};
+class Windows {
+    private static browserWindows: windowsMap = {};
 
     /**
      * Create IPC Windows.CHANNEL to show/hide windows
      * Create MainWindow
      */
     static start(): void {
-        ipcMain.on( Windows.CHANNEL, Windows.onWindowMessage);
+        ipcMain.on( CHANNEL, Windows.onWindowMessage);
         Windows.createMainWindow();
     }
 
-    private static onWindowMessage(e, windowKey: string, command: string): void {
+    private static onWindowMessage(e, windowKey: WindowsKeys, command: Commands): void {
         if (!(windowKey in Windows.browserWindows)) {
             switch (windowKey) {
-                case 'screenManager':
+                case 'ScreenManager':
                     Windows.createScreenManager();
                     break;
-                case 'main':
+                case 'MainWindow':
                     console.error(`Windows.onWindowMessage(${e}, ${windowKey}, ${command}) not in ${Object.keys(Windows.browserWindows)}`);
                     break;
                 default:
@@ -55,7 +58,7 @@ class Windows {
         main.webContents.openDevTools();
 
         main.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-        Windows.browserWindows['main'] = main;
+        Windows.browserWindows['MainWindow'] = main;
     }
 
     private static createScreenManager(): void {
@@ -69,9 +72,9 @@ class Windows {
         screenManager.webContents.openDevTools();
 
         screenManager.loadURL(SCREEN_MANAGER_WEBPACK_ENTRY);
-        Windows.browserWindows['screenManager'] = screenManager;
+        Windows.browserWindows['ScreenManager'] = screenManager;
         screenManager.on('closed', () =>
-            delete Windows.browserWindows['screenManager']
+            delete Windows.browserWindows['ScreenManager']
         );
     }
 

@@ -1,19 +1,35 @@
 import {
-    ipcRenderer, remote
+    remote
 } from 'electron';
 
 import url, { Url } from 'url';
 
 import ConfigEditor from './configeditor';
 import createAndAppend from '../utils/tools';
-import WallpapersManager from '../infrastructure/WallpapersManager';
+import ipc, {CHANNEL, Display2StorageKey} from '../infrastructure/WallpapersManager.ipc';
+
+
+const URL2Url = (URLObject: url.URL): Url => {
+    return {
+        auth: null,
+        path: null,
+        slashes: null,
+        query: null,
+        hash: URLObject.hash,
+        host: URLObject.host,
+        hostname: URLObject.hostname,
+        href: URLObject.href,
+        pathname: URLObject.pathname,
+        protocol: URLObject.protocol,
+        search: URLObject.search,
+        port: URLObject.port
+    };
+};
 
 /** */
 class DisplayView {
 
     display: Electron.Display;
-
-    ipc = ipcRenderer;
 
     container: HTMLDivElement;
 
@@ -36,7 +52,7 @@ class DisplayView {
         console.log(`${this.constructor.name}(${display.id})`);
 
         this.display = display;
-        this.fileStorageKey = this.display.id + WallpapersManager.CHANNEL;
+        this.fileStorageKey = Display2StorageKey( this.display.id );
         const fileRecord = window.localStorage.getItem(this.fileStorageKey);
 
         if (fileRecord) {
@@ -101,15 +117,8 @@ class DisplayView {
                     console.log(`${this.constructor.name}(${this.display.id}) Dialog: canceled=${result.canceled}`);
                 } else {
                     console.log(`${this.constructor.name}(${this.display.id}) Dialog: file=${result.filePaths[0]}`);
-                    const fileUrl = {
-                        auth: null,
-                        path: null,
-                        slashes: null,
-                        query: null,
-                        ...url.pathToFileURL(result.filePaths[0])
-                    };
 
-                    this.setFile(fileUrl);
+                    this.setFile(URL2Url(url.pathToFileURL(result.filePaths[0])));
                 }
             }).catch((err) => {
                 console.error(`Error showing Open File Dialog: ${err}`, err);
@@ -153,7 +162,7 @@ class DisplayView {
         this.file = file;
         this.fileDisplay.textContent = this.file.pathname;
         window.localStorage.setItem(this.fileStorageKey, this.file.href);
-        this.ipc.send(this.fileStorageKey, this.file.href);
+        ipc.send(CHANNEL, this.display.id, 'load', this.file.href);
         this.configEditor = new ConfigEditor(this.container, this.display.id, this.file);
     }
 }

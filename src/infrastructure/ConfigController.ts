@@ -1,13 +1,13 @@
-import {ipcRenderer} from 'electron';
+import { ipcRenderer } from 'electron';
 import crypto from 'crypto';
-import url, {Url} from 'url';
+import url, { Url } from 'url';
 import fs from 'fs';
 
 declare global {
     interface Window {
         wallpaper: {
-            register: (listeners: { user: (settings: ConfigProperties) => void }) => void
-        }
+            register: (listeners: { user: (settings: ConfigProperties) => void }) => void;
+        };
     }
 }
 
@@ -137,12 +137,11 @@ class ConfigController {
      * Called by wallpaper-preloader to get initial config and updates
      */
     static start(): void {
+        const displayId = Number(
+            process.argv.find((arg) => /^--displayid=/.test(arg) ).split('=')[1]);
         // Get displayId from argV and url from window.location.href
         ConfigController.getConfig(
-            Number(
-                process.argv.find((arg) => {
-                    return /^--displayid=/.test(arg);
-                }).split('=')[1]),
+            displayId,
             url.parse(window.location.href, false, false)
         ).then(
             () => {

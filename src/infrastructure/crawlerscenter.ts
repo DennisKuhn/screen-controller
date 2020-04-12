@@ -15,6 +15,24 @@ interface WaitingConsumer {
     reject: RejectCallback;
 }
 
+const URL2Url = (URLObject: url.URL): Url => {
+    return {
+        auth: null,
+        path: null,
+        slashes: null,
+        query: null,
+        hash: URLObject.hash,
+        host: URLObject.host,
+        hostname: URLObject.hostname,
+        href: URLObject.href,
+        pathname: URLObject.pathname,
+        protocol: URLObject.protocol,
+        search: URLObject.search,
+        port: URLObject.port
+    };
+};
+
+
 class CrawlersCenter {
 
     /** Start location */
@@ -48,13 +66,7 @@ class CrawlersCenter {
      * @param {string} rootDirectory
      */
     async start(rootDirectory: string): Promise<void> {
-        this.root = {
-            auth: null,
-            path: null,
-            slashes: null,
-            query: null,
-            ...url.pathToFileURL(rootDirectory)
-        };
+        this.root = URL2Url( url.pathToFileURL(rootDirectory));
 
         // console.log(`${this.constructor.name}.start: ${rootDirectory} => ${this.root}`, this.root);
 

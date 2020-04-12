@@ -3,6 +3,22 @@ import url, { Url } from 'url';
 
 import CrawlersCenter from './crawlerscenter';
 
+const URL2Url = (URLObject: url.URL): Url => {
+    return {
+        auth: null,
+        path: null,
+        slashes: null,
+        query: null,
+        hash: URLObject.hash,
+        host: URLObject.host,
+        hostname: URLObject.hostname,
+        href: URLObject.href,
+        pathname: URLObject.pathname,
+        protocol: URLObject.protocol,
+        search: URLObject.search,
+        port: URLObject.port
+    };
+};
 
 class DirectoryCrawler {
 
@@ -108,13 +124,7 @@ class DirectoryCrawler {
         // console.log(`${this.constructor.name}[${this.relativePath}].processBatch`);
 
         for (const entry of this.entries) {
-            const entryUrl = {
-                auth: null,
-                path: null,
-                slashes: null,
-                query: null,
-                ...url.pathToFileURL(this.directory.path + '\\' + entry.name)
-            };
+            const entryUrl =URL2Url(url.pathToFileURL(this.directory.path + '\\' + entry.name));
 
             if (this.terminating) {
                 return;
