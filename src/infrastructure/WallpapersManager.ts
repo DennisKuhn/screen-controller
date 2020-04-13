@@ -30,10 +30,7 @@ export default class WallpapersManager {
         const wallpaperProperties = {
             webPreferences: {
                 nodeIntegration: true,
-                // preload: `${WallpapersManager.application.getAppPath()}\\src\\infrastructure\\preload.ts`,
-                //preload: `${WallpapersManager.application.getAppPath()}/.webpack/main/preload.js`,
                 preload: WALLPAPER_PRELOAD_WEBPACK_ENTRY,
-                //preload: './preloadLauncher.js',
                 additionalArguments: [
                     `--displayid=${display.id}`,
                     `--displaywidth=${display.workAreaSize.width}`,
