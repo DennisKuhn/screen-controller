@@ -46,6 +46,9 @@ export default class WallpapersManager {
             window.browserWindow.once('ready-to-show', () => {
                 window.browserWindow.show();
             });
+            window.on('resized', (e, data) => {
+                console.log(data.width);
+            });
             WallpapersManager.wallpapers[display.id].window = window;
         } catch (error) {
             console.error(error);
@@ -58,7 +61,7 @@ export default class WallpapersManager {
     private static setupDisplays(): void {
         ipcMain.on(CHANNEL, WallpapersManager.onMessage);
         screen.getAllDisplays().forEach((display) => {
-            WallpapersManager.wallpapers[display.id] = { display: display };            
+            WallpapersManager.wallpapers[display.id] = { display: display };
         });
     }
 
