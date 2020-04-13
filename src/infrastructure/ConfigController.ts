@@ -128,6 +128,11 @@ class ConfigSettings {
     }
 }
 
+type Size = { width: number; height: number };
+type UserCallback = (settings: ConfigProperties) => void;
+type SizeCallback = (size: Size) => void;
+type Listeners = { user?: UserCallback; size?: SizeCallback };
+
 /**
  * Loads configuration from storage and provides interface to configuration updates through channel.
  * @module
@@ -195,7 +200,13 @@ class ConfigController {
     static start(): void {
         const displayId = Number(
             process.argv.find((arg) => /^--displayid=/.test(arg)).split('=')[1]);
-        
+
+        ConfigController.displayWidth = Number(
+            process.argv.find((arg) => /^--displaywidth=/.test(arg)).split('=')[1]);
+
+        ConfigController.displayHeight = Number(
+            process.argv.find((arg) => /^--displayheight=/.test(arg)).split('=')[1]);
+
         ConfigController.getConfig(
             displayId,
             href2Url(window.location.href)
@@ -206,9 +217,11 @@ class ConfigController {
         );
     }
 
-    private static listeners: { user: (settings: ConfigProperties) => void };
+    private static displayWidth: number;
+    private static displayHeight: number;
+    private static listeners: Listeners;
 
-    private static registerPage = (listeners: { user: (settings: ConfigProperties) => void }): void => {
+    private static registerPage = (listeners: Listeners): void => {
         const setting = ConfigController.settings[0];
 
         ConfigController.listeners = listeners;
@@ -217,7 +230,16 @@ class ConfigController {
             `ConfigController: ${setting.configId}: ${Object.keys(setting.userProperties).length}: register`,
             listeners,
             setting.userProperties);
+        
+        ConfigController.initUserListener();
+
+        ConfigController.initSizeListener();
+    }
+
+    private static initUserListener(): void {
         if (ConfigController.listeners.user) {
+            const setting = ConfigController.settings[0];
+
             try {
                 ConfigController.listeners.user(setting.userProperties);
             } catch (initialError) {
@@ -227,6 +249,21 @@ class ConfigController {
                     setting.userProperties);
             }
             ipcRenderer.on(setting.configId + ConfigController.CHANNEL, ConfigController.onNewSettings);
+        }
+    }
+
+    private static initSizeListener(): void {
+        if (ConfigController.listeners.size) {
+            const size: Size = { width: ConfigController.displayWidth, height: ConfigController.displayHeight};
+
+            try {
+                ConfigController.listeners.size(size);
+            } catch (initialError) {
+                console.error(
+                    `ConfigController: ${JSON.stringify(size)}: ERROR initial size setting:${initialError}:`,
+                    initialError,
+                    size);
+            }
         }
     }
 

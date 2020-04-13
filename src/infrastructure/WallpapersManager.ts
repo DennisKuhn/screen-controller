@@ -34,7 +34,10 @@ export default class WallpapersManager {
                 //preload: `${WallpapersManager.application.getAppPath()}/.webpack/main/preload.js`,
                 preload: WALLPAPER_PRELOAD_WEBPACK_ENTRY,
                 //preload: './preloadLauncher.js',
-                additionalArguments: [`--displayid=${display.id}`]
+                additionalArguments: [
+                    `--displayid=${display.id}`,
+                    `--displaywidth=${display.workAreaSize.width}`,
+                    `--displayheight=${display.workAreaSize.height}`]
             },
             display: display,
             show: false,
