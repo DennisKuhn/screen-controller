@@ -8,7 +8,17 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts ."
+    "lint": "eslint --ext .ts .",
+
+    "reactstart": "react-scripts start",
+    "reactbuild": "react-scripts build",
+    "reacttest": "react-scripts test --env=jsdom",
+    "reacteject": "react-scripts eject",
+    "reactinstall:clean": "rm -rf node_modules/ && rm -rf package-lock.json && npm install && npm start",
+    "reactlint:check": "eslint . --ext=js,jsx;  exit 0",
+    "reactlint:fix": "eslint . --ext=js,jsx --fix;  exit 0",
+    "reactbuild-package-css": "cp src/assets/css/material-dashboard-react.css dist/material-dashboard-react.css",
+    "reactbuild-package": "npm run build-package-css && babel src --out-dir dist"
   },
   "keywords": [],
   "author": {
@@ -73,6 +83,9 @@
       ]
     }
   },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
   "devDependencies": {
     "@electron-forge/cli": "6.0.0-beta.50",
     "@electron-forge/maker-deb": "6.0.0-beta.50",
@@ -94,11 +107,35 @@
     "style-loader": "^0.23.1",
     "ts-loader": "^6.2.1",
     "typescript": "^3.8.3"
+
   },
   "dependencies": {
     "@types/lodash": "^4.14.149",
     "electron-squirrel-startup": "^1.0.0",
     "lodash": "^4.17.15",
-    "node-win-wallpaper": "file:./../node-win-wallpaper"
+    "node-win-wallpaper": "file:./../node-win-wallpaper",
+
+    "@material-ui/core": "^4.9.10",
+    "@material-ui/icons": "4.9.1",
+    "@types/chartist": "^0.9.48",
+    "@types/classnames": "^2.2.8",
+    "@types/react": "^16.8.20",
+    "@types/react-dom": "^16.8.4",
+    "@types/react-router-dom": "^4.3.4",
+    "chartist": "^0.11.4",
+    "classnames": "2.2.6",
+    "history": "4.7.2",
+    "perfect-scrollbar": "1.4.0",
+    "prettier": "1.16.4",
+    "react": "^16.8.1",
+    "react-chartist": "0.13.3",
+    "react-dom": "16.8.1",
+    "react-google-maps": "9.4.5",
+    "react-router-dom": "4.3.1",
+    "react-scripts": "2.1.5",
+    "react-swipeable-views": "0.13.1",
+    "tslint": "^5.17.0",
+    "tslint-react": "^4.0.0",
+    "typescript": "^3.8.3"
   }
 }
