@@ -5,7 +5,6 @@ import ConfigCotroller from './ConfigController';
 /** TEST */
 import windowsIpc, { CHANNEL as windowsCHANNEL, Windows, IpcArgs as windowsIpcArgs } from './Windows.ipc';
 
-
 class MainWindow {
 
     static start(): void {

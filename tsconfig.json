@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "module": "commonjs",
+    "module": "esnext",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "noImplicitAny": false,
@@ -15,14 +15,11 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react",
     "typeRoots": [
       "./types",
       "./node_modules/@types"
     ],
-    "paths": {
-      "*": ["node_modules/*"]
-    },
     "lib": [
       "dom",
       "dom.iterable",
