@@ -75,3 +75,4 @@ class WallpaperAbyssProducer extends LoaderProducer {
 }
 
 const wallpaperAbyssProducer = new WallpaperAbyssProducer(3);
+export default wallpaperAbyssProducer;

@@ -5,7 +5,7 @@ import { getColorAsArray } from '../utils/utils';
 /**
  * Interface between classes and properties of the Wallpaper Engine.
  */
-export default class PropertyPropagator {
+class PropertyPropagator {
     constructor(name) {
         this.userPropertyListeners = new Object();
         this.userDirectoryFilesListener = new Object();
@@ -312,3 +312,7 @@ export default class PropertyPropagator {
         }
     }
 }
+
+const proPro = new PropertyPropagator('TiTahi');
+
+export default proPro;

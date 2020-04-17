@@ -735,7 +735,7 @@ const wmRADIO_CLASS = 'wmRadio';
 /**
  * @extends WallMenuGroup
  */
-class WallMenuRadioList extends WallMenuGroup {
+export class WallMenuRadioList extends WallMenuGroup {
     constructor(name) {
         super(name, wmRADIO_LIST_CLASS);
     }

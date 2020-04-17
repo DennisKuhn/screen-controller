@@ -5,7 +5,7 @@ if ( !window.wallpaperRegisterAudioListener ) {
     window.wallpaperRegisterAudioListener = function( callback ) {
         if ( wallpaperAudioInterval ) {
             // clear the older interval 
-            clearInterval( _wallpaperAudioInterval );
+            clearInterval( wallpaperAudioInterval );
             wallpaperAudioInterval = null;
         }
 

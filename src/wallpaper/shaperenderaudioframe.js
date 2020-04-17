@@ -1,3 +1,9 @@
+import timer from './timer';
+import proPro from './infrastructure/propertypropagator';
+import AudioArray from './audioarray';
+import { shapeList } from './shapelist';
+import { cosInterpolate } from './utils/utils';
+
 /**
  * renders an audioFrame obect 
  *
@@ -45,8 +51,9 @@ class AudioShapeRenderer {
 }
 
 const audioShapeRender = new AudioShapeRenderer();
+export default audioShapeRender;
 
-function shaperenderaudioframe( ctx, color, frame, shape, interpolation, interpolationBalanced, renderMethod, radiusFactor ) {
+export function shaperenderaudioframe( ctx, color, frame, shape, interpolation, interpolationBalanced, renderMethod, radiusFactor ) {
     timer.start( 'render shape' );
     timer.start( 'calculate shape' );
     const cx = proPro.width / 2;

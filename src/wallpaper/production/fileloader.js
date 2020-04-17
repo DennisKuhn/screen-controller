@@ -1,5 +1,5 @@
 'use strict';
-
+import { getPropertyValues } from '../utils/utils';
 const context = self;
 
 
@@ -59,7 +59,7 @@ class FileLoader {
         this.createdObjectUrls.push(this.dataUri);
 
         if (this.abortUri == loadedUri) {
-            console.warn('[' + this.name + ']: loaded(' + originalUri + ') == abortUri)');
+            console.warn('[' + this.name + ']: loaded(' + loadedUri + ') == abortUri)');
             this.revoke(this.dataUri);
             this.abortUri = '';
         } else {

@@ -4,6 +4,7 @@ import HoverMenu from '../wallwindow/hovermenu';
 import { WallMenuButtonList, WallMenuTextList } from '../wallwindow/wallmenu';
 import locale from '../utils/locale';
 import { copyToClipboard } from '../utils/utils';
+import accessController from '../infrastructure/AccessController';
 
 /**
  * @extends HoverMenu

@@ -274,3 +274,5 @@ AudioArray.prototype = {
     }
 
 };
+
+export default AudioArray;

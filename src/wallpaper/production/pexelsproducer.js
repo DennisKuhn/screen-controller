@@ -5,7 +5,7 @@ import LoaderProducer from './loaderproducer';
 /**
  *  @extends LoaderProducer
  */
-export default class PexelsProducer extends LoaderProducer {
+class PexelsProducer extends LoaderProducer {
     /**
      * 
      * @param {number} bufferSize used by this producer.
@@ -60,3 +60,4 @@ export default class PexelsProducer extends LoaderProducer {
 }
 
 const pexelsProducer = new PexelsProducer(3);
+export default pexelsProducer;

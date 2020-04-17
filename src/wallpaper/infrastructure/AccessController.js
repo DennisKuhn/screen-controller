@@ -21,7 +21,7 @@ class AccessConsumer {
 /**
  * Controlls single access to one window, e.g. while one window is shown others are disabled.
  */
-export default class AccessController {
+class AccessController {
     constructor() {
         this.consumers = [];
         this.activeConsumer = null;
@@ -78,3 +78,7 @@ export default class AccessController {
         }
     }
 }
+
+const accessController = new AccessController();
+
+export default accessController;

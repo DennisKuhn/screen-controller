@@ -1,3 +1,12 @@
+import proPro from './infrastructure/propertypropagator';
+import {
+ shapeButterfly, shapeCircle, shapeHeart, shapeLeaf
+} from './generators';
+import { frame2 } from './audioframe';
+import { shaperenderaudioframe } from './shaperenderaudioframe';
+import mainMenu from './mainmenu';
+import { adjustPerc } from './utils/utils';
+
 let nextShapeID = 0;
 
 /**
@@ -65,7 +74,7 @@ export default class ShapeList {
 	
     updateAutosave( ) {
         if ( this.useAutosave ) {
-            storage.saveShapeList( 'as_autosave', this );
+            window.storage.saveShapeList( 'as_autosave', this );
             mainMenu.updateStorageStats();
         }
     }
@@ -121,7 +130,7 @@ export default class ShapeList {
 
 }
 
-function shapePointList( points, smooth ) {
+export function shapePointList( points, smooth ) {
     this.id = nextShapeID++;
 
     this.points = points || [];	
@@ -174,8 +183,8 @@ function shapePointList( points, smooth ) {
 		
         if ( !this.dontSmooth ) {
             for ( var i = 0; i < this.points.length-1; i++ ) {
-                xx = this.points[i][0] - this.points[i+1][0];
-                yy = this.points[i][1] - this.points[i+1][1];
+                const xx = this.points[i][0] - this.points[i+1][0];
+                const yy = this.points[i][1] - this.points[i+1][1];
                 const len = ( xx *xx + yy*yy );
                 if ( len < 50 ) {
                     this.points.splice(i+1,1);
@@ -214,8 +223,8 @@ function shapePointList( points, smooth ) {
         //console.error( 'before: ' + this.points.length );
         if ( this.removeDetail ) {
             for ( var i = 0; i < this.points.length-1; i++ ) {
-                xx = this.points[i][0] - this.points[i+1][0];
-                yy = this.points[i][1] - this.points[i+1][1];
+                const xx = this.points[i][0] - this.points[i+1][0];
+                const yy = this.points[i][1] - this.points[i+1][1];
                 const len = ( xx *xx + yy*yy );
                 if ( len < this.removeDetail ) {
                     this.points.splice(i+1,1);
@@ -251,8 +260,8 @@ function shapePointList( points, smooth ) {
     this.getLength = function() {
         let totalLen = 0;
         for ( let i = 0; i < this.points.length-1; i++ ) {
-            xx = this.points[i][0] - this.points[i+1][0];
-            yy = this.points[i][1] - this.points[i+1][1];
+            const xx = this.points[i][0] - this.points[i+1][0];
+            const yy = this.points[i][1] - this.points[i+1][1];
             totalLen += Math.sqrt( xx *xx + yy*yy );
         }
 		
@@ -364,7 +373,9 @@ function shapePointList( points, smooth ) {
         //console.log( 'prepare Finished(' + this.points2.length + ')' );
         //console.log( this.points2 );
     };
-	
+    const heightDir = 3;
+
+
     this.getPositionFor = function( perc, val ) {
         if ( this.points2.length < 2 ) return [ [0,0], [0,0] ];
         const idx = Math.round( perc * (this.points2.length-1) );
@@ -404,8 +415,8 @@ function shapePointList( points, smooth ) {
         const outerPoints = [];
         for ( var i = 0; i <= 100; i++ ) {
             const pos = this.getPositionFor( i / 100, 0.1 );
-            inner = pos[ 0 ];
-            outer = pos[ 1 ];
+            const inner = pos[ 0 ];
+            const outer = pos[ 1 ];
             inner[ 0 ] *= radiusFactor;
             inner[ 1 ] *= radiusFactor;
             outer[ 0 ] *= radiusFactor;
@@ -481,3 +492,6 @@ function shapePointList( points, smooth ) {
         return [x2,y2];
     };
 }
+
+export const shapeList = new ShapeList();
+

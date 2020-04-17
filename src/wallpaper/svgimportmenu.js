@@ -1,6 +1,8 @@
 'use strict';
 
-import PopupMenu from './wallwindow/wallmenu';
+import { PopupMenu, WallMenuButtonList, WallMenuRadioList, WallMenuTextList } from './wallwindow/wallmenu';
+import { SvgFileSource } from './svgsource';
+import { shapeList } from './shapelist';
 
 const siMENU_NAME = 'SVGImport';
 const siDESCRIPTION_GROUP = 'Description';
@@ -11,7 +13,7 @@ const siPROGRESS_ID = 'SvgImportProgress';
 /**
  * @extends PopupMenu
  */
-export default class SvgImportMenu extends PopupMenu {
+class SvgImportMenu extends PopupMenu {
     constructor() {
         super(siMENU_NAME);
         this.progress = null;
@@ -87,3 +89,6 @@ export default class SvgImportMenu extends PopupMenu {
     }
 
 }
+const svgImportMenu = new SvgImportMenu();
+
+export default svgImportMenu;

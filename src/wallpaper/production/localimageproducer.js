@@ -1,11 +1,13 @@
 'use strict';
 
 import WpeOnDemandProducer from './wpeondemandproducer';
+import ImagePreloadInfo from './imagepreloadinfo';
+import { BufferStates } from './contentproducer';
 
 /**
  * @extends WpeOnDemandProducer
  */
-export default class LocalImageProducer extends WpeOnDemandProducer {
+class LocalImageProducer extends WpeOnDemandProducer {
     bufferLoaded(iBuffer, success, image) {
         if (this.bufferStates[iBuffer] != BufferStates.loading ) {
             console.error('LocalImageProducer.bufferLoaded(' + [ iBuffer, success ] + '): State=' + this.bufferStates[iBuffer] );
@@ -56,3 +58,5 @@ export default class LocalImageProducer extends WpeOnDemandProducer {
 }
 
 const localImageProducer = new LocalImageProducer();
+
+export default localImageProducer;

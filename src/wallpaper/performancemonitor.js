@@ -1,9 +1,10 @@
 'use strict';
+import { CreateAppend } from './utils/utils';
 
 /**
  * Shows CPU warning
  */
-export default class PerformanceMonitor {
+class PerformanceMonitor {
     constructor() {
         // variables regarding use fps settings & frameskipping
         this.systemfps = 30; // wallpaper engine will supply us with the target framerate and we will use a sloppy frameskipping mechanism to adjust to that.
@@ -116,3 +117,5 @@ export default class PerformanceMonitor {
     }
 
 }
+
+export const performanceMonitor = new PerformanceMonitor();

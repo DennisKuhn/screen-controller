@@ -5,7 +5,7 @@ import LoaderProducer from './loaderproducer';
 /**
  *  @extends LoaderProducer
  */
-export default class PixabayProducer extends LoaderProducer {
+class PixabayProducer extends LoaderProducer {
     /**
      * 
      * @param {number} bufferSize used by this producer.
@@ -17,3 +17,4 @@ export default class PixabayProducer extends LoaderProducer {
 }
 
 const pixabayProducer = new PixabayProducer(3);
+export default pixabayProducer;

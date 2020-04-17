@@ -1,6 +1,7 @@
 'use strict';
 
 import ContentProducer from './contentproducer';
+import Content from '../content';
 
 /**
  * @extends ContentProducer

@@ -1,6 +1,7 @@
 'use strict';
 
 import WpeOnDemandProducer from './wpeondemandproducer';
+import { BufferStates } from './contentproducer';
 
 let producedVideos = 0;
 
@@ -148,7 +149,7 @@ class VideoPreloadInfo {
 /**
  * @extends WpeOnDemandProducer
  */
-export default class LocalVideoProducer extends WpeOnDemandProducer {
+class LocalVideoProducer extends WpeOnDemandProducer {
     bufferLoaded(iBuffer, success, video) {
         if (success) {
             this.onSuccessProduction(iBuffer, video);
@@ -184,3 +185,5 @@ export default class LocalVideoProducer extends WpeOnDemandProducer {
 }
 
 const localVideoProducer = new LocalVideoProducer();
+
+export default localVideoProducer;

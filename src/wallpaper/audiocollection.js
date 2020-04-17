@@ -1,5 +1,6 @@
 'use strict';
 
+import AudioData from './audiodata';
 /*
 	Squee Powered!
 */

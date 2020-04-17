@@ -1,5 +1,9 @@
 'use strict';
 
+import AudioData from './audiodata';
+import timer from './timer';
+import { performanceMonitor } from './performancemonitor';
+
 /**
  * Squee Powered!
  * Classified by Dennis
@@ -195,10 +199,12 @@ class AudioFrameConfig {
 
 }
 
+export let hadAudioFrame = false;
+
 /**
  * 
  */
-class AudioFrame {
+export default class AudioFrame {
     constructor(opts) {
         // console.log("AudioFrame.constructor(" + JSON.stringify(opts) + ")");
         this.audioData = new AudioData();
@@ -520,3 +526,15 @@ class AudioFrame {
     }
 	
 }
+
+// create container to store processed data
+export const frame2 = new AudioFrame({
+    normalize: true,
+    normalizeFactor: 0,
+    motionBlur: true,
+    motionBlurFactor: 1,
+    smooth: true,
+    smoothFactor: 0.75,
+    powerOf: 4,
+    mono: true
+});

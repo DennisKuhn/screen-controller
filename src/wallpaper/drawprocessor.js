@@ -3,7 +3,7 @@
 /**
  * Base class for all processors like DrawSquare, DrawScribble, 
  */
-export default class DrawProcessor {
+class DrawProcessor {
     constructor() {
         this.points = [];
         this.startX = null;
@@ -227,7 +227,7 @@ class DrawScribble extends DrawProcessor {
 /**
  * List of DrawProcessors manufactured by DrawProcessorFactory
  */
-const DRAWPROCESSORS = {
+export const DRAWPROCESSORS = {
     Scribble:   () => {
         return new DrawScribble();  
     },
@@ -296,4 +296,4 @@ class DrawProcessorFactory {
 /**
  * The singleton drawProcessorFactory
  */
-const drawProcessorFactory = new DrawProcessorFactory();
+export const drawProcessorFactory = new DrawProcessorFactory();

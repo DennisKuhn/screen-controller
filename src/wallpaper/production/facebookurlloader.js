@@ -1,5 +1,8 @@
 'use strict';
 
+import UrlLoader from './urlloader';
+import FacebookConnector from '../connectors/facebookconnector';
+
 try {
     importScripts('../connectors/facebookconnector.js', './urlloader.js');
 } catch (ex) {

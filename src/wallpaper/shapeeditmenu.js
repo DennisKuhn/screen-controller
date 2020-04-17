@@ -1,6 +1,10 @@
 'use strict';
 
-import PopupMenu from './wallwindow/wallmenu';
+import proPro from './infrastructure/propertypropagator';
+import { PopupMenu, WallMenuButtonList, WallMenuList, WallMenuRadioList } from './wallwindow/wallmenu';
+import delayed from './utils/delayed';
+import { shapeList } from './shapelist';
+import renderer from './renderer';
 
 const smMENU_NAME = 'ShapeEdit';
 const smMOVE_GROUP = 'Move';
@@ -252,3 +256,7 @@ class ShapeEditMenu extends PopupMenu {
     }
 
 }
+
+const shapeEditMenu = new ShapeEditMenu();
+
+export default shapeEditMenu;

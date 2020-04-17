@@ -1,5 +1,6 @@
 
-function timer() {
+
+function Timer() {
     this.prefix = '';
     this.timers = {};
 	
@@ -68,7 +69,7 @@ function timer() {
 	
 }
 
-timer.prototype = {
+Timer.prototype = {
     setPrefix: function( prefix ) {
 		
     },
@@ -108,7 +109,7 @@ timer.prototype = {
     },
     reset: function( timer ) {
         if ( this.timers.hasOwnProperty( timer ) ) {
-            t = { 
+            const t = { 
                 count: 0,
                 total: 0,
                 slowest: -1,
@@ -152,4 +153,6 @@ timer.prototype = {
     }
 };
 
-window.timer = new timer();
+const timer = new Timer();
+
+export default timer;

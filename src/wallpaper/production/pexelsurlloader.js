@@ -1,4 +1,5 @@
 'use strict';
+import UrlLoader from './urlloader';
 
 try {
     importScripts('./urlloader.js');

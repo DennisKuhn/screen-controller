@@ -1,5 +1,8 @@
 'use strict';
 
+import delayed from './utils/delayed';
+import { shapePointList } from './shapelist';
+
 /**
  * 
  */
@@ -97,7 +100,9 @@ export default class SvgSource {
     }
 }
 
-function SvgFileSource(fileuri, removeDetailAmount, shapeList, cbUpdate, cbComplete) {
+export let svgSource;
+
+export function SvgFileSource(fileuri, removeDetailAmount, shapeList, cbUpdate, cbComplete) {
     const reader = new FileReader();
 
     reader.onload = function(e) {
@@ -113,3 +118,4 @@ function SvgFileSource(fileuri, removeDetailAmount, shapeList, cbUpdate, cbCompl
     reader.readAsText(fileuri); 
 }
 
+export let hasInit = false;

@@ -1,100 +1,102 @@
 'use strict';
 
 /** log.js : overwrites console.log and console.error to display messages within the wallpaper. **/
-require('./log.js');
+import log from './log';
 
 /** timer.js : simple timer class to measure performance **/
-require('./timer.js');
+import timer from './timer';
 
 /** audioarray.js : has a class that holds data for one channel ( left or right ) of the fft data with some useful functions to access it **/
-require('./audioarray.js');
+import './audioarray';
 
 /** audiodata.js : has a class that holds 2 audiodata instances ( left/right channels ) with some useful functions to access it **/
-require('./audiodata.js');
+import './audiodata';
 
-/** audiocollection.js : is currently unused, i have used this to bunch up and average multiple fft data frames that might occur within one render frame when rendering at a low FPS **/
-require('./audiocollection.js');
+/** audiocollection.js : is currently unused, i have used this to bunch up and average multiple
+ *  fft data frames that might occur within one render frame when rendering at a low FPS **/
+import './audiocollection';
 
-/** audiodata-polyfill.js : fakes wallpaperRegisterAudioListener function for testing in the browser ( also see the guide as thre is another better alternative to this if needed ) **/
-require('./audiodata-polyfill.js');
+/** audiodata-polyfill.js : fakes wallpaperRegisterAudioListener function for testing in the browser
+ * ( also see the guide as thre is another better alternative to this if needed ) **/
+import './audiodata-polyfill';
 
 /** utils.js : contains some functions for processing the properties as well as a function to render the data in an audioframe object **/
-require('./utils/utils.js');
-require('./utils/locale.js');
+import locale from './utils/locale';
 
 /** audioframe.js : somewhat misnamed class written to contain all the audio processing demonstrated with configurable options **/
-require('./audioframe.js');
+import frame2, { hadAudioFrame } from './audioframe';
 
-require('./generators.js');
+import shapeGeneratorFactory from './generators';
 
-require('./utils/delayed.js');
+import './utils/delayed';
 
-require('./flatten.js');
+import './flatten';
 
-require('./wallwindow/WallWindow.js');
-require('./wallwindow/wallmenu.js');
-require('./wallwindow/hovermenu.js');
+import './wallwindow/WallWindow';
+import './wallwindow/wallmenu';
+import './wallwindow/hovermenu';
 
-require('./infrastructure/propertypropagator.js');
-require('./infrastructure/AccessController.js');
-
-
-require('./performancemonitor.js');
-
-require('./production/supplymonitor.js');
+import proPro from './infrastructure/propertypropagator';
+import accessController from './infrastructure/AccessController';
 
 
-require('./svgsource.js');
+import { performanceMonitor } from './performancemonitor';
 
-require('./shapelist.js');
-require('./shaperenderaudioframe.js');
-require('./shapestorage.js');
-
-require('./connectors/connectedpopup.js');
-require('./connectors/connectpopup.js');
-require('./connectors/disconnectedpopup.js');
-require('./connectors/facebookconnector.js');
-
-require('./content.js');
-require('./production/imagepreloadinfo.js');
-require('./production/contentproducer.js');
-require('./production/contentsupplier.js');
-
-require('./production/loaderproducer.js');
-require('./production/pexelsproducer.js');
-require('./production/pixabayproducer.js');
-require('./production/wallpaperabyssproducer.js');
-require('./production/facebookproducer.js');
-
-require('./production/wpeondemandproducer.js');
-require('./production/localimageproducer.js');
-require('./production/localvideoproducer.js');
+import { supplyMonitor } from './production/supplymonitor';
 
 
-require('./presentation/toggleelements.js');
-require('./presentation/displaymenu.js');
-require('./presentation/contentshow.js');
-require('./presentation/singleshow.js');
-require('./presentation/multidisplay.js');
-require('./presentation/multishow.js');
-require('./presentation/backgroundgradient.js');
-require('./presentation/backgroundtransition.js');
+import { hasInit, svgSource } from  './svgsource';
 
-require('./drawprocessor.js');
-require('./drawcontroller.js');
+import { shapeList, shapePointList } from './shapelist';
+import audioShapeRender from './shaperenderaudioframe';
+import ShapeStorage from './shapestorage';
 
-require('./svgimportmenu.js');
-require('./shapeeditmenu.js');
-require('./mainmenu.js');
+import './connectors/connectedpopup';
+import './connectors/connectpopup';
+import './connectors/disconnectedpopup';
+import fbCon from './connectors/facebookconnector';
 
-require('./displays/analogclock.js');
+import './content';
+import './production/imagepreloadinfo';
+import './production/contentproducer';
+import conSup from './production/contentsupplier';
 
-require('./displays/digidisplay.js');
-require('./displays/digidate.js');
-require('./displays/digitime.js');
+import './production/loaderproducer';
+import pexelsProducer from './production/pexelsproducer';
+import pixabayProducer from './production/pixabayproducer';
+import wallpaperAbyssProducer from './production/wallpaperabyssproducer';
+import facebookProducer from './production/facebookproducer';
 
-require('./displays/foreground.js');
+import './production/wpeondemandproducer';
+import localImageProducer from './production/localimageproducer';
+import localVideoProducer from './production/localvideoproducer';
 
+
+import './presentation/toggleelements';
+import './presentation/displaymenu';
+import './presentation/contentshow';
+import './presentation/singleshow';
+import MultiShow from './presentation/multidisplay';
+import './presentation/multishow';
+import './presentation/backgroundgradient';
+import './presentation/backgroundtransition';
+
+import './drawprocessor';
+import DrawController from './drawcontroller';
+
+import svgImportMenu from './svgimportmenu';
+import shapeEditMenu from './shapeeditmenu';
+import mainMenu, { SHAPE_STORAGE_SLOT_AUTO_SAVE } from './mainmenu';
+
+import AnalogClock from './displays/analogclock';
+
+import './displays/digidisplay';
+import DigiDate from './displays/digidate';
+import DigiTime from './displays/digitime';
+
+import Foreground from './displays/foreground';
+
+import { renderer } from './renderer';
 
 // hide log & timer
 if (log) {
@@ -113,8 +115,6 @@ let contextBg = null;
 // render function to use
 const renderFunction = 'default';
 
-const heightDir = 3;
-
 const foreground = new Foreground();
 
 /*
@@ -128,10 +128,6 @@ const frameHistory = [];
 
 let initialized = false;
 
-const shapeList = new ShapeList();
-
-let hadAudioFrame = false;
-
 let contentShow = null;
 const singleShow = null; // new SingleShow( document.getElementById('background-wrapper' ) );
 const multiShow = new MultiShow(document.getElementById('background-wrapper'));
@@ -140,22 +136,12 @@ let fnInitSlideshow;
 
 const storage = new ShapeStorage();
 
-const supplyMonitor = new SupplyMonitor();
-const performanceMonitor = new PerformanceMonitor();
 
 const htmlTime = new DigiTime();
 
 const htmlDate = new DigiDate();
 
 const analogClock = new AnalogClock();
-
-const accessController = new AccessController();
-
-const mainMenu = new MainMenu();
-
-const shapeEditMenu = new ShapeEditMenu();
-
-const svgImportMenu = new SvgImportMenu();
 
 
 
@@ -171,92 +157,8 @@ function setup() {
     canvasBg = document.getElementById('canvasBg'); // reference to our canvas element
     contextBg = canvasBg.getContext('2d');  // reference to our context
 
-    // create container to store processed data
-    frame2 = new AudioFrame({
-        normalize: true,
-        normalizeFactor: 0,
-        motionBlur: true,
-        motionBlurFactor: 1,
-        smooth: true,
-        smoothFactor: 0.75,
-        powerOf: 4,
-        mono: true
-    });
 }
 
-/**
- * Contains settings for render() function, called by PropertyPropagator
- */
-class Renderer {
-    constructor() {
-        this.offsetX = 0;
-        this.offsetY = 0;
-        this.rotation = 0;
-        this.renderMethod = 1;
-        this.interpolationSteps = 1;
-        this.interpolationBalanced = true;
-        this._color1 = [1, 0, 0];
-        this._color2 = [0, 1, 0];
-        this._color3 = [0, 0, 1];
-        this.hslcolor1 = [0, 1, 0.5];
-        this.hslcolor2 = [0.333333, 1, 0.5];
-        this.hslcolor3 = [0.666666, 1, 0.5];
-        this.colorGradient = 2;
-        this.colorRotation = true;
-        this._colorGlow = 0;
-        this.colorGlowStrength = 2;
-        this.paused = false;
-        this.width = 0;
-        this.height = 0;
-        this._loaded = false;
-    }
-
-    init() {
-        frame2.config.lastEqChange = performance.now() - 5000;
-        this._loaded = true;
-    }
-
-    get color1() {
-        return this._color1; 
-    }
-    set color1(rgbColor) {
-        this._color1 = rgbColor;
-        this.hslcolor1 = rgbToHsl(rgbColor[0], rgbColor[1], rgbColor[2], 255);
-    }
-
-    get color2() {
-        return this._color2; 
-    }
-    set color2(rgbColor) {
-        this._color2 = rgbColor;
-        this.hslcolor2 = rgbToHsl(rgbColor[0], rgbColor[1], rgbColor[2], 255);
-    }
-
-    get color3() {
-        return this._color3; 
-    }
-    set color3(rgbColor) {
-        this._color3 = rgbColor;
-        this.hslcolor3 = rgbToHsl(rgbColor[0], rgbColor[1], rgbColor[2], 255);
-    }
-
-
-    get colorGlow() {
-        return this._colorGlow; 
-    }
-    set colorGlow(glow) {
-        this._colorGlow = glow;
-        if (this._colorGlow == 0) {
-            canvasBg.style.display = 'none';
-        } else {
-            canvasBg.style.display = 'block';
-        }
-        if (this._colorGlow >= 1) this._colorGlow += 1;
-        canvasBg.style.filter = 'blur(' + this._colorGlow + (this._colorGlow ? 'px' : '') + ')';
-    }
-}
-
-const renderer = new Renderer();
 
 let h = 0;
 let prevTimestamp;
@@ -430,7 +332,6 @@ function setupAccessController() {
     accessController.registerConsumer('SvgImportMenu', svgImportMenu);
 }
 
-let hasInit = false;
 function onInit() {
     storage.loadShapeList(SHAPE_STORAGE_SLOT_AUTO_SAVE, shapeList);
     if (svgSource) {
@@ -439,7 +340,6 @@ function onInit() {
     hasInit = true;
 }
 
-var proPro = new PropertyPropagator('TiTahi');
 
 function setupPropertyPropagator() {
     //     addReceiver( propertyPrefix, 			receiver, 				generalPrefix, 	windowPrefix, 	pausedPrefix,	loaded,	user,	general,	filesAndDirectories, 	paused,	windowProperties )

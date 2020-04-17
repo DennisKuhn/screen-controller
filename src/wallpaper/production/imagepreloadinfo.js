@@ -5,7 +5,7 @@ let producedImages = 0;
 /**
  * 
  */
-class ImagePreloadInfo {
+export default class ImagePreloadInfo {
     loaded(e) {
         // console.log("ImagePreloadInfo[" + this.iBuffer + "].loaded: " + this._content.uri );
         this._content.setDecoded();

@@ -1,6 +1,7 @@
 'use strict';
 
 import WallWindow from '../wallwindow/WallWindow';
+import { CreateAppend } from '../utils/utils';
 
 require('./supplymonitor.css');
 
@@ -9,7 +10,7 @@ const SUPPLY_MONITOR_ID = 'SupplyMonitor';
 /**
  * @extends WallWindow
  */
-export default class SupplyMonitor extends WallWindow {
+class SupplyMonitor extends WallWindow {
     constructor() {
         super('SupplyMonitor');
 
@@ -52,3 +53,5 @@ export default class SupplyMonitor extends WallWindow {
         return statusCells;
     }
 }
+
+export const supplyMonitor = new SupplyMonitor();

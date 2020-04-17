@@ -1,5 +1,7 @@
 'use strict';
 
+import { getPropertyValues } from '../utils/utils';
+
 const context = self;
 
 /**

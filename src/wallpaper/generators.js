@@ -1,3 +1,7 @@
+import { easeInOutQuad } from './utils/utils';
+import { shapeList, shapePointList} from './shapelist';
+import { hasInit } from './svgsource';
+
 /**
  * Base class for all ShapeGenerators like generatorBiohazard and ShapeCreator, wich is the base for shapeHeart, ...
  */

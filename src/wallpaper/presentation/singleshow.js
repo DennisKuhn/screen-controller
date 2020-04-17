@@ -4,6 +4,8 @@ import ContentShow from './contentshow';
 import { CreateAppend } from '../utils/utils';
 import BackgroundTransition from './backgroundtransition';
 import BackgroundGradient from './backgroundgradient';
+import ToggleElements from './toggleelements';
+import conSup from '../production/contentsupplier';
 
 /**
  * @extends ContentShow

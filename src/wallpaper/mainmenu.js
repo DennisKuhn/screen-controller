@@ -1,8 +1,21 @@
 'use strict';
 
 import HoverMenu from './wallwindow/hovermenu';
+import { DRAWPROCESSORS, drawProcessorFactory } from './drawprocessor';
+import { WallMenuList, WallMenuButtonList, WallMenuRadioList } from './wallwindow/wallmenu';
+import fbCon from './connectors/facebookconnector';
+import conSup from './production/contentsupplier';
+import { supplyMonitor } from './production/supplymonitor';
+import { shapeList } from './shapelist';
+import svgImportMenu from './svgimportmenu';
 
-const SHAPE_STORAGE_SLOT_AUTO_SAVE = 'as_autosave';
+
+
+import localImageProducer from './production/localimageproducer';
+import localVideoProducer from './production/localvideoproducer';
+
+
+export const SHAPE_STORAGE_SLOT_AUTO_SAVE = 'as_autosave';
 const SHAPE_STORAGE_SLOT_PREFIX = 'as_slot';
 const SHAPE_STORAGE_MENU_GROUP = 'Storage';
 const DRAW_PROCESSOR_ICON_PREFIX = 'draw_';
@@ -10,7 +23,7 @@ const DRAW_PROCESSOR_ICON_PREFIX = 'draw_';
 /**
  * @extends HoverMenu
  */
-export default class MainMenu extends HoverMenu {
+class MainMenu extends HoverMenu {
     constructor() {
         super('MainMenu');
 
@@ -64,12 +77,12 @@ export default class MainMenu extends HoverMenu {
             this.storageMenuItems[slot] = this.shapeStorageMenu.addSubItem( slot, title, 
                 slot => {
                     // console.log( 'Save ShapeList(): ' + slot);
-                    storage.saveShapeList( slot, shapeList ); 
+                    window.storage.saveShapeList( slot, shapeList ); 
                     this.updateStorageStats(); 
                 }, 'save', false,
                 slot => { 
                     // console.log( 'Load ShapeList(): ' + slot);
-                    storage.loadShapeList( slot, shapeList ); 
+                    window.storage.loadShapeList( slot, shapeList ); 
                     shapeList.updateAutosave(); 
                 }, 'load', false 
             );
@@ -269,3 +282,7 @@ export default class MainMenu extends HoverMenu {
     }
 
 }
+
+const mainMenu = new MainMenu();
+
+export default mainMenu;

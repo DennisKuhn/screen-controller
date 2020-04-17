@@ -1,11 +1,11 @@
 'use strict';
 
 import LoaderProducer from './loaderproducer';
-
+import fbCon from '../connectors/facebookconnector';
 /**
  *  @extends LoaderProducer
  */
-export default class FacebookProducer extends LoaderProducer {
+class FacebookProducer extends LoaderProducer {
     /**
      * 
      * @param {number} bufferSize used by this producer.
@@ -45,3 +45,4 @@ export default class FacebookProducer extends LoaderProducer {
 }
 
 const facebookProducer = new FacebookProducer(3);
+export default facebookProducer;

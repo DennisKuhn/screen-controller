@@ -1,4 +1,6 @@
 
+import { drawProcessorFactory } from './drawprocessor';
+
 /**
  * Handles drawing on screen
  */
@@ -72,7 +74,7 @@ export default class DrawController {
     }
 
     get OnNewPoints() {
-        return onNewPoints;
+        return this.onNewPoints;
     }
 
     set OnNewPoints(cbOnNewPoints ) {

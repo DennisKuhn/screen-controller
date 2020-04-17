@@ -11,7 +11,7 @@ you can convert all segments to cubic curves using:
 flatten(document.getElementById('svg'), true);
 There are also arguments 'toAbsolute' (convert coordinates to absolute) and 'dec', 
 number of digits after decimal separator.
-*/ 
+*/
 /*
 The MIT License (MIT)
 Copyright (c) 2014 Timo (https://github.com/timo22345)
@@ -32,13 +32,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformToElement || function(toElement) {
+SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformToElement || function (toElement) {
     return toElement.getScreenCTM().inverse().multiply(this.getScreenCTM());
 };
 
-(function() {
+(function () {
     var p2s = /,?([achlmqrstvxz]),?/gi;
-    const convertToString = function(arr) {
+    const convertToString = function (arr) {
         return arr.join(',').replace(p2s, '$1');
     };
 
@@ -64,14 +64,14 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
             return;
         }
         if (!(elem instanceof SVGCircleElement ||
-          elem instanceof SVGRectElement ||
-          elem instanceof SVGEllipseElement ||
-          elem instanceof SVGLineElement ||
-          elem instanceof SVGPolygonElement ||
-          elem instanceof SVGPolylineElement ||
-          elem instanceof SVGPathElement)) return;
+            elem instanceof SVGRectElement ||
+            elem instanceof SVGEllipseElement ||
+            elem instanceof SVGLineElement ||
+            elem instanceof SVGPolygonElement ||
+            elem instanceof SVGPolylineElement ||
+            elem instanceof SVGPathElement)) return;
 
-        path_elem = convertToPath(elem, rectAsArgs);
+        const path_elem = convertToPath(elem, rectAsArgs);
         //console.log('path_elem', $(path_elem).wrap('<div />').parent().html() );
         //$(path_elem).unwrap();
 
@@ -202,29 +202,29 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                 prevX = newcoords[i][len - 2];
                 prevY = newcoords[i][len - 1];
             } else
-            if (letter_orig == 'a') {
-                prevXtmp = newcoords[i][6];
-                prevYtmp = newcoords[i][7];
-                newcoords[i][0] = letter_orig;
-                newcoords[i][6] = r(newcoords[i][6] - prevX);
-                newcoords[i][7] = r(newcoords[i][7] - prevY);
-                prevX = prevXtmp;
-                prevY = prevYtmp;
-            } else
-            if (letter_orig == 'm' || letter_orig == 'l' || letter_orig == 'c' || letter_orig == 's' || letter_orig == 'q' || letter_orig == 't' || letter_orig == 'h' || letter_orig == 'v') {
-                var len = newcoords[i].length;
-                prevXtmp = newcoords[i][len - 2];
-                prevYtmp = newcoords[i][len - 1];
-                for (j = 1; j < len; j = j + 2) {
-                    if (letter_orig == 'h' || letter_orig == 'v')
-                        newcoords[i][0] = 'l';
-                    else newcoords[i][0] = letter_orig;
-                    newcoords[i][j] = r(newcoords[i][j] - prevX);
-                    newcoords[i][j + 1] = r(newcoords[i][j + 1] - prevY);
-                }
-                prevX = prevXtmp;
-                prevY = prevYtmp;
-            }
+                if (letter_orig == 'a') {
+                    prevXtmp = newcoords[i][6];
+                    prevYtmp = newcoords[i][7];
+                    newcoords[i][0] = letter_orig;
+                    newcoords[i][6] = r(newcoords[i][6] - prevX);
+                    newcoords[i][7] = r(newcoords[i][7] - prevY);
+                    prevX = prevXtmp;
+                    prevY = prevYtmp;
+                } else
+                    if (letter_orig == 'm' || letter_orig == 'l' || letter_orig == 'c' || letter_orig == 's' || letter_orig == 'q' || letter_orig == 't' || letter_orig == 'h' || letter_orig == 'v') {
+                        var len = newcoords[i].length;
+                        prevXtmp = newcoords[i][len - 2];
+                        prevYtmp = newcoords[i][len - 1];
+                        for (j = 1; j < len; j = j + 2) {
+                            if (letter_orig == 'h' || letter_orig == 'v')
+                                newcoords[i][0] = 'l';
+                            else newcoords[i][0] = letter_orig;
+                            newcoords[i][j] = r(newcoords[i][j] - prevX);
+                            newcoords[i][j + 1] = r(newcoords[i][j + 1] - prevY);
+                        }
+                        prevX = prevXtmp;
+                        prevY = prevYtmp;
+                    }
             if ((letter_orig.toLowerCase() != 'z' && subpath_start.x == '') || letter_orig.toLowerCase() == 'm') {
                 subpath_start.x = prevX;
                 subpath_start.y = prevY;
@@ -264,7 +264,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
 
         let d = '';
 
-        const valid = function(val) {
+        const valid = function (val) {
             return !(typeof (val) !== 'number' || val == Infinity || val < 0);
         };
 
@@ -274,32 +274,35 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         switch (tag) {
             case 'ellipse':
             case 'circle':
-                var rx = +oldElem.getAttribute('rx'),
-                    ry = +oldElem.getAttribute('ry'),
-                    cx = +oldElem.getAttribute('cx'),
-                    cy = +oldElem.getAttribute('cy');
-                if (tag == 'circle') {
-                    rx = ry = +oldElem.getAttribute('r');
-                }
+                {
+                    let rx = +oldElem.getAttribute('rx'),
+                        ry = +oldElem.getAttribute('ry');
+                    const cx = +oldElem.getAttribute('cx'),
+                        cy = +oldElem.getAttribute('cy');
+                    if (tag == 'circle') {
+                        rx = ry = +oldElem.getAttribute('r');
+                    }
 
-                d += convertToString([
-                    ['M', (cx - rx), (cy)],
-                    ['C', (cx - rx), (cy - ry / num), (cx - rx / num), (cy - ry), (cx), (cy - ry)],
-                    ['C', (cx + rx / num), (cy - ry), (cx + rx), (cy - ry / num), (cx + rx), (cy)],
-                    ['C', (cx + rx), (cy + ry / num), (cx + rx / num), (cy + ry), (cx), (cy + ry)],
-                    ['C', (cx - rx / num), (cy + ry), (cx - rx), (cy + ry / num), (cx - rx), (cy)],
-                    ['Z']
-                ]);
-                break;
+                    d += convertToString([
+                        ['M', (cx - rx), (cy)],
+                        ['C', (cx - rx), (cy - ry / num), (cx - rx / num), (cy - ry), (cx), (cy - ry)],
+                        ['C', (cx + rx / num), (cy - ry), (cx + rx), (cy - ry / num), (cx + rx), (cy)],
+                        ['C', (cx + rx), (cy + ry / num), (cx + rx / num), (cy + ry), (cx), (cy + ry)],
+                        ['C', (cx - rx / num), (cy + ry), (cx - rx), (cy + ry / num), (cx - rx), (cy)],
+                        ['Z']
+                    ]);
+                } break;
             case 'path':
                 d = oldElem.getAttribute('d');
                 break;
             case 'line':
-                var x1 = oldElem.getAttribute('x1'),
-                    y1 = oldElem.getAttribute('y1');
-                x2 = oldElem.getAttribute('x2');
-                y2 = oldElem.getAttribute('y2');
-                d = 'M' + x1 + ',' + y1 + 'L' + x2 + ',' + y2;
+                {
+                    const x1 = oldElem.getAttribute('x1');
+                    const y1 = oldElem.getAttribute('y1');
+                    const x2 = oldElem.getAttribute('x2');
+                    const y2 = oldElem.getAttribute('y2');
+                    d = 'M' + x1 + ',' + y1 + 'L' + x2 + ',' + y2;
+                }
                 break;
             case 'polyline':
                 d = 'M' + oldElem.getAttribute('points');
@@ -506,7 +509,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
     var p2s = /,?([achlmqrstvxz]),?/gi;
     const pathCommand = /([achlmrqstvz])[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029,]*((-?\d*\.?\d*(?:e[\-+]?\d+)?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*)+)/ig;
     const pathValues = /(-?\d*\.?\d*(?:e[\-+]?\d+)?)[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*/ig;
-    R.is = function(o, type) {
+    R.is = function (o, type) {
         type = lowerCase.call(type);
         if (type == 'finite') {
             return !isnan[has](+o);
@@ -529,7 +532,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         }
         return res;
     }
-    R._path2string = function() {
+    R._path2string = function () {
         return this.join(',').replace(p2s, '$1');
     };
 
@@ -539,19 +542,19 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                 return array.push(array.splice(i, 1)[0]);
             }
     }
-    const pathClone = function(pathArray) {
+    const pathClone = function (pathArray) {
         const res = clone(pathArray);
         res.toString = R._path2string;
         return res;
     };
-    var paths = function(ps) {
+    var paths = function (ps) {
         const p = paths.ps = paths.ps ||
-    {};
+            {};
         if (p[ps]) p[ps].sleep = 100;
         else p[ps] = {
             sleep: 100
         };
-        setTimeout(function() {
+        setTimeout(function () {
             for (const key in p) {
                 if (p[has](key) && key != ps) {
                     p[key].sleep--;
@@ -623,29 +626,29 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         }
         return d;
     }
-    var parsePathString = function(pathString) {
+    var parsePathString = function (pathString) {
         if (!pathString) return null;
         const pth = paths(pathString);
         if (pth.arr) return pathClone(pth.arr);
         let paramCounts = {
-                a: 7,
-                c: 6,
-                h: 1,
-                l: 2,
-                m: 2,
-                r: 4,
-                q: 4,
-                s: 4,
-                t: 2,
-                v: 1,
-                z: 0
-            }, data = [];
+            a: 7,
+            c: 6,
+            h: 1,
+            l: 2,
+            m: 2,
+            r: 4,
+            q: 4,
+            s: 4,
+            t: 2,
+            v: 1,
+            z: 0
+        }, data = [];
         if (R.is(pathString, array) && R.is(pathString[0], array)) data = pathClone(pathString);
         if (!data.length) {
-            Str(pathString).replace(pathCommand, function(a, b, c) {
+            Str(pathString).replace(pathCommand, function (a, b, c) {
                 let params = [],
                     name = b.toLowerCase();
-                c.replace(pathValues, function(a, b) {
+                c.replace(pathValues, function (a, b) {
                     b && params.push(+b);
                 });
                 if (name == 'm' && params.length > 2) {
@@ -674,12 +677,12 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
             }
     }
 
-    var pathToAbsolute = cacher(function(pathArray) {
-    //var pth = paths(pathArray); // Timo: commented to prevent multiple caching
-    // for some reason only FF proceed correctly
-    // when not cached using cacher() around
-    // this function.
-    //if (pth.abs) return pathClone(pth.abs)
+    var pathToAbsolute = cacher(function (pathArray) {
+        //var pth = paths(pathArray); // Timo: commented to prevent multiple caching
+        // for some reason only FF proceed correctly
+        // when not cached using cacher() around
+        // this function.
+        //if (pth.abs) return pathClone(pth.abs)
         if (!R.is(pathArray, array) || !R.is(pathArray && pathArray[0], array))
             pathArray = parsePathString(pathArray);
         if (!pathArray || !pathArray.length) return [['M', 0, 0]];
@@ -775,7 +778,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
             const arg = Array.prototype.slice.call(arguments, 0),
                 args = arg.join('\u2400'),
                 cache = newf.cache = newf.cache ||
-        {}, count = newf.count = newf.count || [];
+                    {}, count = newf.count = newf.count || [];
             if (cache.hasOwnProperty(args)) {
                 for (let i = 0, ii = count.length; i < ii; i++)
                     if (count[i] === args) {
@@ -791,20 +794,20 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         return newf;
     }
 
-    var l2c = function(x1, y1, x2, y2) {
-            return [x1, y1, x2, y2, x2, y2];
-        },
-        q2c = function(x1, y1, ax, ay, x2, y2) {
+    var l2c = function (x1, y1, x2, y2) {
+        return [x1, y1, x2, y2, x2, y2];
+    },
+        q2c = function (x1, y1, ax, ay, x2, y2) {
             const _13 = 1 / 3,
                 _23 = 2 / 3;
             return [_13 * x1 + _23 * ax, _13 * y1 + _23 * ay, _13 * x2 + _23 * ax, _13 * y2 + _23 * ay, x2, y2];
         },
-        a2c = cacher(function(x1, y1, rx, ry, angle, large_arc_flag, sweep_flag, x2, y2, recursive) {
+        a2c = cacher(function (x1, y1, rx, ry, angle, large_arc_flag, sweep_flag, x2, y2, recursive) {
             let _120 = PI * 120 / 180,
                 rad = PI / 180 * (+angle || 0),
                 res = [],
                 xy,
-                rotate = cacher(function(x, y, rad) {
+                rotate = cacher(function (x, y, rad) {
                     const X = x * Math.cos(rad) - y * Math.sin(rad),
                         Y = x * Math.sin(rad) + y * Math.cos(rad);
                     return {
@@ -886,7 +889,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
             }
         });
 
-    var path2curve = cacher(function(path, path2) {
+    var path2curve = cacher(function (path, path2) {
         const pth = !path2 && paths(path);
         if (!path2 && pth.curve) return pathClone(pth.curve);
         var p = pathToAbsolute(path),
@@ -911,15 +914,15 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                 qx: null,
                 qy: null
             },
-            processPath = function(path, d, pcom) {
+            processPath = function (path, d, pcom) {
                 let nx, ny;
                 if (!path) {
                     return ['C', d.x, d.y, d.x, d.y, d.x, d.y];
-                }!(path[0] in
-        {
-            T: 1,
-            Q: 1
-        }) && (d.qx = d.qy = null);
+                } !(path[0] in
+                {
+                    T: 1,
+                    Q: 1
+                }) && (d.qx = d.qy = null);
                 switch (path[0]) {
                     case 'M':
                         d.X = path[1];
@@ -968,7 +971,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                 }
                 return path;
             },
-            fixArc = function(pp, i) {
+            fixArc = function (pp, i) {
                 if (pp[i].length > 7) {
                     pp[i].shift();
                     const pi = pp[i];
@@ -981,7 +984,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                     ii = mmax(p.length, p2 && p2.length || 0);
                 }
             },
-            fixM = function(path1, path2, a1, a2, i) {
+            fixM = function (path1, path2, a1, a2, i) {
                 if (path1 && path2 && path1[i][0] == 'M' && path2[i][0] != 'M') {
                     path2.splice(i, 0, ['M', a2.x, a2.y]);
                     a1.bx = 0;
