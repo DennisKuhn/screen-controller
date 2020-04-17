@@ -82,7 +82,7 @@ class VideoPreloadInfo {
      * @param {ErrorEvent} ev 
      */
     onProcessorError( ev ) {
-        console.error('VideoPreloadInfo[' + this.iBuffer + '][' + producedVideos + '].onProcessorError(): ' + ev.message + ' - file: ' + this.content._originalUri);
+        console.error('VideoPreloadInfo[' + this.iBuffer + '][' + producedVideos + '].onProcessorError(): ' + ev.message + ' - file: ' + `${ this.content ? this.content._originalUri : 'null-content' }`);
         // copyToClipboard(this.content._originalUri);
         this.onLoaded(this.iBuffer, false);
     }

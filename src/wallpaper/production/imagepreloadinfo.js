@@ -63,7 +63,7 @@ export default class ImagePreloadInfo {
      * @param {ErrorEvent} ev 
      */
     onProcessorError( ev ) {
-        console.error(`ImagePreloadInfo[${this.name}][${producedImages}].onProcessorError(): ${ev.message} - file: ${this.content._originalUri}`, ev);
+        console.error(`ImagePreloadInfo[${this.name}][${producedImages}].onProcessorError(): ${ev.message} - file: ${this.content ? this.content._originalUri : 'null-content'}`, ev);
         // copyToClipboard(this.content._originalUri);
         setTimeout(
             () => this.onLoaded(this.iBuffer, false),

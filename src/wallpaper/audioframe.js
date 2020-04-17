@@ -349,7 +349,7 @@ export default class AudioFrame {
 				
 				
                 let totalPeakValue = 0;
-                for ( var i = 0; i < this.peakHistory.length; i++ ) {
+                for (let i = 0; i < this.peakHistory.length; i++ ) {
                     totalPeakValue += this.peakHistory[i];
                 }
                 if ( totalPeakValue > 0.01 ) {
@@ -396,9 +396,9 @@ export default class AudioFrame {
 		
         ctx.strokeStyle = 'silver';
         ctx.beginPath();
-        for ( var i = 0; i < 64; i++ ) {
-            var x = 100 + ( 320 / 63 ) * i;
-            var y = 300 - 200 * this.getEqValueForIdx( i );
+        for ( const i = 0; i < 64; i++ ) {
+            const x = 100 + ( 320 / 63 ) * i;
+            const y = 300 - 200 * this.getEqValueForIdx( i );
             if ( i == 0 ) {
                 ctx.moveTo( x, y );
             } else {
@@ -425,9 +425,9 @@ export default class AudioFrame {
 		
         ctx.strokeStyle = 'rgb( 0, 128, 0 )';
         ctx.beginPath();
-        for ( var i = 0; i < 64; i++ ) {
-            var x = 100 + ( 320 / 63 ) * i;
-            var y = 300 - 200 * ( this.audioData.left.data[ i ] / maxVal );
+        for (let i = 0; i < 64; i++ ) {
+            let x = 100 + ( 320 / 63 ) * i;
+            let y = 300 - 200 * ( this.audioData.left.data[ i ] / maxVal );
             if ( i == 0 ) {
                 ctx.moveTo( x, y );
             } else {
@@ -461,29 +461,29 @@ export default class AudioFrame {
             }
 			
             if ( Math.abs( dist1 ) <= this.config._eqWidth ) {
-                var min = eq1 - this.config._eqWidth;
-                var max = eq1 + this.config._eqWidth;
-                var p = ( idx - min ) / ( max - min );
-                var v = (1 + Math.cos( -Math.PI + Math.PI*2*p )) / 2;
+                const min = eq1 - this.config._eqWidth;
+                const max = eq1 + this.config._eqWidth;
+                const p = ( idx - min ) / ( max - min );
+                const v = (1 + Math.cos( -Math.PI + Math.PI*2*p )) / 2;
                 result = v * this.config._eqFreq1Strength;
                 //result += v;
                 valuesUsed += this.config._eqFreq1Strength;//Math.pow( v, 1/1.4142 );
             }
             if ( Math.abs( dist2 ) <= this.config._eqWidth ) {
-                var min = eq2 - this.config._eqWidth;
-                var max = eq2 + this.config._eqWidth;
-                var p = ( idx - min ) / ( max - min );
-                var v = (1 + Math.cos( -Math.PI + Math.PI*2*p )) / 2;
+                const min = eq2 - this.config._eqWidth;
+                const max = eq2 + this.config._eqWidth;
+                const p = ( idx - min ) / ( max - min );
+                const v = (1 + Math.cos( -Math.PI + Math.PI*2*p )) / 2;
                 result = Math.max( result, v * this.config._eqFreq2Strength );
                 //result += v;
                 valuesUsed += this.config._eqFreq2Strength;//Math.pow( v, 1/1.4142 );
 				
             }
             if ( Math.abs( dist3 ) <= this.config._eqWidth ) {
-                var min = eq3 - this.config._eqWidth;
-                var max = eq3 + this.config._eqWidth;
-                var p = ( idx - min ) / ( max - min );
-                var v = (1 + Math.cos( -Math.PI + Math.PI*2*p )) / 2;
+                const min = eq3 - this.config._eqWidth;
+                const max = eq3 + this.config._eqWidth;
+                const p = ( idx - min ) / ( max - min );
+                const v = (1 + Math.cos( -Math.PI + Math.PI*2*p )) / 2;
                 result = Math.max( result, v * this.config._eqFreq3Strength );
                 //result += v;
                 valuesUsed += this.config._eqFreq3Strength;//Math.pow( v, 1/1.4142 );

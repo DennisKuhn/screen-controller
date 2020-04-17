@@ -37,7 +37,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
 };
 
 (function () {
-    var p2s = /,?([achlmqrstvxz]),?/gi;
+    let p2s = /,?([achlmqrstvxz]),?/gi;
     const convertToString = function (arr) {
         return arr.join(',').replace(p2s, '$1');
     };
@@ -56,7 +56,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         if (typeof (dec) == 'undefined') dec = false;
 
         if (elem && elem.children && elem.children.length) {
-            for (var i = 0, ilen = elem.children.length; i < ilen; i++) {
+            for (let i = 0, ilen = elem.children.length; i < ilen; i++) {
                 //console.log(elem.children[i]);
                 flatten(elem.children[i], toCubics, toAbsolute, rectAsArgs, dec);
             }
@@ -89,21 +89,21 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         }
 
         let arr;
-        //var pathDOM = path_elem.node;
+        //let pathDOM = path_elem.node;
         const pathDOM = path_elem;
-        var d = pathDOM.getAttribute('d').trim();
+        let d = pathDOM.getAttribute('d').trim();
 
         // If you want to retain current path commans, set toCubics to false
         if (!toCubics) { // Set to false to prevent possible re-normalization. 
             arr = parsePathString(d); // str to array
-            var arr_orig = arr;
+            let arr_orig = arr;
             arr = pathToAbsolute(arr); // mahvstcsqz -> uppercase
         }
         // If you want to modify path data using nonAffine methods,
         // set toCubics to true
         else {
             arr = path2curve(d); // mahvstcsqz -> MC
-            var arr_orig = arr;
+            let arr_orig = arr;
         }
         const svgDOM = pathDOM.ownerSVGElement;
 
@@ -114,7 +114,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         // The following code can bake transformations
         // both normalized and non-normalized data
         // Coordinates have to be Absolute in the following
-        var i = 0,
+        let i = 0,
             j, m = arr.length,
             letter = '',
             letter_orig = '',
@@ -190,7 +190,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         for (i = 0; i < newcoords.length; i++) {
             letter_orig = arr_orig[i][0];
             if (letter_orig == 'A' || letter_orig == 'M' || letter_orig == 'L' || letter_orig == 'C' || letter_orig == 'S' || letter_orig == 'Q' || letter_orig == 'T' || letter_orig == 'H' || letter_orig == 'V') {
-                var len = newcoords[i].length;
+                let len = newcoords[i].length;
                 let lentmp = len;
                 if (letter_orig == 'A') {
                     newcoords[i][6] = r(newcoords[i][6]);
@@ -212,7 +212,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                     prevY = prevYtmp;
                 } else
                     if (letter_orig == 'm' || letter_orig == 'l' || letter_orig == 'c' || letter_orig == 's' || letter_orig == 'q' || letter_orig == 't' || letter_orig == 'h' || letter_orig == 'v') {
-                        var len = newcoords[i].length;
+                        let len = newcoords[i].length;
                         prevXtmp = newcoords[i][len - 2];
                         prevYtmp = newcoords[i][len - 1];
                         for (j = 1; j < len; j = j + 2) {
@@ -252,13 +252,13 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         const path = document.createElementNS(oldElem.ownerSVGElement.namespaceURI, 'path');
 
         // All attributes that path element can have
-        const attrs = ['requiredFeatures', 'requiredExtensions', 'systemLanguage', 'id', 'xml:base', 'xml:lang', 'xml:space', 'onfocusin', 'onfocusout', 'onactivate', 'onclick', 'onmousedown', 'onmouseup', 'onmouseover', 'onmousemove', 'onmouseout', 'onload', 'alignment-baseline', 'baseline-shift', 'clip', 'clip-path', 'clip-rule', 'color', 'color-interpolation', 'color-interpolation-filters', 'color-profile', 'color-rendering', 'cursor', 'direction', 'display', 'dominant-baseline', 'enable-background', 'fill', 'fill-opacity', 'fill-rule', 'filter', 'flood-color', 'flood-opacity', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 'font-variant', 'font-weight', 'glyph-orientation-horizontal', 'glyph-orientation-vertical', 'image-rendering', 'kerning', 'letter-spacing', 'lighting-color', 'marker-end', 'marker-mid', 'marker-start', 'mask', 'opacity', 'overflow', 'pointer-events', 'shape-rendering', 'stop-color', 'stop-opacity', 'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-width', 'text-anchor', 'text-decoration', 'text-rendering', 'unicode-bidi', 'visibility', 'word-spacing', 'writing-mode', 'class', 'style', 'externalResourcesRequired', 'transform', 'd', 'pathLength'];
+        const attrs = ['requiredFeatures', 'requiredExtensions', 'systemLanguage', 'id', 'xml:base', 'xml:lang', 'xml:space', 'onfocusin', 'onfocusout', 'onactivate', 'onclick', 'onmousedown', 'onmouseup', 'onmouseover', 'onmousemove', 'onmouseout', 'onload', 'alignment-baseline', 'baseline-shift', 'clip', 'clip-path', 'clip-rule', 'color', 'color-interpolation', 'color-interpolation-filters', 'color-profile', 'color-rendering', 'cursor', 'direction', 'display', 'dominant-baseline', 'enable-background', 'fill', 'fill-opacity', 'fill-rule', 'filter', 'flood-color', 'flood-opacity', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 'font-letiant', 'font-weight', 'glyph-orientation-horizontal', 'glyph-orientation-vertical', 'image-rendering', 'kerning', 'letter-spacing', 'lighting-color', 'marker-end', 'marker-mid', 'marker-start', 'mask', 'opacity', 'overflow', 'pointer-events', 'shape-rendering', 'stop-color', 'stop-opacity', 'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-width', 'text-anchor', 'text-decoration', 'text-rendering', 'unicode-bidi', 'visibility', 'word-spacing', 'writing-mode', 'class', 'style', 'externalResourcesRequired', 'transform', 'd', 'pathLength'];
 
         // Copy attributes of oldElem to path
-        var attrName, attrValue;
+        let attrName, attrValue;
         for (let i = 0, ilen = attrs.length; i < ilen; i++) {
-            var attrName = attrs[i];
-            var attrValue = oldElem.getAttribute(attrName);
+            attrName = attrs[i];
+            attrValue = oldElem.getAttribute(attrName);
             if (attrValue) path.setAttribute(attrName, attrValue);
         }
 
@@ -269,7 +269,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         };
 
         // Possibly the cubed root of 6, but 1.81 works best
-        var num = 1.81;
+        let num = 1.81;
         const tag = oldElem.tagName;
         switch (tag) {
             case 'ellipse':
@@ -311,64 +311,66 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                 d = 'M' + oldElem.getAttribute('points') + 'Z';
                 break;
             case 'rect':
-                var rx = +oldElem.getAttribute('rx'),
-                    ry = +oldElem.getAttribute('ry'),
-                    b = oldElem.getBBox(),
-                    x = b.x,
-                    y = b.y,
-                    w = b.width,
-                    h = b.height;
+                {
+                    let rx = +oldElem.getAttribute('rx'),
+                        ry = +oldElem.getAttribute('ry');
+                    const b = oldElem.getBBox(),
+                        x = b.x,
+                        y = b.y,
+                        w = b.width,
+                        h = b.height;
 
-                // Validity checks from http://www.w3.org/TR/SVG/shapes.html#RectElement:
-                // If neither �rx� nor �ry� are properly specified, then set both rx and ry to 0. (This will result in square corners.)
-                if (!valid(rx) && !valid(ry)) rx = ry = 0;
-                // Otherwise, if a properly specified value is provided for �rx�, but not for �ry�, then set both rx and ry to the value of �rx�.
-                else if (valid(rx) && !valid(ry)) ry = rx;
-                // Otherwise, if a properly specified value is provided for �ry�, but not for �rx�, then set both rx and ry to the value of �ry�.
-                else if (valid(ry) && !valid(rx)) rx = ry;
-                else {
-                    // If rx is greater than half of �width�, then set rx to half of �width�.
-                    if (rx > w / 2) rx = w / 2;
-                    // If ry is greater than half of �height�, then set ry to half of �height�.
-                    if (ry > h / 2) ry = h / 2;
-                }
+                    // Validity checks from http://www.w3.org/TR/SVG/shapes.html#RectElement:
+                    // If neither �rx� nor �ry� are properly specified, then set both rx and ry to 0. (This will result in square corners.)
+                    if (!valid(rx) && !valid(ry)) rx = ry = 0;
+                    // Otherwise, if a properly specified value is provided for �rx�, but not for �ry�, then set both rx and ry to the value of �rx�.
+                    else if (valid(rx) && !valid(ry)) ry = rx;
+                    // Otherwise, if a properly specified value is provided for �ry�, but not for �rx�, then set both rx and ry to the value of �ry�.
+                    else if (valid(ry) && !valid(rx)) rx = ry;
+                    else {
+                        // If rx is greater than half of �width�, then set rx to half of �width�.
+                        if (rx > w / 2) rx = w / 2;
+                        // If ry is greater than half of �height�, then set ry to half of �height�.
+                        if (ry > h / 2) ry = h / 2;
+                    }
 
-                if (!rx && !ry) {
-                    d += convertToString([
-                        ['M', x, y],
-                        ['L', x + w, y],
-                        ['L', x + w, y + h],
-                        ['L', x, y + h],
-                        ['L', x, y],
-                        ['Z']
-                    ]);
-                } else if (rectAsArgs) {
-                    d += convertToString([
-                        ['M', x + rx, y],
-                        ['H', x + w - rx],
-                        ['A', rx, ry, 0, 0, 1, x + w, y + ry],
-                        ['V', y + h - ry],
-                        ['A', rx, ry, 0, 0, 1, x + w - rx, y + h],
-                        ['H', x + rx],
-                        ['A', rx, ry, 0, 0, 1, x, y + h - ry],
-                        ['V', y + ry],
-                        ['A', rx, ry, 0, 0, 1, x + rx, y]
-                    ]);
-                } else {
-                    var num = 2.19;
-                    if (!ry) ry = rx;
-                    d += convertToString([
-                        ['M', x, y + ry],
-                        ['C', x, y + ry / num, x + rx / num, y, x + rx, y],
-                        ['L', x + w - rx, y],
-                        ['C', x + w - rx / num, y, x + w, y + ry / num, x + w, y + ry],
-                        ['L', x + w, y + h - ry],
-                        ['C', x + w, y + h - ry / num, x + w - rx / num, y + h, x + w - rx, y + h],
-                        ['L', x + rx, y + h],
-                        ['C', x + rx / num, y + h, x, y + h - ry / num, x, y + h - ry],
-                        ['L', x, y + ry],
-                        ['Z']
-                    ]);
+                    if (!rx && !ry) {
+                        d += convertToString([
+                            ['M', x, y],
+                            ['L', x + w, y],
+                            ['L', x + w, y + h],
+                            ['L', x, y + h],
+                            ['L', x, y],
+                            ['Z']
+                        ]);
+                    } else if (rectAsArgs) {
+                        d += convertToString([
+                            ['M', x + rx, y],
+                            ['H', x + w - rx],
+                            ['A', rx, ry, 0, 0, 1, x + w, y + ry],
+                            ['V', y + h - ry],
+                            ['A', rx, ry, 0, 0, 1, x + w - rx, y + h],
+                            ['H', x + rx],
+                            ['A', rx, ry, 0, 0, 1, x, y + h - ry],
+                            ['V', y + ry],
+                            ['A', rx, ry, 0, 0, 1, x + rx, y]
+                        ]);
+                    } else {
+                        let num = 2.19;
+                        if (!ry) ry = rx;
+                        d += convertToString([
+                            ['M', x, y + ry],
+                            ['C', x, y + ry / num, x + rx / num, y, x + rx, y],
+                            ['L', x + w - rx, y],
+                            ['C', x + w - rx / num, y, x + w, y + ry / num, x + w, y + ry],
+                            ['L', x + w, y + h - ry],
+                            ['C', x + w, y + h - ry / num, x + w - rx / num, y + h, x + w - rx, y + h],
+                            ['L', x + rx, y + h],
+                            ['C', x + rx / num, y + h, x, y + h - ry / num, x, y + h - ry],
+                            ['L', x, y + ry],
+                            ['Z']
+                        ]);
+                    }
                 }
                 break;
             default:
@@ -506,7 +508,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         round = math.round,
         toFloat = parseFloat,
         toInt = parseInt;
-    var p2s = /,?([achlmqrstvxz]),?/gi;
+    // let p2s = /,?([achlmqrstvxz]),?/gi;
     const pathCommand = /([achlmrqstvz])[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029,]*((-?\d*\.?\d*(?:e[\-+]?\d+)?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*)+)/ig;
     const pathValues = /(-?\d*\.?\d*(?:e[\-+]?\d+)?)[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*,?[\x09\x0a\x0b\x0c\x0d\x20\xa0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000\u2028\u2029]*/ig;
     R.is = function (o, type) {
@@ -547,7 +549,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         res.toString = R._path2string;
         return res;
     };
-    var paths = function (ps) {
+    let paths = function (ps) {
         const p = paths.ps = paths.ps ||
             {};
         if (p[ps]) p[ps].sleep = 100;
@@ -626,7 +628,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         }
         return d;
     }
-    var parsePathString = function (pathString) {
+    let parsePathString = function (pathString) {
         if (!pathString) return null;
         const pth = paths(pathString);
         if (pth.arr) return pathClone(pth.arr);
@@ -670,15 +672,8 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         return data;
     };
 
-    function repush(array, item) {
-        for (let i = 0, ii = array.length; i < ii; i++)
-            if (array[i] === item) {
-                return array.push(array.splice(i, 1)[0]);
-            }
-    }
-
-    var pathToAbsolute = cacher(function (pathArray) {
-        //var pth = paths(pathArray); // Timo: commented to prevent multiple caching
+    let pathToAbsolute = cacher(function (pathArray) {
+        //let pth = paths(pathArray); // Timo: commented to prevent multiple caching
         // for some reason only FF proceed correctly
         // when not cached using cacher() around
         // this function.
@@ -701,7 +696,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
             res[0] = ['M', x, y];
         }
         const crz = pathArray.length == 3 && pathArray[0][0] == 'M' && pathArray[1][0].toUpperCase() == 'R' && pathArray[2][0].toUpperCase() == 'Z';
-        for (var r, pa, i = start, ii = pathArray.length; i < ii; i++) {
+        for (let r, pa, i = start, ii = pathArray.length; i < ii; i++) {
             res.push(r = []);
             pa = pathArray[i];
             if (pa[0] != upperCase.call(pa[0])) {
@@ -723,8 +718,8 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                         r[1] = +pa[1] + x;
                         break;
                     case 'R':
-                        var dots = [x, y][concat](pa.slice(1));
-                        for (var j = 2, jj = dots.length; j < jj; j++) {
+                        let dots = [x, y][concat](pa.slice(1));
+                        for (let j = 2, jj = dots.length; j < jj; j++) {
                             dots[j] = +dots[j] + x;
                             dots[++j] = +dots[j] + y;
                         }
@@ -794,7 +789,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
         return newf;
     }
 
-    var l2c = function (x1, y1, x2, y2) {
+    let l2c = function (x1, y1, x2, y2) {
         return [x1, y1, x2, y2, x2, y2];
     },
         q2c = function (x1, y1, ax, ay, x2, y2) {
@@ -832,7 +827,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
                     rx = h * rx;
                     ry = h * ry;
                 }
-                var rx2 = rx * rx,
+                let rx2 = rx * rx,
                     ry2 = ry * ry,
                     k = (large_arc_flag == sweep_flag ? -1 : 1) * Math.sqrt(Math.abs((rx2 * ry2 - rx2 * y * y - ry2 * x * x) / (rx2 * y * y + ry2 * x * x))),
                     cx = k * rx * y / ry + (x1 + x2) / 2,
@@ -889,10 +884,10 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
             }
         });
 
-    var path2curve = cacher(function (path, path2) {
+    let path2curve = cacher(function (path, path2) {
         const pth = !path2 && paths(path);
         if (!path2 && pth.curve) return pathClone(pth.curve);
-        var p = pathToAbsolute(path),
+        let p = pathToAbsolute(path),
             p2 = path2 && pathToAbsolute(path2),
             attrs = {
                 x: 0,
@@ -998,7 +993,7 @@ SVGElement.prototype.getTransformToElement = SVGElement.prototype.getTransformTo
             pcoms2 = [],
             pfirst = '',
             pcom = '';
-        for (var i = 0, ii = mmax(p.length, p2 && p2.length || 0); i < ii; i++) {
+        for (let i = 0, ii = mmax(p.length, p2 && p2.length || 0); i < ii; i++) {
             p[i] && (pfirst = p[i][0]);
             if (pfirst != 'C') {
                 pcoms1[i] = pfirst;

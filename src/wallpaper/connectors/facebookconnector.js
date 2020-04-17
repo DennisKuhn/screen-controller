@@ -4,6 +4,7 @@ import FacebookConnectPopup from './connectpopup';
 import FacebookConnectedPopup from './connectedpopup';
 import FacebookDisconnectedPopup from './disconnectedpopup';
 
+import { FB_APP_ID, FB_CLIENT_TOKEN } from '../apikeys';
 
 /**
  * 

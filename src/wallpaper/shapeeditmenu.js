@@ -4,7 +4,7 @@ import proPro from './infrastructure/propertypropagator';
 import { PopupMenu, WallMenuButtonList, WallMenuList, WallMenuRadioList } from './wallwindow/wallmenu';
 import delayed from './utils/delayed';
 import { shapeList } from './shapelist';
-import renderer from './renderer';
+import { renderer } from './renderer';
 
 const smMENU_NAME = 'ShapeEdit';
 const smMOVE_GROUP = 'Move';

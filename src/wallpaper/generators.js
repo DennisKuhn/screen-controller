@@ -1212,7 +1212,7 @@ class ShapeCreator extends ShapeGenerator {
 /**
  * @extends ShapeCreator
  */
-class shapeCircle extends ShapeCreator {
+export class shapeCircle extends ShapeCreator {
     constructor() {
         super();
         this.centerDeg = 0;
@@ -1239,7 +1239,7 @@ class shapeCircle extends ShapeCreator {
 /**
  * @extends ShapeCreator
  */
-class shapeHeart extends ShapeCreator {
+export class shapeHeart extends ShapeCreator {
     constructor() {
         super();
         this.centerDeg = 0;
@@ -1293,7 +1293,7 @@ class shapeHeart extends ShapeCreator {
 /**
  * @extends ShapeCreator
  */
-class shapeLeaf extends ShapeCreator {
+export class shapeLeaf extends ShapeCreator {
     constructor() {
         super();
         this.centerDeg = 90;
@@ -1336,7 +1336,7 @@ class shapeLeaf extends ShapeCreator {
 /**
  * @extends ShapeCreator
  */
-class shapeButterfly extends ShapeCreator {
+export class shapeButterfly extends ShapeCreator {
     constructor() {
         super();
         this.centerDeg = 270;
@@ -1378,7 +1378,7 @@ class shapeButterfly extends ShapeCreator {
     }
 }
 
-const SHAPE_GENERATORS = {
+export const SHAPE_GENERATORS = {
     circle: () => {
         return new shapeCircle(); 
     },

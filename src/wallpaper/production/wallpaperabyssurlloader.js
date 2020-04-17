@@ -1,5 +1,7 @@
 'use strict';
 
+import { WallpaperAbyssUrlLoader__apiKey } from '../apikeys';
+
 try {
     importScripts('./urlloader.js');
 } catch (ex) {
@@ -72,14 +74,14 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
     }
 
     get sortParameter() {
-        if ( this._method in ['category', 'collection', 'group', 'sub_category', 'featured', 'popular', 'tag', 'user', 'search', 'random'] ) {
+        if (this._method in ['category', 'collection', 'group', 'sub_category', 'featured', 'popular', 'tag', 'user', 'search', 'random']) {
             return 'sort=' + this._sort + '&';
         }
         return '';
     }
 
     get termParameter() {
-        if ( this._method == 'search' ) {
+        if (this._method == 'search') {
             return 'term=' + this._term + '&';
         }
         return '';
@@ -92,42 +94,42 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
     async getUrls(rerequestIfBusy) {
         if (this.requesting) {
             // console.log("[" + this.name + "].getUrls(" + rerequestIfBusy + "): rerequest - return promise");
-            this.rerequest |= ( rerequestIfBusy ? true : false);
+            this.rerequest |= (rerequestIfBusy ? true : false);
         } else {
             do {
                 this.requesting = true;
 
-                const url = this.urlBase + '?' 
-                + 'method=' + this._method + '&' 
-                + this.sortParameter
-                + this.termParameter
-                + 'info_level=' + this._infoLevel + '&' 
-                + 'page=' + this._currentPage + '&' 
-                + 'check_last=' + '1' + '&' 
-                + 'auth=' + this._apiKey;
+                const url = this.urlBase + '?'
+                    + 'method=' + this._method + '&'
+                    + this.sortParameter
+                    + this.termParameter
+                    + 'info_level=' + this._infoLevel + '&'
+                    + 'page=' + this._currentPage + '&'
+                    + 'check_last=' + '1' + '&'
+                    + 'auth=' + WallpaperAbyssUrlLoader__apiKey;
 
                 // console.log("[" + this.name + "].getUrls(): rerequest=" + this.rerequest + " :" + url );
                 this.rerequest = false;
 
-                const response = await fetch( url );
+                const response = await fetch(url);
                 let responseObject = null;
                 let message = null;
 
                 const headers = [];
 
-                for (const header of response.headers.entries() ) {
+                for (const header of response.headers.entries()) {
                     headers.push(header[0] + '=' + header[1]);
                 }
                 // console.log("[" + this.name + "].getUrls(): rerequest=" + this.rerequest + " :" + url + " Headers: " + headers );
 
-                if (! this.rerequest) {
+                if (!this.rerequest) {
                     if (response.ok) {
                         responseObject = await response.json();
                     } else {
                         message = '[' + this.name + '].getUrls(): Error:' + response.status + ':' + response.statusText + ': ' + url;
                     }
                 }
-                if ((! this.rerequest) && responseObject) {
+                if ((!this.rerequest) && responseObject) {
                     if (responseObject.success) {
                         this.handlePhotoList(responseObject);
                     } else {
@@ -135,13 +137,13 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
                     }
                 }
                 if (message) {
-                    console.error('[' + this.name + '].getUrls(): Error: ' + message );
-                    throw new Error( message );
+                    console.error('[' + this.name + '].getUrls(): Error: ' + message);
+                    throw new Error(message);
                 }
 
                 this.requesting = false;
-            } while ( this.rerequest );
-        }  
+            } while (this.rerequest);
+        }
     }
 
 
@@ -154,12 +156,12 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
         this.lastPage = list.is_last;
         this._currentPage = this.lastPage ? 1 : 1 + this._currentPage;
 
-        list.wallpapers.forEach( 
+        list.wallpapers.forEach(
             photoInfo =>
                 this.addUrlContent(
                     {
                         title: photoInfo.user_name,
-                        description: photoInfo.category + ( photoInfo.sub_category ? ' - ' + photoInfo.sub_category : ''),
+                        description: photoInfo.category + (photoInfo.sub_category ? ' - ' + photoInfo.sub_category : ''),
                         uri: photoInfo.url_image,
                         userUri: photoInfo.url_page
                     })
@@ -170,7 +172,7 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
      * 
      * @param {MessageEvent} request 
      */
-    processRequest(request) { 
+    processRequest(request) {
         if (request.data.method) {
             // console.log("[" + this.name + "].processRequest(method) = " + request.data.method);
 
@@ -181,7 +183,7 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
         } else if (request.data.sort) {
             // console.log("[" + this.name + "].processRequest(sort) = " + request.data.sort);
 
-            if ( this._sort != request.data.sort ) {
+            if (this._sort != request.data.sort) {
                 this._sort = request.data.sort;
                 this.flush();
             }
@@ -197,7 +199,7 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
         }
 
     }
-    
+
 }
 
 const loader = new WallpaperAbyssUrlLoader();

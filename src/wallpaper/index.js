@@ -23,8 +23,14 @@ import './audiodata-polyfill';
 /** utils.js : contains some functions for processing the properties as well as a function to render the data in an audioframe object **/
 import locale from './utils/locale';
 
-/** audioframe.js : somewhat misnamed class written to contain all the audio processing demonstrated with configurable options **/
-import frame2, { hadAudioFrame } from './audioframe';
+/** audioframe.js : somewhat misnamed class written to contain all the audio processing demonstrated with configurable options 
+    ! audioFrame found in utils.js
+
+    in audioFrame is where I store the audio data and do all processing of the incoming audio listener event
+    Most code regarding the wallpaper settings are found in there.
+// is an AudioFrame object .. stores the "processes" data and is created in setup()
+ * **/
+import {frame2, hadAudioFrame } from './audioframe';
 
 import shapeGeneratorFactory from './generators';
 
@@ -117,13 +123,6 @@ const renderFunction = 'default';
 
 const foreground = new Foreground();
 
-/*
-    ! audioFrame found in utils.js
-
-    in audioFrame is where I store the audio data and do all processing of the incoming audio listener event
-    Most code regarding the wallpaper settings are found in there.
-*/
-let frame2; // is an AudioFrame object .. stores the "processes" data and is created in setup()
 const frameHistory = [];
 
 let initialized = false;
@@ -304,7 +303,7 @@ function render(timestamp) // requestAnimationFrame supplies its own timestamp. 
 
 
 
-var drawController = new DrawController(pointsSource => {
+const drawController = new DrawController(pointsSource => {
     onNewPoints(pointsSource); 
 });
 
@@ -322,8 +321,6 @@ function onNewPoints(pointsSource) {
         shapeList.updateAutosave();
     }
 }
-
-let svgSource;
 
 function setupAccessController() {
     accessController.registerConsumer('WallMenu', mainMenu);
