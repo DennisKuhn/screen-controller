@@ -1,137 +1,119 @@
-import { ipcMain, screen } from 'electron';
-import Url, { url2fs } from '../utils/Url';
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
-import { CHANNEL, IpcArgs } from './WallpapersManager.ipc';
 import controller, { Controller } from './Configuration/Controller';
-import { Setup, IdMap, Display } from './Configuration/WallpaperSetup';
-import deepDiffObj from '../utils/deepDiffObj';
+import { Setup, Browser, SetupDiff } from './Configuration/WallpaperSetup';
+import { Dictionary } from 'lodash';
 
 declare const WALLPAPER_PRELOAD_WEBPACK_ENTRY: string;
 declare const WALLPAPER_WEBPACK_ENTRY: string;
 
-interface Wallpaper {
-    window?: WallpaperWindow;
-    display: Display;
-}
-
-interface WallpapersMap {
-    [key: number]: Wallpaper;
-}
-
 
 export default class WallpapersManager {
-    static async run(): Promise<void> {
 
-        // controller.getSetup(false).then(setup => {
-        //     const changedSetup = WallpapersManager.checkDisplays(setup);
-        //     console.log(`WallpapersManager.run: gotSetup: got=${JSON.stringify(setup)} changes=${JSON.stringify(changedSetup)}`);
+    private static setup: Setup | undefined;
+    private static papers: Dictionary<WallpaperWindow> = {};
 
-        //     if (changedSetup.displays) {
-        //         controller.updateSetup(changedSetup);
-        //     }
-        // });
+    public static async run(): Promise<void> {
+        console.log('WallpapersManager.run');
+        controller.getSetup(false)
+            .then(setup => {
+                console.log('WallpapersManager.run: gotSetup:', setup);
 
-        // controller.on(Controller.setupChanged, WallpapersManager.onSetupChanged);
+                WallpapersManager.setup = setup;
 
-        WallpapersManager.setupDisplays();
+                WallpapersManager.setupDisplays();
+            });
+
+        controller.on(Controller.setupChanged, WallpapersManager.onSetupChanged);
+
     }
 
-    private static onSetupChanged = (e, change: Setup): void => {
+    private static onSetupChanged = (e, change: SetupDiff): void => {
+        if (!WallpapersManager.setup) throw new Error('WallpapersManager.onSetupChanged(): no setup');
 
+        console.log('WallpapersManager.onSetupChanged()', change);
+
+        for (const display of change.displays) {
+            if (display) {
+                for (const browserId in display.browsers) {
+                    const browser = display.browsers[browserId];
+                    if (browser) {
+                        const mergedBrowser = { ...WallpapersManager.setup?.displays[display.id].browsers[browserId], browser };
+                        WallpapersManager.createWallpaperWindow(
+                            display.id,
+                            mergedBrowser
+                        );
+                    }
+                }
+            } else {
+                // display removed
+            }
+        }
     }
-
-    private static checkDisplays(setup: Setup): Partial<Setup> {
-        const actualSetup: Setup = { displays: [] };
-
-        screen.getAllDisplays().forEach((display) => {
-
-            actualSetup.displays[display.id] = {
-                browsers: [],
-                id: display.id,
-                ...display.workArea
-            };
-        });
-        const changedSetup: Partial<Setup> = deepDiffObj(setup, actualSetup);
-
-        console.log(
-            `WallpapersManager.checkDisplays(${JSON.stringify(setup)}) actual=${JSON.stringify(actualSetup)} changes=${JSON.stringify(changedSetup)}`);
-
-        return changedSetup;
-    }
-
-    private static wallpapers: WallpapersMap = {};
 
     /**
      * Called by loadFile, ready-to-show sets initial bounds, calls show to trigger attaching to the desktop and adding to browsers
      *  */
-    private static createWallpaperWindow(display: Display): void {
+    private static createWallpaperWindow(displayId: number, browser: Browser): void {
         const wallpaperProperties = {
             webPreferences: {
                 nodeIntegration: true,
                 preload: WALLPAPER_PRELOAD_WEBPACK_ENTRY,
                 additionalArguments: [
-                    `--displayid=${display.id}`,
-                    `--displaywidth=${display.workAreaSize.width}`,
-                    `--displayheight=${display.workAreaSize.height}`]
+                    `--browserid=${browser.id}`
+                ]
             },
-            display: display,
+            displayId: displayId,
+            browser: browser,
             show: false,
             transparent: true,
         };
 
+        let window: WallpaperWindow;
+
         try {
-            const window = new WallpaperWindow(wallpaperProperties);
+            window = new WallpaperWindow(wallpaperProperties);
+            const view = window.browserWindow.getBrowserView();
+
+            console.log(`Window.ID = ${window.browserWindow.id}`);
+            if (view) {
+                view.id = browser.id;
+                console.log(`WallpapersManager.createWallpaperWindow[${browser.id}]: Set view id = ${view.id}, Window.ID = ${window.browserWindow.id}`);
+            }
             window.browserWindow.once('ready-to-show', () => {
                 window.browserWindow.show();
             });
             window.on('resized', (e, data) => {
                 console.log(data.width);
             });
-            WallpapersManager.wallpapers[display.id].window = window;
+            window.browserWindow.loadURL(WALLPAPER_WEBPACK_ENTRY)
+                .then(() => console.log(`WallpapersManager.createWallpaperWindow[${browser.id}]: loaded: ${WALLPAPER_WEBPACK_ENTRY}`))
+                .catch((reason) => {
+                    console.error(`WallpapersManager.createWallpaperWindow[${browser.id}]: Failed loading: ${reason} = ${WALLPAPER_WEBPACK_ENTRY}`);
+                });
+
+            WallpapersManager.papers[browser.id] = window;
         } catch (error) {
             console.error(error);
         }
     }
 
     /**
-     * creates an IPC channel for each display and connects loadFile
+     * creates a WallpaperWindow for each configured browser
      */
     private static setupDisplays(): void {
-        ipcMain.on(CHANNEL, WallpapersManager.onMessage);
-        screen.getAllDisplays().forEach((display) => {
-            WallpapersManager.wallpapers[display.id] = { display: display };
-        });
-    }
 
-    private static onMessage(e, args: IpcArgs): void {
-        switch (args.command) {
-            case 'load':
-                {
-                    WallpapersManager.loadFile(args.displayId, args.file);
-                }
-                break;
-            default:
-                throw new Error(`WallpapersManager: illegal command: ${args.command}! displayId: ${args.displayId}, file: ${args.file}`);
+        if (!WallpapersManager.setup) throw new Error('WallpapersManager.setupDisplays(): no setup');
+
+        console.log('WallpapersManager.setupDisplays()');
+
+        for (const display of WallpapersManager.setup.displays) {
+            for (const browser of display.browsers) {
+                WallpapersManager.createWallpaperWindow(
+                    display.id,
+                    browser
+                );
+            }
         }
     }
 
-    private static loadFile(displayId: number, file: Url): void {
-        const wallpaper = WallpapersManager.wallpapers[displayId];
-
-        if (!(wallpaper.window)) {
-            WallpapersManager.createWallpaperWindow(wallpaper.display);
-        }
-
-        console.log(`WallpapersManager[${displayId}] = ${url2fs(file)}`);
-        
-        //wallpaper.window.browserWindow.loadURL(file.href)
-        //wallpaper.window.browserWindow.loadFile(url2fs(file))
-        wallpaper.window.browserWindow.loadURL(WALLPAPER_WEBPACK_ENTRY)
-            // .then(() => {
-            //     console.log(`${displayId}: loaded: h=${file.href} p=${file.pathname}`);
-            // })
-            .catch((reason) => {
-                console.error(`${displayId}: Failed loading: ${reason}, h=${file.href} f2p=${url2fs(file)}`);
-            });
-    }
 }

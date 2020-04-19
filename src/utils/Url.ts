@@ -21,6 +21,10 @@ export const fs2Url = (link: string): Url => {
     return URL2Url(url.pathToFileURL(link));
 };
 
+export const fs2URL = (link: string): URL => {
+    return url.pathToFileURL(link);
+};
+
 export const url2fs = (localUrl: Url): string => {
     return url.fileURLToPath(localUrl.href);
 };

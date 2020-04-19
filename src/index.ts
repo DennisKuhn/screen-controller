@@ -1,6 +1,7 @@
 import {app} from 'electron';
 import WallpapersManager from './infrastructure/WallpapersManager';
 import Windows from './infrastructure/Windows';
+import DisplaysManager from './infrastructure/DisplaysManager';
 
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -13,10 +14,10 @@ app.allowRendererProcessReuse = true;
 
 app.whenReady().then(
     () => {
-        // Create and listen to "<display>-file" IPC channels to load wallpapers
+        console.log('index.ts: App ready');
+        DisplaysManager.run();
         WallpapersManager.run();
 
-        // MainWindow feeds "<display>-file" IPC channels
         Windows.start();
     }
 );

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import MainW from '../infrastructure/MainWindow';
 import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
+import controller from '../infrastructure/Configuration/Controller';
 
 function MainWindow() {
     return <>
@@ -18,11 +18,13 @@ function MainWindow() {
                 }} />
                 <span>Screen Manager</span>
             </label>
-            <input type='button' id='button' onClick={MainW.loadWallpapers} />
+            <input type='button' id='button' />
         </div>
     </>;
 }
 
 ReactDOM.render(<MainWindow />, document.getElementById('root'));
 
+console.log('renderer/app.tsx');
+controller.log();
 

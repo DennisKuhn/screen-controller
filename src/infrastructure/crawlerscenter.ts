@@ -18,7 +18,7 @@ interface WaitingConsumer {
 class CrawlersCenter {
 
     /** Start location */
-    root: Url;
+    root?: Url;
 
     constructor(options: {
         crawlerCount?: number;
@@ -100,9 +100,12 @@ class CrawlersCenter {
             if (this.onTerminate) {
                 // console.log(`${this.constructor.name}.removeCrawler: call onTerminate`);
                 this.onTerminate();
-                this.onTerminate = null;
+                this.onTerminate = undefined;
             } else {
                 // console.log(`${this.constructor.name}.removeCrawler: crawler.run.then: restarting at root`);
+                if (!this.root) {
+                    throw new Error(`${this.constructor.name}.removeCrawler(): No crawlers, respawn at NO ROOT`);
+                }
                 this.spawnFolder(this.root);
             }
         }
@@ -116,9 +119,9 @@ class CrawlersCenter {
     addFile(file: string): Promise<void> {
         // console.log(`${this.constructor.name}.addFile @${this.filesBuffer.length},${this.waitingConsumers.length} = ${file}`);
         return new Promise((resolve, reject) => {
-            if (this.waitingConsumers.length) {
+            const waitingConsumer = this.waitingConsumers.shift();
+            if (waitingConsumer) {
                 // console.log(`${this.constructor.name}.addFile resolve waitingConsumer ${this.waitingConsumers.length} = ${file}`);
-                const waitingConsumer = this.waitingConsumers.shift();
                 waitingConsumer.resolve(file);
                 resolve();
             } else {
@@ -154,9 +157,8 @@ class CrawlersCenter {
             } else {
                 const file = this.filesBuffer.shift();
                 // console.log(`${this.constructor.name}.getFile sclice filesBuffer, resolve @${this.filesBuffer.length}, waitingCrawlers=${this.waitingCrawlers.length}`, ${file});
-
-                if (this.waitingCrawlers.length) {
-                    const crawler = this.waitingCrawlers.shift();
+                const crawler = this.waitingCrawlers.pop();
+                if (crawler) {
                     this.filesBuffer.push(crawler.file);
                     crawler.resolve();
                 }
@@ -197,7 +199,7 @@ class CrawlersCenter {
      */
     private waitingConsumers: WaitingConsumer[] = [];
 
-    private onTerminate: () => void;
+    private onTerminate: (() => void) | undefined = undefined;
 }
 
 

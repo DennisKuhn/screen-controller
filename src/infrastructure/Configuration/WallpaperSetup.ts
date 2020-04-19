@@ -1,45 +1,80 @@
-import Url from '../../utils/Url';
-import { Dictionary } from 'lodash';
+import { Dictionary, NumericDictionary } from 'lodash';
 
-export interface IdMap < T > {
+class IterableMap<T> implements NumericDictionary<T>, Iterable<T> {
     [key: number]: T;
+
+    *[Symbol.iterator](): Iterator<T> {
+
+        for (const itemId in this) {
+            yield this[itemId];
+        }
+    }
 }
 
-export interface Setup extends Dictionary<IdMap<Display>> {
-    displays: IdMap<Display>;
+
+export interface SetupInterface {
+    displays: DisplayMapInterface;
+}
+export type DisplayMapInterface = NumericDictionary<DisplayInterface>;
+export type DisplayDiffMapInterface = NumericDictionary<DisplayInterface| null>;
+export type BrowserMapInterface = NumericDictionary<Browser>;
+export type BrowserDiffMapInterface = NumericDictionary<Partial<Browser> | null>;
+
+export class Setup implements SetupInterface {
+    displays: IterableMap<Display> = new IterableMap<Display>();
 }
 
-export interface Wallpaper {
-    file: Url;
-    config?: Config;
+export interface DisplayInterface {
+    id: number;
+    browsers: BrowserMapInterface;
 }
+
+export class Display implements DisplayInterface {
+    constructor(id: number) {
+        this.id = id;
+    }
+    id: number;
+
+    browsers: IterableMap<Browser> = new IterableMap<Browser>();
+}
+
+export interface SetupDiffInterface {
+    displays: DisplayDiffMapInterface;
+}
+
+export class SetupDiff {
+    displays: IterableMap<DisplayDiff | null> = new IterableMap<DisplayDiff | null>();
+}
+
+export interface DisplayDiffInterface {
+    id: number;
+    browsers: BrowserDiffMapInterface;
+}
+
+export class DisplayDiff implements DisplayDiffInterface {
+    constructor(id: number) {
+        this.id = id;
+    }
+    id: number;
+
+    browsers: IterableMap<Partial<Browser> | null> = new IterableMap<Partial<Browser> | null>();
+}
+
 
 /**
- * Bounds in %, relativ to display. Application unique id, e.g. auto increment from 1
- * @example {x:0, y:0, width:1, height:1} fills the entire display
+ * Bounds in %, relativ to display. Application unique id, e.g. auto increment from 1. 
+ * config for paper usually ommited for performance, request explictly from Configuration/Controller
+ * @example {rx:0, ry:0, rWidth:1, rHeight:1} fills the entire display
  **/
 export interface Browser {
     /** Application unique, e.g. auto increment from 1 */
     id: number;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    paper: Wallpaper;
+    rx: number;
+    ry: number;
+    rWidth: number;
+    rHeight: number;
+    config?: Config;
 }
-
-/**
- * Display width and height (Device Pixels divided by scaling factor)
- */
-export interface Display {
-    id: number;
-    browsers: IdMap<Browser>;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
-
 
 export interface Config {
     contentrating: string;
@@ -56,10 +91,7 @@ export interface Config {
     };
 }
 
-export interface Properties {
-    [key: string]: Property;
-
-}
+type Properties = Dictionary<Property>;
 
 export interface Option {
     label: string;

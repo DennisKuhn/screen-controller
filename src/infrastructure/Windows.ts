@@ -35,6 +35,10 @@ class Windows {
             }
         }
         const window = Windows.browserWindows[args.window];
+
+        if (!window) {
+            throw new Error(`${this.constructor.name}.onWindowMessage: window=${args.window} doesn't exist`);
+        }
         switch (args.command) {
             case 'show':
             case 'hide':

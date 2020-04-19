@@ -10,7 +10,7 @@ class DirectoryCrawler {
      * @param {CrawlersCenter} center to deliver files and folder spawn request to
      * @param {number} batchSize
      */
-    constructor( center: CrawlersCenter, batchSize: number) {
+    constructor(center: CrawlersCenter, batchSize: number) {
         this.center = center;
 
         this.batchSize = batchSize ? batchSize : this.batchSize;
@@ -23,10 +23,20 @@ class DirectoryCrawler {
     async run(root: Url): Promise<void> {
 
         this.root = root;
+
+        if (!(this.root.pathname && this.center.root && this.center.root.pathname)) {
+            console.error(
+                `${this.constructor.name}.run() pathnames unset: this=${this.root.pathname} center=${this.center.root && this.center.root.pathname ? this.center.root.pathname : 'null'}`
+            );
+            throw new Error(
+                `${this.constructor.name}.run() pathnames unset: this=${this.root.pathname} center=${this.center.root && this.center.root.pathname ? this.center.root.pathname : 'null'}`
+            );
+        }
+
         this.relativePath = this.root.pathname.substr(this.center.root.pathname.length);
 
         this.directoriesQueue.push(root);
-        
+
         await this.processDirectory();
     }
 
@@ -37,11 +47,11 @@ class DirectoryCrawler {
 
     private center: CrawlersCenter;
 
-    private root: Url;
+    private root: Url | undefined;
 
-    private relativePath: string;
+    private relativePath: string | undefined;
 
-    private directory: fs.Dir;
+    private directory: fs.Dir | undefined;
 
     private directoriesQueue: Url[] = [];
 
@@ -53,7 +63,7 @@ class DirectoryCrawler {
     // Node opendir default=32
     private batchSize = 32;
 
-    private terminating= false;
+    private terminating = false;
 
     /**
      *
@@ -79,24 +89,26 @@ class DirectoryCrawler {
             if (this.terminating) {
                 return;
             }
-            try {
-                // console.log(`${this.constructor.name}[${this.relativePath}].processDirectory: start looping`);
-                for await (const dirent of this.directory) {
-                    if (this.terminating) {
-                        return;
-                    }
-                    if (this.entries.push(dirent) == this.batchSize) {
-                        await this.processBatch();
+            if (this.directory) {
+                try {
+                    // console.log(`${this.constructor.name}[${this.relativePath}].processDirectory: start looping`);
+                    for await (const dirent of this.directory) {
                         if (this.terminating) {
                             return;
                         }
+                        if (this.entries.push(dirent) == this.batchSize) {
+                            await this.processBatch();
+                            if (this.terminating) {
+                                return;
+                            }
+                        }
                     }
+                    await this.processBatch();
+                } catch (processBatchError) {
+                    console.error(
+                        `${this.constructor.name}[${this.relativePath}].processDirectory: read dir fail:[q=${this.directoriesQueue.length},t=${this.terminating}]`,
+                        processBatchError);
                 }
-                await this.processBatch();
-            } catch (processBatchError) {
-                console.error(
-                    `${this.constructor.name}[${this.relativePath}].processDirectory: read dir fail:[q=${this.directoriesQueue.length},t=${this.terminating}]`,
-                    processBatchError);
             }
         } while (this.directoriesQueue.length && (this.terminating == false));
 
@@ -105,6 +117,11 @@ class DirectoryCrawler {
 
     private async processBatch(): Promise<void> {
         // console.log(`${this.constructor.name}[${this.relativePath}].processBatch`);
+
+        if (!this.directory) {
+            console.error(`${this.constructor.name}.processBatch() without a directory`);
+            throw new Error(`${this.constructor.name}.processBatch() without a directory`);
+        }
 
         for (const entry of this.entries) {
             const entryUrl = fs2Url(this.directory.path + '\\' + entry.name);
@@ -117,7 +134,7 @@ class DirectoryCrawler {
                 await this.center.addFile(entryUrl.href);
             } else if (entry.isDirectory()) {
 
-                if ( this.center.canSpan ) {
+                if (this.center.canSpan) {
                     this.center.spawnFolder(entryUrl)
                         .catch(reason => {
                             console.warn(`${this.constructor}[${this.relativePath}]@${entry.name}:.processBatch: spawnFolder threw: ${reason}`, reason);

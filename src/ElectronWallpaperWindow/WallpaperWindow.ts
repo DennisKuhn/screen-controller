@@ -1,23 +1,34 @@
-import { BrowserWindow, BrowserWindowConstructorOptions, Display } from 'electron';
+import { BrowserWindow, BrowserWindowConstructorOptions, remote } from 'electron';
 import nodeWinWallpaper from 'node-win-wallpaper';
 import ScreenBounds, { DisplayBounds } from './ScreenBounds';
 import { EventEmitter } from 'events';
+import { Browser } from '../infrastructure/Configuration/WallpaperSetup';
 
 interface WallpaperWindowConstructorOptions extends BrowserWindowConstructorOptions {
-    display: Display;
+    displayId: number;
+    browser: Browser;
 }
 
 class WallpaperWindow extends EventEmitter {
-    display: Display;
+    displayId: number;
+    browser: Browser;
     browserWindow: BrowserWindow;
     _attached = false;
-    private currentBounds: DisplayBounds;
+    private currentBounds: DisplayBounds | undefined;
 
     constructor(options?: WallpaperWindowConstructorOptions) {
         super();
-        const { display, ...windowOptions } = options;
-        this.display = display;
-        this.browserWindow = new BrowserWindow({ frame: false, ...windowOptions });
+
+        if (options) {
+            const { displayId, browser, ...windowOptions } = options;
+            this.displayId = displayId;
+            this.browser = browser;
+            this.browserWindow = new BrowserWindow({ frame: false, ...windowOptions });
+        } else {
+            this.displayId = remote.screen.getPrimaryDisplay().id;
+            this.browser = { id: this.displayId, rx: 0, ry: 0, rWidth: 1, rHeight: 1 };
+            this.browserWindow = new BrowserWindow({ frame: false });
+        }
         this.browserWindow.once('show', () => {
             try {
                 this.attach();
@@ -45,9 +56,16 @@ class WallpaperWindow extends EventEmitter {
     }
 
     private fitToDisplay(): void {
-        const displayBounds = ScreenBounds.findBoundsByDisplayId(this.display.id);
+        const displayBounds = ScreenBounds.findBoundsByDisplayId(this.displayId);
         if (displayBounds) {
-            this.currentBounds = displayBounds;
+            // this.currentBounds = displayBounds;
+            this.currentBounds = {
+                displayId: displayBounds.displayId,
+                x: displayBounds.x + (this.browser.rx * displayBounds.width),
+                y: displayBounds.y + (this.browser.ry * displayBounds.height),
+                width: this.browser.rWidth * displayBounds.width,
+                height: this.browser.rHeight * displayBounds.height
+            };
             const handle = this.browserWindow.getNativeWindowHandle();
             nodeWinWallpaper.moveWindow(handle, this.currentBounds);
         }
