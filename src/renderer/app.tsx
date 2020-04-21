@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
 import controller from '../infrastructure/Configuration/Controller';
 
-function MainWindow() {
+function MainWindow(): JSX.Element {
     return <>
         <h1>Main index</h1>
         <div id="wrapper">

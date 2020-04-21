@@ -7,8 +7,7 @@ import { Setup, Display, SetupDiff } from './Configuration/WallpaperSetup';
 export default class DisplaysManager {
     public static async run(): Promise<void> {
         console.log('DisplaysManager.run');
-        controller.getSetup(false)
-            .then(DisplaysManager.checkDisplays);
+        controller.once('init', DisplaysManager.checkDisplays);
     }
 
     private static _actualSetup: Setup | undefined;
@@ -21,12 +20,9 @@ export default class DisplaysManager {
         if (!DisplaysManager._actualSetup) {
             DisplaysManager._actualSetup = new Setup();
 
-            screen.getAllDisplays().forEach(
-                display => {
-                    this[display.id] = new Display( display.id );
-                },
-                DisplaysManager._actualSetup.displays
-            );
+            for (const display of screen.getAllDisplays()) {
+                DisplaysManager._actualSetup.displays[display.id] = new Display(display.id);
+            }
         }
         return DisplaysManager._actualSetup;
     }
@@ -36,10 +32,10 @@ export default class DisplaysManager {
      * @param setup to check with actual setup
      */
     private static checkDisplays(setup: Setup): void {
-        console.log('DisplaysManager.checkDisplays:', setup);
+        // console.log('DisplaysManager.checkDisplays:', setup);
 
         const changedSetup: SetupDiff = new SetupDiff();
-        
+
         for (const display of DisplaysManager.actualSetup.displays) {
             if (!(display.id in setup.displays)) {
                 changedSetup.displays[display.id] = display;
@@ -53,7 +49,7 @@ export default class DisplaysManager {
 
         console.log('DisplaysManager.checkDisplays:', setup, changedSetup);
 
-        if (Object.keys( changedSetup.displays).length) {
+        if (Object.keys(changedSetup.displays).length) {
             controller.updateSetup(changedSetup);
         }
     }

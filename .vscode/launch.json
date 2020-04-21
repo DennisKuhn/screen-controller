@@ -10,6 +10,7 @@
             "windows": {
                 "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron-forge-vscode-win.cmd"
             },
+            "timeout": 60000,
             "args": [
                 "."
             ],

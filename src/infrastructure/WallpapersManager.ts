@@ -1,5 +1,5 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
-import controller, { Controller } from './Configuration/Controller';
+import controller from './Configuration/Controller';
 import { Setup, Browser, SetupDiff } from './Configuration/WallpaperSetup';
 import { Dictionary } from 'lodash';
 
@@ -14,20 +14,21 @@ export default class WallpapersManager {
 
     public static async run(): Promise<void> {
         console.log('WallpapersManager.run');
-        controller.getSetup(false)
-            .then(setup => {
-                console.log('WallpapersManager.run: gotSetup:', setup);
 
-                WallpapersManager.setup = setup;
-
-                WallpapersManager.setupDisplays();
-            });
-
-        controller.on(Controller.setupChanged, WallpapersManager.onSetupChanged);
+        controller.on('init', WallpapersManager.onSetupInit);
+        controller.on('change', WallpapersManager.onSetupChanged);
 
     }
 
-    private static onSetupChanged = (e, change: SetupDiff): void => {
+    private static onSetupInit = (setup: Setup): void => {
+        console.log('WallpapersManager.onSetupInit:', setup);
+
+        WallpapersManager.setup = setup;
+
+        WallpapersManager.setupDisplays();
+    }
+
+    private static onSetupChanged = (change: SetupDiff): void => {
         if (!WallpapersManager.setup) throw new Error('WallpapersManager.onSetupChanged(): no setup');
 
         console.log('WallpapersManager.onSetupChanged()', change);
@@ -37,7 +38,7 @@ export default class WallpapersManager {
                 for (const browserId in display.browsers) {
                     const browser = display.browsers[browserId];
                     if (browser) {
-                        const mergedBrowser = { ...WallpapersManager.setup?.displays[display.id].browsers[browserId], browser };
+                        const mergedBrowser = { ...WallpapersManager.setup.displays[display.id].browsers[browserId], browser };
                         WallpapersManager.createWallpaperWindow(
                             display.id,
                             mergedBrowser

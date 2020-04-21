@@ -1,4 +1,6 @@
-import {app} from 'electron';
+debugger;
+
+import { app } from 'electron';
 import WallpapersManager from './infrastructure/WallpapersManager';
 import Windows from './infrastructure/Windows';
 import DisplaysManager from './infrastructure/DisplaysManager';
@@ -8,7 +10,6 @@ import DisplaysManager from './infrastructure/DisplaysManager';
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
     app.quit();
 }
-debugger;
 
 app.allowRendererProcessReuse = true;
 

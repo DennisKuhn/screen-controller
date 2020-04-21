@@ -1,6 +1,6 @@
 import { Dictionary, NumericDictionary } from 'lodash';
 
-class IterableMap<T> implements NumericDictionary<T>, Iterable<T> {
+class IterableNumberMap<T> implements NumericDictionary<T>, Iterable<T> {
     [key: number]: T;
 
     *[Symbol.iterator](): Iterator<T> {
@@ -16,13 +16,9 @@ export interface SetupInterface {
     displays: DisplayMapInterface;
 }
 export type DisplayMapInterface = NumericDictionary<DisplayInterface>;
-export type DisplayDiffMapInterface = NumericDictionary<DisplayInterface| null>;
+export type DisplayDiffMapInterface = NumericDictionary<DisplayDiffInterface | null>;
 export type BrowserMapInterface = NumericDictionary<Browser>;
 export type BrowserDiffMapInterface = NumericDictionary<Partial<Browser> | null>;
-
-export class Setup implements SetupInterface {
-    displays: IterableMap<Display> = new IterableMap<Display>();
-}
 
 export interface DisplayInterface {
     id: number;
@@ -35,15 +31,30 @@ export class Display implements DisplayInterface {
     }
     id: number;
 
-    browsers: IterableMap<Browser> = new IterableMap<Browser>();
+    browsers: IterableNumberMap<Browser> = new IterableNumberMap<Browser>();
 }
+
+export class Setup implements SetupInterface {
+    displays: IterableNumberMap<Display> = new IterableNumberMap<Display>();
+
+    constructor(setup?: SetupInterface) {
+        if (setup) {
+            for (const displayPair of Object.entries(setup.displays)) {
+                const display = new Display(Number(displayPair[0]));
+                this.displays[Number(displayPair[0])] = display;
+
+                for (const browserPair of Object.entries(displayPair[1].browsers)) {
+                    display.browsers[browserPair[0]] = browserPair[1];
+                }
+            }
+        }
+    }
+}
+
+
 
 export interface SetupDiffInterface {
     displays: DisplayDiffMapInterface;
-}
-
-export class SetupDiff {
-    displays: IterableMap<DisplayDiff | null> = new IterableMap<DisplayDiff | null>();
 }
 
 export interface DisplayDiffInterface {
@@ -57,7 +68,29 @@ export class DisplayDiff implements DisplayDiffInterface {
     }
     id: number;
 
-    browsers: IterableMap<Partial<Browser> | null> = new IterableMap<Partial<Browser> | null>();
+    browsers: IterableNumberMap<Partial<Browser> | null> = new IterableNumberMap<Partial<Browser> | null>();
+}
+
+export class SetupDiff implements SetupDiffInterface {
+    displays: IterableNumberMap<DisplayDiff | null> = new IterableNumberMap<DisplayDiff | null>();
+
+    constructor(setup?: SetupDiffInterface) {
+        if (setup) {
+            for (const displayPair of Object.entries(setup.displays)) {
+                if (displayPair[1]) {
+                    const display = new DisplayDiff(Number(displayPair[0]));
+                    this.displays[Number(displayPair[0])] = display;
+
+                    for (const browserPair of Object.entries(displayPair[1].browsers)) {
+                        display.browsers[browserPair[0]] = browserPair[1];
+                    }
+                } else {
+                    this.displays[Number(displayPair[0])] = null;
+                }
+            }
+        }
+    }
+
 }
 
 

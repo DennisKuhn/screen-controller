@@ -18,17 +18,43 @@ class WallpaperWindow extends EventEmitter {
 
     constructor(options?: WallpaperWindowConstructorOptions) {
         super();
+        let windowOptions: BrowserWindowConstructorOptions = {};
 
         if (options) {
-            const { displayId, browser, ...windowOptions } = options;
+            const { displayId, browser, ...otherWindowOptions } = options;
+
             this.displayId = displayId;
             this.browser = browser;
-            this.browserWindow = new BrowserWindow({ frame: false, ...windowOptions });
+            windowOptions = otherWindowOptions;
         } else {
             this.displayId = remote.screen.getPrimaryDisplay().id;
             this.browser = { id: this.displayId, rx: 0, ry: 0, rWidth: 1, rHeight: 1 };
-            this.browserWindow = new BrowserWindow({ frame: false });
         }
+
+        const displayBounds = ScreenBounds.findBoundsByDisplayId(this.displayId);
+
+        if (!displayBounds) throw new Error(`${this.constructor.name}():Can not receive bounds for display ${this.displayId}`);
+
+        this.currentBounds = {
+            displayId: displayBounds.displayId,
+            x: displayBounds.x + (this.browser.rx * displayBounds.width),
+            y: displayBounds.y + (this.browser.ry * displayBounds.height),
+            width: this.browser.rWidth * displayBounds.width,
+            height: this.browser.rHeight * displayBounds.height
+        };
+
+        windowOptions.webPreferences = windowOptions.webPreferences ?? {};
+        windowOptions.webPreferences.additionalArguments = windowOptions.webPreferences.additionalArguments ?? [];
+        windowOptions.webPreferences.additionalArguments.push(
+            `--displaywidth=${this.currentBounds?.width}`,
+            `--displayheight=${this.currentBounds?.height}`
+        );
+
+        this.browserWindow = new BrowserWindow({
+            frame: false,
+            ...windowOptions
+        });
+
         this.browserWindow.once('show', () => {
             try {
                 this.attach();

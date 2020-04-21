@@ -1,10 +1,9 @@
-import crypto from 'crypto';
 import fs from 'fs';
 import { EventEmitter } from 'events';
-import { BrowserWindow, ipcMain, ipcRenderer } from 'electron';
-import { Setup, SetupDiff, Browser, Config } from './WallpaperSetup';
-import Url, { fs2URL } from '../../utils/Url';
-import _ from 'lodash';
+import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer } from 'electron';
+import { Setup, SetupDiff, Browser, Config, SetupInterface, SetupDiffInterface } from './WallpaperSetup';
+import { fs2URL } from '../../utils/Url';
+import { cloneDeep, mergeWith, omit } from 'lodash';
 
 import '../../wallpaper/project.json';
 
@@ -12,41 +11,73 @@ interface BrowserConfig {
     [key: number]: Config;
 }
 
+type InitialSetupChannel = 'init';
+type SetupChangeChannel = 'change';
+
+interface IpcRenderer extends electron.IpcRenderer {
+    send(channel: InitialSetupChannel, update: SetupInterface): void;
+    send(channel: SetupChangeChannel, update: SetupDiffInterface): void;
+
+    on(channel: SetupChangeChannel, listener: (event: IpcRendererEvent, update: SetupDiffInterface, persist?: boolean) => void): this;
+}
+
+interface IpcMain extends electron.IpcMain {
+    on(channel: SetupChangeChannel, listener: (event: IpcMainEvent, update: SetupDiffInterface) => void): this;
+
+    once(channel: InitialSetupChannel, listener: (event: IpcMainEvent, update: SetupInterface) => void): this;
+}
+
+interface IpcWindow extends electron.WebContents {
+    send(channel: SetupChangeChannel, update: SetupDiffInterface, persist?: boolean): void;
+}
+
+
+type InitialSetupEvent = 'init';
+type SetupChangeEvent = 'change';
+
+type SetupListener = (setup: Setup) => void;
+type DiffListener = (update: SetupDiff) => void;
+
+
+export declare interface Controller {
+    on(event: InitialSetupEvent, listener: SetupListener): this;
+    on(event: SetupChangeEvent, listener: DiffListener): this;
+
+    once(event: InitialSetupEvent, listener: SetupListener): this;
+    once(event: SetupChangeEvent, listener: DiffListener): this;
+
+    getSetup(includeConfig: boolean): Promise<Setup>;
+    updateSetup(update: SetupDiff): void;
+
+    log(): void;
+}
+
+
+declare interface ControllerImpl {
+    emit(event: InitialSetupEvent, setup: Setup): boolean;
+    emit(event: SetupChangeEvent, update: SetupDiff): boolean;
+}
+
 /**
- * @emits 'change'
  */
-export class Controller extends EventEmitter {
-    public static setupChanged = Symbol('setupChanged');
-
-    protected static GET_SETUP = 'getSetup';
-    protected static WAIT_FOR_SETUP = 'waitForSetup';
-    protected static SETUP_CHANGED = 'setupChanged';
-
-    protected setup: Setup|undefined;
+abstract class ControllerImpl extends EventEmitter implements Controller {
+    protected setup: Setup | undefined;
     protected configs: BrowserConfig = {};
     protected loadedConfig = false;
 
     protected constructor() {
         super();
-        console.log(`Config.Controller.contructor: ${this.constructor.name}`);
+        console.log(`Config.ControllerImpl(${this.constructor.name})`);
     }
 
     log(): void {
         console.log(`${this.constructor.name}.log()`);
     }
 
-    getSetup(includeConfig: boolean): Promise<Setup> {
-        throw Error(`Controller.getSetup(${includeConfig}) must be implemented by ${this.constructor.name}`);
-    }
-
-    updateSetup(update: SetupDiff): void {
-        throw Error(`Controller.updateSetup(${update}) must be implemented by ${this.constructor.name}`);
-    }
-
     protected get fullSetup(): Setup {
         if (!this.setup) throw new Error(`${this.constructor.name}.get fullSetup: no setup`);
 
-        const fullSetup: Setup = _.cloneDeep(this.setup);
+        const fullSetup: Setup = cloneDeep(this.setup);
 
         for (const display of fullSetup.displays) {
             for (const browser of display.browsers) {
@@ -58,44 +89,11 @@ export class Controller extends EventEmitter {
 
         return fullSetup;
     }
-}
 
-class Renderer extends Controller {
-    private static SETUP_KEY = 'Setup';
-
-    constructor() {
-        super();
-
-        if (ipcRenderer.listenerCount(Controller.GET_SETUP) == 0) {
-            ipcRenderer.on(Controller.GET_SETUP, this.onGetSetup);
-        }
-
-        this.loadSetup();
-
-        console.log(`${this.constructor.name}() GET_SETUP=${ipcRenderer.listenerCount(Controller.GET_SETUP)}  WAIT_FOR_SETUP=${ipcRenderer.listenerCount(Controller.WAIT_FOR_SETUP)}`);
-        if (ipcRenderer.listenerCount(Controller.WAIT_FOR_SETUP) > 0) {
-            ipcRenderer.send(Controller.WAIT_FOR_SETUP, this.setup);
-        }
-
-        ipcRenderer.on(Controller.SETUP_CHANGED, this.onSetupChanged);
-    }
-
-    updateSetup(update: SetupDiff): void {
-        ipcRenderer.send(Controller.SETUP_CHANGED, update);
-
-        this.processSetupChange(update);
-
-        this.storeSetup();
-    }
-
-    onSetupChanged(e, update: SetupDiff): void {
-        this.processSetupChange(update);
-    }
-
-    processSetupChange(update: SetupDiff): void {
+    protected processSetupChange(update: SetupDiff): void {
 
         console.log(`${this.constructor.name}.processSetupChange() ${JSON.stringify(update)} => ${JSON.stringify(this.setup)} + ${JSON.stringify(this.configs)}`);
-        _.mergeWith(
+        mergeWith(
             this.setup,
             update,
             (objValue, srcValue, key, object /*, source, stack */) => {
@@ -103,7 +101,7 @@ class Renderer extends Controller {
                     if ('config' in srcValue) {
                         console.log(`${this.constructor.name}.processSetupChange: split config[${object.id}]: ${srcValue.config}`);
                         this.configs[object.id] = srcValue.config;
-                        return _.omit(srcValue, 'config');
+                        return omit(srcValue, 'config');
                     }
                     return srcValue;
                 } // else mergeWith handles it
@@ -111,12 +109,67 @@ class Renderer extends Controller {
         console.log(`${this.constructor.name}.processedSetupChange() ${JSON.stringify(update)} => ${JSON.stringify(this.setup)} + ${JSON.stringify(this.configs)}`);
     }
 
-    async onGetSetup(e, responseChannel: string, includeConfig: boolean): Promise<void> {
+    protected updateAllWindows(update: SetupDiff, persist?: boolean): void {
+        console.log(`${this.constructor.name}.updateAllWindows: ${update}`);
 
-        ipcRenderer.send(
-            responseChannel,
-            await this.getSetup(includeConfig)
-        );
+        for (const window of BrowserWindow.getAllWindows()) {
+            const ipcWindow = window.webContents as IpcWindow;
+
+            console.log(`${this.constructor.name}.onSetupChanged: send to ${window.id}.${window.getBrowserView()?.id} persist=${persist}`);
+            
+            ipcWindow.send('change', update, persist);
+
+            persist = undefined;
+        }
+    }
+
+
+    abstract getSetup(includeConfig: boolean): Promise<Setup>;
+
+    abstract updateSetup(update: SetupDiff): void;
+}
+
+
+
+class Renderer extends ControllerImpl {
+    private static SETUP_KEY = 'Setup';
+
+    private ipc: IpcRenderer = electronIpcRenderer;
+
+    constructor() {
+        super();
+
+        console.log(`${this.constructor.name}()`);
+
+        this.setup = this.loadSetup();
+
+        this.ipc.send('init', this.setup);
+
+        this.ipc.on('change', this.onSetupChanged);
+    }
+
+    updateSetup(update: SetupDiff): void {
+        //this.emit(Controller.change, update);
+        this.processSetupChange(update);
+
+        this.emit('change', update);
+        this.ipc.send('change', update);
+        this.updateAllWindows(update, false);
+
+        this.storeSetup();
+    }
+
+    onSetupChanged = (e, update: SetupDiffInterface, persist?: boolean): void => {
+        const updateObj = new SetupDiff(update);
+        console.log(`${this.constructor.name}.onSetupChanged`, update, updateObj);
+        // this.emit(Controller.change, new SetupDiff(update));
+        this.processSetupChange(updateObj);
+
+        this.emit('change', updateObj);
+
+        if (persist && (persist === true)) {
+            this.storeSetup();
+        }
     }
 
     async getSetup(includeConfig: boolean): Promise<Setup> {
@@ -137,16 +190,17 @@ class Renderer extends Controller {
         return response;
     }
 
-    private loadSetup(): void {
+    private loadSetup(): Setup {
         console.log(`${this.constructor.name}: loadSetup`);
         const setupString = localStorage.getItem(Renderer.SETUP_KEY);
 
         if (setupString) {
-            this.setup = JSON.parse(setupString);
+            this.setup = new Setup(JSON.parse(setupString));
         } else {
             console.warn(`${this.constructor.name}: loadSetup: no setup`);
             this.setup = new Setup();
         }
+        return this.setup;
     }
 
     private storeSetup(): void {
@@ -157,14 +211,10 @@ class Renderer extends Controller {
     }
 
 
-    private static getFileId(fileUrl: Url): string {
-        return crypto.createHash('md5').update(fileUrl.href).digest('hex');
-    }
-
     private static getConfigKey(browser: Browser): string {
         return `${browser.id}`;
     }
-    
+
     protected defaultConfig: Config | undefined;
 
     private async loadConfig(): Promise<void> {
@@ -180,18 +230,18 @@ class Renderer extends Controller {
                     let config: Config;
 
                     if (isDefault && this.defaultConfig) {
-                        config = _.cloneDeep(this.defaultConfig);
+                        config = cloneDeep(this.defaultConfig);
                     } else {
                         if (null == configString) {
                             configString = await this.loadDefault();
                         }
                         config = JSON.parse(configString);
                     }
-                    
+
                     this.configs[browser.id] = config;
 
                     if (isDefault) {
-                        this.defaultConfig = this.defaultConfig ?? _.cloneDeep( config );
+                        this.defaultConfig = this.defaultConfig ?? cloneDeep(config);
                         this.storeConfig(browser, configString ?? JSON.stringify(config));
                     }
                 } catch (loadConfigError) {
@@ -212,7 +262,7 @@ class Renderer extends Controller {
     async loadDefault(): Promise<string> {
         const defaultPath = fs2URL('../../wallpaper/project.json'); // href2fs(defaultLocation);
 
-        console.log( `${this.constructor.name}.loadDefault: path: ${defaultPath}` );
+        console.log(`${this.constructor.name}.loadDefault: path: ${defaultPath}`);
         try {
             const buffer = await fs.promises.readFile(defaultPath);
             console.log(`${this.constructor.name}.loadEDdefault`, buffer.toString());
@@ -254,69 +304,79 @@ class Paper extends Renderer {
     }
 }
 
-type SetupPromise = {
-    resolve: (setup: Setup) => void;
-    reject: (reason: string) => void;
-};
+class Main extends ControllerImpl {
 
-class Main extends Controller {
-
-    setupPromises: SetupPromise[] = [];
+    private ipc: IpcMain = electronIpcMain;
+    private updating = false;
+    private updates: SetupDiff[] = [];
 
     constructor() {
         super();
 
-        ipcMain.on(Controller.SETUP_CHANGED, this.onSetupChanged);
+        this.ipc.once('init', this.onInitialSetup);
+        this.ipc.on('change', this.onSetupChanged);
     }
 
-    onInitialSetup = (e, setup: Setup): void => {
-        this.setup = setup;
+    onInitialSetup = (e, setup: SetupInterface): void => {
+        this.setup = new Setup(setup);
 
-        console.log(`${this.constructor.name}.onInitialSetup: promises=${this.setupPromises.length}`);
+        console.log(`${this.constructor.name}.onInitialSetup: ${this.setup}`);
 
-        this.setupPromises.forEach(
-            promise => promise.resolve(setup)
-        );
-        this.setupPromises.length = 0;
+        this.updating = true;
+        try {
+            this.emit('init', this.setup);
+        } finally {
+            this.updating = false;
+            this.processUpdateQueue();
+        }
+    }
+
+    processUpdateQueue(): void {
+        if ((!this.updating) && this.updates.length) {
+            this.updating = true;
+            try {
+                do {                    
+                    const update = this.updates[0];
+                    this.updates.shift();
+
+                    this.deliverUpdate(update);
+
+                } while (this.updates.length);
+            } finally {
+                this.updating = false;
+            }
+        }
     }
 
     getSetup(includeConfig: boolean): Promise<Setup> {
-        return new Promise<Setup>(
-            (resolve, reject) => {
-                if (this.setup) {
-                    console.log(`${this.constructor.name}.getSetup: resolve, still promises=${this.setupPromises.length}`);
-                    resolve(this.setup);
-                } else {
-                    this.setupPromises.push({ resolve: resolve, reject: reject });
-
-                    if (ipcMain.listenerCount(Main.GET_SETUP)) {
-                        console.log(`${this.constructor.name}.getSetup: request, GET_SETUP=${ipcMain.listenerCount(Main.GET_SETUP)}`);
-                        const id = crypto.randomBytes(2).toString();
-                        ipcMain.once(id, this.onInitialSetup);
-                        Electron.BrowserWindow.getAllWindows().forEach(
-                            window => window.webContents.send(
-                                Controller.GET_SETUP, id, includeConfig
-                            )
-                        );
-                    } else {
-                        console.log(`${this.constructor.name}.getSetup: wait`);
-                        ipcMain.once(Controller.WAIT_FOR_SETUP, this.onInitialSetup);
-                    }
-
-                }
-            });
+        throw new Error(`Main.getSetup(${includeConfig}): Use events instead: init, change`);
     }
 
     updateSetup(update: SetupDiff): void {
-        this.onSetupChanged(null, update);
+        console.log(`${this.constructor.name}.onSetupChanged: ${this.updating} no promise, emit `, update);
+
+        this.updates.push(update);
+        this.processUpdateQueue();
     }
 
-    onSetupChanged(e, update: SetupDiff): void {
-        BrowserWindow.getAllWindows().forEach(
-            window => window.webContents.send(
-                Controller.SETUP_CHANGED, update
-            )
-        );
+    deliverUpdate(update: SetupDiff): void {
+
+        this.updating = true;
+        try {
+            this.processSetupChange(update);
+            this.emit('change', update);
+
+            this.updateAllWindows(update, true);
+        } finally {
+            this.updating = false;
+        }
+    }
+
+    onSetupChanged(e, update: SetupDiffInterface): void {
+        const updateObj = new SetupDiff(update);
+
+        this.processSetupChange(updateObj);
+        this.emit('change', updateObj);
     }
 }
 
