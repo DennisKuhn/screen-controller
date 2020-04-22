@@ -1,33 +1,33 @@
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "module": "esnext",
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "noImplicitAny": false,
-    "sourceMap": true,
-    "baseUrl": ".",
-    "outDir": "dist",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react",
-    "typeRoots": [
-      "./types",
-      "./node_modules/@types"
-    ],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "target": "ES6"
-  },
-  "include": [
-    "src/**/*"
-  ]
+    "compilerOptions": {
+        "allowJs": true,
+        "module": "esnext",
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "baseUrl": ".",
+        "outDir": "dist",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react",
+        "typeRoots": [
+            "./types",
+            "./node_modules/@types"
+        ],
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "esnext"
+        ],
+        "target": "ES6",
+    },
+    "include": [
+        "src/**/*"
+    ]
 }

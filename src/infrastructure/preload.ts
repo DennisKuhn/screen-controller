@@ -4,5 +4,4 @@ console.log('preload included');
 
 process.once('loaded', () => {
     controller.log();
-    controller.getSetup(true);
 });

@@ -1,27 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { createBrowserHistory } from 'history';
-import { Router, Route, Switch, Redirect } from 'react-router-dom';
+import App from './App';
 
-// core components
-import Admin from './layouts/Admin';
-import RTL from './layouts/RTL';
+const renderApp = (): void => {
+    ReactDOM.render(<App />, document.getElementById('root'));
+};
 
-import './assets/css/material-dashboard-react.css';
-import controller from '../infrastructure/Configuration/Controller';
-
-const hist = createBrowserHistory();
-
-controller.log();
-
-ReactDOM.render(
-// tslint:disable-next-line: jsx-wrap-multiline
-  <Router history={hist}>
-    <Switch>
-      <Route path="/admin" component={Admin} />
-      <Route path="/rtl" component={RTL} />
-      <Redirect from="/" to="/admin/dashboard" />
-    </Switch>
-  </Router>,
-  document.getElementById('root')
-);
+renderApp();
+if (module.hot) {
+    module.hot.accept('./App', renderApp);
+}

@@ -59,6 +59,6 @@ rules:
   react/prop-types: 0
   react/jsx-indent-props: 0
   react/display-name: 0
-
-
+  prefer-arrow-callback:
+    - error
 

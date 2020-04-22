@@ -1,6 +1,6 @@
 import { Dictionary, NumericDictionary } from 'lodash';
 
-class IterableNumberMap<T> implements NumericDictionary<T>, Iterable<T> {
+export class IterableNumberDictionary<T> implements NumericDictionary<T>, Iterable<T> {
     [key: number]: T;
 
     *[Symbol.iterator](): Iterator<T> {
@@ -8,6 +8,9 @@ class IterableNumberMap<T> implements NumericDictionary<T>, Iterable<T> {
         for (const itemId in this) {
             yield this[itemId];
         }
+    }
+    get values(): T[] {
+        return Object.values(this);
     }
 }
 
@@ -31,11 +34,11 @@ export class Display implements DisplayInterface {
     }
     id: number;
 
-    browsers: IterableNumberMap<Browser> = new IterableNumberMap<Browser>();
+    browsers: IterableNumberDictionary<Browser> = new IterableNumberDictionary<Browser>();
 }
 
 export class Setup implements SetupInterface {
-    displays: IterableNumberMap<Display> = new IterableNumberMap<Display>();
+    displays: IterableNumberDictionary<Display> = new IterableNumberDictionary<Display>();
 
     constructor(setup?: SetupInterface) {
         if (setup) {
@@ -49,6 +52,8 @@ export class Setup implements SetupInterface {
             }
         }
     }
+
+
 }
 
 
@@ -68,11 +73,11 @@ export class DisplayDiff implements DisplayDiffInterface {
     }
     id: number;
 
-    browsers: IterableNumberMap<Partial<Browser> | null> = new IterableNumberMap<Partial<Browser> | null>();
+    browsers: IterableNumberDictionary<Partial<Browser> | null> = new IterableNumberDictionary<Partial<Browser> | null>();
 }
 
 export class SetupDiff implements SetupDiffInterface {
-    displays: IterableNumberMap<DisplayDiff | null> = new IterableNumberMap<DisplayDiff | null>();
+    displays: IterableNumberDictionary<DisplayDiff | null> = new IterableNumberDictionary<DisplayDiff | null>();
 
     constructor(setup?: SetupDiffInterface) {
         if (setup) {
@@ -96,7 +101,7 @@ export class SetupDiff implements SetupDiffInterface {
 
 /**
  * Bounds in %, relativ to display. Application unique id, e.g. auto increment from 1. 
- * config for paper usually ommited for performance, request explictly from Configuration/Controller
+ * config for Browser usually ommited for performance, request explictly from Configuration/Controller
  * @example {rx:0, ry:0, rWidth:1, rHeight:1} fills the entire display
  **/
 export interface Browser {
@@ -124,21 +129,21 @@ export interface Config {
     };
 }
 
-type Properties = Dictionary<Property>;
+export type Properties = Dictionary<Property>;
 
 export interface Option {
     label: string;
-    value: string;
+    value: string | number | boolean;
 }
 
 export interface Property {
-    condition: string;
+    condition?: string;
     order: number;
     text: string;
-    type: string;
-    max: number;
-    min: number;
-    value: string;
-    options: Option[];
+    type: string; // ['bool' | 'slider' | 'textinput' | 'directory'];
+    max?: number;
+    min?: number;
+    value?: string | number | boolean;
+    options?: Option[];
 }
 

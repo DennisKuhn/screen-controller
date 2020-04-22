@@ -1,9 +1,7 @@
 import * as React from 'react';
-import * as ReactDOM from 'react-dom';
 import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
-import controller from '../infrastructure/Configuration/Controller';
 
-function MainWindow(): JSX.Element {
+export default function MainWindow(): JSX.Element {
     return <>
         <h1>Main index</h1>
         <div id="wrapper">
@@ -22,9 +20,3 @@ function MainWindow(): JSX.Element {
         </div>
     </>;
 }
-
-ReactDOM.render(<MainWindow />, document.getElementById('root'));
-
-console.log('renderer/app.tsx');
-controller.log();
-

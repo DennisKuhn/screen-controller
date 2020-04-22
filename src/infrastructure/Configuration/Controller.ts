@@ -1,11 +1,9 @@
-import fs from 'fs';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer } from 'electron';
-import { Setup, SetupDiff, Browser, Config, SetupInterface, SetupDiffInterface } from './WallpaperSetup';
-import { fs2URL } from '../../utils/Url';
-import { cloneDeep, mergeWith, omit } from 'lodash';
+import { Setup, SetupDiff, Config, SetupInterface, SetupDiffInterface, Properties } from './WallpaperSetup';
+import { cloneDeep, mergeWith } from 'lodash';
 
-import '../../wallpaper/project.json';
+import DefaultConfig from '../../wallpaper/project.json';
 
 interface BrowserConfig {
     [key: number]: Config;
@@ -63,7 +61,8 @@ declare interface ControllerImpl {
 abstract class ControllerImpl extends EventEmitter implements Controller {
     protected setup: Setup | undefined;
     protected configs: BrowserConfig = {};
-    protected loadedConfig = false;
+    protected loadedAllConfig = false;
+    protected abstract getAllWindows: () => Electron.BrowserWindow[];
 
     protected constructor() {
         super();
@@ -91,32 +90,56 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     }
 
     protected processSetupChange(update: SetupDiff): void {
-
         console.log(`${this.constructor.name}.processSetupChange() ${JSON.stringify(update)} => ${JSON.stringify(this.setup)} + ${JSON.stringify(this.configs)}`);
+        if (!this.setup) throw new Error(`${this.constructor.name}.processSetupChange: no setup`);
+
         mergeWith(
-            this.setup,
-            update,
-            (objValue, srcValue, key, object /*, source, stack */) => {
-                if (key == 'paper') {
-                    if ('config' in srcValue) {
-                        console.log(`${this.constructor.name}.processSetupChange: split config[${object.id}]: ${srcValue.config}`);
-                        this.configs[object.id] = srcValue.config;
-                        return omit(srcValue, 'config');
-                    }
-                    return srcValue;
-                } // else mergeWith handles it
-            });
+            this.setup.displays,
+            update.displays,
+            (existingDisplay, newDisplay/*, displayId, object , source, stack */) => {
+                if (existingDisplay && newDisplay) {
+                    return mergeWith(
+                        existingDisplay,
+                        newDisplay,
+                        (objValue, srcValue, key/*, object , source, stack */) => {
+                            if (key === 'browsers') {
+                                return mergeWith(
+                                    objValue,
+                                    srcValue,
+                                    (existingBrowser, newBrowser, /*browserId, object , source, stack */) => {
+                                        if (existingBrowser && newBrowser) {
+                                            return mergeWith(
+                                                existingBrowser,
+                                                newBrowser,
+                                                (objValue, srcValue, key, object /*, source, stack */) => {
+                                                    if (key === 'config') {
+                                                        console.log(`${this.constructor.name}.processSetupChange: split config[${object.id}]: ${srcValue}`);
+                                                        this.configs[object.id] = srcValue.config;
+                                                        return null;
+                                                    }
+                                                }
+                                            );
+                                        }
+                                    }
+                                );
+                            }
+                        }
+                    );
+                }
+            }
+        );
+
         console.log(`${this.constructor.name}.processedSetupChange() ${JSON.stringify(update)} => ${JSON.stringify(this.setup)} + ${JSON.stringify(this.configs)}`);
     }
 
     protected updateAllWindows(update: SetupDiff, persist?: boolean): void {
         console.log(`${this.constructor.name}.updateAllWindows: ${update}`);
 
-        for (const window of BrowserWindow.getAllWindows()) {
+        for (const window of this.getAllWindows()) {
             const ipcWindow = window.webContents as IpcWindow;
 
-            console.log(`${this.constructor.name}.onSetupChanged: send to ${window.id}.${window.getBrowserView()?.id} persist=${persist}`);
-            
+            console.log(`${this.constructor.name}.updateAllWindows: send to ${window.id}.${window.getBrowserView()?.id} persist=${persist}`);
+
             ipcWindow.send('change', update, persist);
 
             persist = undefined;
@@ -132,6 +155,8 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
 
 class Renderer extends ControllerImpl {
+    protected getAllWindows = electron.remote.BrowserWindow.getAllWindows;
+
     private static SETUP_KEY = 'Setup';
 
     private ipc: IpcRenderer = electronIpcRenderer;
@@ -140,6 +165,8 @@ class Renderer extends ControllerImpl {
         super();
 
         console.log(`${this.constructor.name}()`);
+
+        this.getAllWindows = electron.remote.BrowserWindow.getAllWindows;
 
         this.setup = this.loadSetup();
 
@@ -159,6 +186,7 @@ class Renderer extends ControllerImpl {
         this.storeSetup();
     }
 
+    // onSetupChanged = (e, update: SetupDiffInterface, persist?: boolean): void => {
     onSetupChanged = (e, update: SetupDiffInterface, persist?: boolean): void => {
         const updateObj = new SetupDiff(update);
         console.log(`${this.constructor.name}.onSetupChanged`, update, updateObj);
@@ -175,8 +203,8 @@ class Renderer extends ControllerImpl {
     async getSetup(includeConfig: boolean): Promise<Setup> {
         let response: Setup;
 
-        if (!this.loadedConfig) {
-            await this.loadConfig();
+        if (includeConfig && (!this.loadedAllConfig)) {
+            this.loadAllConfig();
         }
 
         if (includeConfig) {
@@ -211,72 +239,67 @@ class Renderer extends ControllerImpl {
     }
 
 
-    private static getConfigKey(browser: Browser): string {
-        return `${browser.id}`;
+    private static getConfigKey(browserId: number): string {
+        return `browser-${browserId}-config`;
     }
 
-    protected defaultConfig: Config | undefined;
+    protected defaultConfig: Config = DefaultConfig;
 
-    private async loadConfig(): Promise<void> {
-        console.log(`${this.constructor.name}: loadConfig`);
+    private loadAllConfig(): void {
+        console.log(`${this.constructor.name}: loadAllConfig`);
 
-        if (!this.setup) throw new Error(`${this.constructor.name}.loadConfig(): no setup`);
+        if (!this.setup) throw new Error(`${this.constructor.name}.loadAllConfig(): no setup`);
 
         for (const display of this.setup.displays) {
             for (const browser of display.browsers) {
-                try {
-                    let configString = localStorage.getItem(Renderer.getConfigKey(browser));
-                    const isDefault = configString == null;
-                    let config: Config;
-
-                    if (isDefault && this.defaultConfig) {
-                        config = cloneDeep(this.defaultConfig);
-                    } else {
-                        if (null == configString) {
-                            configString = await this.loadDefault();
-                        }
-                        config = JSON.parse(configString);
-                    }
-
-                    this.configs[browser.id] = config;
-
-                    if (isDefault) {
-                        this.defaultConfig = this.defaultConfig ?? cloneDeep(config);
-                        this.storeConfig(browser, configString ?? JSON.stringify(config));
-                    }
-                } catch (loadConfigError) {
-                    console.error(
-                        `${this.constructor.name}: loadConfig[${browser.id}]: ${loadConfigError}: `,
-                        loadConfigError);
-                }
+                this.loadConfig(browser.id);
             }
         }
-        this.loadedConfig = true;
+        this.loadedAllConfig = true;
     }
 
-    private storeConfig(browser: Browser, config: string | null): void {
-        localStorage.setItem(Renderer.getConfigKey(browser), config ? config : '');
-    }
-
-
-    async loadDefault(): Promise<string> {
-        const defaultPath = fs2URL('../../wallpaper/project.json'); // href2fs(defaultLocation);
-
-        console.log(`${this.constructor.name}.loadDefault: path: ${defaultPath}`);
+    protected loadConfig(browserId: number): Config {
         try {
-            const buffer = await fs.promises.readFile(defaultPath);
-            console.log(`${this.constructor.name}.loadEDdefault`, buffer.toString());
+            let config: Config;
 
-            return buffer.toString();
-        } catch (loadError) {
-            console.error(
-                `${this.constructor.name}: ERROR loading default:${loadError}:${defaultPath}`,
-                loadError,
-                defaultPath);
-            throw new Error(`${this.constructor.name}: ERROR loading default:${loadError}:${defaultPath}`);
+            if (browserId in this.configs) {
+                config = this.configs[browserId];
+            } else {
+                const configString = localStorage.getItem(Renderer.getConfigKey(browserId));
+                if (null == configString) {
+                    config = cloneDeep(this.defaultConfig);
+                } else {
+                    config = JSON.parse(configString);
+                }
+                this.configs[browserId] = config;
+                if (null == configString) {
+                    this.storeConfig(browserId, JSON.stringify(config));
+                }
+            }
+            return config;
+        } catch (loadConfigError) {
+            console.error(`${this.constructor.name}: loadConfig[${browserId}]: ${loadConfigError}: `, loadConfigError);
+            throw new Error(`${this.constructor.name}: loadConfig[${browserId}]: ${loadConfigError}: `);
         }
     }
+
+    private storeConfig(browserId: number, config: string | null): void {
+        localStorage.setItem(Renderer.getConfigKey(browserId), config ? config : '');
+    }
 }
+
+declare global {
+    interface Window {
+        wallpaper: {
+            register: (listeners: { user: (settings: Properties) => void }) => void;
+        };
+    }
+}
+
+type Size = { width: number; height: number };
+type UserCallback = (settings: Properties) => void;
+type SizeCallback = (size: Size) => void;
+type Listeners = { user?: UserCallback; size?: SizeCallback };
 
 /**
  * Renderer Config Controller for Wallpaper Browsers. Deal with size
@@ -285,6 +308,7 @@ class Paper extends Renderer {
     private displayWidth: number;
     private displayHeight: number;
     private browserId: number;
+    private paper: Listeners = {};
 
     constructor() {
         super();
@@ -301,10 +325,66 @@ class Paper extends Renderer {
         this.displayWidth = Number(displayWidth.split('=')[1]);
         this.displayHeight = Number(displayHeight.split('=')[1]);
         this.browserId = Number(browserId.split('=')[1]);
+
+        this.connectToWallpaper();
     }
+
+
+    private onRegisterPaper = (listeners: Listeners): void => {
+        this.paper = listeners;
+
+        console.log(`ConfigController: ${this.browserId}: register`, listeners);
+
+        this.initUserListener();
+
+        this.initSizeListener();
+    }
+
+    private initUserListener(): void {
+        if (this.paper.user) {
+            const setting = this.loadConfig(this.browserId);
+
+            try {
+                this.paper.user(setting.general.properties);
+            } catch (initialError) {
+                console.error(
+                    `${this.constructor.name}: ${this.browserId}: ERROR initial user setting:${initialError}:`,
+                    initialError,
+                    setting.general);
+            }
+        }
+    }
+
+    private initSizeListener(): void {
+        if (this.paper.size) {
+            const size: Size = { width: this.displayWidth, height: this.displayHeight };
+
+            try {
+                this.paper.size(size);
+            } catch (initialError) {
+                console.error(
+                    `ConfigController: ${JSON.stringify(size)}: ERROR initial size setting:${initialError}:`,
+                    initialError,
+                    size);
+            }
+        }
+    }
+
+    /**
+     * Exposes interface to wallpaper window, e.g. window.wallpaper.register(listeners)
+     */
+    private connectToWallpaper(): void {
+        // Expose protected methods that allow the renderer process to use
+        // the ipcRenderer without exposing the entire object
+        window.wallpaper = {
+            register: this.onRegisterPaper
+        };
+    }
+
 }
 
 class Main extends ControllerImpl {
+    protected getAllWindows = BrowserWindow.getAllWindows;
 
     private ipc: IpcMain = electronIpcMain;
     private updating = false;
@@ -335,7 +415,7 @@ class Main extends ControllerImpl {
         if ((!this.updating) && this.updates.length) {
             this.updating = true;
             try {
-                do {                    
+                do {
                     const update = this.updates[0];
                     this.updates.shift();
 
@@ -353,7 +433,7 @@ class Main extends ControllerImpl {
     }
 
     updateSetup(update: SetupDiff): void {
-        console.log(`${this.constructor.name}.onSetupChanged: ${this.updating} no promise, emit `, update);
+        console.log(`${this.constructor.name}.updateSetup: ${this.updating} no promise, emit `, update);
 
         this.updates.push(update);
         this.processUpdateQueue();
@@ -372,7 +452,7 @@ class Main extends ControllerImpl {
         }
     }
 
-    onSetupChanged(e, update: SetupDiffInterface): void {
+    onSetupChanged = (e, update: SetupDiffInterface): void => {
         const updateObj = new SetupDiff(update);
 
         this.processSetupChange(updateObj);
