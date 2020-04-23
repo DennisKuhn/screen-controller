@@ -15,7 +15,6 @@ app.allowRendererProcessReuse = true;
 
 app.whenReady().then(
     () => {
-        console.log('index.ts: App ready');
         DisplaysManager.run();
         WallpapersManager.run();
 

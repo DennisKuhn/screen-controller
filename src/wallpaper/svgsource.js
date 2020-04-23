@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import delayed from './utils/delayed';
-import { shapePointList } from './shapelist';
+import shapePointList from './shapePointList';
 
 /**
  * 
@@ -63,7 +64,6 @@ export default class SvgSource {
         const dx = this.maxX - this.minX;
         const dy = this.maxY - this.minY;
         const d = Math.max(dx, dy);
-        const d2 = Math.min(dx, dy);
         let dx1 = 1;
         let dy1 = 1;
         if (d == dx) {
@@ -80,9 +80,7 @@ export default class SvgSource {
                 points[j][1] = ((points[j][1] - this.minY) / dy) * dy1 * 400 - 200 * dy1;
             }
         }
-        if (hasInit) {
-            this.toShapeList();
-        }
+        this.toShapeList();
         if (this.cbComplete)
             this.cbComplete();
     }
@@ -105,7 +103,7 @@ export let svgSource;
 export function SvgFileSource(fileuri, removeDetailAmount, shapeList, cbUpdate, cbComplete) {
     const reader = new FileReader();
 
-    reader.onload = function(e) {
+    reader.onload = function(/*e*/) {
         
         svgSource = new SvgSource( 
             reader.result, 
@@ -117,5 +115,3 @@ export function SvgFileSource(fileuri, removeDetailAmount, shapeList, cbUpdate, 
 
     reader.readAsText(fileuri); 
 }
-
-export let hasInit = false;

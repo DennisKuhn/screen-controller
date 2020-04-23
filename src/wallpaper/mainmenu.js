@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import HoverMenu from './wallwindow/hovermenu';
@@ -27,6 +28,7 @@ class MainMenu extends HoverMenu {
     constructor() {
         super('MainMenu');
 
+        this.contentShow = null;
         this.facebookConnectionButton = null;
         this.initReady = false;
         this.shapeStorageMenu = null;
@@ -100,7 +102,7 @@ class MainMenu extends HoverMenu {
             newGroup
         );
 
-        newGroup.addSubItem( function()  {
+        newGroup.addSubItem( () => {
             shapeList.empty(); shapeList.updateAutosave(); 
         }, 'clear', false );
         newGroup.addSubItem( () => {
@@ -133,7 +135,7 @@ class MainMenu extends HoverMenu {
         this.addGroup(
             newGroup
         );
-        this.facebookConnectionButton = newGroup.addStateButton( function(newConnectState)  {
+        this.facebookConnectionButton = newGroup.addStateButton( newConnectState => {
             // console.log("MainMenu.onNewConnectState(" + newConnectState + ")");
             switch (newConnectState) {
                 case 0: // connected
@@ -163,16 +165,16 @@ class MainMenu extends HoverMenu {
         );
 
         newGroup.addSubItem( function()  {
-            contentShow.next();
+            this.contentShow.next();
         }, 'next', false );
         newGroup.addStateButton( function(newPlayState)  {
             // console.log("HoverMenu.onNewFilterState(" + newFilterState + ")");
             switch (newPlayState) {
                 case 0: // play
-                    contentShow.play();
+                    this.contentShow.play();
                     break;
                 case 1: // pause
-                    contentShow.pause();
+                    this.contentShow.pause();
                     break;
             }
         }, 'play_pause', 2, 0 );
@@ -204,14 +206,14 @@ class MainMenu extends HoverMenu {
                 case 0: // out
                 case 2: // in
                     conSup.flush();
-                    contentShow.flush();
+                    this.contentShow.flush();
                     break;
                 case 1:  // none
                     break;
             }
         }, 'filter_states', 3, 0 );
 
-        newGroup.addStateButton( function(monitorState)  {
+        newGroup.addStateButton( monitorState => {
             // console.log("HoverMenu.onNewFilterState(" + newFilterState + ")");
             switch (monitorState) {
                 case 0: // Film

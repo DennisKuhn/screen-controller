@@ -1,7 +1,13 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import LoaderProducer from './loaderproducer';
 import fbCon from '../connectors/facebookconnector';
+
+// eslint-disable-next-line import/no-unresolved
+import UrlLoaderWorker from 'worker-loader!./facebookurlloader';
+import logo from './logos/Facebook.svg';
+
 /**
  *  @extends LoaderProducer
  */
@@ -11,7 +17,7 @@ class FacebookProducer extends LoaderProducer {
      * @param {number} bufferSize used by this producer.
      */
     constructor(bufferSize) {
-        super(bufferSize, 'Facebook.svg', 'production/facebookurlloader.js', 'FB-Url-Loader'  );
+        super(bufferSize, logo, new UrlLoaderWorker( {name: 'FB-Url-Loader' } ));
         // console.log("FacebookProducer.constructor(): bufferSize=" + this.bufferSize);
 
         this._accessToken = null;

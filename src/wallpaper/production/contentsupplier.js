@@ -233,7 +233,7 @@ class ContentSupplier {
      * @param {number} height 
      */
     setSize(width,height) {
-        console.log(`ContentSupplier.setSize(${width},${height}): ${this.producers.length}`, this.producers);
+        // console.log(`ContentSupplier.setSize(${width},${height}): ${this.producers.length}`, this.producers);
         this.width = width;
         this.height = height;
 

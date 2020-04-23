@@ -1,7 +1,9 @@
 import * as React from 'react';
 import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
+import controller from '../infrastructure/Configuration/Controller';
 
 export default function MainWindow(): JSX.Element {
+    controller.log();
     return <>
         <h1>Main index</h1>
         <div id="wrapper">

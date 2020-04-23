@@ -1,10 +1,55 @@
+/* eslint-disable @typescript-eslint/camelcase */
 'use strict';
 
 import WallWindow from './WallWindow';
 import { CreateAppend } from '../utils/utils';
 
+
+/**
+ * Contains all icons, ADD NEW ICONS HERE !
+ * The icon SVG file must be named wm_<IconName>.svg
+ */
+
+import wm_clear from './icons/wm_clear.svg';
+import wm_clipboard_code from './icons/wm_clipboard_code.svg';
+import wm_clipboard_prev from './icons/wm_clipboard_prev.svg';
+import wm_clipboard_url from './icons/wm_clipboard_url.svg';
+import wm_clipboard_url_prev from './icons/wm_clipboard_url_prev.svg';
+import wm_clipboard from './icons/wm_clipboard.svg';
+import wm_close from './icons/wm_close.svg';
+import wm_connection_facebook from './icons/wm_connection_facebook.svg';
+import wm_delete from './icons/wm_delete.svg';
+import wm_display_lock from './icons/wm_display_lock.svg';
+import wm_draw_scribble from './icons/wm_draw_scribble.svg';
+import wm_draw_line from './icons/wm_draw_line.svg';
+import wm_draw_oval from './icons/wm_draw_oval.svg';
+import wm_draw_circle from './icons/wm_draw_circle.svg';
+import wm_draw_rect from './icons/wm_draw_rect.svg';
+import wm_draw_square from './icons/wm_draw_square.svg';
+import wm_filter_states from './icons/wm_filter_states.svg';
+import wm_load from './icons/wm_load.svg';
+import wm_loadsvg from './icons/wm_loadsvg.svg';
+import wm_move_down from './icons/wm_move_down.svg';
+import wm_move_left from './icons/wm_move_left.svg';
+import wm_move_right from './icons/wm_move_right.svg';
+import wm_move_up from './icons/wm_move_up.svg';
+import wm_next from './icons/wm_next.svg';
+import wm_play_pause from './icons/wm_play_pause.svg';
+import wm_rotate_ccw from './icons/wm_rotate_ccw.svg';
+import wm_rotate_cw from './icons/wm_rotate_cw.svg';
+import wm_save from './icons/wm_save.svg';
+import wm_scale_down from './icons/wm_scale_down.svg';
+import wm_scale_up from './icons/wm_scale_up.svg';
+import wm_supply from './icons/wm_supply.svg';
+
+
 const wmITEM_TITLE_CLASS = 'wmItemTitle'; // Unused
 const wmITEM_DESCRIPTION_CLASS = 'wmItemDescription'; // Unused
+
+const wmLIST_ITEM_CLASS = 'wmListItem';
+const wmLIST_ITEM_TEXT_CONTAINER_CLASS = 'wmListItemTextContainer';
+const wmLIST_ITEM_TITLE_CLASS = 'wmListItemTitle';
+const wmLIST_ITEM_DESCRIPTION = 'wmListItemDescription';
 
 
 const wmACTION_ID_PREFIX = 'wmAction-';
@@ -20,34 +65,34 @@ const wmSVG_ICON_FOLDER = 'wallwindow/icons/';
 function addButtonHoldIt(btn, action, start, speedup) {
     let t;
     const originalStart = start;
-    var repeat = () => {
+    const repeat = () => {
         action();
         t = setTimeout(repeat, start);
         start = start / speedup;
-        if ( start < 30 ) start = 30;
+        if (start < 30) start = 30;
     };
 
-    btn.addEventListener('mousedown',function(e) {
+    btn.addEventListener('mousedown', (/*e*/) => {
         // console.log("addButtonHoldIt().mousedown()");
         // e.stopPropagation(); e.preventDefault();
         start = originalStart;
         repeat();
         return false;
-    },false);
+    }, false);
 
-    btn.addEventListener('mouseup',function(e) {
+    btn.addEventListener('mouseup', (/*e*/) => {
         // console.log("addButtonHoldIt().mouseup()");
         // e.stopPropagation(); e.preventDefault();
         clearTimeout(t);
         return false;
-    },false);
+    }, false);
 
-    btn.addEventListener('mouseout',function(e) {
+    btn.addEventListener('mouseout', (/*e*/) => {
         // console.log("addButtonHoldIt().mouseout()");
         // e.stopPropagation(); e.preventDefault();
         clearTimeout(t);
         return false;
-    },false);
+    }, false);
 }
 
 /**
@@ -71,7 +116,7 @@ function createIcon(iconClass, cbAction, parentID, holdIt) {
             newIcon.id = wmACTION_ID_PREFIX + parentID + '-' + iconClass;
             if (cbAction) {
                 if (holdIt) {
-                    addButtonHoldIt(newIcon, cbAction, 300, 1.1 );
+                    addButtonHoldIt(newIcon, cbAction, 300, 1.1);
                 } else {
                     newIcon.onclick = cbAction;
                 }
@@ -90,6 +135,8 @@ const wmCONTENT_CLASS = 'wmContent';
 const wmCONTENT_ID_POSTIFX = '-wmContent';
 const wmWRAPPER_CLASS = 'wmWrapper';
 const wmWRAPPER_ID_POSTFIX = '-wmWrapper';
+
+const wmOLD_GROUP_APPENDIX = '-old';
 
 const wmLOAD_STATES = {
     NULL: 'NULL',
@@ -110,7 +157,7 @@ export default class Wallmenu extends WallWindow {
         super(name, parent);
 
         this.wrapperElement = null;
-        this.contentElement = null;        
+        this.contentElement = null;
         this.enabled = true;
         this.hasLoaded = false;
         this.createCallLoaded = false;
@@ -126,20 +173,20 @@ export default class Wallmenu extends WallWindow {
             case wmLOAD_STATES.NULL:
                 // console.log("Wallmenu["+name+"].constructor[wmLOAD_STATES._NULL]");
                 Wallmenu.LoadingState = wmLOAD_STATES.LOADING;
-                Wallmenu.LoadedCallbacks.push( () => {
-                    instance.loaded(); 
-                } );
+                Wallmenu.LoadedCallbacks.push(() => {
+                    instance.loaded();
+                });
                 Wallmenu.loadAllIcons();
                 break;
             case wmLOAD_STATES.LOADING:
                 // console.log("Wallmenu["+name+"].constructor[wmLOAD_STATES.LOADING]");
                 Wallmenu.LoadedCallbacks.push(() => {
-                    instance.loaded(); 
+                    instance.loaded();
                 });
                 break;
             case wmLOAD_STATES.LOADED:
                 // console.warn("Wallmenu["+ instance.name+"].constructor[wmLOAD_STATES.LOADED] set timeout(loaded, 1)");
-                setTimeout( () => instance.loaded(), 1 );
+                setTimeout(() => instance.loaded(), 1);
                 break;
             default:
                 console.error('Wallmenu.constructor(' + name + ', cbOnLoaded) UNKOWN STATE wmLoadingState=' + Wallmenu.LoadingState);
@@ -191,7 +238,7 @@ export default class Wallmenu extends WallWindow {
      * Should be overwriten by deriving class to construct the menu.
      */
     onLoaded() {
-        console.error('Wallmenu[' + this.constructor.name + ', ' + this.name + '] no onLoaded !!' );
+        console.error('Wallmenu[' + this.constructor.name + ', ' + this.name + '] no onLoaded !!');
     }
 
     /**
@@ -204,9 +251,9 @@ export default class Wallmenu extends WallWindow {
 
         if (oldGroup) {
             // console.log("Wallmenu.addGroup(" + newGroup.id + ") Found Old Group: " + oldGroup.id);
-            this.contentElement.replaceChild( newGroup, oldGroup );
+            this.contentElement.replaceChild(newGroup, oldGroup);
         } else {
-            this.contentElement.appendChild( newGroup );
+            this.contentElement.appendChild(newGroup);
         }
     }
 
@@ -218,7 +265,7 @@ export default class Wallmenu extends WallWindow {
 
         if (updateGroup) {
             const updateItem = updateGroup.querySelector('[id=' + itemID + ']');
-            if (updateItem) {            
+            if (updateItem) {
                 const updateTitle = updateItem.querySelector('[class~=' + wmITEM_TITLE_CLASS + ']');
                 if (updateTitle) {
                     updateTitle.innerText = newText;
@@ -235,7 +282,7 @@ export default class Wallmenu extends WallWindow {
 
         if (updateGroup) {
             const updateItem = updateGroup.querySelector('[id=' + itemID + ']');
-            if (updateItem) {            
+            if (updateItem) {
                 const updateAction = updateItem.querySelector('[id=' + wmACTION_ID_PREFIX + itemID + '-' + action + ']');
                 if (updateAction) {
                     if (enabled) {
@@ -252,7 +299,7 @@ export default class Wallmenu extends WallWindow {
      * Pre loads all SVG Icons defined in AllIcons.
      */
     static loadAllIcons() {
-        Wallmenu.AllIcons.forEach(element => {
+        Object.entries(Wallmenu.AllIcons).forEach(element => {
             Wallmenu.loadIcon(element);
         });
     }
@@ -261,80 +308,116 @@ export default class Wallmenu extends WallWindow {
      * Loads an SVG icon into the DOM using XMLHttpRequest, to be referenced by menu items.
      * @param {string} iconClass e.g. clear
      */
-    static loadIcon(iconClass) {
+    static loadIcon([iconClass, iconValue]) {
         const xhr = new XMLHttpRequest();
-        xhr.open('get', wmSVG_ICON_FOLDER + wmSVG_ICON_FILE_PREFIX + iconClass + wmSVG_ICON_FILE_EXTENSION, true);
-        xhr.onreadystatechange = function(ev) {
+        const location = 'wallpaper/' + wmSVG_ICON_FOLDER + wmSVG_ICON_FILE_PREFIX + iconClass + wmSVG_ICON_FILE_EXTENSION;
+
+        xhr.open('get', location, true);
+        xhr.onreadystatechange = function(/* ev */) {
             if (xhr.readyState != 4) return;
             if (xhr.responseXML) {
                 let svg = xhr.responseXML.documentElement;
-                svg = document.importNode(svg,true); // surprisingly optional in these browsers
-                svg.id = wmSVG_ICON_ID_PREFIX + iconClass;            
+                svg = document.importNode(svg, true); // surprisingly optional in these browsers
+                svg.id = wmSVG_ICON_ID_PREFIX + iconClass;
                 document.body.appendChild(svg);
 
                 const loadedIcons = document.querySelectorAll('[id^=' + wmSVG_ICON_ID_PREFIX + ']').length;
-                if ( loadedIcons == Wallmenu.AllIcons.length) {
+                if (loadedIcons == Wallmenu.AllIcons.length) {
                     // console.log("loadIcon(" + iconClass + ") last icon loaded " + loadedIcons + "/" + Wallmenu.AllIcons.length);
                     Wallmenu.LoadedAllIcons();
-                } else if ( loadedIcons > Wallmenu.AllIcons.length) {
+                } else if (loadedIcons > Wallmenu.AllIcons.length) {
                     console.error('loadIcon(' + iconClass + ') LOADED TOO MANY ICONS ' + loadedIcons + '/' + Wallmenu.AllIcons.length);
                 }
             } else {
                 console.error('wallmenu: loadIcon(' + iconClass + ') received empty response');
             }
         };
-        xhr.send();
+        try {
+            xhr.send();
+        } catch (loadIconError) {
+            console.error(`Wallmenu.loadIcon(${iconClass},${iconValue}) from ${location}: ${loadIconError}`, loadIconError);
+        }
     }
 
     static LoadedAllIcons() {
         // console.log("Wallmenu.LoadedAllIcons wmOnLoadedCallbacks=" + Wallmenu.LoadedCallbacks.length);
         Wallmenu.LoadingState = wmLOAD_STATES.LOADED;
-        Wallmenu.LoadedCallbacks.forEach( cbOnLoaded => {
+        Wallmenu.LoadedCallbacks.forEach(cbOnLoaded => {
             cbOnLoaded();
-        } );
+        });
     }
 }
 
 Wallmenu.LoadingState = wmLOAD_STATES.NULL;
 Wallmenu.LoadedCallbacks = [];
-/**
- * Contains all icons, ADD NEW ICONS HERE !
- * The icon SVG file must be named wm_<IconName>.svg
- */
-Wallmenu.AllIcons = [
-    'clear', 
-    'clipboard_code', 
-    'clipboard_prev', 
-    'clipboard_url', 
-    'clipboard_url_prev', 
-    'clipboard',
-    'close',
-    'connection_facebook',
-    'delete',
-    'display_lock',
-    'draw_scribble',
-    'draw_line',
-    'draw_oval',
-    'draw_circle',
-    'draw_rect',
-    'draw_square',
-    'filter_states',
-    'load',
-    'loadsvg',
-    'move_down',
-    'move_left',
-    'move_right',
-    'move_up',
-    'next',
-    'play_pause',
-    'rotate_ccw',
-    'rotate_cw',
-    'save',
-    'scale_down',
-    'scale_up',
-    'supply'
-];
 
+Wallmenu.AllIcons = {
+    clear: wm_clear,
+    clipboard_code: wm_clipboard_code,
+    clipboard_prev: wm_clipboard_prev,
+    clipboard_url: wm_clipboard_url,
+    clipboard_url_prev: wm_clipboard_url_prev,
+    clipboard: wm_clipboard,
+    close: wm_close,
+    connection_facebook: wm_connection_facebook,
+    delete: wm_delete,
+    display_lock: wm_display_lock,
+    draw_scribble: wm_draw_scribble,
+    draw_line: wm_draw_line,
+    draw_oval: wm_draw_oval,
+    draw_circle: wm_draw_circle,
+    draw_rect: wm_draw_rect,
+    draw_square: wm_draw_square,
+    filter_states: wm_filter_states,
+    load: wm_load,
+    loadsvg: wm_loadsvg,
+    move_down: wm_move_down,
+    move_left: wm_move_left,
+    move_right: wm_move_right,
+    move_up: wm_move_up,
+    next: wm_next,
+    play_pause: wm_play_pause,
+    rotate_ccw: wm_rotate_ccw,
+    rotate_cw: wm_rotate_cw,
+    save: wm_save,
+    scale_down: wm_scale_down,
+    scale_up: wm_scale_up,
+    supply: wm_supply
+};
+// Wallmenu.AllIcons = {
+//     clear: wm_clear,
+//     clear: require('./icons/wm_clear.svg'),
+//     clipboard_code: require('./icons/wm_clipboard_code.svg'),
+//     clipboard_prev: require('./icons/wm_clipboard_prev.svg'),
+//     clipboard_url: require('./icons/wm_clipboard_url.svg'),
+//     clipboard_url_prev: require('./icons/wm_clipboard_url_prev.svg'),
+//     clipboard: require('./icons/wm_clipboard.svg'),
+//     close: require('./icons/wm_close.svg'),
+//     connection_facebook: require('./icons/wm_connection_facebook.svg'),
+//     delete: require('./icons/wm_delete.svg'),
+//     display_lock: require('./icons/wm_display_lock.svg'),
+//     draw_scribble: require('./icons/wm_draw_scribble.svg'),
+//     draw_line: require('./icons/wm_draw_line.svg'),
+//     draw_oval: require('./icons/wm_draw_oval.svg'),
+//     draw_circle: require('./icons/wm_draw_circle.svg'),
+//     draw_rect: require('./icons/wm_draw_rect.svg'),
+//     draw_square: require('./icons/wm_draw_square.svg'),
+//     filter_states: require('./icons/wm_filter_states.svg'),
+//     load: require('./icons/wm_load.svg'),
+//     loadsvg: require('./icons/wm_loadsvg.svg'),
+//     move_down: require('./icons/wm_move_down.svg'),
+//     move_left: require('./icons/wm_move_left.svg'),
+//     move_right: require('./icons/wm_move_right.svg'),
+//     move_up: require('./icons/wm_move_up.svg'),
+//     next: require('./icons/wm_next.svg'),
+//     play_pause: require('./icons/wm_play_pause.svg'),
+//     rotate_ccw: require('./icons/wm_rotate_ccw.svg'),
+//     rotate_cw: require('./icons/wm_rotate_cw.svg'),
+//     save: require('./icons/wm_save.svg'),
+//     scale_down: require('./icons/wm_scale_down.svg'),
+//     scale_up: require('./icons/wm_scale_up.svg'),
+//     supply: require('./icons/wm_supply.svg')
+// };
 
 const wmPOPMENU_NAME_PREFIX = 'PopupMenu-';
 
@@ -347,7 +430,7 @@ export class PopupMenu extends Wallmenu {
      * @param {string} name 
      */
     constructor(name) {
-        super( wmPOPMENU_NAME_PREFIX + name);
+        super(wmPOPMENU_NAME_PREFIX + name);
 
         this.Create();
     }
@@ -358,7 +441,7 @@ export class PopupMenu extends Wallmenu {
 
     Show() {
         super.Show();
-        this.wrapperElement.style.display = 'block'; 
+        this.wrapperElement.style.display = 'block';
     }
 
     Hide() {
@@ -367,7 +450,214 @@ export class PopupMenu extends Wallmenu {
     }
 }
 
-const wmOLD_GROUP_APPENDIX = '-old';
+/**
+ * 
+ */
+class WallButton {
+    constructor() {
+        this.root = null;
+    }
+
+    Show() {
+        this.root.style.visibility = 'visible';
+    }
+    Hide() {
+        this.root.style.visibility = 'hidden';
+    }
+}
+
+/**
+ * @extends WallButton
+ */
+class WrappedButton extends WallButton {
+    /**
+     * 
+     * @param {HTMLElement} container 
+     */
+    constructor(container) {
+        super();
+        this.root = CreateAppend('span', container, /*id=*/ null); // div ?
+        this.root.classList.add(wmBUTTON_CLASS);
+        this.root.classList.add(wmICON_WRAPPER_CLASS);
+    }
+
+    /**
+     * @returns {HTMLElement}
+     */
+    get rootElement() {
+        return this.root;
+    }
+
+}
+
+const wbPROGRESS_WRAPPER_CLASS = 'wbProgressWrapper';
+const wbPROGRESS_CLASS = 'wbProgress';
+
+/**
+ * @extends WrappedButton
+ */
+class ProgressButton extends WrappedButton {
+    /**
+     * 
+     * @param {HTMLElement} container 
+     * @param {string} id
+     */
+    constructor(container, id) {
+        super(container);
+
+        this.root.classList.add(wbPROGRESS_WRAPPER_CLASS);
+        this.progress = CreateAppend('div', this.root, id);
+        this.progress.classList.add(wbPROGRESS_CLASS);
+    }
+
+    /**
+     * Sets relative progress 0-1.
+     * @param {number} percentage percentage 0.1 = 10%
+     */
+    setProgress(percentage) {
+        // console.log("ProgressButton.setProgress(" + percentage + ")");
+        this.progress.style.width = Math.round(100 * percentage) + '%';
+    }
+
+    setColor(progress, remaining) {
+        this.root.style.backgroundColor = remaining;
+        this.progress.style.backgroundColor = progress;
+    }
+}
+
+/**
+ * @extends WallButton
+ */
+class IconButton extends WallButton {
+    constructor(container, iconClass, cbAction, itemID, holdIt) {
+        super();
+
+        this.itemID = itemID;
+        this.cbAction = cbAction;
+
+        this.root = createIcon(iconClass, e => this.onClick(e), this.itemID, holdIt);
+
+        container.appendChild(this.root);
+    }
+
+    onClick(/*e*/) {
+        if (this.cbAction) {
+            this.cbAction(this.itemID);
+        } else {
+            console.error('IconButton[' + this.itemID + '] no onClick cbAction !!');
+        }
+    }
+}
+
+/**
+ *
+ * @extends WallButton
+ */
+class ImageButton extends WallButton {
+    constructor(container, imageUrl, cbAction, itemID, holdIt) {
+        super();
+
+        this.itemID = itemID;
+        this.cbAction = cbAction;
+
+        this.root = document.createElement('img');
+        this.root.src = imageUrl;
+        this.root.classList.add(wmICON_CLASS);
+        this.root.id = wmACTION_ID_PREFIX + '-' + itemID;
+
+        if (cbAction) {
+            if (holdIt) {
+                addButtonHoldIt(this.root, cbAction, 300, 1.1);
+            } else {
+                this.root.onclick = cbAction;
+            }
+        }
+
+        container.appendChild(this.root);
+    }
+
+    onClick(/*e*/) {
+        if (this.cbAction) {
+            this.cbAction(this.itemID);
+        } else {
+            console.error('ImageButton[' + this.itemID + '] no onClick cbAction !!');
+        }
+    }
+}
+
+const wb_STATE_CLASS_PREFIX = 'wbState';
+const wb_LAST_STATE_CLASS = 'wbStateLast';
+
+/**
+ * @extends WrappedButton
+ */
+class StateButton extends WrappedButton {
+
+    /**
+     * 
+     * @param {*} container 
+     * @param {string} iconClass 
+     * @param {newstate => void} cbAction 
+     * @param {number} statesCount 
+     * @param {number} initialState 
+     */
+    constructor(container, iconClass, cbAction, statesCount, initialState) {
+        super(container);
+
+        this.statesCount = statesCount;
+        this.state = initialState;
+
+        this.states = [];
+        for (let iState = 0; iState < statesCount; iState++) {
+            this.states[iState] = wb_STATE_CLASS_PREFIX + iState;
+        }
+        this.states.push(wb_LAST_STATE_CLASS);
+        this.onStateChanged = cbAction;
+
+        this.button = createIcon(
+            iconClass,
+            (/*e*/) => this.nextState(),
+            /* parentID=*/ null,
+            /* holdIt=*/ false
+        );
+
+        this.setStateClasses();
+
+        this.root.appendChild(this.button);
+    }
+
+    setStateClasses() {
+        this.button.classList.add(wb_STATE_CLASS_PREFIX + this.state);
+        if (this.state == (this.statesCount - 1)) {
+            this.button.classList.add(wb_LAST_STATE_CLASS);
+        }
+    }
+
+    /**
+     * Selects the state of the button
+     * @param {number} newState number 0-(n-1) as used in the SVG
+     */
+    setState(newState) {
+        this.button.classList.remove(... this.states);
+        this.state = newState;
+
+        this.setStateClasses();
+
+        if (this.onStateChanged) {
+            this.onStateChanged(this.state);
+        } else {
+            console.error('StateButton.setState(' + newState + ') no onStateChanged');
+        }
+    }
+
+    nextState() {
+        if (this.state < (this.statesCount - 1)) {
+            this.setState(this.state + 1);
+        } else {
+            this.setState(0);
+        }
+    }
+}
 
 /**
  * 
@@ -404,215 +694,6 @@ class WallMenuGroup {
     }
 }
 
-/**
- * 
- */
-class WallButton {
-    constructor() {
-        this.root = null;
-    }
-
-    Show() {
-        this.root.style.visibility = 'visible';
-    }
-    Hide() {
-        this.root.style.visibility = 'hidden';
-    }
-}
-
-/**
- * @extends WallButton
- */
-class WrappedButton extends WallButton {
-    /**
-     * 
-     * @param {HTMLElement} container 
-     */
-    constructor(container) {
-        super();
-        this.root = CreateAppend('span', container, /*id=*/ null ); // div ?
-        this.root.classList.add( wmBUTTON_CLASS );
-        this.root.classList.add( wmICON_WRAPPER_CLASS );
-    }
-
-    /**
-     * @returns {HTMLElement}
-     */
-    get rootElement() {
-        return this.root; 
-    }
-
-}
-
-const wbPROGRESS_WRAPPER_CLASS = 'wbProgressWrapper';
-const wbPROGRESS_CLASS = 'wbProgress';
-
-/**
- * @extends WrappedButton
- */
-class ProgressButton extends WrappedButton {
-    /**
-     * 
-     * @param {HTMLElement} container 
-     * @param {string} id
-     */
-    constructor(container, id) {
-        super(container);
-
-        this.root.classList.add(wbPROGRESS_WRAPPER_CLASS);
-        this.progress = CreateAppend('div', this.root, id );		
-        this.progress.classList.add(wbPROGRESS_CLASS);
-    }
-
-    /**
-     * Sets relative progress 0-1.
-     * @param {number} percentage percentage 0.1 = 10%
-     */
-    setProgress(percentage) {
-        // console.log("ProgressButton.setProgress(" + percentage + ")");
-        this.progress.style.width = Math.round( 100 * percentage ) + '%';
-    }
-
-    setColor(progress, remaining) {
-        this.root.style.backgroundColor = remaining;
-        this.progress.style.backgroundColor = progress;
-    }
-}
-
-/**
- * @extends WallButton
- */
-class IconButton extends WallButton {
-    constructor(container, iconClass, cbAction, itemID, holdIt) {
-        super();
-
-        this.itemID = itemID;
-        this.cbAction = cbAction;
-
-        this.root = createIcon(iconClass, e => this.onClick(e), this.itemID, holdIt);
-
-        container.appendChild(this.root);
-    }
-
-    onClick(e) {
-        if (this.cbAction) {
-            this.cbAction(this.itemID);
-        } else {
-            console.error('IconButton[' + this.itemID + '] no onClick cbAction !!');
-        }
-    }
-}
-
-/**
- *
- * @extends WallButton
- */
-class ImageButton extends WallButton {
-    constructor(container, imageUrl, cbAction, itemID, holdIt) {
-        super();
-
-        this.itemID = itemID;
-        this.cbAction = cbAction;
-
-        this.root = document.createElement('img');
-        this.root.src = imageUrl;
-        this.root.classList.add(wmICON_CLASS);
-        this.root.id = wmACTION_ID_PREFIX + '-' + itemID;
-
-        if (cbAction) {
-            if (holdIt) {
-                addButtonHoldIt(this.root, cbAction, 300, 1.1 );
-            } else {
-                this.root.onclick = cbAction;
-            }
-        }
-    
-        container.appendChild(this.root);
-    }
-
-    onClick(e) {
-        if (this.cbAction) {
-            this.cbAction(this.itemID);
-        } else {
-            console.error('ImageButton[' + this.itemID + '] no onClick cbAction !!');
-        }
-    }
-}
-
-const wb_STATE_CLASS_PREFIX = 'wbState';
-const wb_LAST_STATE_CLASS = 'wbStateLast';
-
-/**
- * @extends WrappedButton
- */
-class StateButton extends WrappedButton {
-
-    /**
-     * 
-     * @param {*} container 
-     * @param {string} iconClass 
-     * @param {newstate => void} cbAction 
-     * @param {number} statesCount 
-     * @param {number} initialState 
-     */
-    constructor(container, iconClass, cbAction, statesCount, initialState) {
-        super(container);
-
-        this.statesCount = statesCount;
-        this.state = initialState;
-
-        this.states = [];
-        for (let iState=0; iState < statesCount; iState++) {
-            this.states[iState] = wb_STATE_CLASS_PREFIX + iState;
-        }
-        this.states.push(wb_LAST_STATE_CLASS);
-        this.onStateChanged = cbAction;
-
-        this.button = createIcon( 
-            iconClass, 
-            e => this.nextState(),
-            /* parentID=*/ null,
-            /* holdIt=*/ false
-        );
-
-        this.setStateClasses();
-        
-        this.root.appendChild(this.button);
-    }
-
-    setStateClasses() {
-        this.button.classList.add(wb_STATE_CLASS_PREFIX + this.state);
-        if (this.state == (this.statesCount - 1)) {
-            this.button.classList.add(wb_LAST_STATE_CLASS);
-        }
-    }
-
-    /**
-     * Selects the state of the button
-     * @param {number} newState number 0-(n-1) as used in the SVG
-     */
-    setState(newState) {
-        this.button.classList.remove( ... this.states);
-        this.state = newState;
-
-        this.setStateClasses();
-
-        if (this.onStateChanged) {
-            this.onStateChanged(this.state);
-        } else {
-            console.error( 'StateButton.setState(' + newState + ') no onStateChanged');
-        }
-    }
-
-    nextState() {
-        if (this.state < (this.statesCount - 1)) {
-            this.setState(this.state + 1);
-        } else {
-            this.setState(0);
-        }
-    }
-}
-
 const wmBUTTON_LIST_CLASS = 'wmButtonList';
 
 /**
@@ -636,17 +717,17 @@ export class WallMenuButtonList extends WallMenuGroup {
      * @param {boolean} fileLoadButton =true if creating a button to choose a local file
      * @returns {HTMLSpanElement}
      */
-    addSubItem(cbAction, iconClass, holdIt, fileLoadButton) {       
+    addSubItem(cbAction, iconClass, holdIt, fileLoadButton) {
         const newClickWrap = document.createElement('span');
         let newFileButton = null;
 
         newClickWrap.className = wmBUTTON_CLASS + ' ' + wmICON_WRAPPER_CLASS;
 
         if (fileLoadButton) {
-            newFileButton = CreateAppend( 'input', newClickWrap, null, iconClass);
+            newFileButton = CreateAppend('input', newClickWrap, null, iconClass);
             newFileButton.setAttribute('type', 'file');
             newFileButton.setAttribute('accept', '.svg');
-            newFileButton.addEventListener('change', cbAction );
+            newFileButton.addEventListener('change', cbAction);
         } else if (iconClass) {
             const newIcon = createIcon(iconClass, cbAction, this.containerElement.id, holdIt);
 
@@ -740,7 +821,7 @@ export class WallMenuRadioList extends WallMenuGroup {
         super(name, wmRADIO_LIST_CLASS);
     }
 
-    addSubItem( text, cbAction, isDefault, iconClass, value  ) {
+    addSubItem(text, cbAction, isDefault, iconClass, value) {
         const radioContainer = document.createElement('label');
         radioContainer.className = wmRADIO_CONTAINER_CLASS;
 
@@ -755,14 +836,14 @@ export class WallMenuRadioList extends WallMenuGroup {
             newRadio.setAttribute('value', value);
         }
         if (isDefault) {
-            newRadio.setAttribute( 'checked', 'checked');
+            newRadio.setAttribute('checked', 'checked');
         }
         newRadio.className = wmRADIO_CLASS;
 
-        radioContainer.appendChild( newRadio);
+        radioContainer.appendChild(newRadio);
         if (text) {
             if (iconClass) {
-                radioContainer.appendChild( document.createTextNode(text));
+                radioContainer.appendChild(document.createTextNode(text));
             } else {
                 const newText = CreateAppend('span', radioContainer, null, wmICON_CLASS);
                 newText.appendChild(document.createTextNode(text));
@@ -788,7 +869,7 @@ export class WallMenuRadioList extends WallMenuGroup {
  * A title and description in between.
  */
 class WallMenuListItem {
-    constructor( container, itemID, text, cbAction, iconClass, holdIt, cbAction2, iconClass2, holdIt2, cbAction3, iconClass3, holdIt3  ) {
+    constructor(container, itemID, text, cbAction, iconClass, holdIt, cbAction2, iconClass2, holdIt2, cbAction3, iconClass3, holdIt3) {
         this.root = document.createElement('div');
 
         this.root.className = wmLIST_ITEM_CLASS;
@@ -808,24 +889,24 @@ class WallMenuListItem {
         } else {
             this.titleDiv.style.display = 'none';
         }
-        this.textContainer.appendChild( this.titleDiv );
+        this.textContainer.appendChild(this.titleDiv);
 
         this.descDiv = document.createElement('span');
         this.descDiv.className = wmLIST_ITEM_DESCRIPTION + ' ' + wmITEM_DESCRIPTION_CLASS;
         this.descDiv.style.display = 'none';
 
-        this.textContainer.appendChild( this.descDiv );
+        this.textContainer.appendChild(this.descDiv);
 
-        this.root.appendChild( this.textContainer );
+        this.root.appendChild(this.textContainer);
 
-        if ( cbAction2 && iconClass2 ) {
+        if (cbAction2 && iconClass2) {
             this.secondAction = new IconButton(this.root, iconClass2, cbAction2, itemID, holdIt2);
         }
 
-        if ( cbAction3 && iconClass3 ) {
+        if (cbAction3 && iconClass3) {
             this.thirdAction = new IconButton(this.root, iconClass3, cbAction3, itemID, holdIt3);
         }
-        container.appendChild( this.root);
+        container.appendChild(this.root);
     }
 
     /**
@@ -864,10 +945,6 @@ class WallMenuListItem {
 }
 
 const wmLIST_CLASS = 'wmList';
-const wmLIST_ITEM_CLASS = 'wmListItem';
-const wmLIST_ITEM_TEXT_CONTAINER_CLASS = 'wmListItemTextContainer';
-const wmLIST_ITEM_TITLE_CLASS = 'wmListItemTitle';
-const wmLIST_ITEM_DESCRIPTION = 'wmListItemDescription';
 
 /**
  * List of items with two buttons and text in between.
@@ -897,8 +974,8 @@ export class WallMenuList extends WallMenuGroup {
      * @param {boolean} holdIt3
      * @returns {WallMenuListItem}
      */
-    addSubItem( itemID, text, cbAction, iconClass, holdIt, cbAction2, iconClass2, holdIt2, cbAction3, iconClass3, holdIt3  ) {
-        return new WallMenuListItem(this.containerElement, itemID, text, cbAction, iconClass, holdIt, cbAction2, iconClass2, holdIt2, cbAction3, iconClass3, holdIt3  );
+    addSubItem(itemID, text, cbAction, iconClass, holdIt, cbAction2, iconClass2, holdIt2, cbAction3, iconClass3, holdIt3) {
+        return new WallMenuListItem(this.containerElement, itemID, text, cbAction, iconClass, holdIt, cbAction2, iconClass2, holdIt2, cbAction3, iconClass3, holdIt3);
     }
 }
 

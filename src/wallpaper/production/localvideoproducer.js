@@ -1,7 +1,13 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
+
+// eslint-disable-next-line import/no-unresolved
+import FileLoaderWorker from 'worker-loader!./fileloader';
 
 import WpeOnDemandProducer from './wpeondemandproducer';
 import { BufferStates } from './contentproducer';
+
+import logo from './logos/hdd.svg';
 
 let producedVideos = 0;
 
@@ -19,7 +25,7 @@ class VideoPreloadInfo {
         }
 
         this.video.play().then( 
-            value => {
+            () => {
                 let pausedVideo = false;
                 // console.log("VideoPreloadInfo[" + this.iBuffer + "].loaded(" + this._content.uri + "): video.playED");
                 try {
@@ -82,7 +88,9 @@ class VideoPreloadInfo {
      * @param {ErrorEvent} ev 
      */
     onProcessorError( ev ) {
-        console.error('VideoPreloadInfo[' + this.iBuffer + '][' + producedVideos + '].onProcessorError(): ' + ev.message + ' - file: ' + `${ this.content ? this.content._originalUri : 'null-content' }`);
+        console.error(
+            `'VideoPreloadInfo[${this.iBuffer}][${producedVideos}].onProcessorError(): ${ev.message} - file: ${this.content ? this.content._originalUri : 'null-content'}`
+        );
         // copyToClipboard(this.content._originalUri);
         this.onLoaded(this.iBuffer, false);
     }
@@ -98,7 +106,7 @@ class VideoPreloadInfo {
         this.iBuffer = iBuffer;
         this._content = null;
         this.video = null;
-        this.processor = new Worker('production/fileloader.js', {name: 'VideoLoader-' + iBuffer });
+        this.processor = new FileLoaderWorker({name: 'VideoLoader-' + iBuffer });
         this.processor.postMessage({name: 'VideoLoader-' + iBuffer });
         this.processor.onmessage = e => this.onProcessorMessage( e );
         this.processor.onerror = ev => this.onProcessorError( ev );
@@ -159,7 +167,7 @@ class LocalVideoProducer extends WpeOnDemandProducer {
     }
 
     constructor() {
-        super(3, 'hdd.svg');
+        super(3, logo);
 
         this.preloadBuffer = new Array(this.bufferSize);
 
@@ -178,7 +186,7 @@ class LocalVideoProducer extends WpeOnDemandProducer {
      * @param {number} iBuffer 
      * @param {Content} content 
      */
-    abortLoad(iBuffer, content) {
+    abortLoad(iBuffer, /*content*/) {
         console.warn(this.constructor.name + '.abortLoad( ' + iBuffer + ' )');
         this.preloadBuffer[iBuffer].abort();
     }

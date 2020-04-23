@@ -48,16 +48,16 @@ export default function log() {
         if ( document.body && document.body.appendChild ) {
             document.body.appendChild( self.htmlElement );
         } else {
-            setTimeout( function() {
+            setTimeout( () => {
                 bodyCheckTimeout(); 
             }, 1 );
         }
     };
-    setTimeout( function() {
+    setTimeout( () => {
         bodyCheckTimeout(); 
     }, 100 );
 	
-    this.buttonElement.addEventListener('click', function() {
+    this.buttonElement.addEventListener('click', () => {
         self.hide();
         self.clear();
     });

@@ -66,7 +66,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
     protected constructor() {
         super();
-        console.log(`Config.ControllerImpl(${this.constructor.name})`);
+        // console.log(`Config.ControllerImpl(${this.constructor.name})`);
     }
 
     log(): void {
@@ -133,12 +133,12 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     }
 
     protected updateAllWindows(update: SetupDiff, persist?: boolean): void {
-        console.log(`${this.constructor.name}.updateAllWindows: ${update}`);
+        // console.log(`${this.constructor.name}.updateAllWindows: ${update}`);
 
         for (const window of this.getAllWindows()) {
             const ipcWindow = window.webContents as IpcWindow;
 
-            console.log(`${this.constructor.name}.updateAllWindows: send to ${window.id}.${window.getBrowserView()?.id} persist=${persist}`);
+            console.log(`${this.constructor.name}.updateAllWindows: send to ${window.id} persist=${persist}`);
 
             ipcWindow.send('change', update, persist);
 
@@ -320,11 +320,19 @@ class Paper extends Renderer {
         if (!(displayWidth && displayHeight && browserId)) {
             console.error(`${this.constructor.name}() missing arguments: displayWidth=${displayWidth} displayHeight=${displayHeight} browserId=${browserId}`, process.argv);
             throw new Error(`${this.constructor.name}() missing arguments: displayWidth=${displayWidth} displayHeight=${displayHeight} browserId=${browserId}`);
-        }
+        }        
 
         this.displayWidth = Number(displayWidth.split('=')[1]);
         this.displayHeight = Number(displayHeight.split('=')[1]);
         this.browserId = Number(browserId.split('=')[1]);
+
+        console.log(
+            `${this.constructor.name}(): displayWidth=${this.displayWidth} displayHeight=${this.displayHeight} browserId=${this.browserId}`,
+            displayWidth,
+            displayHeight,
+            browserId,
+            process.argv
+        );        
 
         this.connectToWallpaper();
     }
@@ -333,7 +341,7 @@ class Paper extends Renderer {
     private onRegisterPaper = (listeners: Listeners): void => {
         this.paper = listeners;
 
-        console.log(`ConfigController: ${this.browserId}: register`, listeners);
+        // console.log(`${this.constructor.name}[${this.browserId}]: register`, listeners);
 
         this.initUserListener();
 
@@ -348,7 +356,7 @@ class Paper extends Renderer {
                 this.paper.user(setting.general.properties);
             } catch (initialError) {
                 console.error(
-                    `${this.constructor.name}: ${this.browserId}: ERROR initial user setting:${initialError}:`,
+                    `${this.constructor.name}[${this.browserId}]: ERROR initial user setting:${initialError}:`,
                     initialError,
                     setting.general);
             }
@@ -360,10 +368,11 @@ class Paper extends Renderer {
             const size: Size = { width: this.displayWidth, height: this.displayHeight };
 
             try {
+                // console.log(`${this.constructor.name}[${this.browserId}]: set size=${JSON.stringify(size)}`, size);
                 this.paper.size(size);
             } catch (initialError) {
                 console.error(
-                    `ConfigController: ${JSON.stringify(size)}: ERROR initial size setting:${initialError}:`,
+                    `${this.constructor.name}[${this.browserId}]: ${JSON.stringify(size)}: ERROR initial size setting:${initialError}:`,
                     initialError,
                     size);
             }
@@ -400,7 +409,7 @@ class Main extends ControllerImpl {
     onInitialSetup = (e, setup: SetupInterface): void => {
         this.setup = new Setup(setup);
 
-        console.log(`${this.constructor.name}.onInitialSetup: ${this.setup}`);
+        // console.log(`${this.constructor.name}.onInitialSetup: ${this.setup}`);
 
         this.updating = true;
         try {
@@ -433,7 +442,7 @@ class Main extends ControllerImpl {
     }
 
     updateSetup(update: SetupDiff): void {
-        console.log(`${this.constructor.name}.updateSetup: ${this.updating} no promise, emit `, update);
+        console.log(`${this.constructor.name}.updateSetup: ${this.updating}`, update);
 
         this.updates.push(update);
         this.processUpdateQueue();
@@ -471,15 +480,15 @@ let controller: Controller;
  */
 switch (process.type) {
     case 'browser':
-        console.log(`Config.Controller[${process.type}]: create Main`);
+        // console.log(`Config.Controller[${process.type}]: create Main`);
         controller = new Main();
         break;
     case 'renderer':
         if (process.argv.some((arg) => /^--browserid=/.test(arg))) {
-            console.log(`Config.Controller[${process.type}]: create Paper`);
+            // console.log(`Config.Controller[${process.type}]: create Paper`);
             controller = new Paper();
         } else {
-            console.log(`Config.Controller[${process.type}]: create Renderer`);
+            // console.log(`Config.Controller[${process.type}]: create Renderer`);
             controller = new Renderer();
         }
         break;

@@ -3,6 +3,7 @@
 import WpeOnDemandProducer from './wpeondemandproducer';
 import ImagePreloadInfo from './imagepreloadinfo';
 import { BufferStates } from './contentproducer';
+import logo from './logos/hdd.svg';
 
 /**
  * @extends WpeOnDemandProducer
@@ -20,7 +21,7 @@ class LocalImageProducer extends WpeOnDemandProducer {
     }
 
     constructor() {
-        super(3, 'hdd.svg');
+        super(3, logo);
 
         this.preloadBuffer = new Array(this.bufferSize);
 

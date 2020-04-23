@@ -1,6 +1,12 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import LoaderProducer from './loaderproducer';
+
+// eslint-disable-next-line import/no-unresolved
+import UrlLoaderWorker from 'worker-loader!./pexelsurlloader';
+
+import logo from './logos/Pexels.svg';
 
 /**
  *  @extends LoaderProducer
@@ -11,7 +17,7 @@ class PexelsProducer extends LoaderProducer {
      * @param {number} bufferSize used by this producer.
      */
     constructor(bufferSize) {
-        super(bufferSize, 'Pexels.svg', 'production/pexelsurlloader.js', 'Pexels-Url-Loader');
+        super(bufferSize, logo, new UrlLoaderWorker({ name: 'Pexels-Url-Loader' }) );
         // console.log("PexelsProducer.constructor(): bufferSize=" + this.bufferSize);
 
         /**

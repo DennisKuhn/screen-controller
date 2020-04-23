@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 /**
@@ -158,7 +159,9 @@ export default class Content {
                 // this.element.src = null '' //:0; data:, // Causes error on image
                 this.element.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
                 if (this.element.parentElement) {
-                    console.error('Content.freeResources(): ' + this.element.tagName + '-element has parent: ' + this.element.parentElement.tagName + '#' + this.element.parentElement.id + ' : ' + this.uri);
+                    console.error(
+                        `Content.freeResources(): ${this.element.tagName}-element has parent: ${this.element.parentElement.tagName}#${this.element.parentElement.id}: ${this.uri}
+                    `);
                 }
                 this.element = null;
             }

@@ -6,7 +6,6 @@ import { Setup, Display, SetupDiff } from './Configuration/WallpaperSetup';
 
 export default class DisplaysManager {
     public static async run(): Promise<void> {
-        console.log('DisplaysManager.run');
         controller.once('init', DisplaysManager.checkDisplays);
     }
 
@@ -47,7 +46,7 @@ export default class DisplaysManager {
             }
         }
 
-        console.log('DisplaysManager.checkDisplays:', setup, changedSetup);
+        // console.log('DisplaysManager.checkDisplays:', setup, changedSetup);
 
         if (Object.keys(changedSetup.displays).length) {
             controller.updateSetup(changedSetup);

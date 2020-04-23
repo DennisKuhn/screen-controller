@@ -66,7 +66,7 @@ class AccessController {
             } else {
                 // console.log("releaseAccess(" + consumerID + ")");
                 this.activeConsumer = null;
-                this.consumers.forEach( function(consumer, index, array) {
+                this.consumers.forEach( (consumer, index, array) => {
                     if (consumer.consumerID != consumerID) {
                         // console.log("releaseAccess(" + consumerID + ") unlock=" + consumer.consumerID);
                         consumer.setEnabled(true);

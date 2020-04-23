@@ -1010,7 +1010,7 @@
 				"type" : "slider",
 				"value" : 3
 			},
-			"multiShow_columns" : 
+			"background_columns" : 
 			{
 				"condition" : "background.value == true",
 				"max" : 25,
@@ -1020,7 +1020,7 @@
 				"type" : "slider",
 				"value" : 2
 			},
-			"multiShow_rows" : 
+			"background_rows" : 
 			{
 				"condition" : "background.value == true",
 				"max" : 25,

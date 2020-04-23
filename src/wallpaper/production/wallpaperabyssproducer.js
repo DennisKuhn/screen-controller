@@ -1,6 +1,11 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import LoaderProducer from './loaderproducer';
+
+// eslint-disable-next-line import/no-unresolved
+import UrlLoaderWorker from 'worker-loader!./wallpaperabyssurlloader';
+import logo from './logos/WallpaperAbyss48.png';
 
 /**
  *  @extends LoaderProducer
@@ -11,7 +16,7 @@ class WallpaperAbyssProducer extends LoaderProducer {
      * @param {number} bufferSize used by this producer.
      */
     constructor(bufferSize) {
-        super(bufferSize, 'WallpaperAbyss48.png', 'production/wallpaperabyssurlloader.js', 'WallpaperAbyss-Url-Loader' );
+        super(bufferSize, logo, new UrlLoaderWorker({ name: 'WallpaperAbyss-Url-Loader' }));
         // console.log("WallpaperAbyssProducer.constructor(): bufferSize=" + this.bufferSize);
 
         /**

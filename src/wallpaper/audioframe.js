@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import AudioData from './audiodata';
@@ -199,8 +200,6 @@ class AudioFrameConfig {
 
 }
 
-export let hadAudioFrame = false;
-
 /**
  * 
  */
@@ -213,7 +212,9 @@ export default class AudioFrame {
         this.audioDataNormalized = new AudioData();
         this.audioDataResult = new AudioData();
         this.audioPeakAverage = 1;
-		
+        
+        this.hadAudioFrame = false;
+
         this.peakHistoryWriteIdx = 0;
         this.peakHistory = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
             0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -283,7 +284,7 @@ export default class AudioFrame {
             console.error( ex.message );
             throw ex;
         }				
-        hadAudioFrame = true;
+        this.hadAudioFrame = true;
         timer.stop('audio update');
         const t1 = performance.now();
         performanceMonitor.fpsRenderTime += t1 - t0;
@@ -310,7 +311,7 @@ export default class AudioFrame {
 			
             this.audioDataPrev.copyFrom( this.audioDataNormalized );
 			
-            for ( var i = 0; i < 64; i++ ) {
+            for ( let i = 0; i < 64; i++ ) {
                 const a = this.getEqValueForIdx( i );
 				
                 this.audioData.left.data[i] *= a;
@@ -396,7 +397,7 @@ export default class AudioFrame {
 		
         ctx.strokeStyle = 'silver';
         ctx.beginPath();
-        for ( const i = 0; i < 64; i++ ) {
+        for ( let i = 0; i < 64; i++ ) {
             const x = 100 + ( 320 / 63 ) * i;
             const y = 300 - 200 * this.getEqValueForIdx( i );
             if ( i == 0 ) {
@@ -410,11 +411,11 @@ export default class AudioFrame {
 		
         ctx.strokeStyle = 'rgb( 64, 0, 0 )';
         ctx.beginPath();
-        for ( var i = 0; i < 64; i++ ) {
-            var x = 100 + ( 320 / 63 ) * i;
+        for ( let i = 0; i < 64; i++ ) {
+            const x = 100 + ( 320 / 63 ) * i;
             let f = this.getEqValueForIdx( i );
             if ( f == 0 ) f = 0.00000000000000001;
-            var y = 300 - 200 * ( this.audioData.left.data[ i ] / maxVal / f  )  ;
+            const y = 300 - 200 * ( this.audioData.left.data[ i ] / maxVal / f  )  ;
             if ( i == 0 ) {
                 ctx.moveTo( x, y );
             } else {
@@ -426,8 +427,8 @@ export default class AudioFrame {
         ctx.strokeStyle = 'rgb( 0, 128, 0 )';
         ctx.beginPath();
         for (let i = 0; i < 64; i++ ) {
-            let x = 100 + ( 320 / 63 ) * i;
-            let y = 300 - 200 * ( this.audioData.left.data[ i ] / maxVal );
+            const x = 100 + ( 320 / 63 ) * i;
+            const y = 300 - 200 * ( this.audioData.left.data[ i ] / maxVal );
             if ( i == 0 ) {
                 ctx.moveTo( x, y );
             } else {
@@ -438,6 +439,7 @@ export default class AudioFrame {
     }
 	
     getEqValueForIdx( idx ) {
+        let result = 0;
         try {
             const eq1 = this.freqToIdx( this.config._eqFreq1 );
             const eq2 = this.freqToIdx( this.config._eqFreq2 );
@@ -447,7 +449,6 @@ export default class AudioFrame {
             const dist2 = ( eq2 - idx );
             const dist3 = ( eq3 - idx );
 			
-            var result = 0;
             let valuesUsed = 0;
 			
             const c = 10;
@@ -498,11 +499,11 @@ export default class AudioFrame {
     idxToFreq( idx ) {
         return -188.75596010894685 +  81.79508702900829 * Math.pow( 30.416291139283476, 0.2812954890617726 + idx / 49.91248369525583 );
         // -44.51401880248667 +  77.50771033219084 * Math.pow( 2.8864295611172226, 13.050180958147799 + idx \/ 0.293946557709426 )
-        return -44.51401880248667 +  77.50771033219084 * Math.pow( 2.8864295611172226, 0.293946557709426 + (idx/1) / 13.050180958147799 );
+        // return -44.51401880248667 +  77.50771033219084 * Math.pow( 2.8864295611172226, 0.293946557709426 + (idx/1) / 13.050180958147799 );
     }
 	
     getBaseLog(x, y) {
-	 	return Math.log(x) / Math.log(y);
+        return Math.log(x) / Math.log(y);
     }
 	
     freqToIdx( freq ) {

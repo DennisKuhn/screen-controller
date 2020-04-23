@@ -9,7 +9,7 @@ import AudioArray from './audioarray';
 //
 // Contains 2 AudioArray instances, one for the left channel, one for the right
 //
-const AudioData = function (data) {
+const AudioData = function(data) {
     this.left = new AudioArray([]);
     this.right = new AudioArray([]);
     if (typeof data !== 'undefined') {
@@ -20,52 +20,52 @@ const AudioData = function (data) {
 
 AudioData.prototype =
 {
-    clear: function () {
+    clear: function() {
         this.left.clear();
         this.right.clear();
 
     },
-    copyFrom: function (audioData) {
+    copyFrom: function(audioData) {
         this.left.copyFrom(audioData.left);
         this.right.copyFrom(audioData.right);
     },
-    copyMinFrom: function (audioData) {
+    copyMinFrom: function(audioData) {
         this.left.copyMinFrom(audioData.left);
         this.right.copyMinFrom(audioData.right);
     },
-    copyMaxFrom: function (audioData) {
+    copyMaxFrom: function(audioData) {
         this.left.copyMaxFrom(audioData.left);
         this.right.copyMaxFrom(audioData.right);
     },
-    setData: function (data) {
+    setData: function(data) {
         this.left.setData(data, 0);
         this.right.setData(data, 64);
     },
-    reverse: function () {
+    reverse: function() {
         this.left.reverse();
         this.right.reverse();
     },
-    smooth: function (factor, dir) {
+    smooth: function(factor, dir) {
         this.left.smooth(factor, dir);
         this.right.smooth(factor, dir);
     },
-    min: function () {
+    min: function() {
         return Math.min(this.left.min(), this.right.min());
     },
-    max: function () {
+    max: function() {
         return Math.max(this.left.max(), this.right.max());
     },
-    sum: function (min, max) {
+    sum: function(min, max) {
         return this.left.sum(min, max) + this.right.sum(min, max);
     },
-    average: function () {
+    average: function() {
         return (this.left.average() + this.right.average() / 2);
     },
-    add: function (audioData) {
+    add: function(audioData) {
         this.left.add(audioData.left);
         this.right.add(audioData.right);
     },
-    subtract: function (audioData) {
+    subtract: function(audioData) {
         if (typeof audioData == 'object') {
             this.left.subtract(audioData.left);
             this.right.subtract(audioData.right);
@@ -74,23 +74,23 @@ AudioData.prototype =
             this.right.subtract(audioData);
         }
     },
-    multiply: function (f) {
+    multiply: function(f) {
         this.left.multiply(f);
         this.right.multiply(f);
     },
-    power: function (f) {
+    power: function(f) {
         this.left.power(f);
         this.right.power(f);
     },
-    divide: function (f) {
+    divide: function(f) {
         this.left.divide(f);
         this.right.divide(f);
     },
-    downsample: function (valuesPerSample) {
+    downsample: function(valuesPerSample) {
         this.left.downsample(valuesPerSample);
         this.right.downsample(valuesPerSample);
     },
-    correctPinkNoise: function () {
+    correctPinkNoise: function() {
         const max = 2.1029779444138;
         const dt = [1.0548608488838, 0.76054078751554, 0.61124787706261, 0.52188737442096, 0.47582581340335, 0.442985940855, 0.39506604448116, 0.38179901474466, 0.3791498265819,
             0.35862620105656, 0.34117808276167, 0.31407858754586, 0.32956896818321, 0.32649587026332, 0.32553041354753, 0.33023063745582, 0.33723850113961,

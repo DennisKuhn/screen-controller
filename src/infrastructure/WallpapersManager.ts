@@ -13,7 +13,7 @@ export default class WallpapersManager {
     private static papers: Dictionary<WallpaperWindow> = {};
 
     public static async run(): Promise<void> {
-        console.log('WallpapersManager.run');
+        //console.log('WallpapersManager.run');
 
         controller.on('init', WallpapersManager.onSetupInit);
         controller.on('change', WallpapersManager.onSetupChanged);
@@ -21,7 +21,7 @@ export default class WallpapersManager {
     }
 
     private static onSetupInit = (setup: Setup): void => {
-        console.log('WallpapersManager.onSetupInit:', setup);
+        // console.log('WallpapersManager.onSetupInit:', setup);
 
         WallpapersManager.setup = setup;
 
@@ -73,21 +73,15 @@ export default class WallpapersManager {
 
         try {
             window = new WallpaperWindow(wallpaperProperties);
-            const view = window.browserWindow.getBrowserView();
 
-            console.log(`Window.ID = ${window.browserWindow.id}`);
-            if (view) {
-                view.id = browser.id;
-                console.log(`WallpapersManager.createWallpaperWindow[${browser.id}]: Set view id = ${view.id}, Window.ID = ${window.browserWindow.id}`);
-            }
             window.browserWindow.once('ready-to-show', () => {
                 window.browserWindow.show();
             });
             window.on('resized', (e, data) => {
-                console.log(data.width);
+                // console.log(data.width);
             });
             window.browserWindow.loadURL(WALLPAPER_WEBPACK_ENTRY)
-                .then(() => console.log(`WallpapersManager.createWallpaperWindow[${browser.id}]: loaded: ${WALLPAPER_WEBPACK_ENTRY}`))
+                // .then(() => console.log(`WallpapersManager.createWallpaperWindow[${browser.id}]: loaded: ${WALLPAPER_WEBPACK_ENTRY}`))
                 .catch((reason) => {
                     console.error(`WallpapersManager.createWallpaperWindow[${browser.id}]: Failed loading: ${reason} = ${WALLPAPER_WEBPACK_ENTRY}`);
                 });
@@ -105,7 +99,7 @@ export default class WallpapersManager {
 
         if (!WallpapersManager.setup) throw new Error('WallpapersManager.setupDisplays(): no setup');
 
-        console.log('WallpapersManager.setupDisplays()');
+        // console.log('WallpapersManager.setupDisplays()');
 
         for (const display of WallpapersManager.setup.displays) {
             for (const browser of display.browsers) {

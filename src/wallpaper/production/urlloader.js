@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 const context = self;
@@ -12,9 +13,10 @@ export default class UrlLoader {
      * @param {number} requestSize 
      */
     constructor(requestSize) {
-        this.name = 'PexelsUrlLoader';
+        this.name = 'UrlLoader';
         context.onmessage = e => this.processRequest(e);
 
+        // console.log(`${this.constructor.name}()`);
 
         /**
          * Request size to allocate infoBuffer, the infoBuffer will become roughly requestSize * (1+refillAt)
@@ -115,6 +117,7 @@ export default class UrlLoader {
      * @param {MessageEvent} request 
      */
     processRequest(request) { 
+        // console.log(`${this.constructor.name}[${this.name}].processRequest: ${Object.keys(request.data).join()}`);
         if (request.data.getNewContent) {
             this.getNewContent();
         } else if (request.data.name) {

@@ -1,4 +1,4 @@
-import { BrowserWindow, BrowserWindowConstructorOptions, remote } from 'electron';
+import { BrowserWindow, BrowserWindowConstructorOptions, screen } from 'electron';
 import nodeWinWallpaper from 'node-win-wallpaper';
 import ScreenBounds, { DisplayBounds } from './ScreenBounds';
 import { EventEmitter } from 'events';
@@ -27,13 +27,14 @@ class WallpaperWindow extends EventEmitter {
             this.browser = browser;
             windowOptions = otherWindowOptions;
         } else {
-            this.displayId = remote.screen.getPrimaryDisplay().id;
+            this.displayId = screen.getPrimaryDisplay().id;
             this.browser = { id: this.displayId, rx: 0, ry: 0, rWidth: 1, rHeight: 1 };
         }
 
         const displayBounds = ScreenBounds.findBoundsByDisplayId(this.displayId);
 
         if (!displayBounds) throw new Error(`${this.constructor.name}():Can not receive bounds for display ${this.displayId}`);
+        if (displayBounds) console.log(`${this.constructor.name}():bounds for display ${this.displayId}`, displayBounds, this.browser);
 
         this.currentBounds = {
             displayId: displayBounds.displayId,
@@ -43,11 +44,18 @@ class WallpaperWindow extends EventEmitter {
             height: this.browser.rHeight * displayBounds.height
         };
 
+        const scaledRect = screen.getAllDisplays().find(display => display.id == this.displayId)?.workAreaSize;
+
+        if (!scaledRect)
+            throw new Error(`${this.constructor.name}():Can not get workArea for displayId ${this.displayId}=`);
+
+        console.log(`${this.constructor.name}():bounds @ ${this.displayId} for browser ${this.browser.id} =`, this.currentBounds, scaledRect);
+
         windowOptions.webPreferences = windowOptions.webPreferences ?? {};
         windowOptions.webPreferences.additionalArguments = windowOptions.webPreferences.additionalArguments ?? [];
         windowOptions.webPreferences.additionalArguments.push(
-            `--displaywidth=${this.currentBounds?.width}`,
-            `--displayheight=${this.currentBounds?.height}`
+            `--displaywidth=${scaledRect.width * this.browser.rWidth}`,
+            `--displayheight=${scaledRect.height * this.browser.rHeight}`
         );
 
         this.browserWindow = new BrowserWindow({
@@ -55,6 +63,8 @@ class WallpaperWindow extends EventEmitter {
             ...windowOptions
         });
 
+        this.browserWindow.webContents.openDevTools({ mode: 'detach' });
+        
         this.browserWindow.once('show', () => {
             try {
                 this.attach();

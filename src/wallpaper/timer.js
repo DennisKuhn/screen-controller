@@ -35,27 +35,27 @@ function Timer() {
         if ( document.body && document.body.appendChild ) {
             document.body.appendChild( self.htmlElement );
         } else {
-            setTimeout( function() {
+            setTimeout( () => {
                 bodyCheckTimeout(); 
             }, 100 );
         }
     };
-    setTimeout( function() {
+    setTimeout( () => {
         bodyCheckTimeout(); 
     }, 100 );
 	
     var self = this;
-    this.btnReset.addEventListener( 'click', function() {
+    this.btnReset.addEventListener( 'click', () => {
         self.resetAll();
         self.logToConsole();
     });
-    this.btnUpdate.addEventListener( 'click', function() {
+    this.btnUpdate.addEventListener( 'click', () => {
         self.logToConsole();
     });
     let interval = null;
-    this.btnAutoRefresh.addEventListener( 'click', function() {
+    this.btnAutoRefresh.addEventListener( 'click', () => {
         if ( interval === null ) {
-            interval = setInterval(function() {
+            interval = setInterval(() => {
                 self.logToConsole();
             }, 1000 );
             self.btnAutoRefresh.innerHTML = 'Stop Autorefresh';

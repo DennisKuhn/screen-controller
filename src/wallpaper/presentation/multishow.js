@@ -200,7 +200,7 @@ export default class MultiShow extends ContentShow {
     }
 
     init() {
-        console.log('MultiShow.init()');
+        // console.log('MultiShow.init()');
 
         this.createDisplays();
         this.initCss();

@@ -1,10 +1,10 @@
 export function getColor( val ) {
-    return 'rgb(' + val.split(' ').map(function(c) {
+    return 'rgb(' + val.split(' ').map((c) => {
         return Math.ceil(c * 255);
     }).join(',') + ')'; 
 }
 export function getColorAsArray( val ) {
-    return val.split(' ').map(function(c) {
+    return val.split(' ').map((c) => {
         return Math.ceil(c * 255);
     }); 
 }

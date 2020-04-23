@@ -1,12 +1,11 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
-import { WallpaperAbyssUrlLoader__apiKey } from '../apikeys';
+import { WallpaperAbyssUrlLoaderApiKey } from '../apikeys';
 
-try {
-    importScripts('./urlloader.js');
-} catch (ex) {
-    console.error(ex);
-}
+import UrlLoader from './urlloader';
+
+const context = self;
 
 /**
  * Thread to async retrieve content URLs from WallpaperAbyss
@@ -106,12 +105,14 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
                     + 'info_level=' + this._infoLevel + '&'
                     + 'page=' + this._currentPage + '&'
                     + 'check_last=' + '1' + '&'
-                    + 'auth=' + WallpaperAbyssUrlLoader__apiKey;
+                    + 'auth=' + WallpaperAbyssUrlLoaderApiKey;
 
                 // console.log("[" + this.name + "].getUrls(): rerequest=" + this.rerequest + " :" + url );
                 this.rerequest = false;
 
-                const response = await fetch(url);
+                await new Promise(r => setTimeout(r, 10000) );
+
+                const response = await fetch(url, { mode: 'no-cors' });
                 let responseObject = null;
                 let message = null;
 
@@ -122,6 +123,7 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
                 }
                 // console.log("[" + this.name + "].getUrls(): rerequest=" + this.rerequest + " :" + url + " Headers: " + headers );
 
+                debugger;
                 if (!this.rerequest) {
                     if (response.ok) {
                         responseObject = await response.json();

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 /** log.js : overwrites console.log and console.error to display messages within the wallpaper. **/
@@ -30,7 +31,7 @@ import locale from './utils/locale';
     Most code regarding the wallpaper settings are found in there.
 // is an AudioFrame object .. stores the "processes" data and is created in setup()
  * **/
-import {frame2, hadAudioFrame } from './audioframe';
+import {frame2 } from './audioframe';
 
 import shapeGeneratorFactory from './generators';
 
@@ -51,9 +52,10 @@ import { performanceMonitor } from './performancemonitor';
 import { supplyMonitor } from './production/supplymonitor';
 
 
-import { hasInit, svgSource } from  './svgsource';
+import { svgSource } from  './svgsource';
 
-import { shapeList, shapePointList } from './shapelist';
+import { shapeList } from './shapelist';
+import shapePointList from './shapePointList';
 import audioShapeRender from './shaperenderaudioframe';
 import ShapeStorage from './shapestorage';
 
@@ -81,9 +83,8 @@ import localVideoProducer from './production/localvideoproducer';
 import './presentation/toggleelements';
 import './presentation/displaymenu';
 import './presentation/contentshow';
-import './presentation/singleshow';
-import MultiShow from './presentation/multidisplay';
-import './presentation/multishow';
+import './presentation/multidisplay';
+import MultiShow from './presentation/multishow';
 import './presentation/backgroundgradient';
 import './presentation/backgroundtransition';
 
@@ -127,8 +128,6 @@ const frameHistory = [];
 
 let initialized = false;
 
-let contentShow = null;
-const singleShow = null; // new SingleShow( document.getElementById('background-wrapper' ) );
 const multiShow = new MultiShow(document.getElementById('background-wrapper'));
 
 let fnInitSlideshow;
@@ -148,15 +147,35 @@ const analogClock = new AnalogClock();
  * setup wallpaper stuff
  **/
 function setup() {
-    contentShow = multiShow;
-
     canvas = document.getElementById('canvas'); // reference to our canvas element
     context = canvas.getContext('2d');  // reference to our context
 
     canvasBg = document.getElementById('canvasBg'); // reference to our canvas element
     contextBg = canvasBg.getContext('2d');  // reference to our context
 
+    mainMenu.contentShow = multiShow;
 }
+
+let drawController;
+
+function onNewPoints(pointsSource) {
+    const points = [];
+    for (let i = 0; i < pointsSource.length; i++) {
+        points.push([(-renderer.offsetX + pointsSource[i].x - proPro.width / 2) / shapeList._radiusFactor,
+            (-renderer.offsetY + pointsSource[i].y - proPro.height / 2) / shapeList._radiusFactor]);
+    }
+    if (points.length > 1) {
+        const s = new shapePointList([], drawController.smooth);
+        s.setRemoveDetailAmount(drawController.smooth ? 100 : 0);
+        s.setData(points);
+        shapeList.add(s);
+        shapeList.updateAutosave();
+    }
+}
+
+drawController = new DrawController(pointsSource => {
+    onNewPoints(pointsSource);
+});
 
 
 let h = 0;
@@ -166,20 +185,20 @@ let frameCount = 0;
 /**
  * render wallpaper
  **/
-function render(timestamp) // requestAnimationFrame supplies its own timestamp. no need for performance.now();
-{
+function render(timestamp) {// requestAnimationFrame supplies its own timestamp. no need for performance.now();
+
     frameCount++;
     const t0 = performance.now();
     timestamp = timestamp || performance.now();
     if (timestamp > 2000) initialized = true;
 
     // frame skipping to maintain user selected framerate
-    if (renderer.paused || !hadAudioFrame || performanceMonitor.shouldSkipFrame(timestamp)) {
+    if (renderer.paused || !frame2.hadAudioFrame || performanceMonitor.shouldSkipFrame(timestamp)) {
         setTimeout(render, renderer.paused ? 1000 : 8.33);
         return;
     }
 
-    hadAudioFrame = false;
+    frame2.hadAudioFrame = false;
 
     timeDiff = timestamp - prevTimestamp;
     prevTimestamp = timestamp;
@@ -212,9 +231,12 @@ function render(timestamp) // requestAnimationFrame supplies its own timestamp. 
         const v = renderer.colorRotation
             ? (360 * 1 / 6) + (++h / 1 % 360)
             : 0;
-        const col1 = 'hsla(  ' + (renderer.hslcolor1[0] * 360 + v) + ', ' + Math.round(renderer.hslcolor1[1] * 100) + '%, ' + Math.round(renderer.hslcolor1[2] * 100) + '%, ' + 1 + ' )';
-        const col2 = 'hsla(  ' + (renderer.hslcolor2[0] * 360 + v) + ', ' + Math.round(renderer.hslcolor2[1] * 100) + '%, ' + Math.round(renderer.hslcolor2[2] * 100) + '%, ' + 1 + ' )';
-        const col3 = 'hsla(  ' + (renderer.hslcolor3[0] * 360 + v) + ', ' + Math.round(renderer.hslcolor3[1] * 100) + '%, ' + Math.round(renderer.hslcolor3[2] * 100) + '%, ' + 1 + ' )';
+        const col1 =
+            'hsla( ' + (renderer.hslcolor1[0] * 360 + v) + ', ' + Math.round(renderer.hslcolor1[1] * 100) + '%, ' + Math.round(renderer.hslcolor1[2] * 100) + '%, ' + 1 + ' )';
+        const col2 =
+            'hsla( ' + (renderer.hslcolor2[0] * 360 + v) + ', ' + Math.round(renderer.hslcolor2[1] * 100) + '%, ' + Math.round(renderer.hslcolor2[2] * 100) + '%, ' + 1 + ' )';
+        const col3 =
+            'hsla( ' + (renderer.hslcolor3[0] * 360 + v) + ', ' + Math.round(renderer.hslcolor3[1] * 100) + '%, ' + Math.round(renderer.hslcolor3[2] * 100) + '%, ' + 1 + ' )';
 
         htmlDate.setHue(renderer.hslcolor1[0] * 360 + v);
         htmlTime.setHue(renderer.hslcolor1[0] * 360 + v);
@@ -225,7 +247,8 @@ function render(timestamp) // requestAnimationFrame supplies its own timestamp. 
                 gradient = col1;
                 break;
             case 1:
-                gradient = context.createRadialGradient(renderer.width / 2, renderer.height / 2, 0, renderer.width / 2, renderer.height / 2, (renderer.width + renderer.height) / 4);
+                gradient = context.createRadialGradient(
+                    renderer.width / 2, renderer.height / 2, 0, renderer.width / 2, renderer.height / 2, (renderer.width + renderer.height) / 4);
                 gradient.addColorStop(0, col1);
                 gradient.addColorStop(0.5, col2);
                 gradient.addColorStop(1, col3);
@@ -287,10 +310,10 @@ function render(timestamp) // requestAnimationFrame supplies its own timestamp. 
         }
         timer.stop('render');
     } catch (ex) {
-        let caller_line = ex.stack.split('\n');
-        caller_line = caller_line[1];
-        const index = caller_line.indexOf('at ');
-        const clean = caller_line.slice(index + 2, caller_line.length);
+        let callerLine = ex.stack.split('\n');
+        callerLine = callerLine[1];
+        const index = callerLine.indexOf('at ');
+        const clean = callerLine.slice(index + 2, callerLine.length);
 
 
         console.error(clean.replace(/^\s+/g, '').replace(/(http|file).+\//g, '') + ' ' + ex.message);
@@ -303,24 +326,6 @@ function render(timestamp) // requestAnimationFrame supplies its own timestamp. 
 
 
 
-const drawController = new DrawController(pointsSource => {
-    onNewPoints(pointsSource); 
-});
-
-function onNewPoints(pointsSource) {
-    const points = [];
-    for (let i = 0; i < pointsSource.length; i++) {
-        points.push([(-renderer.offsetX + pointsSource[i].x - proPro.width / 2) / shapeList._radiusFactor,
-            (-renderer.offsetY + pointsSource[i].y - proPro.height / 2) / shapeList._radiusFactor]);
-    }
-    if (points.length > 1) {
-        const s = new shapePointList([], drawController.smooth);
-        s.setRemoveDetailAmount(drawController.smooth ? 100 : 0);
-        s.setData(points);
-        shapeList.add(s);
-        shapeList.updateAutosave();
-    }
-}
 
 function setupAccessController() {
     accessController.registerConsumer('WallMenu', mainMenu);
@@ -334,20 +339,16 @@ function onInit() {
     if (svgSource) {
         svgSource.toShapeList(shapeList);
     }
-    hasInit = true;
 }
 
 
 function setupPropertyPropagator() {
-    //     addReceiver( propertyPrefix, 			receiver, 				generalPrefix, 	windowPrefix, 	pausedPrefix,	loaded,	user,	general,	filesAndDirectories, 	paused,	windowProperties )
+    //     addReceiver( propertyPrefix, receiver, generalPrefix, windowPrefix, pausedPrefix, loaded, user, general, filesAndDirectories, paused, windowProperties )
     proPro.addReceiver('analogClock_', analogClock, null, null, null, null, true, false, false, false, true);
     proPro.addReceiver('audioFrame_', frame2.config, null, null, null, null, true, false, false, false, false);
     proPro.addReceiver('audioShapeRender_', audioShapeRender, null, null, null, null, true, false, false, false, false);
-    proPro.addReceiver('backgroundGradient_', contentShow.gradient, null, null, null, null, true, false, false, false, false);
-
-    // most properties are handled by contentShow, only specialised userProperties required like columns/rows, ..
-    proPro.addReceiver('background_', contentShow, null, null, null, 'init', true, false, false, true, false);
-    proPro.addReceiver('multiShow_', multiShow, null, null, null, null, true, false, false, false, true);
+    proPro.addReceiver('backgroundGradient_', multiShow.gradient, null, null, null, null, true, false, false, false, false);
+    proPro.addReceiver('background_', multiShow, null, null, null, 'init', true, false, false, true, true);
 
     proPro.addReceiver('Locale_', locale, null, null, null, null, true, false, false, false, false);
 

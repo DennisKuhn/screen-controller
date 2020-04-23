@@ -31,8 +31,8 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
         //     id: 0,
         //     rx: 0,
         //     ry: 0,
-        //     rHeight: 0,
-        //     rWidth: 0
+        //     rHeight: 1,
+        //     rWidth: 1
         // };
         const update = new SetupDiff( {
             displays: {
@@ -43,8 +43,8 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
                             id: 0,
                             rx: 0,
                             ry: 0,
-                            rHeight: 0,
-                            rWidth: 0
+                            rHeight: 1,
+                            rWidth: 1
                         }
                     }
                 }

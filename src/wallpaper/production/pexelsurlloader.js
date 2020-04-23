@@ -1,13 +1,7 @@
 'use strict';
 import UrlLoader from './urlloader';
 
-import { PexelsUrlLoader__apiKey } from '../apikeys';
-
-try {
-    importScripts('./urlloader.js');
-} catch (ex) {
-    console.error(ex);
-}
+import { PexelsUrlLoaderApiKey } from '../apikeys';
 
 
 /**
@@ -97,7 +91,7 @@ class PexelsUrlLoader extends UrlLoader {
                 this.rerequest = false;
 
                 this.rateRemainingReduce(1);
-                const response = await fetch(url, { headers: { Authorization: PexelsUrlLoader__apiKey } });
+                const response = await fetch(url, { headers: { Authorization: PexelsUrlLoaderApiKey } });
                 let responseObject = null;
                 let message = null;
 

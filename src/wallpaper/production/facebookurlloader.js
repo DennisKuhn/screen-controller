@@ -1,13 +1,8 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import UrlLoader from './urlloader';
 import FacebookConnector from '../connectors/facebookconnector';
-
-try {
-    importScripts('../connectors/facebookconnector.js', './urlloader.js');
-} catch (ex) {
-    console.error(ex);
-}
 
 const context = self;
 

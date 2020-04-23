@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 import { getPropertyValues } from '../utils/utils';
 const context = self;
@@ -8,6 +9,7 @@ const context = self;
  */
 class FileLoader {
     constructor() {
+        // console.log(`${this.constructor.name}()`);
         this.abortUri = '';
         this.createdObjectUrls = [];
         this.originalUri = '';
@@ -34,7 +36,7 @@ class FileLoader {
         }
     }
 
-    onabort( e ) {
+    onabort( /*e*/ ) {
         if (this.abortUri) {
             // console.warn(`${this.name}.onabort():  abortUri=${this.abortUri} status:${this.loader.status}: ${this.loader.statusText} - file: ${this.originalUri}`, e);
         } else {
@@ -43,12 +45,12 @@ class FileLoader {
         }
     }
 
-    onerror( e ) {
+    onerror( /*e*/ ) {
         // console.error(`${this.name}.onerror(): status:${this.loader.status}: ${this.loader.statusText} - file: ${this.originalUri}`, e);
         throw new Error('[' + this.name + '].onerror(): ' + this.loader.status + ': ' + this.loader.statusText + ' - file: ' + this.originalUri);
     }
 
-    loaded(e) {
+    loaded(/*e*/) {
         const loadedUri = this.originalUri;
         //console.log("FileLoader.loaded: "  + " headers:" + this.loader.getAllResponseHeaders() + " : " + this.originalUri);
         this.dataUri = URL.createObjectURL(this.loader.response);
@@ -110,6 +112,7 @@ class FileLoader {
      * @param {MessageEvent} request 
      */
     processRequest(request) { 
+        // console.log(`${this.constructor.name}[${this.name}].processRequest: ${Object.keys(request.data).join()}`);
         if (request.data.uri) {
             this.load(request.data.uri);
         } else if (request.data.revokeUri) {

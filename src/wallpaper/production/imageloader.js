@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import { getPropertyValues } from '../utils/utils';
@@ -9,6 +10,7 @@ const context = self;
  */
 class ImageLoader {
     constructor() {
+        // console.log(`${this.constructor.name}()`);
         this.width = 0;
         this.height = 0;
         this.ratio = 0;
@@ -26,39 +28,39 @@ class ImageLoader {
     }
 
     createLoader() {
-        this.loader = new XMLHttpRequest(); 
+        this.loader = new XMLHttpRequest();
         this.loader.responseType = 'blob';
 
-        this.loader.onload = e => this.loaded(e).catch( reason => setTimeout( () => {
-            throw reason; 
-        }, 1)  );
+        this.loader.onload = e => this.loaded(e).catch(reason => setTimeout(() => {
+            throw reason;
+        }, 1));
         this.loader.onreadystatechange = e => this.readyStateChanged(e);
         this.loader.onabort = e => this.onabort(e);
         this.loader.onerror = e => this.onerror(e);
     }
 
-    readyStateChanged( e ) {
+    readyStateChanged(e) {
         if (this.loader.readyState > 4 || this.loader.readyState < 0) {
-            console.error( '[' + this.name + '].readyStateChanged(' + getPropertyValues( e ) + '):'+ this.loader.readyState);
+            console.error('[' + this.name + '].readyStateChanged(' + getPropertyValues(e) + '):' + this.loader.readyState);
         }
     }
 
-    onabort( e ) {
+    onabort(/*e*/) {
         if (this.abortUri) {
             console.warn('[' + this.name + '].onabort(): abortUri= ' + this.abortUri + ' :' + this.loader.status + ':' + this.loader.statusText + ': ' + this.originalUri);
         } else {
-            console.error( '[' + this.name + '].onabort(): ' +  + this.loader.status + ': ' + this.loader.statusText + ': ' + this.originalUri);
-            throw new Error('[' + this.name + '].onabort(): ' +  + this.loader.status + ': ' + this.loader.statusText + ': ' + this.originalUri);
+            console.error('[' + this.name + '].onabort(): ' + + this.loader.status + ': ' + this.loader.statusText + ': ' + this.originalUri);
+            throw new Error('[' + this.name + '].onabort(): ' + + this.loader.status + ': ' + this.loader.statusText + ': ' + this.originalUri);
         }
     }
 
-    onerror( e ) {
+    onerror(/*e*/) {
         console.error('[' + this.name + '].onerror(): ' + this.loader.status + ': ' + this.loader.statusText + ' - file: ' + this.originalUri);
         throw new Error('[' + this.name + '].onerror(): ' + this.loader.status + ': ' + this.loader.statusText + ' - file: ' + this.originalUri);
     }
 
-    async loaded(e) {
-        if ( ! [0, 200].includes(this.loader.status)) {
+    async loaded(/*e*/) {
+        if (![0, 200].includes(this.loader.status)) {
             console.warn('[' + this.name + '].loaded(): ' + this.loader.status + ': ' + this.loader.statusText + ': ' + this.originalUri);
         }
         //console.log("ImageLoader.loaded: "  + " headers:" + this.loader.getAllResponseHeaders() + " : " + this.originalUri);
@@ -66,10 +68,10 @@ class ImageLoader {
 
         try {
             this.originalBitmap = null;
-            this.originalBitmap = await createImageBitmap( this.loader.response );
+            this.originalBitmap = await createImageBitmap(this.loader.response);
             this.originalRatio = this.originalBitmap.height / this.originalBitmap.width;
         } catch (decodeException) {
-            // console.error(`[${this.name}].loaded: caught: `, decodeException );
+            console.error(`[${this.name}].loaded: caught: `, decodeException);
             throw decodeException;
         }
 
@@ -82,7 +84,7 @@ class ImageLoader {
         let targetHeight = this.height;
         let targetWidth = this.width;
 
-        if ( this.ratio < this.originalRatio) {
+        if (this.ratio < this.originalRatio) {
             targetWidth = targetHeight / this.originalRatio;
         } else {
             targetHeight = targetWidth * this.originalRatio;
@@ -96,10 +98,20 @@ class ImageLoader {
                 bitmap.close();
             } else {
                 // console.log("[" + this.name + "].loaded: " + (performance.now() / 1000).toFixed(3) + ": " + this.originalUri);
-                postMessage( {originalUri: this.originalUri, height: targetHeight, width: targetWidth, offsetX: ((this.width - targetWidth) / 2), offsetY: ((this.height - targetHeight) / 2), bitmap}, [bitmap] );
+                postMessage(
+                    {
+                        originalUri: this.originalUri,
+                        height: targetHeight,
+                        width: targetWidth,
+                        offsetX: ((this.width - targetWidth) / 2),
+                        offsetY: ((this.height - targetHeight) / 2),
+                        bitmap
+                    },
+                    [bitmap]
+                );
             }
         } catch (scaleException) {
-            console.error(`[${this.name}].scaleAndPost: caught: `, scaleException );
+            console.error(`[${this.name}].scaleAndPost: caught: `, scaleException);
             throw scaleException;
         } finally {
             this.originalUri = '';
@@ -118,11 +130,11 @@ class ImageLoader {
 
     abort(originalUri) {
         if (originalUri == this.originalUri) {
-            console.warn('[' + this.name + ']: cancel(' + originalUri + ')' );
+            console.warn('[' + this.name + ']: cancel(' + originalUri + ')');
             this.abortUri = originalUri;
             this.loader.abort();
         } else {
-            console.error('[' + this.name + ']: cancel(' + originalUri + ') != ' + this.originalUri );
+            console.error('[' + this.name + ']: cancel(' + originalUri + ') != ' + this.originalUri);
         }
     }
 
@@ -130,11 +142,12 @@ class ImageLoader {
      * 
      * @param {MessageEvent} request 
      */
-    processRequest(request) { 
-        // console.log("[" + this.name + "].processRequest:", request );
+    processRequest(request) {
+        // console.log(`${this.constructor.name}[${this.name}].processRequest: ${Object.keys(request.data).join()}`);
+
         if (request.data.uri) {
             this.load(request.data.uri);
-        } else if ( request.data.abortUri) {
+        } else if (request.data.abortUri) {
             this.abort(request.data.abortUri);
         } else {
             if (request.data.name) {
@@ -146,16 +159,16 @@ class ImageLoader {
                 this.width = request.data.width;
                 this.ratio = this.height / this.width;
                 if (this.originalRatio) {
-                    this.scaleAndPost().catch( reason => {
+                    this.scaleAndPost().catch(reason => {
                         throw reason;
-                    }  );
+                    });
                 }
             }
-            if ( !(request.data.uri || request.data.abortUri || request.data.name || (request.data.height && request.data.width) )) {
-                console.error('[' + this.name + '].processRequest(): unkown request: ', request.data, request );
+            if (!(request.data.uri || request.data.abortUri || request.data.name || (request.data.height && request.data.width))) {
+                console.error('[' + this.name + '].processRequest(): unkown request: ', request.data, request);
             }
         }
-    }    
+    }
 }
 
 const loader = new ImageLoader();

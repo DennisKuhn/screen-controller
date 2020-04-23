@@ -9,7 +9,7 @@
 //
 // raw data can be found in AudioArray.data array
 // 
-const AudioArray = function (data) {
+const AudioArray = function(data) {
     data = data || [];
     this.data = new Array(64);
     this.dataBuffer = new Array(64);
@@ -21,19 +21,19 @@ const AudioArray = function (data) {
 };
 
 AudioArray.prototype = {
-    clear: function () {
+    clear: function() {
         for (let i = 0; i < 64; i++) {
             this.data[i] = 0;
         }
     },
-    copyFrom: function (audioArray) {
+    copyFrom: function(audioArray) {
         for (let i = 0; i < 64; i++) {
             if (audioArray.data.length <= i) this.data[i] = 0;
             else if (isNaN(audioArray.data[i])) this.data[i] = 0;
             else this.data[i] = audioArray.data[i];
         }
     },
-    copyMinFrom: function (audioArray) {
+    copyMinFrom: function(audioArray) {
         let v = 0;
         for (let i = 0; i < 64; i++) {
             if (audioArray.data.length <= i) v = 0;
@@ -42,7 +42,7 @@ AudioArray.prototype = {
             if (v < this.data[i]) this.data[i] = v;
         }
     },
-    copyMaxFrom: function (audioArray) {
+    copyMaxFrom: function(audioArray) {
         let v = 0;
         for (let i = 0; i < 64; i++) {
             if (audioArray.data.length <= i) v = 0;
@@ -51,7 +51,7 @@ AudioArray.prototype = {
             if (v > this.data[i]) this.data[i] = v;
         }
     },
-    setData: function (data, startIdx) {
+    setData: function(data, startIdx) {
         if (typeof startIdx === 'undefined') startIdx = 0;
 
         for (let i = 0; i < 64; i++) {
@@ -60,7 +60,7 @@ AudioArray.prototype = {
             else this.data[i] = data[i + startIdx];
         }
     },
-    get: function (min, max) {
+    get: function(min, max) {
         if (typeof (max) === 'undefined') max = min;
 
         let total = 0;
@@ -70,7 +70,7 @@ AudioArray.prototype = {
         total /= (max - min + 1);
         return total;
     },
-    sum: function (min, max) {
+    sum: function(min, max) {
         if (typeof (max) === 'undefined') max = min;
 
         let total = 0;
@@ -79,7 +79,7 @@ AudioArray.prototype = {
         }
         return total;
     },
-    min: function () {
+    min: function() {
         let min = Number.POSITIVE_INFINITY;
         for (let i = 0; i < 64; i++) {
             if (this.data[i] < min) {
@@ -88,7 +88,7 @@ AudioArray.prototype = {
         }
         return min;
     },
-    max: function (min, max) {
+    max: function(min, max) {
         if (typeof (min) === 'undefined') min = 0;
         if (typeof (max) === 'undefined') max = 63;
         let maxVal = Number.NEGATIVE_INFINITY;
@@ -99,14 +99,14 @@ AudioArray.prototype = {
         }
         return maxVal;
     },
-    average: function () {
+    average: function() {
         let total = 0;
         for (let i = 0; i < 64; i++) {
             total += this.data[i];
         }
         return total / 64;
     },
-    average: function (min, max) {
+    average: function(min, max) {
         if (typeof (min) === 'undefined') min = 0;
         if (typeof (max) === 'undefined') max = 63;
         let total = 0;
@@ -115,14 +115,14 @@ AudioArray.prototype = {
         }
         return total / (max - min + 1);
     },
-    reverse: function () {
+    reverse: function() {
         for (let i = 0; i < 32; i++) {
             const tmp = this.data[i];
             this.data[i] = this.data[63 - i];
             this.data[63 - i] = tmp;
         }
     },
-    smooth: function (factor, dir) {
+    smooth: function(factor, dir) {
         dir = dir || 0;
         factor = Math.max(0, Math.min(1, factor));
 
@@ -154,7 +154,7 @@ AudioArray.prototype = {
             this.data[i] = this.dataBuffer[i];
         }
     },
-    add: function (audioArray) {
+    add: function(audioArray) {
         if (typeof audioArray == 'object') {
             for (var i = 0; i < 64; i++) {
                 this.data[i] += audioArray.data[i];
@@ -165,7 +165,7 @@ AudioArray.prototype = {
             }
         }
     },
-    subtract: function (audioArray) {
+    subtract: function(audioArray) {
         if (typeof audioArray == 'object') {
             for (var i = 0; i < 64; i++) {
                 this.data[i] -= audioArray.data[i];
@@ -176,28 +176,28 @@ AudioArray.prototype = {
             }
         }
     },
-    multiply: function (f) {
+    multiply: function(f) {
         if (isNaN(f) || !isFinite(f)) return;
 
         for (let i = 0; i < 64; i++) {
             this.data[i] *= f;
         }
     },
-    divide: function (f) {
+    divide: function(f) {
         if (isNaN(f) || !isFinite(f) || f == 0) return;
 
         for (let i = 0; i < 64; i++) {
             this.data[i] /= f;
         }
     },
-    power: function (f) {
+    power: function(f) {
         if (isNaN(f) || !isFinite(f)) return;
 
         for (let i = 0; i < 64; i++) {
             this.data[i] = Math.pow(this.data[i], f);
         }
     },
-    downsample: function (values) {
+    downsample: function(values) {
         for (var i = 0; i < 64; i++) {
             this.dataBuffer[i] = 0;
         }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
 import Content from '../content';
@@ -15,14 +16,14 @@ export default class LoaderProducer extends ContentProducer {
      * 
      * @param {number} bufferSize used by this producer.
      * @param {string} logo name of logo image in production/logos
-     * @param {string} loaderFile filename of Worker, e.g. "production/wallpaperabyssurlloader.js"
-     * @param {string} loaderName passed to Worker constructor for debug purpose, does not seem to work!!
+     * @param {Worker} loader Worker to load Urls
      */
-    constructor(bufferSize, logo, loaderFile, loaderName) {
+    constructor(bufferSize, logo, loader) {
         super(bufferSize, logo);
         // console.log("LoaderProducer.constructor(): bufferSize=" + this.bufferSize);
 
-        this.urlLoader = new Worker(loaderFile, {name: loaderName });
+        this.urlLoader = loader;
+        
         this.urlLoader.onmessage = e => this.onUrlLoaderMessage( e.data );
         this.urlLoader.onerror = ev => this.onUrlLoaderError( ev );
 
@@ -44,7 +45,7 @@ export default class LoaderProducer extends ContentProducer {
      * @param {number} iBuffer 
      * @param {Content} content 
      */
-    abortLoad(iBuffer, content) {
+    abortLoad(iBuffer /*, content*/) {
         console.warn(this.constructor.name + '.abortLoad( ' + iBuffer + ' )');
         this.preloadBuffer[iBuffer].abort();
     }

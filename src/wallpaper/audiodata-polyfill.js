@@ -12,7 +12,7 @@ if ( !window.wallpaperRegisterAudioListener ) {
         // set new interval
         const data = new Array(64);
         let cnt = 0;
-        wallpaperAudioInterval = setInterval( function() {
+        wallpaperAudioInterval = setInterval( () => {
             cnt++;
             for ( let i = 0; i < 64; i++ ) {
                 let v = 1 + Math.sin( (i-cnt)/300)/1.5 + Math.random() * Math.sin(cnt/100)/1.5; // real data can be above 1 as well

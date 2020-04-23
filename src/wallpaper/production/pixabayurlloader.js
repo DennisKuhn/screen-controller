@@ -1,11 +1,7 @@
 'use strict';
 import UrlLoader from './urlloader';
-import { PixabayUrlLoader__apiKey } from '../apikeys';
-try {
-    importScripts('./urlloader.js');
-} catch (ex) {
-    console.error(ex);
-}
+
+import { PixabayUrlLoaderApiKey } from '../apikeys';
 
 
 /**
@@ -60,7 +56,7 @@ class PixabayUrlLoader extends UrlLoader {
                 this.requesting = true;
 
         
-                const url = this.urlBase + '?' + 'key=' + PixabayUrlLoader__apiKey + '&' + 'per_page=' + this.requestSize + '&' + 'page=' + this._currentPage;
+                const url = this.urlBase + '?' + 'key=' + PixabayUrlLoaderApiKey + '&' + 'per_page=' + this.requestSize + '&' + 'page=' + this._currentPage;
 
                 // console.log("[" + this.name + "].getUrls(): rerequest=" + this.rerequest + " :" + url );
                 this.rerequest = false;

@@ -65,7 +65,7 @@ export default class ContentProducer {
 
         this.initialised = false;
 
-        this._logo = logo ? 'production/logos/' + logo : logo;
+        this._logo = logo;
     }
 
     /**

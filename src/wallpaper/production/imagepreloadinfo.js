@@ -1,12 +1,17 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
+// import './imageloader.js';
+
 let producedImages = 0;
+// eslint-disable-next-line import/no-unresolved
+import ImageLoaderWorker from 'worker-loader!./imageloader';
 
 /**
  * 
  */
 export default class ImagePreloadInfo {
-    loaded(e) {
+    loaded(/*e*/) {
         // console.log("ImagePreloadInfo[" + this.iBuffer + "].loaded: " + this._content.uri );
         this._content.setDecoded();
         this.image.onerror = null;
@@ -18,7 +23,7 @@ export default class ImagePreloadInfo {
             this.onLoaded(this.iBuffer, false);
         } else {
             // console.log("ImagePreloadInfo[" + this.iBuffer + "].loaded.decoded: " + this._content.uri );
-            this.onLoaded(this.iBuffer, true, this.image);            
+            this.onLoaded(this.iBuffer, true, this.image);
         }
         this.createImage();
     }
@@ -27,7 +32,7 @@ export default class ImagePreloadInfo {
         this.image = document.createElement('CANVAS');
 
         this.image.onerror = event => {
-            console.error('ImagePreloadInfo.onError[' + this.name + ']: ' + event + ': ' + JSON.stringify(event)  + ': ' + this.content.uri + ': ' + this.content._originalUri );
+            console.error('ImagePreloadInfo.onError[' + this.name + ']: ' + event + ': ' + JSON.stringify(event) + ': ' + this.content.uri + ': ' + this.content._originalUri);
             this.onLoaded(this.iBuffer, false);
         };
 
@@ -42,8 +47,8 @@ export default class ImagePreloadInfo {
             //            'opacity': this._opacity,
             //            'filter': 'blur('+this.blur+'px)',
         };
-        for ( const i in css ) {
-            this.image.style[ i ] = css[ i ];
+        for (const i in css) {
+            this.image.style[i] = css[i];
         }
     }
 
@@ -62,12 +67,15 @@ export default class ImagePreloadInfo {
      * 
      * @param {ErrorEvent} ev 
      */
-    onProcessorError( ev ) {
-        console.error(`ImagePreloadInfo[${this.name}][${producedImages}].onProcessorError(): ${ev.message} - file: ${this.content ? this.content._originalUri : 'null-content'}`, ev);
+    onProcessorError(ev) {
+        console.error(
+            `ImagePreloadInfo[${this.name}][${producedImages}].onProcessorError(): ${ev.message} - file: ${this.content ? this.content._originalUri : 'null-content'}`,
+            ev
+        );
         // copyToClipboard(this.content._originalUri);
         setTimeout(
             () => this.onLoaded(this.iBuffer, false),
-            5000 
+            5000
         );
     }
 
@@ -77,18 +85,22 @@ export default class ImagePreloadInfo {
         this.iBuffer = iBuffer;
         this.onLoaded = onLoaded;
         this._content = null;
-        this.image = null; 
+        this.image = null;
         this.createImage();
-        this.processor = new Worker('production/imageloader.js', {name: this.name });
+
+        // Loading error is reported through onProcessorError
+        // this.processor = new Worker('production/imageloader.js', { name: this.name });
+        this.processor = new ImageLoaderWorker({ name: this.name });
+
         this.width = 0;
         this.height = 0;
 
         if (this.processor) {
-            this.processor.postMessage({name: this.name});
-            this.processor.onmessage = e => this.onProcessorMessage( e );
-            this.processor.onerror = ev => this.onProcessorError( ev );
+            this.processor.postMessage({ name: this.name });
+            this.processor.onmessage = e => this.onProcessorMessage(e);
+            this.processor.onerror = ev => this.onProcessorError(ev);
         } else {
-            console.error('ImagePreloadInfo[' + this.name + '] can\'t create processor!');
+            console.error('ImagePreloadInfo[' + this.name + '] processor wasn\'t created!');
         }
     }
 
@@ -96,12 +108,12 @@ export default class ImagePreloadInfo {
      * @returns {Content}
      */
     get content() {
-        return this._content; 
+        return this._content;
     }
-    set content(newContent) {        
+    set content(newContent) {
         this._content = newContent;
         this._content.onFreeResources = content => content.data.bitmap.close();
-        this._content.attacher = content => {            
+        this._content.attacher = (/*content*/) => {
             setTimeout(
                 content => {
                     const destinationContext = content.element.getContext('2d');
@@ -118,13 +130,13 @@ export default class ImagePreloadInfo {
             );
         };
         producedImages++;
-        this.processor.postMessage( {uri: this._content.uri });
+        this.processor.postMessage({ uri: this._content.uri });
     }
 
     abort() {
         if (this._content.uri == this._content._originalUri) {
             console.warn('ImagePreloadInfo[' + this.name + '].abort(): postMesage');
-            this.processor.postMessage( {abortUri: this._content.uri} );
+            this.processor.postMessage({ abortUri: this._content.uri });
         } else {
             console.warn('ImagePreloadInfo[' + this.name + '].abort()');
             this.abortLoad = true;
@@ -136,12 +148,12 @@ export default class ImagePreloadInfo {
      * @param {number} width 
      * @param {number} height 
      */
-    setSize(width,height) {
+    setSize(width, height) {
         // console.log(`${this.name}.setSize(${width},${height}) posting` );
         this.width = width;
         this.height = height;
         this.createImage();
-        
-        this.processor.postMessage({width: width, height: height });
+
+        this.processor.postMessage({ width: width, height: height });
     }
 }
