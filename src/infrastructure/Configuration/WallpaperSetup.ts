@@ -100,21 +100,21 @@ export class Display implements DisplayInterface {
     constructor(display: DisplayInterface) {
         this.id = display.id;
         for (const sourceBrowser of Object.values( display.browsers )) {
-            this.browsers[sourceBrowser.id] = new Browser(sourceBrowser);
+            this.browsers[sourceBrowser.id] = observable( new Browser(sourceBrowser));
         }
     }
 
-    @observable browsers: BrowserIterableDictionary = new BrowserIterableDictionary();
+    @observable browsers: BrowserIterableDictionary = observable( new BrowserIterableDictionary() );
 }
 
 
 export class Setup implements SetupInterface {
-    @observable displays: DisplayIterableDictionary = new DisplayIterableDictionary();
+    @observable displays: DisplayIterableDictionary = observable( new DisplayIterableDictionary() );
 
     constructor(setup?: SetupInterface) {
         if (setup) {
             for (const sourceDisplay of Object.values(setup.displays)) {
-                const display = new Display(sourceDisplay);
+                const display = observable( new Display(sourceDisplay) );
                 this.displays[sourceDisplay.id] = display;
             }
         }
