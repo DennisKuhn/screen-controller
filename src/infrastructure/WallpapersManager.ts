@@ -1,6 +1,6 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import controller from './Configuration/Controller';
-import { Setup, Browser, SetupDiff } from './Configuration/WallpaperSetup';
+import { Setup, Browser, SetupDiff, IterableNumberDictionary } from './Configuration/WallpaperSetup';
 import { Dictionary } from 'lodash';
 
 declare const WALLPAPER_PRELOAD_WEBPACK_ENTRY: string;
@@ -10,7 +10,7 @@ declare const WALLPAPER_WEBPACK_ENTRY: string;
 export default class WallpapersManager {
 
     private static setup: Setup | undefined;
-    private static papers: Dictionary<WallpaperWindow> = {};
+    private static papers: IterableNumberDictionary<WallpaperWindow> = {};
 
     public static async run(): Promise<void> {
         //console.log('WallpapersManager.run');
@@ -36,9 +36,15 @@ export default class WallpapersManager {
         for (const display of change.displays) {
             if (display) {
                 for (const browserId in display.browsers) {
-                    const browser = display.browsers[browserId];
-                    if (browser) {
-                        const mergedBrowser = { ...WallpapersManager.setup.displays[display.id].browsers[browserId], browser };
+                    const browserUpdate = display.browsers[browserId];
+                    const mergedBrowser = { ...WallpapersManager.setup.displays[display.id].browsers[browserId], browserUpdate };
+
+                    if (browserUpdate == null) { // Close removed browser
+                        WallpapersManager.papers[browserId].browserWindow.close();
+                        delete WallpapersManager.papers[browserId];
+                    } else if (browserId in WallpapersManager.papers) {
+                        WallpapersManager.papers[browserId].browser = mergedBrowser;
+                    } else {
                         WallpapersManager.createWallpaperWindow(
                             display.id,
                             mergedBrowser

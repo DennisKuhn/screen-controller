@@ -5,7 +5,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
 
 // @material-ui/icons
-import DesktopWindows from '@material-ui/icons/DesktopWindows';
+import Computer from '@material-ui/icons/Computer';
 import LibraryAdd from '@material-ui/icons/LibraryAdd';
 
 
@@ -20,20 +20,20 @@ import CardFooter from '../../components/Card/CardFooter';
 import configController from '../../../infrastructure/Configuration/Controller';
 import { Setup, Display, IterableNumberDictionary, SetupDiff } from '../../../infrastructure/Configuration/WallpaperSetup';
 import { remote } from 'electron';
+import Table from '../../components/Table/Table';
+import Browsers from './Browsers';
 
 function DisplayCard({ config, specs }: { config: Display; specs: Electron.Display }): JSX.Element {
+    const updateTemplate = new SetupDiff({
+        displays: {
+            [config.id]: {
+                id: config.id,
+                browsers: {}
+            }
+        }
+    });
 
     function addPaper(): void {
-        // const addition = new SetupDiff();
-        // const displayDiff = new DisplayDiff(config.id);
-        // addition.displays[config.id] = displayDiff;
-        // displayDiff.browsers[0] = {
-        //     id: 0,
-        //     rx: 0,
-        //     ry: 0,
-        //     rHeight: 1,
-        //     rWidth: 1
-        // };
         const update = new SetupDiff( {
             displays: {
                 [config.id]: {
@@ -52,16 +52,13 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
         } );
         configController.updateSetup(update);
     }
-
-    return <GridItem xs={12} sm={6} md={3}>
+    //xs, sm, md, lg, and xl
+    return <GridItem xs={12} sm={8} md={6} lg={4} xl={3}>
         <Card>
             <CardHeader color="success" stats={true} icon={true}>
                 <CardIcon color="success">
-                    <DesktopWindows />
+                    <Computer />
                 </CardIcon>
-                <p>{config.id}</p>
-            </CardHeader>
-            <CardBody>
                 <Tooltip
                     id="tooltip-top"
                     title="Add wallpaper"
@@ -74,15 +71,18 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
                         <LibraryAdd />
                     </IconButton>
                 </Tooltip>
+            </CardHeader>
+            <CardBody>
+                <Browsers updateTemplate={updateTemplate} browsers={config.browsers} />
             </CardBody>
             <CardFooter stats={true}>
-                <p>{specs.workArea.width} x {specs.workArea.height}</p>
+                <p>{config.id} - {specs.scaleFactor}* {specs.workArea.width} x {specs.workArea.height}</p>
             </CardFooter>
         </Card>
     </GridItem>;
 }
 
-function DisplayContainer({ displays }: { displays: IterableNumberDictionary<Display> }): JSX.Element {
+function DisplayContainer({ displays }: { displays: DisplayIterableDictionary }): JSX.Element {
     console.log(`Displays.tsx: Electron is ready=${remote.app.isReady()}`);
 
     const electronDisplays = remote.screen.getAllDisplays().reduce((result, display) => {

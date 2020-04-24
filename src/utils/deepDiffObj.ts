@@ -21,7 +21,9 @@ export default function deepDiffObj<T>(base: Dictionary<T>, object: Dictionary<T
     const result = transform(object, (result: Dictionary<T | undefined>, value, key) => {
         if (! has(base, key)) result[key] = value; // fix edge case: not defined to explicitly defined as undefined
         if (! isEqual(value, base[key])) {
-            result[key] = isPlainObject(value) && isPlainObject(base[key]) ? deepDiffObj(((base[key] as unknown) as Dictionary<T>), ((value as unknown) as Dictionary<T>)) : value;
+            result[key] = (isPlainObject(value) && isPlainObject(base[key]) ?
+                deepDiffObj(((base[key] as unknown) as Dictionary<T>), ((value as unknown) as Dictionary<T>)) :
+                value) as T;
         }
     });
     // map removed fields to undefined

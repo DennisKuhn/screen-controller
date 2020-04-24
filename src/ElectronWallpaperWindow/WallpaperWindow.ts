@@ -11,7 +11,7 @@ interface WallpaperWindowConstructorOptions extends BrowserWindowConstructorOpti
 
 class WallpaperWindow extends EventEmitter {
     displayId: number;
-    browser: Browser;
+    _browser: Browser;
     browserWindow: BrowserWindow;
     _attached = false;
     private currentBounds: DisplayBounds | undefined;
@@ -24,11 +24,11 @@ class WallpaperWindow extends EventEmitter {
             const { displayId, browser, ...otherWindowOptions } = options;
 
             this.displayId = displayId;
-            this.browser = browser;
+            this._browser = browser;
             windowOptions = otherWindowOptions;
         } else {
             this.displayId = screen.getPrimaryDisplay().id;
-            this.browser = { id: this.displayId, rx: 0, ry: 0, rWidth: 1, rHeight: 1 };
+            this._browser = { id: this.displayId, rx: 0, ry: 0, rWidth: 1, rHeight: 1 };
         }
 
         const displayBounds = ScreenBounds.findBoundsByDisplayId(this.displayId);
@@ -77,7 +77,16 @@ class WallpaperWindow extends EventEmitter {
             this.fitToDisplay();
             this.emit('resized', { bounds: this.currentBounds });
         });
+    }
 
+    get browser(): Browser {
+        return this._browser;
+    }
+
+    set browser(newConfig: Browser) {
+        this._browser = newConfig;
+
+        this.fitToDisplay();
     }
 
     private attach(): void {

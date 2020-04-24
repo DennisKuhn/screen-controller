@@ -12,20 +12,46 @@ export class IterableNumberDictionary<T> implements NumericDictionary<T>, Iterab
     get values(): T[] {
         return Object.values(this);
     }
+
+    /**
+     * 
+     * @param source Create a shallow copy
+     */
+    constructor(source?: IterableNumberDictionary<T>) {
+        if (source) {
+            for (const key in source) {
+                this[key] = { ...source[key] };
+            }
+        }
+    }
 }
 
 
 export interface SetupInterface {
-    displays: DisplayMapInterface;
+    displays: DisplayInterfaceDictionary;
 }
-export type DisplayMapInterface = NumericDictionary<DisplayInterface>;
-export type DisplayDiffMapInterface = NumericDictionary<DisplayDiffInterface | null>;
-export type BrowserMapInterface = NumericDictionary<Browser>;
-export type BrowserDiffMapInterface = NumericDictionary<Partial<Browser> | null>;
+
+export type DisplayInterfaceDictionary = NumericDictionary<DisplayInterface>;
+export type DisplayDiffInterfaceDictionary = NumericDictionary<DisplayDiffInterface | null>;
+export type BrowserInterfaceDictionary = NumericDictionary<Browser>;
+export type BrowserDiffInterfaceDictionary = NumericDictionary<Partial<Browser> | null>;
+
+export class DisplayIterableDictionary extends IterableNumberDictionary<Display> { 
+
+}
+export class DisplayDiffIterableDictionary extends IterableNumberDictionary<DisplayDiff | null> {
+
+}
+export class BrowserDiffIterableDictionary extends IterableNumberDictionary<Partial<Browser> | null> {
+
+}
+export class BrowserIterableDictionary extends IterableNumberDictionary<Browser> {
+
+}
 
 export interface DisplayInterface {
     id: number;
-    browsers: BrowserMapInterface;
+    browsers: BrowserInterfaceDictionary;
 }
 
 export class Display implements DisplayInterface {
@@ -34,11 +60,11 @@ export class Display implements DisplayInterface {
     }
     id: number;
 
-    browsers: IterableNumberDictionary<Browser> = new IterableNumberDictionary<Browser>();
+    browsers: BrowserIterableDictionary = new BrowserIterableDictionary();
 }
 
 export class Setup implements SetupInterface {
-    displays: IterableNumberDictionary<Display> = new IterableNumberDictionary<Display>();
+    displays: DisplayIterableDictionary = new DisplayIterableDictionary();
 
     constructor(setup?: SetupInterface) {
         if (setup) {
@@ -59,12 +85,12 @@ export class Setup implements SetupInterface {
 
 
 export interface SetupDiffInterface {
-    displays: DisplayDiffMapInterface;
+    displays: DisplayDiffInterfaceDictionary;
 }
 
 export interface DisplayDiffInterface {
     id: number;
-    browsers: BrowserDiffMapInterface;
+    browsers: BrowserDiffInterfaceDictionary;
 }
 
 export class DisplayDiff implements DisplayDiffInterface {
@@ -73,11 +99,11 @@ export class DisplayDiff implements DisplayDiffInterface {
     }
     id: number;
 
-    browsers: IterableNumberDictionary<Partial<Browser> | null> = new IterableNumberDictionary<Partial<Browser> | null>();
+    browsers: BrowserDiffIterableDictionary = new BrowserDiffIterableDictionary();
 }
 
 export class SetupDiff implements SetupDiffInterface {
-    displays: IterableNumberDictionary<DisplayDiff | null> = new IterableNumberDictionary<DisplayDiff | null>();
+    displays: DisplayDiffIterableDictionary = new DisplayDiffIterableDictionary();
 
     constructor(setup?: SetupDiffInterface) {
         if (setup) {
