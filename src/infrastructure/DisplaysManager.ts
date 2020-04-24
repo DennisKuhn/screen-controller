@@ -20,7 +20,7 @@ export default class DisplaysManager {
             DisplaysManager._actualSetup = new Setup();
 
             for (const display of screen.getAllDisplays()) {
-                DisplaysManager._actualSetup.displays[display.id] = new Display(display.id);
+                DisplaysManager._actualSetup.displays[display.id] = new Display({id: display.id, browsers: {} });
             }
         }
         return DisplaysManager._actualSetup;

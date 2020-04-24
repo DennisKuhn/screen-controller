@@ -8,7 +8,6 @@ import IconButton from '@material-ui/core/IconButton';
 import Computer from '@material-ui/icons/Computer';
 import LibraryAdd from '@material-ui/icons/LibraryAdd';
 
-
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
@@ -18,39 +17,33 @@ import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 
 import configController from '../../../infrastructure/Configuration/Controller';
-import { Setup, Display, IterableNumberDictionary, SetupDiff } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { Setup, Display, DisplayIterableDictionary, SetupDiff, Browser } from '../../../infrastructure/Configuration/WallpaperSetup';
 import { remote } from 'electron';
-import Table from '../../components/Table/Table';
 import Browsers from './Browsers';
+import controller from '../../../infrastructure/Configuration/Controller';
 
 function DisplayCard({ config, specs }: { config: Display; specs: Electron.Display }): JSX.Element {
-    const updateTemplate = new SetupDiff({
-        displays: {
-            [config.id]: {
-                id: config.id,
-                browsers: {}
-            }
-        }
-    });
 
     function addPaper(): void {
-        const update = new SetupDiff( {
-            displays: {
-                [config.id]: {
-                    id: config.id,
-                    browsers: {
-                        [0]: {
-                            id: 0,
-                            rx: 0,
-                            ry: 0,
-                            rHeight: 1,
-                            rWidth: 1
-                        }
-                    }
+        controller.getSetup(false).then(
+            setup => {
+                let newBrowserId = 0;
+                const ids = setup.displays.values.flatMap(
+                    display => display.browsers.keys
+                );
+                while (ids.indexOf(newBrowserId) >= 0) {
+                    newBrowserId += 1;
                 }
+                console.log(`DisplayCard[${config.id}].addPaper: id=${newBrowserId}`);
+                config.browsers[newBrowserId] = new Browser({
+                    id: newBrowserId,
+                    rx: 0,
+                    ry: 0,
+                    rHeight: 1,
+                    rWidth: 1
+                });
             }
-        } );
-        configController.updateSetup(update);
+        );
     }
     //xs, sm, md, lg, and xl
     return <GridItem xs={12} sm={8} md={6} lg={4} xl={3}>
@@ -73,7 +66,7 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
                 </Tooltip>
             </CardHeader>
             <CardBody>
-                <Browsers updateTemplate={updateTemplate} browsers={config.browsers} />
+                <Browsers browsers={config.browsers} />
             </CardBody>
             <CardFooter stats={true}>
                 <p>{config.id} - {specs.scaleFactor}* {specs.workArea.width} x {specs.workArea.height}</p>

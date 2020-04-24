@@ -1,7 +1,6 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import controller from './Configuration/Controller';
 import { Setup, Browser, SetupDiff, IterableNumberDictionary } from './Configuration/WallpaperSetup';
-import { Dictionary } from 'lodash';
 
 declare const WALLPAPER_PRELOAD_WEBPACK_ENTRY: string;
 declare const WALLPAPER_WEBPACK_ENTRY: string;
@@ -10,7 +9,7 @@ declare const WALLPAPER_WEBPACK_ENTRY: string;
 export default class WallpapersManager {
 
     private static setup: Setup | undefined;
-    private static papers: IterableNumberDictionary<WallpaperWindow> = {};
+    private static papers: IterableNumberDictionary<WallpaperWindow> = new IterableNumberDictionary();
 
     public static async run(): Promise<void> {
         //console.log('WallpapersManager.run');

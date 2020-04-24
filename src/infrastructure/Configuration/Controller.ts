@@ -1,3 +1,4 @@
+import { observable, action } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer } from 'electron';
 import { Setup, SetupDiff, Config, SetupInterface, SetupDiffInterface, Properties } from './WallpaperSetup';
@@ -59,8 +60,8 @@ declare interface ControllerImpl {
 /**
  */
 abstract class ControllerImpl extends EventEmitter implements Controller {
-    protected setup: Setup | undefined;
-    protected configs: BrowserConfig = {};
+    @observable protected setup: Setup | undefined;
+    @observable protected configs: BrowserConfig = {};
     protected loadedAllConfig = false;
     protected abstract getAllWindows: () => Electron.BrowserWindow[];
 
@@ -89,6 +90,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         return fullSetup;
     }
 
+    @action
     protected processSetupChange(update: SetupDiff): void {
         console.log(`${this.constructor.name}.processSetupChange() ${JSON.stringify(update)} => ${JSON.stringify(this.setup)} + ${JSON.stringify(this.configs)}`);
         if (!this.setup) throw new Error(`${this.constructor.name}.processSetupChange: no setup`);
@@ -173,6 +175,7 @@ class Renderer extends ControllerImpl {
         this.ipc.send('init', this.setup);
 
         this.ipc.on('change', this.onSetupChanged);
+
     }
 
     updateSetup(update: SetupDiff): void {
@@ -218,6 +221,7 @@ class Renderer extends ControllerImpl {
         return response;
     }
 
+    @action
     private loadSetup(): Setup {
         console.log(`${this.constructor.name}: loadSetup`);
         const setupString = localStorage.getItem(Renderer.SETUP_KEY);
@@ -258,6 +262,7 @@ class Renderer extends ControllerImpl {
         this.loadedAllConfig = true;
     }
 
+    @action
     protected loadConfig(browserId: number): Config {
         try {
             let config: Config;
@@ -320,7 +325,7 @@ class Paper extends Renderer {
         if (!(displayWidth && displayHeight && browserId)) {
             console.error(`${this.constructor.name}() missing arguments: displayWidth=${displayWidth} displayHeight=${displayHeight} browserId=${browserId}`, process.argv);
             throw new Error(`${this.constructor.name}() missing arguments: displayWidth=${displayWidth} displayHeight=${displayHeight} browserId=${browserId}`);
-        }        
+        }
 
         this.displayWidth = Number(displayWidth.split('=')[1]);
         this.displayHeight = Number(displayHeight.split('=')[1]);
@@ -332,7 +337,7 @@ class Paper extends Renderer {
             displayHeight,
             browserId,
             process.argv
-        );        
+        );
 
         this.connectToWallpaper();
     }

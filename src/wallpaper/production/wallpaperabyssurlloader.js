@@ -123,7 +123,7 @@ class WallpaperAbyssUrlLoader extends UrlLoader {
                 }
                 // console.log("[" + this.name + "].getUrls(): rerequest=" + this.rerequest + " :" + url + " Headers: " + headers );
 
-                debugger;
+                // debugger;
                 if (!this.rerequest) {
                     if (response.ok) {
                         responseObject = await response.json();
