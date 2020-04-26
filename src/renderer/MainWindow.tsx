@@ -3,12 +3,18 @@ import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
 import controller from '../infrastructure/Configuration/Controller';
 
 export default function MainWindow(): JSX.Element {
-    controller.log();
-    const windowArgs: IpcArgs = {
-        window: 'ScreenManager',
-        command: 'show'
-    };
-    windowsIpc.send(CHANNEL, windowArgs);
+    controller.getSetup(false).then(
+        setup => {
+            if (setup.displays.size == 0) {
+                const windowArgs: IpcArgs = {
+                    window: 'ScreenManager',
+                    command: 'show'
+                };
+                windowsIpc.send(CHANNEL, windowArgs);
+            }
+        }
+    );
+    
     return <>
         <h1>Main index</h1>
         <div id="wrapper">
@@ -19,7 +25,6 @@ export default function MainWindow(): JSX.Element {
                         command: e.target.checked ? 'show' : 'hide'
                     };
                     windowsIpc.send(CHANNEL, windowArgs);
-
                 }} />
                 <span>Screen Manager</span>
             </label>

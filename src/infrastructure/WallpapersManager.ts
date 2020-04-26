@@ -1,6 +1,8 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import controller from './Configuration/Controller';
-import { Setup, Browser, SetupDiff, IterableNumberDictionary } from './Configuration/WallpaperSetup';
+import { Setup, Browser, Display } from './Configuration/WallpaperSetup';
+import { autorun } from 'mobx';
+
 
 declare const WALLPAPER_PRELOAD_WEBPACK_ENTRY: string;
 declare const WALLPAPER_WEBPACK_ENTRY: string;
@@ -9,14 +11,16 @@ declare const WALLPAPER_WEBPACK_ENTRY: string;
 export default class WallpapersManager {
 
     private static setup: Setup | undefined;
-    private static papers: IterableNumberDictionary<WallpaperWindow> = new IterableNumberDictionary();
+
+    /**
+     * Maps Browser.id to WallpaperWindow
+     */
+    private static papers: Map<string, WallpaperWindow> = new Map<string, WallpaperWindow>();
 
     public static async run(): Promise<void> {
         //console.log('WallpapersManager.run');
 
         controller.on('init', WallpapersManager.onSetupInit);
-        controller.on('change', WallpapersManager.onSetupChanged);
-
     }
 
     private static onSetupInit = (setup: Setup): void => {
@@ -24,36 +28,9 @@ export default class WallpapersManager {
 
         WallpapersManager.setup = setup;
 
-        WallpapersManager.setupDisplays();
-    }
-
-    private static onSetupChanged = (change: SetupDiff): void => {
-        if (!WallpapersManager.setup) throw new Error('WallpapersManager.onSetupChanged(): no setup');
-
-        console.log('WallpapersManager.onSetupChanged()', change);
-
-        for (const display of change.displays) {
-            if (display) {
-                for (const browserId in display.browsers) {
-                    const browserUpdate = display.browsers[browserId];
-                    const mergedBrowser = { ...WallpapersManager.setup.displays[display.id].browsers[browserId], browserUpdate };
-
-                    if (browserUpdate == null) { // Close removed browser
-                        WallpapersManager.papers[browserId].browserWindow.close();
-                        delete WallpapersManager.papers[browserId];
-                    } else if (browserId in WallpapersManager.papers) {
-                        WallpapersManager.papers[browserId].browser = mergedBrowser;
-                    } else {
-                        WallpapersManager.createWallpaperWindow(
-                            display.id,
-                            mergedBrowser
-                        );
-                    }
-                }
-            } else {
-                // display removed
-            }
-        }
+        autorun(
+            WallpapersManager.updateDisplays
+        );
     }
 
     /**
@@ -82,16 +59,16 @@ export default class WallpapersManager {
             window.browserWindow.once('ready-to-show', () => {
                 window.browserWindow.show();
             });
-            window.on('resized', (e, data) => {
-                // console.log(data.width);
-            });
+            // window.on('resized', (e, data) => {
+            //     // console.log(data.width);
+            // });
             window.browserWindow.loadURL(WALLPAPER_WEBPACK_ENTRY)
                 // .then(() => console.log(`WallpapersManager.createWallpaperWindow[${browser.id}]: loaded: ${WALLPAPER_WEBPACK_ENTRY}`))
                 .catch((reason) => {
                     console.error(`WallpapersManager.createWallpaperWindow[${browser.id}]: Failed loading: ${reason} = ${WALLPAPER_WEBPACK_ENTRY}`);
                 });
 
-            WallpapersManager.papers[browser.id] = window;
+            WallpapersManager.papers.set(browser.id,  window);
         } catch (error) {
             console.error(error);
         }
@@ -100,20 +77,48 @@ export default class WallpapersManager {
     /**
      * creates a WallpaperWindow for each configured browser
      */
-    private static setupDisplays(): void {
+    private static updateDisplays = (): void => {
 
-        if (!WallpapersManager.setup) throw new Error('WallpapersManager.setupDisplays(): no setup');
+        if (!WallpapersManager.setup) throw new Error('WallpapersManager.updateDisplays(): no setup');
 
-        // console.log('WallpapersManager.setupDisplays()');
+        console.log('WallpapersManager.updateDisplays()');
 
-        for (const display of WallpapersManager.setup.displays) {
-            for (const browser of display.browsers) {
-                WallpapersManager.createWallpaperWindow(
-                    display.id,
-                    browser
-                );
+        for (const display of WallpapersManager.setup.displays.values()) {
+            autorun( () => WallpapersManager.updateBrowsers(display) );
+        }
+        for (const paper of WallpapersManager.papers.values()) {
+            if (!WallpapersManager.setup.displays.has(paper.displayId.toFixed(0))) {
+                paper.browserWindow.close();
+                WallpapersManager.papers.delete(paper.browser.id);
             }
         }
     }
 
+    private static updateBrowsers(display: Display): void {
+        console.log(`WallpapersManager.updateBrowsers(${display.id})`);
+        for (const browser of display.browsers.values()) {
+            autorun( () => WallpapersManager.updateBrowser(Number(display.id), browser) );
+        }
+        for (const paper of WallpapersManager.papers.values()) {
+            if (!display.browsers.has(paper.browser.id)) {
+                paper.browserWindow.close();
+                WallpapersManager.papers.delete(paper.browser.id);
+            }
+        }
+    }
+
+    private static updateBrowser(displayId: number, browser: Browser): void {
+        console.log(`WallpapersManager.updateBrowser(${displayId}).${browser.id}`);
+        const paper = WallpapersManager.papers.get(browser.id);
+
+        if (paper) {
+            paper.browser = browser;
+        } else {
+            WallpapersManager.createWallpaperWindow(
+                displayId,
+                browser
+            );
+        }
+
+    }
 }

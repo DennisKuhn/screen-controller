@@ -24,13 +24,14 @@ const Row = observer(({browser}: { browser: Browser }): JSX.Element => {
     function deleteBrowser(): void {
         controller.getSetup(false).then(
             setup => {
-                for (const display of setup.displays) {
-                    if (browser.id in display.browsers) {
+                for (const display of setup.displays.values()) {
+                    if (display.browsers.has(browser.id)) {
                         console.log(`${display.id}.Row[${browser.id}].deleteBrowser`);
-                        delete display.browsers[browser.id];
+                        display.browsers.delete(browser.id);
                         return;
                     }
                 }
+                throw new Error(`Row[${browser.id}].deleteBrowser can not find display`);
             }                
         );
     }
@@ -109,7 +110,7 @@ const Browsers = observer(({browsers}: { browsers: BrowserIterableDictionary }):
     return (
         <Table>
             <TableBody>
-                {browsers.values.map(browser =>
+                {browsers.map(browser =>
                     <Row key={browser.id} browser={browser} />)}
             </TableBody>
         </Table>

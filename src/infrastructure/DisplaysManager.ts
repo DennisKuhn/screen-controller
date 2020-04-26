@@ -1,6 +1,6 @@
 import { screen } from 'electron';
 import controller from './Configuration/Controller';
-import { Setup, Display, SetupDiff } from './Configuration/WallpaperSetup';
+import { Setup, Display } from './Configuration/WallpaperSetup';
 
 
 
@@ -20,7 +20,7 @@ export default class DisplaysManager {
             DisplaysManager._actualSetup = new Setup();
 
             for (const display of screen.getAllDisplays()) {
-                DisplaysManager._actualSetup.displays[display.id] = new Display({id: display.id, browsers: {} });
+                DisplaysManager._actualSetup.displays.set(display.id.toFixed(0), new Display( display.id.toFixed(0) ) );
             }
         }
         return DisplaysManager._actualSetup;
@@ -33,25 +33,17 @@ export default class DisplaysManager {
     private static checkDisplays(setup: Setup): void {
         // console.log('DisplaysManager.checkDisplays:', setup);
 
-        const changedSetup: SetupDiff = new SetupDiff();
-
-        for (const display of DisplaysManager.actualSetup.displays) {
-            if (!(display.id in setup.displays)) {
-                changedSetup.displays[display.id] = display;
+        for (const display of DisplaysManager.actualSetup.displays.values()) {
+            if (!setup.displays.has(display.id)) {
+                console.log(`DisplaysManager.checkDisplays: add ${display.id}`);
+                setup.displays.set(display.id, display);
             }
         }
-        for (const displayId in setup.displays) {
-            if (!(displayId in DisplaysManager.actualSetup.displays)) {
-                changedSetup.displays[displayId] = null;
+        for (const displayId of setup.displays.keys()) {
+            if (! DisplaysManager.actualSetup.displays.has(displayId)) {
+                console.log(`DisplaysManager.checkDisplays: delete ${displayId}`);
+                setup.displays.delete(displayId);
             }
-        }
-
-        // console.log('DisplaysManager.checkDisplays:', setup, changedSetup);
-
-        if (Object.keys(changedSetup.displays).length) {
-            controller.updateSetup(changedSetup);
         }
     }
-
-
 }

@@ -1,68 +1,30 @@
-import { observable } from 'mobx';
-import { Dictionary, NumericDictionary } from 'lodash';
+import { observable, ObservableMap, reaction } from 'mobx';
+import { Dictionary } from 'lodash';
 
-export class IterableNumberDictionary<T> implements NumericDictionary<T>, Iterable<T> {
-    [key: number]: T;
+export class ObservableArrayMap<K, V> extends ObservableMap<K, V> {
 
-    *[Symbol.iterator](): Iterator<T> {
+    map<O>(mapper: (value: V) => O): O[] {
+        const result: O[] = new Array<O>(this.size);
+        let i = 0;
 
-        for (const itemId in this) {
-            yield this[itemId];
+        for (const value of this.values()) {
+            result[i] = mapper(value);
+            i += 1;
         }
-    }
 
-    get values(): T[] {
-        return Object.values(this);
-    }
-
-    get keys(): number[] {
-        return Object.keys(this).map( s => Number(s) );
-    }
-
-    /**
-     * 
-     * @param source Create a shallow copy
-     */
-    constructor(source?: IterableNumberDictionary<T>) {
-        if (source) {
-            for (const key in source) {
-                this[key] = { ...source[key] };
-            }
-        }
+        return result;
     }
 }
 
-
-export interface SetupInterface {
-    displays: DisplayInterfaceDictionary;
-}
-
-export type DisplayInterfaceDictionary = NumericDictionary<DisplayInterface>;
-export type DisplayDiffInterfaceDictionary = NumericDictionary<DisplayDiffInterface | null>;
-export type BrowserInterfaceDictionary = NumericDictionary<Browser>;
-export type BrowserDiffInterfaceDictionary = NumericDictionary<Partial<Browser> | null>;
-
-export class DisplayIterableDictionary extends IterableNumberDictionary<Display> { 
+export class DisplayIterableDictionary extends ObservableArrayMap<string, Display> {
 
 }
-export class DisplayDiffIterableDictionary extends IterableNumberDictionary<DisplayDiff | null> {
-
-}
-export class BrowserDiffIterableDictionary extends IterableNumberDictionary<Partial<Browser> | null> {
-
-}
-export class BrowserIterableDictionary extends IterableNumberDictionary<Browser> {
+export class BrowserIterableDictionary extends ObservableArrayMap<string, Browser> {
 
 }
 
-/**
- * Bounds in %, relativ to display. Application unique id, e.g. auto increment from 1. 
- * config for Browser usually ommited for performance, request explictly from Configuration/Controller
- * @example {rx:0, ry:0, rWidth:1, rHeight:1} fills the entire display
- **/
-export interface Browser {
-    /** Application unique, e.g. auto increment from 1 */
-    id: number;
+export interface BrowserInterface {
+    id: string;
     rx: number;
     ry: number;
     rWidth: number;
@@ -70,16 +32,21 @@ export interface Browser {
     config?: Config;
 }
 
-export class Browser implements Browser {
+/**
+ * Bounds in %, relativ to display. Application unique id, e.g. auto increment from 1. 
+ * config for Browser usually ommited for performance, request explictly from Configuration/Controller
+ * @example {rx:0, ry:0, rWidth:1, rHeight:1} fills the entire display
+ **/
+export class Browser {
     /** Application unique, e.g. auto increment from 1 */
-    @observable id: number;
+    @observable id: string;
     @observable rx: number;
     @observable ry: number;
     @observable rWidth: number;
     @observable rHeight: number;
     @observable config?: Config;
 
-    constructor(source: Browser) {
+    constructor(source: BrowserInterface) {
         this.id = source.id;
         this.rx = source.rx;
         this.ry = source.ry;
@@ -89,74 +56,79 @@ export class Browser implements Browser {
     }
 }
 
-
 export interface DisplayInterface {
-    id: number;
-    browsers: BrowserInterfaceDictionary;
+    id: string;
+
+    browsers: Dictionary<BrowserInterface>;
 }
 
-export class Display implements DisplayInterface {
-    @observable public id: number
-    constructor(display: DisplayInterface) {
-        this.id = display.id;
-        for (const sourceBrowser of Object.values( display.browsers )) {
-            this.browsers[sourceBrowser.id] = observable( new Browser(sourceBrowser));
+
+export class Display {
+    @observable public id: string;
+    @observable browsers: BrowserIterableDictionary;
+
+    constructor(displayId: string, onLocalBrowsersChange?) {
+        this.id = displayId;
+        this.browsers = new BrowserIterableDictionary();
+        if (onLocalBrowsersChange) {
+            this.browsers.observe(onLocalBrowsersChange, false);
         }
     }
 
-    @observable browsers: BrowserIterableDictionary = observable( new BrowserIterableDictionary() );
+    get plain(): DisplayInterface {
+        return { id: this.id, browsers: {} };
+    }
 }
 
+export interface SetupInterface {
+    displays: Dictionary<DisplayInterface>;
+}
 
-export class Setup implements SetupInterface {
-    @observable displays: DisplayIterableDictionary = observable( new DisplayIterableDictionary() );
+export class Setup {
+    @observable displays: DisplayIterableDictionary;
 
-    constructor(setup?: SetupInterface) {
-        if (setup) {
-            for (const sourceDisplay of Object.values(setup.displays)) {
-                const display = observable( new Display(sourceDisplay) );
-                this.displays[sourceDisplay.id] = display;
+    constructor() {
+        this.displays = new DisplayIterableDictionary();
+        // this.displays = new DisplayIterableDictionary();
+    }
+
+    getPlainSetup = (): SetupInterface => {
+        const plainSetup: SetupInterface = { displays: {} };
+
+        for (const display of this.displays.values()) {
+            const newDisplay: DisplayInterface = { id: display.id, browsers: {} };
+            plainSetup.displays[display.id] = newDisplay;
+
+            for (const browser of display.browsers.values()) {
+                const newBrowser: BrowserInterface = { ...browser };
+                newDisplay.browsers[browser.id] = newBrowser;
             }
         }
+
+        return plainSetup;
     }
-}
 
+    fromPlain(plainSetup: SetupInterface, onLocalBrowsersChange, onLocalBrowserChange): void {
+        // debugger;
 
-export interface SetupDiffInterface {
-    displays: DisplayDiffInterfaceDictionary;
-}
+        for (const display of Object.values(plainSetup.displays)) {
+            const newDisplay = new Display(display.id);
 
-export interface DisplayDiffInterface {
-    id: number;
-    browsers: BrowserDiffInterfaceDictionary;
-}
+            this.displays.set(display.id, newDisplay);
 
-export class DisplayDiff implements DisplayDiffInterface {
-    constructor(id: number) {
-        this.id = id;
-    }
-    id: number;
+            for (const browser of Object.values(display.browsers)) {
+                const newBrowser = observable(new Browser(browser));
+                newDisplay.browsers.set(browser.id, newBrowser);
 
-    browsers: BrowserDiffIterableDictionary = new BrowserDiffIterableDictionary();
-}
-
-export class SetupDiff implements SetupDiffInterface {
-    displays: DisplayDiffIterableDictionary = new DisplayDiffIterableDictionary();
-
-    constructor(setup?: SetupDiffInterface) {
-        if (setup) {
-            for (const [displayId, sourceDisplay] of Object.entries(setup.displays)) {
-                if (sourceDisplay) {
-                    const display = new DisplayDiff(Number(displayId));
-                    this.displays[Number(displayId)] = display;
-
-                    for (const [browserId, sourceBrowser] of Object.entries(sourceDisplay.browsers)) {
-                        display.browsers[browserId] = sourceBrowser;
-                    }
-                } else {
-                    this.displays[Number(displayId)] = null;
-                }
+                reaction(
+                    () => {
+                        return { ...newBrowser };
+                    },
+                    onLocalBrowserChange,
+                    { name: this.constructor.name + ' browser change', delay: 1 }
+                );
             }
+            newDisplay.browsers.observe(onLocalBrowsersChange, false);
         }
     }
 

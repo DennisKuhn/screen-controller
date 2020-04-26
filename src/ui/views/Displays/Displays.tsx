@@ -16,11 +16,11 @@ import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 
-import configController from '../../../infrastructure/Configuration/Controller';
-import { Setup, Display, DisplayIterableDictionary, SetupDiff, Browser } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { Setup, Display, Browser, DisplayIterableDictionary } from '../../../infrastructure/Configuration/WallpaperSetup';
 import { remote } from 'electron';
 import Browsers from './Browsers';
 import controller from '../../../infrastructure/Configuration/Controller';
+import { observable } from 'mobx';
 
 function DisplayCard({ config, specs }: { config: Display; specs: Electron.Display }): JSX.Element {
 
@@ -28,20 +28,28 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
         controller.getSetup(false).then(
             setup => {
                 let newBrowserId = 0;
-                const ids = setup.displays.values.flatMap(
-                    display => display.browsers.keys
-                );
-                while (ids.indexOf(newBrowserId) >= 0) {
+                const ids: string[] = new Array<string>();
+
+                for (const display of setup.displays.values())
+                    for (const browserId of display.browsers.keys())
+                        ids.push(browserId);
+
+                while (ids.indexOf(newBrowserId.toFixed()) >= 0) {
                     newBrowserId += 1;
                 }
                 console.log(`DisplayCard[${config.id}].addPaper: id=${newBrowserId}`);
-                config.browsers[newBrowserId] = new Browser({
-                    id: newBrowserId,
-                    rx: 0,
-                    ry: 0,
-                    rHeight: 1,
-                    rWidth: 1
-                });
+                config.browsers.set(
+                    newBrowserId.toFixed(),
+                    observable(
+                        new Browser({
+                            id: newBrowserId.toFixed(),
+                            rx: 0,
+                            ry: 0,
+                            rHeight: 1,
+                            rWidth: 1
+                        })
+                    )
+                );
             }
         );
     }
@@ -84,7 +92,7 @@ function DisplayContainer({ displays }: { displays: DisplayIterableDictionary })
     }, {});
     return <GridContainer>
         {
-            displays.values.map(
+            displays.map(
                 display => <DisplayCard key={display.id} config={display} specs={electronDisplays[display.id]} />
             )
         }
@@ -97,7 +105,7 @@ export default function DisplaysPage(): JSX.Element {
     const [setup, setSetup] = useState(new Setup());
 
     useEffect(() => {
-        configController.getSetup(false)
+        controller.getSetup(false)
             .then(setup => setSetup(setup));
     }, []);
 

@@ -28,7 +28,7 @@ class WallpaperWindow extends EventEmitter {
             windowOptions = otherWindowOptions;
         } else {
             this.displayId = screen.getPrimaryDisplay().id;
-            this._browser = { id: this.displayId, rx: 0, ry: 0, rWidth: 1, rHeight: 1 };
+            this._browser = { id: this.displayId.toFixed(), rx: 0, ry: 0, rWidth: 1, rHeight: 1 };
         }
 
         const displayBounds = ScreenBounds.findBoundsByDisplayId(this.displayId);
