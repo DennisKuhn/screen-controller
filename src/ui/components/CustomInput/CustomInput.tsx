@@ -12,37 +12,37 @@ import Check from '@material-ui/icons/Check';
 import customInputStyle from '../../assets/jss/material-dashboard-react/components/customInputStyle';
 
 function CustomInput({ ...props }: any) {
-  const {
-    classes,
-    formControlProps,
-    labelText,
-    id,
-    labelProps,
-    inputProps,
-    error,
-    success
-  } = props;
+    const {
+        classes,
+        formControlProps,
+        labelText,
+        id,
+        labelProps,
+        inputProps,
+        error,
+        success
+    } = props;
 
-  const labelClasses = classNames({
-    [' ' + classes.labelRootError]: error,
-    [' ' + classes.labelRootSuccess]: success && !error
-  });
+    const labelClasses = classNames({
+        [' ' + classes.labelRootError]: error,
+        [' ' + classes.labelRootSuccess]: success && !error
+    });
 
-  const underlineClasses = classNames({
-    [classes.underlineError]: error,
-    [classes.underlineSuccess]: success && !error,
-    [classes.underline]: true
-  });
+    const underlineClasses = classNames({
+        [classes.underlineError]: error,
+        [classes.underlineSuccess]: success && !error,
+        [classes.underline]: true
+    });
 
-  const marginTop = classNames({
-    [classes.marginTop]: labelText === undefined
-  });
+    const marginTop = classNames({
+        [classes.marginTop]: labelText === undefined
+    });
   
-  return (
+    return (
     <FormControl
       {...formControlProps}
       className={formControlProps.className + ' ' + classes.formControl}
-    >
+        >
       {labelText !== undefined ? (
         <InputLabel
           className={classes.labelRoot + labelClasses}
@@ -67,7 +67,7 @@ function CustomInput({ ...props }: any) {
         <Check className={classes.feedback + ' ' + classes.labelRootSuccess} />
       ) : null}
     </FormControl>
-  );
+    );
 }
 
 // CustomInput.propTypes = {

@@ -15,7 +15,7 @@ import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
 import controller from '../../../infrastructure/Configuration/Controller';
-import { BrowserIterableDictionary, Browser } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { BrowserIterableDictionary, Browser, Rectangle } from '../../../infrastructure/Configuration/WallpaperSetup';
 
 const Row = observer(({browser}: { browser: Browser }): JSX.Element => {
 
@@ -37,13 +37,13 @@ const Row = observer(({browser}: { browser: Browser }): JSX.Element => {
     }
 
     function toggleFullScreen(): void {
-        const newFullScreen = !(browser.rx == 0 && browser.ry == 0 && browser.rWidth == 1 && browser.rHeight == 1);
+        const newFullScreen = !(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1);
 
-        Object.assign(
-            browser,
+        browser.relative = new Rectangle(
             newFullScreen ?
-                { rx: 0, ry: 0, rWidth: 1, rHeight: 1 } :
-                { rx: 0.25, ry: 0.25, rWidth: 0.5, rHeight: 0.5 });
+                { x: 0, y: 0, width: 1, height: 1 } :
+                { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
+        );
     }
 
     function toggleConfigVisible(): void {
@@ -69,23 +69,23 @@ const Row = observer(({browser}: { browser: Browser }): JSX.Element => {
             <TableCell style={{ padding: '8px 0px 8px 0px' }}>
                 <Tooltip
                     id={'tooltip-' + browser.id + '-config'}
-                    title={(browser.rx == 0 && browser.ry == 0 && browser.rWidth == 1 && browser.rHeight == 1) ? 'Make part screen' : 'Make Full Screen'}
+                    title={(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1) ? 'Make part screen' : 'Make Full Screen'}
                     placement="top"
                 >
                     <IconButton
                         aria-label="Fullscreen"
                         onClick={toggleFullScreen}
                     >
-                        {(browser.rx == 0 && browser.ry == 0 && browser.rWidth == 1 && browser.rHeight == 1) ? <FullscreenExit /> : <Fullscreen />}
+                        {(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1) ? <FullscreenExit /> : <Fullscreen />}
                     </IconButton>
                 </Tooltip>
             </TableCell>
-            <TableCell style={{ padding: '8px 0px 8px 4px', textAlign: 'right' }}>{browser.rx * 100}%</TableCell>
+            <TableCell style={{ padding: '8px 0px 8px 4px', textAlign: 'right' }}>{browser.relative.x * 100}%</TableCell>
             <TableCell style={{ padding: '8px 2px 8px 0px', textAlign: 'center' }}>,</TableCell>
-            <TableCell style={{ padding: '8px 4px 8px 0px', textAlign: 'left' }}>{browser.ry * 100}%</TableCell>
-            <TableCell style={{ padding: '8px 0px 8px 4px', textAlign: 'right' }}>{browser.rWidth * 100}%</TableCell>
+            <TableCell style={{ padding: '8px 4px 8px 0px', textAlign: 'left' }}>{browser.relative.y * 100}%</TableCell>
+            <TableCell style={{ padding: '8px 0px 8px 4px', textAlign: 'right' }}>{browser.relative.width * 100}%</TableCell>
             <TableCell style={{ padding: '8px 2px 8px 2px', textAlign: 'center' }}>x</TableCell>
-            <TableCell style={{ padding: '8px 4px 8px 0px', textAlign: 'left' }}>{browser.rHeight * 100}%</TableCell>
+            <TableCell style={{ padding: '8px 4px 8px 0px', textAlign: 'left' }}>{browser.relative.height * 100}%</TableCell>
             <TableCell style={{ padding: '8px 0px 8px 0px' }}>
                 <Tooltip
                     id={'tooltip-' + browser.id + '-delete'}

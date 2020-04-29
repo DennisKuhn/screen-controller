@@ -43,10 +43,12 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
                     observable(
                         new Browser({
                             id: newBrowserId.toFixed(),
-                            rx: 0,
-                            ry: 0,
-                            rHeight: 1,
-                            rWidth: 1
+                            relative: {
+                                x: 0,
+                                y: 0,
+                                height: 1,
+                                width: 1
+                            }
                         })
                     )
                 );

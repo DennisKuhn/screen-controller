@@ -15,33 +15,33 @@ import CardBody from '../../components/Card/CardBody';
 import { createStyles } from '@material-ui/core';
 
 const styles = createStyles({
-  cardCategoryWhite: {
-    '&,& a,& a:hover,& a:focus': {
-      color: 'rgba(255,255,255,.62)',
-      margin: '0',
-      fontSize: '14px',
-      marginTop: '0',
-      marginBottom: '0'
+    cardCategoryWhite: {
+        '&,& a,& a:hover,& a:focus': {
+            color: 'rgba(255,255,255,.62)',
+            margin: '0',
+            fontSize: '14px',
+            marginTop: '0',
+            marginBottom: '0'
+        },
+        '& a,& a:hover,& a:focus': {
+            color: '#FFFFFF'
+        }
     },
-    '& a,& a:hover,& a:focus': {
-      color: '#FFFFFF'
+    cardTitleWhite: {
+        color: '#FFFFFF',
+        marginTop: '0px',
+        minHeight: 'auto',
+        fontWeight: 300,
+        fontFamily: '\'Roboto\', \'Helvetica\', \'Arial\', sans-serif',
+        marginBottom: '3px',
+        textDecoration: 'none',
+        '& small': {
+            color: '#777',
+            fontSize: '65%',
+            fontWeight: 400,
+            lineHeight: 1
+        }
     }
-  },
-  cardTitleWhite: {
-    color: '#FFFFFF',
-    marginTop: '0px',
-    minHeight: 'auto',
-    fontWeight: 300,
-    fontFamily: '\'Roboto\', \'Helvetica\', \'Arial\', sans-serif',
-    marginBottom: '3px',
-    textDecoration: 'none',
-    '& small': {
-      color: '#777',
-      fontSize: '65%',
-      fontWeight: 400,
-      lineHeight: 1
-    }
-  }
 });
 
 interface Props {
@@ -49,50 +49,50 @@ interface Props {
 }
 
 interface State {
-  tl: Boolean;
-  tc: Boolean;
-  tr: Boolean;
-  bl: Boolean;
-  bc: Boolean;
-  br: Boolean;
-  [key: string]: Boolean;
+  tl: boolean;
+  tc: boolean;
+  tr: boolean;
+  bl: boolean;
+  bc: boolean;
+  br: boolean;
+  [key: string]: boolean;
 }
 
 class Notifications extends React.Component<Props, State> {
   alertTimeout: any;
   constructor(props: Props) {
-    super(props);
-    this.state = {
-      tl: false,
-      tc: false,
-      tr: false,
-      bl: false,
-      bc: false,
-      br: false
-    };
-    // this.showNotification = this.showNotification.bind(this);
+      super(props);
+      this.state = {
+          tl: false,
+          tc: false,
+          tr: false,
+          bl: false,
+          bc: false,
+          br: false
+      };
+      // this.showNotification = this.showNotification.bind(this);
   }
   // to stop the warning of calling setState of unmounted component
   componentWillUnmount() {
-    var id = window.setTimeout(() => { }, 0);
-    while (id--) {
-      window.clearTimeout(id);
-    }
+      let id = window.setTimeout(() => { }, 0);
+      while (id--) {
+          window.clearTimeout(id);
+      }
   }
 
   showNotification(e: any) {
-    this.setState({[e]: true});
-    this.alertTimeout = setTimeout(
-      () => {
-        this.setState({[e]: false});
-      },
-      6000
-    );
+      this.setState({[e]: true});
+      this.alertTimeout = setTimeout(
+          () => {
+              this.setState({[e]: false});
+          },
+          6000
+      );
   }
 
   render() {
-    const { classes } = this.props;
-    return (
+      const { classes } = this.props;
+      return (
       <Card>
         <CardHeader color="primary">
           <h4 className={classes.cardTitleWhite}>Notifications</h4>
@@ -308,7 +308,7 @@ class Notifications extends React.Component<Props, State> {
           </GridContainer>
         </CardBody>
       </Card>
-    );
+      );
   }
 }
 

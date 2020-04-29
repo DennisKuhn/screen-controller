@@ -29,35 +29,35 @@ interface State {
 }
 
 class Tasks extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      checked: this.props.checkedIndexes
-    };
-  }
-
-  handleToggle = (value: any) => () => {
-    const { checked } = this.state;
-    const currentIndex = checked.indexOf(value);
-    const newChecked = [...checked];
-
-    if (currentIndex === -1) {
-      newChecked.push(value);
-    } else {
-      newChecked.splice(currentIndex, 1);
+    constructor(props: Props) {
+        super(props);
+        this.state = {
+            checked: this.props.checkedIndexes
+        };
     }
 
-    this.setState({
-      checked: newChecked
-    });
+  handleToggle = (value: any) => () => {
+      const { checked } = this.state;
+      const currentIndex = checked.indexOf(value);
+      const newChecked = [...checked];
+
+      if (currentIndex === -1) {
+          newChecked.push(value);
+      } else {
+          newChecked.splice(currentIndex, 1);
+      }
+
+      this.setState({
+          checked: newChecked
+      });
   }
 
   render() {
-    const { classes, tasksIndexes, tasks, rtlActive } = this.props;
-    const tableCellClasses = classnames(classes.tableCell, {
-      [classes.tableCellRTL]: rtlActive
-    });
-    return (
+      const { classes, tasksIndexes, tasks, rtlActive } = this.props;
+      const tableCellClasses = classnames(classes.tableCell, {
+          [classes.tableCellRTL]: rtlActive
+      });
+      return (
       <Table className={classes.table}>
         <TableBody>
           {tasksIndexes.map((value: any) => (
@@ -118,7 +118,7 @@ class Tasks extends React.Component<Props, State> {
           ))}
         </TableBody>
       </Table>
-    );
+      );
   }
 }
 

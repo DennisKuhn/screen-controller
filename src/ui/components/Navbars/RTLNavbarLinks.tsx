@@ -28,25 +28,25 @@ class HeaderLinks extends React.Component<Props, {}> {
   anchorEl: any;
 
   state = {
-    open: false
+      open: false
   };
 
   handleToggle = () => {
-    this.setState({ open: !this.state.open });
+      this.setState({ open: !this.state.open });
   }
 
   handleClose = (event: any) => {
-    if (this.anchorEl.contains(event.target)) {
-      return;
-    }
+      if (this.anchorEl.contains(event.target)) {
+          return;
+      }
 
-    this.setState({ open: false });
+      this.setState({ open: false });
   }
 
   render() {
-    const { classes } = this.props;
-    const { open } = this.state;
-    return (
+      const { classes } = this.props;
+      const { open } = this.state;
+      return (
       <div>
         <div className={classes.searchWrapper}>
           <CustomInput
@@ -171,7 +171,7 @@ class HeaderLinks extends React.Component<Props, {}> {
           </Hidden>
         </Button>
       </div>
-    );
+      );
   }
 }
 

@@ -1,5 +1,5 @@
-import { observable, ObservableMap, reaction } from 'mobx';
-import { Dictionary } from 'lodash';
+import { observable, ObservableMap, reaction, IReactionPublic } from 'mobx';
+import { Dictionary, isEqual } from 'lodash';
 
 export class ObservableArrayMap<K, V> extends ObservableMap<K, V> {
 
@@ -23,36 +23,105 @@ export class BrowserIterableDictionary extends ObservableArrayMap<string, Browse
 
 }
 
+export interface RectangleInterface {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+export class Rectangle implements RectangleInterface {
+    @observable x: number;
+    @observable y: number;
+    @observable width: number;
+    @observable height: number;
+
+    constructor(source: RectangleInterface) {
+        this.x = source.x;
+        this.y = source.y;
+        this.width = source.width;
+        this.height = source.height;
+    }
+
+    get plain(): RectangleInterface {
+        return {
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height
+        };
+    }
+}
+
 export interface BrowserInterface {
     id: string;
-    rx: number;
-    ry: number;
-    rWidth: number;
-    rHeight: number;
+    relative: RectangleInterface;
+    scaled?: RectangleInterface;
+    device?: RectangleInterface;
     config?: Config;
 }
+
+
 
 /**
  * Bounds in %, relativ to display. Application unique id, e.g. auto increment from 1. 
  * config for Browser usually ommited for performance, request explictly from Configuration/Controller
  * @example {rx:0, ry:0, rWidth:1, rHeight:1} fills the entire display
  **/
-export class Browser {
-    /** Application unique, e.g. auto increment from 1 */
+export class Browser implements BrowserInterface {
+    /** Application unique persistent, e.g. auto increment from 1 */
     @observable id: string;
-    @observable rx: number;
-    @observable ry: number;
-    @observable rWidth: number;
-    @observable rHeight: number;
+
+    @observable relative: Rectangle;
+    @observable scaled?: Rectangle;
+    @observable device?: Rectangle;
+
     @observable config?: Config;
 
     constructor(source: BrowserInterface) {
         this.id = source.id;
-        this.rx = source.rx;
-        this.ry = source.ry;
-        this.rWidth = source.rWidth;
-        this.rHeight = source.rHeight;
+        this.relative = new Rectangle(source.relative);
+
+        if (source.scaled) {
+            this.scaled = new Rectangle(source.scaled);
+        }
+        if (source.device) {
+            this.device = new Rectangle(source.device);
+        }
+
         this.config = source.config;
+    }
+
+    get plain(): BrowserInterface {
+        return {
+            id: this.id,
+            relative: this.relative.plain,
+            scaled: this.scaled ? this.scaled.plain : undefined,
+            device: this.device ? this.device.plain : undefined,
+            config: this.config,
+        };
+    }
+
+    update(update: BrowserInterface): void {
+        if (!isEqual(this.relative.plain, update.relative)) {
+            console.log(`${this.constructor.name}[${this.id}].update(): relative`, { ...this.relative.plain }, { ...update.relative });
+
+            this.relative = new Rectangle(update.relative);
+        }
+        if (update.device) {
+            if (!isEqual(this.device?.plain, update.device)) {
+                console.log(`${this.constructor.name}[${this.id}].update(): device`, { ...this.device?.plain }, { ...update.device });
+
+                this.device = new Rectangle(update.device);
+            }
+        }
+        if (update.scaled) {
+            if (!isEqual(this.scaled?.plain, update.scaled)) {
+                console.log(`${this.constructor.name}[${this.id}].update(): scaled`, { ...this.scaled?.plain }, { ...update.scaled });
+
+                this.scaled = new Rectangle(update.scaled);
+            }
+        }
     }
 }
 
@@ -76,7 +145,13 @@ export class Display {
     }
 
     get plain(): DisplayInterface {
-        return { id: this.id, browsers: {} };
+        const newDisplay: DisplayInterface = { id: this.id, browsers: {} };
+
+        for (const browser of this.browsers.values()) {
+            newDisplay.browsers[browser.id] = browser.plain;
+        }
+
+        return newDisplay;
     }
 }
 
@@ -89,28 +164,19 @@ export class Setup {
 
     constructor() {
         this.displays = new DisplayIterableDictionary();
-        // this.displays = new DisplayIterableDictionary();
     }
 
-    getPlainSetup = (): SetupInterface => {
+    get plain(): SetupInterface {
         const plainSetup: SetupInterface = { displays: {} };
 
         for (const display of this.displays.values()) {
-            const newDisplay: DisplayInterface = { id: display.id, browsers: {} };
-            plainSetup.displays[display.id] = newDisplay;
-
-            for (const browser of display.browsers.values()) {
-                const newBrowser: BrowserInterface = { ...browser };
-                newDisplay.browsers[browser.id] = newBrowser;
-            }
+            plainSetup.displays[display.id] = display.plain;
         }
 
         return plainSetup;
     }
 
-    fromPlain(plainSetup: SetupInterface, onLocalBrowsersChange, onLocalBrowserChange): void {
-        // debugger;
-
+    fromPlain(plainSetup: SetupInterface, onLocalBrowsersChange, onLocalBrowserChange: (browser: BrowserInterface, r: IReactionPublic) => void): void {
         for (const display of Object.values(plainSetup.displays)) {
             const newDisplay = new Display(display.id);
 
@@ -121,9 +187,7 @@ export class Setup {
                 newDisplay.browsers.set(browser.id, newBrowser);
 
                 reaction(
-                    () => {
-                        return { ...newBrowser };
-                    },
+                    () => newBrowser.plain,
                     onLocalBrowserChange,
                     { name: this.constructor.name + ' browser change', delay: 1 }
                 );

@@ -17,21 +17,21 @@ import Button from '../CustomButtons/Button';
 import headerStyle from '../../assets/jss/material-dashboard-react/components/headerStyle';
 
 function Header({ ...props }: any) {
-  function makeBrand() {
-    var name;
-    props.routes.map((prop: any, key: any) => {
-      if (prop.layout + prop.path === props.location.pathname) {
-        name = props.rtlActive ? prop.rtlName : prop.name;
-      }
-      return null;
+    function makeBrand() {
+        let name;
+        props.routes.map((prop: any, key: any) => {
+            if (prop.layout + prop.path === props.location.pathname) {
+                name = props.rtlActive ? prop.rtlName : prop.name;
+            }
+            return null;
+        });
+        return name;
+    }
+    const { classes, color } = props;
+    const appBarClasses = classNames({
+        [' ' + classes[color]]: color
     });
-    return name;
-  }
-  const { classes, color } = props;
-  const appBarClasses = classNames({
-    [' ' + classes[color]]: color
-  });
-  return (
+    return (
     <AppBar className={classes.appBar + appBarClasses}>
       <Toolbar className={classes.container}>
         <div className={classes.flex}>
@@ -54,7 +54,7 @@ function Header({ ...props }: any) {
         </Hidden>
       </Toolbar>
     </AppBar>
-  );
+    );
 }
 
 // Header.propTypes = {

@@ -88,6 +88,7 @@ export default class WallpapersManager {
         }
         for (const paper of WallpapersManager.papers.values()) {
             if (!WallpapersManager.setup.displays.has(paper.displayId.toFixed(0))) {
+                console.log(`WallpapersManager.updateDisplays(${paper.displayId}) close ${paper.browser.id}`);
                 paper.browserWindow.close();
                 WallpapersManager.papers.delete(paper.browser.id);
             }
@@ -97,10 +98,18 @@ export default class WallpapersManager {
     private static updateBrowsers(display: Display): void {
         console.log(`WallpapersManager.updateBrowsers(${display.id})`);
         for (const browser of display.browsers.values()) {
-            autorun( () => WallpapersManager.updateBrowser(Number(display.id), browser) );
+            WallpapersManager.updateBrowser(Number(display.id), browser);
+            // autorun(
+            //     () => WallpapersManager.updateBrowser(Number(display.id), browser),
+            //     {
+            //         delay: 1,
+            //         name: `WallpapersManager.updateBrowser(${display.id}, ${browser.id})`
+            //     }
+            // );
         }
         for (const paper of WallpapersManager.papers.values()) {
-            if (!display.browsers.has(paper.browser.id)) {
+            if ((paper.displayId == Number(display.id)) && (!display.browsers.has(paper.browser.id))) {
+                console.log(`WallpapersManager.updateBrowsers(${display.id}) close ${paper.browser.id}`);
                 paper.browserWindow.close();
                 WallpapersManager.papers.delete(paper.browser.id);
             }
@@ -108,11 +117,12 @@ export default class WallpapersManager {
     }
 
     private static updateBrowser(displayId: number, browser: Browser): void {
-        console.log(`WallpapersManager.updateBrowser(${displayId}).${browser.id}`);
         const paper = WallpapersManager.papers.get(browser.id);
 
+        console.log(`WallpapersManager.updateBrowser(${displayId}, ${browser.id}) ${paper}`);
+
         if (paper) {
-            paper.browser = browser;
+            console.error(`WallpapersManager.updateBrowser(${displayId}, ${browser.id}) already exists`);
         } else {
             WallpapersManager.createWallpaperWindow(
                 displayId,

@@ -17,16 +17,16 @@ import RTLNavbarLinks from '../Navbars/RTLNavbarLinks';
 import sidebarStyle from '../../assets/jss/material-dashboard-react/components/sidebarStyle';
 
 const Sidebar = ({ ...props }) => {
-  // verifies if routeName is the one active (in browser input)
-  function activeRoute(routeName: any) {
-    return props.location.pathname.indexOf(routeName) > -1 ? true : false;
-  }
-  const { classes, color, logo, image, logoText, routes } = props;
-  var links = (
+    // verifies if routeName is the one active (in browser input)
+    function activeRoute(routeName: any) {
+        return props.location.pathname.indexOf(routeName) > -1 ? true : false;
+    }
+    const { classes, color, logo, image, logoText, routes } = props;
+    const links = (
     <List className={classes.list}>
       {routes.map((prop: any, key: any) => {
-        var activePro = ' ';
-        var listItemClasses;
+        let activePro = ' ';
+        let listItemClasses;
         if (prop.path === '/upgrade-to-pro') {
           activePro = classes.activePro + ' ';
           listItemClasses = classNames({
@@ -77,8 +77,8 @@ const Sidebar = ({ ...props }) => {
         );
       })}
     </List>
-  );
-  var brand = (
+    );
+    const brand = (
     <div className={classes.logo}>
       <a
         href="https://www.creative-tim.com"
@@ -92,8 +92,8 @@ const Sidebar = ({ ...props }) => {
         {logoText}
       </a>
     </div>
-  );
-  return (
+    );
+    return (
     <div>
       <Hidden mdUp={true} implementation="css">
         <Drawer
@@ -145,7 +145,7 @@ const Sidebar = ({ ...props }) => {
         </Drawer>
       </Hidden>
     </div>
-  );
+    );
 };
 
 // Sidebar.propTypes = {

@@ -1,4 +1,4 @@
-import { IMapDidChange } from 'mobx';
+import { IMapDidChange, reaction, autorun, observable } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
 import { Setup, Config, Properties, Display, Browser, SetupInterface, BrowserInterface, DisplayInterface } from './WallpaperSetup';
@@ -112,6 +112,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     protected configs: BrowserConfig;
     protected loadedAllConfig = false;
     protected abstract getAllWindows: () => Electron.BrowserWindow[];
+    protected abstract getWindowById: (id: number) => Electron.BrowserWindow;
 
     protected constructor() {
         super();
@@ -134,13 +135,15 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     }
 
     protected onLocalDisplaysChange = (changes: IMapDidChange<string, Display>): void => {
-        console.log(`${this.constructor.name}.onLocalDisplaysChange(${changes}): `, changes);
+        //console.log(`${this.constructor.name}.onLocalDisplaysChange(${changes.type}): `, changes);
 
         switch (changes.type) {
             case 'add':
+                console.log(`${this.constructor.name}.onLocalDisplaysChange(${changes.type}): ${changes.newValue.id}`);
                 this.send({ type: 'add', component: 'displays', id: changes.newValue.id, display: changes.newValue.plain });
                 break;
             case 'delete':
+                console.log(`${this.constructor.name}.onLocalDisplaysChange(${changes.type}): ${changes.oldValue.id}`);
                 this.send({ type: 'delete', component: 'displays', id: changes.oldValue.id });
                 break;
             case 'update':
@@ -151,11 +154,18 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     }
 
     protected onLocalBrowsersChange = (changes: IMapDidChange<string, Browser>): void => {
-        console.log(`${this.constructor.name}.onLocalBrowsersChange(${changes}): `, changes);
+        // console.log(`${this.constructor.name}.onLocalBrowsersChange(${changes.type})`);
 
         switch (changes.type) {
             case 'add':
                 {
+                    console.log(`${this.constructor.name}.onLocalBrowsersChange(${changes.type}): ${changes.newValue.id}`);
+                    reaction(
+                        () => changes.newValue.plain,
+                        this.onLocalBrowserChange,
+                        { name: this.constructor.name + '.onLocalBrowsersChange browser change', delay: 1 }
+                    );
+
                     let displayId: string | undefined;
 
                     for (const display of this.setup.displays.values()) {
@@ -166,10 +176,12 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     }
                     if (!displayId) throw new Error(`${this.constructor.name}.onLocalBrowsersChange(${changes.type}) no display for browser id ${changes.newValue.id} `);
 
-                    this.send({ type: 'add', component: 'browsers', displayId: displayId, id: changes.newValue.id, browser: changes.newValue });
+                    this.send({ type: 'add', component: 'browsers', displayId: displayId, id: changes.newValue.id, browser: changes.newValue.plain } );
+
                 }
                 break;
             case 'delete':
+                console.log(`${this.constructor.name}.onLocalBrowsersChange(${changes.type}): ${changes.oldValue.id}`);
                 this.send({ type: 'delete', component: 'browsers', id: changes.oldValue.id });
                 break;
             case 'update':
@@ -179,8 +191,8 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         }
     }
 
-    protected onLocalBrowserChange = (browser: Browser /*, r */): void => {
-        console.log(`${this.constructor.name}.onLocalBrowserChange(${browser.id}): `, { ...browser });
+    protected onLocalBrowserChange = (browser: BrowserInterface /*, r */): void => {
+        console.log(`${this.constructor.name}.onLocalBrowserChange(${browser.id})`);
 
         this.send({ type: 'update', component: 'browser', browser: browser });
     }
@@ -190,13 +202,13 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             received => isEqual(change, received)
         );
         if (i > -1) {
-            console.log(`${this.constructor.name}.shouldSendChange: found @${i} don't send:`, change);
+            console.log(`${this.constructor.name}.shouldSendChange: found @${i} don't send: ${change.type} - ${change.component}`);
             this.receivedChanges.splice(i, 1);
 
             return false;
         }
-        console.log(`${this.constructor.name}.shouldSendChange: send `, change);
-        this.persist(this.setup.getPlainSetup());
+        console.log(`${this.constructor.name}.shouldSendChange: send ${change.type} - ${change.component}`);
+        this.persist(this.setup.plain);
         return true;
     }
 
@@ -229,12 +241,25 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
             if (window.id != senderId) {
                 const ipcWindow = window.webContents as IpcWindow;
+                const started = window.eventNames().indexOf('ready-to-show') < 0;
 
-                console.log(`${this.constructor.name}.updateAllWindows(${senderId}): send to ${window.id}, ${persist}`);
+                // If a window was just closed, checks like:
+                // window.isDestroyed(), doubleCheck = this.getWindowById(window.id), ipcWindow.isDestroyed()
+                // didn't help to avoid throwing:
+                // Uncaught(in promise) TypeError: Object has been destroyed
+                // at electron / js2c / browser_init.js: 6754
+                // at IpcMainImpl.<anonymous>(electron / js2c / browser_init.js: 6597)
+                // at IpcMainImpl.emit(events.js: 210)
+                // at WebContents.<anonymous>(electron / js2c / browser_init.js: 3873)
+                // at WebContents.emit(events.js: 210)
 
-                ipcWindow.send('change', args, persist);
-
-                persist = undefined;
+                if (started) {
+                    console.log(`${this.constructor.name}.updateAllWindows(${senderId}): send to ${window.id}, ${persist}`);
+                    ipcWindow.send('change', args, persist);
+                    persist = undefined;
+                } else {
+                    console.warn(`${this.constructor.name}.updateAllWindows(${senderId}, ${persist}): skipping ${window.id} started=${started}`);
+                }
             }
         }
     }
@@ -249,7 +274,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     abstract getSetup(includeConfig: boolean): Promise<Setup>;
 
     protected persist = (plainSetup): void => {
-        console.log(`${this.constructor.name}.persist not implemented`, plainSetup);
+        // console.log(`${this.constructor.name}.persist not implemented`, plainSetup);
     }
 
     receivedChanges: IpcChangeArgs[] = new Array<IpcChangeArgs>();
@@ -265,8 +290,11 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     for (const display of this.setup.displays.values()) {
                         for (const browser of display.browsers.values()) {
                             if (browser.id == update.browser.id) {
-                                console.log(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type}: ${update.browser.id} @${display.id}:`, update.browser);
-                                Object.assign(browser, update.browser);
+                                console.log(
+                                    `${this.constructor.name}.processSetupChange: ${args.component} - ${args.type}: ${update.browser.id} @${display.id}:`,
+                                    { ...update.browser });
+
+                                browser.update(update.browser);
                                 return;
                             }
                         }
@@ -283,8 +311,16 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
                     for (const display of this.setup.displays.values()) {
                         if (display.id == addition.displayId) {
-                            console.log(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type}: ${addition.browser.id} @${display.id}:`, addition.browser);
-                            display.browsers.set(addition.browser.id, addition.browser);
+                            console.log(
+                                `${this.constructor.name}.processSetupChange: ${args.component} - ${args.type}: ${addition.browser.id} @${display.id}:`,
+                                { ...addition.browser });
+                            const newBrowser = observable(new Browser(addition.browser));
+                            display.browsers.set(addition.browser.id, newBrowser);
+                            reaction(
+                                () => newBrowser.plain,
+                                this.onLocalBrowserChange,
+                                { name: this.constructor.name + '.processSetupChange browser change', delay: 1 }
+                            );
                             return;
                         }
                     }
@@ -330,6 +366,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
 class Renderer extends ControllerImpl {
     protected getAllWindows = electron.remote.BrowserWindow.getAllWindows;
+    protected getWindowById = electron.remote.BrowserWindow.fromId;
 
     private static SETUP_KEY = 'Setup';
 
@@ -346,7 +383,7 @@ class Renderer extends ControllerImpl {
 
         this.setup = this.loadSetup();
 
-        this.ipc.send('init', this.setup.getPlainSetup());
+        this.ipc.send('init', this.setup.plain);
 
         this.ipc.on('change', this.onSetupChanged);
     }
@@ -359,7 +396,7 @@ class Renderer extends ControllerImpl {
     }
 
     onSetupChanged = (e, args: IpcChangeArgs, persist?: boolean): void => {
-        // console.log(`${this.constructor.name}.onSetupChanged(${args.type}, ${args.component}, ${persist}):`, args);
+        console.log(`${this.constructor.name}.onSetupChanged(${args.type}, ${args.component}, ${persist}):`);
         this.processSetupChange(args);
 
         if (persist && (persist === true)) {
@@ -481,32 +518,39 @@ type Listeners = { user?: UserCallback; size?: SizeCallback };
  * Renderer Config Controller for Wallpaper Browsers. Deal with size
  */
 class Paper extends Renderer {
-    private displayWidth: number;
-    private displayHeight: number;
     private browserId: string;
     private paper: Listeners = {};
+    private browser: Browser;
+
 
     constructor() {
         super();
 
-        const displayWidth = process.argv.find((arg) => /^--displaywidth=/.test(arg));
-        const displayHeight = process.argv.find((arg) => /^--displayheight=/.test(arg));
-        const browserId = process.argv.find((arg) => /^--browserid=/.test(arg));
+        const browserIdArg = process.argv.find((arg) => /^--browserid=/.test(arg));
 
-        if (!(displayWidth && displayHeight && browserId)) {
-            console.error(`${this.constructor.name}() missing arguments: displayWidth=${displayWidth} displayHeight=${displayHeight} browserId=${browserId}`, process.argv);
-            throw new Error(`${this.constructor.name}() missing arguments: displayWidth=${displayWidth} displayHeight=${displayHeight} browserId=${browserId}`);
+        if (!browserIdArg ) {
+            console.error(`${this.constructor.name}() missing arguments: browserId=${browserIdArg}`, process.argv);
+            throw new Error(`${this.constructor.name}() missing arguments: browserId=${browserIdArg}: ${process.argv.join()}`);
+        }
+        this.browserId = browserIdArg.split('=')[1];
+
+        let browser: Browser | undefined;
+        for (const display of this.setup.displays.values()) {
+            browser = display.browsers.get(this.browserId);
+            if (browser) {
+                break;
+            }
         }
 
-        this.displayWidth = Number(displayWidth.split('=')[1]);
-        this.displayHeight = Number(displayHeight.split('=')[1]);
-        this.browserId = browserId.split('=')[1];
+        if (!browser)
+            throw new Error(`${this.constructor.name}() can't find browser ${this.browserId}`);        
 
+        this.browser = browser;
+        
         console.log(
-            `${this.constructor.name}(): displayWidth=${this.displayWidth} displayHeight=${this.displayHeight} browserId=${this.browserId}`,
-            displayWidth,
-            displayHeight,
-            browserId,
+            `${this.constructor.name}[${this.browserId}]():` +
+            ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
+            ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`,
             process.argv
         );
 
@@ -541,17 +585,23 @@ class Paper extends Renderer {
 
     private initSizeListener(): void {
         if (this.paper.size) {
-            const size: Size = { width: this.displayWidth, height: this.displayHeight };
+            // console.log(`${this.constructor.name}[${this.browserId}]: set size=${JSON.stringify(size)}`, size);
 
-            try {
-                // console.log(`${this.constructor.name}[${this.browserId}]: set size=${JSON.stringify(size)}`, size);
-                this.paper.size(size);
-            } catch (initialError) {
-                console.error(
-                    `${this.constructor.name}[${this.browserId}]: ${JSON.stringify(size)}: ERROR initial size setting:${initialError}:`,
-                    initialError,
-                    size);
-            }
+            autorun(
+                () => {
+                    try {
+                        if (!this.paper.size) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: lost size handler`);
+                        if (!this.browser.scaled) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: no scaled size to set`);
+
+                        this.paper.size({ width: this.browser.scaled.width, height: this.browser.scaled.height });
+                    } catch (initialError) {
+                        console.error(
+                            `${this.constructor.name}[${this.browserId}]: ${JSON.stringify(this.browser)}: ERROR setting size:${initialError}:`,
+                            initialError,
+                            this.browser);
+                    }
+                }
+            );
         }
     }
 
@@ -570,6 +620,7 @@ class Paper extends Renderer {
 
 class Main extends ControllerImpl {
     protected getAllWindows = BrowserWindow.getAllWindows;
+    protected getWindowById = BrowserWindow.fromId;
 
     private ipc: IpcMain = electronIpcMain;
 
@@ -600,7 +651,7 @@ class Main extends ControllerImpl {
     }
 
     onSetupChanged = (e, args: IpcChangeArgs, persist?: boolean): void => {
-        console.log(`${this.constructor.name}.onSetupChanged(${args.type}, ${args.component}, ${persist}):`, args);
+        console.log(`${this.constructor.name}.onSetupChanged(${args.type}, ${args.component}, ${persist}):`);
         // this.emit(Controller.change, new SetupDiff(update));
         this.processSetupChange(args);
     }

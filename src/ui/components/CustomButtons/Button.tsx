@@ -12,38 +12,38 @@ import buttonStyle from '../../assets/jss/material-dashboard-react/components/bu
 import { createStyles } from '@material-ui/core';
 
 function RegularButton({ ...props }: any) {
-  const {
-    classes,
-    color,
-    round,
-    children,
-    disabled,
-    simple,
-    size,
-    block,
-    link,
-    justIcon,
-    className,
-    muiClasses,
-    ...rest
-  } = props;
-  const btnClasses = classNames({
-    [classes.button]: true,
-    [classes[size]]: size,
-    [classes[color]]: color,
-    [classes.round]: round,
-    [classes.disabled]: disabled,
-    [classes.simple]: simple,
-    [classes.block]: block,
-    [classes.link]: link,
-    [classes.justIcon]: justIcon,
-    [className]: className
-  });
-  return (
+    const {
+        classes,
+        color,
+        round,
+        children,
+        disabled,
+        simple,
+        size,
+        block,
+        link,
+        justIcon,
+        className,
+        muiClasses,
+        ...rest
+    } = props;
+    const btnClasses = classNames({
+        [classes.button]: true,
+        [classes[size]]: size,
+        [classes[color]]: color,
+        [classes.round]: round,
+        [classes.disabled]: disabled,
+        [classes.simple]: simple,
+        [classes.block]: block,
+        [classes.link]: link,
+        [classes.justIcon]: justIcon,
+        [className]: className
+    });
+    return (
     <Button {...rest} classes={muiClasses} className={btnClasses}>
       {children}
     </Button>
-  );
+    );
 }
 
 // RegularButton.propTypes = {

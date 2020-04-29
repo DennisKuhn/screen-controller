@@ -26,25 +26,25 @@ interface State {
 }
 
 class FixedPlugin extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      classes: 'dropdown show',
-      bg_checked: true,
-      bgImage: this.props.bgImage
-    };
-    this.handleClick = this.handleClick.bind(this);
-  }
-  handleClick() {
-    this.props.handleFixedClick();
-  }
-  render() {
-    return (
+    constructor(props: Props) {
+        super(props);
+        this.state = {
+            classes: 'dropdown show',
+            bg_checked: true,
+            bgImage: this.props.bgImage
+        };
+        this.handleClick = this.handleClick.bind(this);
+    }
+    handleClick() {
+        this.props.handleFixedClick();
+    }
+    render() {
+        return (
       <div
         className={classnames('fixed-plugin', {
           'rtl-fixed-plugin': this.props.rtlActive
         })}
-      >
+          >
         <div id="fixedPluginClasses" className={this.props.fixedClasses}>
           <div onClick={this.handleClick}>
             <i className="fa fa-cog fa-2x" />
@@ -196,8 +196,8 @@ class FixedPlugin extends Component<Props, State> {
           </ul>
         </div>
       </div>
-    );
-  }
+        );
+    }
 }
 
 export default FixedPlugin;

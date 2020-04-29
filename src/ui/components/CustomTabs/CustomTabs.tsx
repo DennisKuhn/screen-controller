@@ -28,32 +28,32 @@ interface State {
 }
 
 class CustomTabs extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      value: 0
-    };
-    this.handleChange = this.handleChange.bind(this);
-  }
+    constructor(props: Props) {
+        super(props);
+        this.state = {
+            value: 0
+        };
+        this.handleChange = this.handleChange.bind(this);
+    }
 
   handleChange = (event: any, value: number) => {
-    this.setState({ value });
+      this.setState({ value });
   }
 
   render() {
-    const {
-      classes,
-      headerColor,
-      plainTabs,
-      tabs,
-      title,
-      rtlActive
-    } = this.props;
-    const cardTitle = classNames({
-      [classes.cardTitle]: true,
-      [classes.cardTitleRTL]: rtlActive
-    });
-    return (
+      const {
+          classes,
+          headerColor,
+          plainTabs,
+          tabs,
+          title,
+          rtlActive
+      } = this.props;
+      const cardTitle = classNames({
+          [classes.cardTitle]: true,
+          [classes.cardTitleRTL]: rtlActive
+      });
+      return (
       <Card plain={plainTabs}>
         <CardHeader color={headerColor} plain={plainTabs}>
           {title !== undefined ? (
@@ -71,7 +71,7 @@ class CustomTabs extends React.Component<Props, State> {
             scrollButtons="auto"
           >
             {tabs.map((prop: any, key: any) => {
-              var icon = {};
+              let icon = {};
               if (prop.tabIcon) {
                 icon = {
                   icon: <prop.tabIcon />
@@ -103,7 +103,7 @@ class CustomTabs extends React.Component<Props, State> {
           })}
         </CardBody>
       </Card>
-    );
+      );
   }
 }
 

@@ -11,22 +11,22 @@ import Close from '@material-ui/icons/Close';
 import snackbarContentStyle from '../../assets/jss/material-dashboard-react/components/snackbarContentStyle';
 
 function Snackbar({ ...props }: any) {
-  const {
-    classes,
-    message,
-    color,
-    close,
-    icon,
-    place,
-    open,
-    rtlActive
-  } = props;
-  let action: any[] = [];
-  const messageClasses = classNames({
-    [classes.iconMessage]: icon !== undefined
-  });
-  if (close !== undefined) {
-    action = [
+    const {
+        classes,
+        message,
+        color,
+        close,
+        icon,
+        place,
+        open,
+        rtlActive
+    } = props;
+    let action: any[] = [];
+    const messageClasses = classNames({
+        [classes.iconMessage]: icon !== undefined
+    });
+    if (close !== undefined) {
+        action = [
       // tslint:disable-next-line: jsx-wrap-multiline
       <IconButton
         className={classes.iconButton}
@@ -34,12 +34,12 @@ function Snackbar({ ...props }: any) {
         aria-label="Close"
         color="inherit"
         onClick={() => props.closeNotification()}
-      >
+          >
         <Close className={classes.close} />
       </IconButton>
-    ];
-  }
-  return (
+        ];
+    }
+    return (
     <Snack
       anchorOrigin={{
         vertical: place.indexOf('t') === -1 ? 'bottom' : 'top',
@@ -66,7 +66,7 @@ function Snackbar({ ...props }: any) {
         }
       }}
     />
-  );
+    );
 }
 
 // Snackbar.propTypes = {
