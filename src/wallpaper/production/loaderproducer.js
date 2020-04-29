@@ -84,7 +84,7 @@ export default class LoaderProducer extends ContentProducer {
      * @param {ErrorEvent} ev 
      */
     onUrlLoaderError( ev ) {
-        console.error('LoaderProducer.onUrlLoaderError(): ' + ev.message );
+        console.error(`LoaderProducer[${this.constructor.name}].onUrlLoaderError: ${ev.message}`, ev );
     }
 
     produce() {
