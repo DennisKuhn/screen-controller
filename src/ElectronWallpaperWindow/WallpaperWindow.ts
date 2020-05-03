@@ -1,8 +1,8 @@
-import { BrowserWindow, BrowserWindowConstructorOptions, screen } from 'electron';
+import { Rectangle as ElectronRectangle, BrowserWindow, BrowserWindowConstructorOptions, screen } from 'electron';
 import nodeWinWallpaper from 'node-win-wallpaper';
 import ScreenBounds, { DisplayBounds } from './ScreenBounds';
 import { EventEmitter } from 'events';
-import { Browser, Rectangle, RectangleInterface } from '../infrastructure/Configuration/WallpaperSetup';
+import { Browser, Rectangle, RectangleInterface, SetupItem } from '../infrastructure/Configuration/WallpaperSetup';
 import { autorun, reaction } from 'mobx';
 import { isEqual } from 'lodash';
 
@@ -18,7 +18,7 @@ class WallpaperWindow extends EventEmitter {
     nativeHandle: Buffer | undefined;
     _attached = false;
     private displayBounds: DisplayBounds;
-    private displayScaledBounds: RectangleInterface;
+    private displayScaledBounds: ElectronRectangle;
 
     constructor(options: WallpaperWindowConstructorOptions) {
         super();
@@ -67,7 +67,7 @@ class WallpaperWindow extends EventEmitter {
         return this.displayBounds;
     }
 
-    private setScaledSystemBounds(): RectangleInterface {
+    private setScaledSystemBounds(): ElectronRectangle {
         const scaledRect = screen.getAllDisplays().find(display => display.id == this.displayId)?.workArea;
 
         if (!scaledRect)
@@ -81,37 +81,41 @@ class WallpaperWindow extends EventEmitter {
     private updateBrowserBounds(): boolean {
         let changed = false;
 
-        const newDevice = new Rectangle({
+        const newDevice: RectangleInterface = {
+            id: this.browser.device?.id ?? SetupItem.getNewId('Rectangle'),
+            className: 'Rectangle',
             x: this.displayBounds.x + (this.browser.relative.x * this.displayBounds.width),
             y: this.displayBounds.y + (this.browser.relative.y * this.displayBounds.height),
             width: this.browser.relative.width * this.displayBounds.width,
             height: this.browser.relative.height * this.displayBounds.height
-        });
+        };
 
-        if (!isEqual(this.browser.device?.plain, newDevice.plain)) {
+        if (!isEqual(this.browser.device?.getPlainFlat(), newDevice)) {
             console.log(
                 `${this.constructor.name}[${this.browser.id}].updateBrowserBounds device` +
                 (this.browser.device ? ` ${this.browser.device.x},${this.browser.device.y} ${this.browser.device.width}*${this.browser.device.height}` : ' noDevice') +
                 ` ${newDevice.x}, ${newDevice.y} ${newDevice.width} * ${newDevice.height}`
             );
-            this.browser.device = newDevice;
+            this.browser.device = new Rectangle(newDevice);
             changed = true;
         }
 
-        const newScaled = new Rectangle({
+        const newScaled: RectangleInterface = {
+            id: this.browser.scaled?.id ?? SetupItem.getNewId('Rectangle'),
+            className: 'Rectangle',
             x: this.displayScaledBounds.x + (this.displayScaledBounds.width * this.browser.relative.x),
             y: this.displayScaledBounds.y + (this.displayScaledBounds.height * this.browser.relative.x),
             width: this.displayScaledBounds.width * this.browser.relative.width,
             height: this.displayScaledBounds.height * this.browser.relative.height
-        });
+        };
 
-        if (!isEqual(this.browser.scaled?.plain, newScaled.plain)) {
+        if (!isEqual(this.browser.scaled?.getPlainFlat(), newScaled)) {
             console.log(
                 `${this.constructor.name}[${this.browser.id}].updateBrowserBounds scaled` +
                 (this.browser.scaled ? ` ${this.browser.scaled.x},${this.browser.scaled.y} ${this.browser.scaled.width}*${this.browser.scaled.height}` : ' noDevice') +
                 ` ${newScaled.x}, ${newScaled.y} ${newScaled.width} * ${newScaled.height}`
             );
-            this.browser.scaled = newScaled;
+            this.browser.scaled = new Rectangle( newScaled);
             changed = true;
         }
 

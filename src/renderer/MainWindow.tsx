@@ -1,11 +1,12 @@
 import * as React from 'react';
 import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
 import controller from '../infrastructure/Configuration/Controller';
+import { Setup } from '../infrastructure/Configuration/WallpaperSetup';
 
 export default function MainWindow(): JSX.Element {
-    controller.getSetup(false).then(
+    controller.getSetup('Setup', 0).then(
         setup => {
-            if (setup.displays.size == 0) {
+            if ((setup as Setup).children.size == 0) {
                 const windowArgs: IpcArgs = {
                     window: 'ScreenManager',
                     command: 'show'

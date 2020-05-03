@@ -1,5 +1,6 @@
-import { observable, ObservableMap, reaction, IReactionPublic } from 'mobx';
+import { observable, action, computed, ObservableMap } from 'mobx';
 import { Dictionary, isEqual } from 'lodash';
+
 
 export class ObservableArrayMap<K, V> extends ObservableMap<K, V> {
 
@@ -16,61 +17,271 @@ export class ObservableArrayMap<K, V> extends ObservableMap<K, V> {
     }
 }
 
-export class DisplayIterableDictionary extends ObservableArrayMap<string, Display> {
-
-}
-export class BrowserIterableDictionary extends ObservableArrayMap<string, Browser> {
-
+export class ObservableSetupItemMap<V extends SetupItem> extends ObservableArrayMap<SetupItemId, V | null> {
 }
 
-export interface RectangleInterface {
+export class DisplayMap extends ObservableSetupItemMap<Display> {
+
+}
+
+export class BrowserMap extends ObservableSetupItemMap<Browser> {
+
+}
+
+export type SetupItemInterfaceDictionary<V extends SetupItemInterface> = Dictionary<V | null>;
+export type DisplayDictionary = SetupItemInterfaceDictionary<DisplayInterface>;
+export type BrowserDictionary = SetupItemInterfaceDictionary<BrowserInterface>;
+
+
+export type SetupItemId = string;
+
+export interface SetupItemInterface {
+    /** Application unique, persistent, e.g. <ClassName>-<auto increment> */
+    id: SetupItemId;
+    parentId: SetupItemId;
+    className: string;
+}
+
+export interface SetupContainerInterface<ChildInterface extends SetupItemInterface> extends SetupItemInterface {
+    children: SetupItemInterfaceDictionary<ChildInterface>;
+}
+
+export abstract class SetupItem {
+
+    readonly id: SetupItemId;
+    readonly parentId: SetupItemId;
+    readonly className: string;
+
+    constructor(source: SetupItemInterface) {
+        if (SetupItem.usedIDs.includes(source.id))
+            throw new Error(`SetupItem[${this.constructor.name}] id=${source.id} already in use`);
+
+        this.id = source.id;
+        this.parentId = source.parentId;
+        this.className = source.className;
+
+        SetupItem.usedIDs.push(this.id);
+    }
+
+    /**
+     * Returns a plain javascript object. Needs be implemented by any extending class calling super.
+     * @example 
+     * class Rectangle extends SetupItem implements RectangleInterface {
+     * getPlain(): RectangleInterface {
+     *   return {
+     *       ... super.getPlain(),
+     *       x: this.x,
+     *       y: this.y,
+     *       width: this.width,
+     *       height: this.height
+     *   };
+     * }
+     */
+    getPlainFlat(): SetupItemInterface {
+        return { id: this.id, parentId: this.parentId, className: this.className };
+    }
+    getPlainDeep(): SetupItemInterface {
+        return { id: this.id, parentId: this.parentId, className: this.className };
+    }
+
+
+    update(update: SetupItemInterface): void {
+        if (update.id != this.id)
+            throw new Error(`SetupItem[${this.constructor.name}][-> ${this.id} <-, ${this.parentId}, ${this.className}].update =`
+                + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
+        if (update.parentId != this.parentId)
+            throw new Error(`SetupItem[${this.constructor.name}][${this.id},-> ${this.parentId} <-, ${this.className}].update =`
+                + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
+        if (update.className != this.className)
+            throw new Error(`SetupItem[${this.constructor.name}][${this.id}, ${this.parentId}, -> ${this.className} <-].update =`
+                + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
+    }
+
+
+    static usedIDs = new Array<string>();
+
+    public getNewId(): string {
+        let id = 0;
+        return SetupItem.usedIDs.reduce(
+            (result: string, usedId: string): string => {
+                const parts = usedId.split('-');
+
+                if ((parts.length == 2) && (parts[0] == this.constructor.name)) {
+                    const usedIdNumber = Number(parts[1]);
+                    id = usedIdNumber >= id ? usedIdNumber + 1 : id;
+                }
+                return `${this.constructor.name}-${id}`;
+            }
+        );
+    }
+    public static getNewId(className: string): string {
+        let id = 0;
+        return SetupItem.usedIDs.reduce(
+            (result: string, usedId: string): string => {
+                const parts = usedId.split('-');
+
+                if ((parts.length == 2) && (parts[0] == className)) {
+                    const usedIdNumber = Number(parts[1]);
+                    id = usedIdNumber >= id ? usedIdNumber + 1 : id;
+                }
+                return `${className}-${id}`;
+            }
+        );
+    }
+}
+
+export abstract class SetupContainer<ChildType extends SetupItem, ChildInterface extends SetupItemInterface> extends SetupItem {
+    readonly children: ObservableSetupItemMap<ChildType>;
+
+    constructor(source: SetupContainerInterface<ChildInterface>) {
+        super(source);
+        this.children = new ObservableSetupItemMap<ChildType>();
+
+        this.updateDictionary(source.children as SetupItemInterfaceDictionary<ChildInterface>);
+    }
+
+    abstract createChild(source: ChildInterface): ChildType;
+
+    protected updateDictionary(source: SetupItemInterfaceDictionary<ChildInterface>): void {
+
+        if (!this.children) throw new Error(`SetupItem[${this.constructor.name}].updateDictionary no children`);
+
+        for (const [id, plainObject] of Object.entries(source)) {
+            const object = this.children.get(id);
+            if (plainObject) {
+                if (object) {
+                    object.update(plainObject);
+                } else {
+                    this.children.set(
+                        id,
+                        this.createChild(plainObject)
+                    );
+                }
+            } else if (!this.children.has(id)) {
+                this.children.set(id, null);
+            }
+        }
+        for (const deleted of this.children.keys()) {
+            if (!(deleted in source)) {
+                this.children.delete(deleted);
+            }
+        }
+    }
+
+    // @computed
+    getPlainDeep(): SetupContainerInterface<ChildInterface> {
+        const plainObject: SetupContainerInterface<ChildInterface> = { ...super.getPlainDeep(), children: {} };
+
+        for (const [id, child] of this.children.entries()) {
+            plainObject.children[id] = child?.getPlainDeep() as ChildInterface;
+        }
+
+        return plainObject;
+    }
+
+    // @computed
+    getPlainFlat(): SetupContainerInterface<ChildInterface> {
+        const plainObject: SetupContainerInterface<ChildInterface> = { ...super.getPlainFlat(), children: {} };
+
+        for (const id of this.children.keys()) {
+            plainObject.children[id] = null;
+        }
+
+        return plainObject;
+    }
+
+    @action
+    update(source: SetupContainerInterface<ChildInterface>): void {
+        super.update(source);
+
+        this.updateDictionary(
+            source.children as SetupItemInterfaceDictionary<ChildInterface>
+        );
+    }
+}
+
+
+export interface RectangleInterface extends SetupItemInterface {
+    className: 'Rectangle';
     x: number;
     y: number;
     width: number;
     height: number;
 }
 
-export class Rectangle implements RectangleInterface {
+export class Rectangle extends SetupItem implements RectangleInterface {
     @observable x: number;
     @observable y: number;
     @observable width: number;
     @observable height: number;
 
+    className: 'Rectangle' = 'Rectangle';
+
     constructor(source: RectangleInterface) {
+        super(source);
         this.x = source.x;
         this.y = source.y;
         this.width = source.width;
         this.height = source.height;
     }
 
-    get plain(): RectangleInterface {
+    // @computed
+    getPlainDeep(): RectangleInterface {
         return {
+            ... super.getPlainDeep() as RectangleInterface,
             x: this.x,
             y: this.y,
             width: this.width,
             height: this.height
         };
     }
+
+    // @computed
+    getPlainFlat(): RectangleInterface {
+        return {
+            ... super.getPlainFlat() as RectangleInterface,
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height
+        };
+    }
+
+    @action
+    update(update: RectangleInterface): void {
+        super.update(update);
+
+        if (this.x != update.x) this.x = update.x;
+        if (this.y != update.y) this.y = update.y;
+        if (this.width != update.width) this.width = update.width;
+        if (this.height != update.height) this.height = update.height;
+    }
 }
 
-export interface BrowserInterface {
-    id: string;
+export interface BrowserInterface extends SetupItemInterface {
+    className: 'Browser';
+
+    /**
+     * Relative to display
+     * @example {x:0, y:0, width:1, height:1} // fills the entire display
+     */
     relative: RectangleInterface;
+
+    /**
+     * Scaled pixels as the browser perceives it
+     */
     scaled?: RectangleInterface;
+    /**
+     * Device pixels
+     */
     device?: RectangleInterface;
+
     config?: Config;
 }
 
+export class Browser extends SetupItem implements BrowserInterface {
 
-
-/**
- * Bounds in %, relativ to display. Application unique id, e.g. auto increment from 1. 
- * config for Browser usually ommited for performance, request explictly from Configuration/Controller
- * @example {rx:0, ry:0, rWidth:1, rHeight:1} fills the entire display
- **/
-export class Browser implements BrowserInterface {
-    /** Application unique persistent, e.g. auto increment from 1 */
-    @observable id: string;
+    className: 'Browser' = 'Browser';
 
     @observable relative: Rectangle;
     @observable scaled?: Rectangle;
@@ -79,45 +290,55 @@ export class Browser implements BrowserInterface {
     @observable config?: Config;
 
     constructor(source: BrowserInterface) {
-        this.id = source.id;
+        super(source);
+
         this.relative = new Rectangle(source.relative);
 
-        if (source.scaled) {
-            this.scaled = new Rectangle(source.scaled);
-        }
-        if (source.device) {
-            this.device = new Rectangle(source.device);
-        }
+        this.scaled = source.scaled ? new Rectangle(source.scaled) : undefined;
+        this.device = source.device ? new Rectangle(source.device) : undefined;
 
         this.config = source.config;
     }
 
-    get plain(): BrowserInterface {
+    // @computed
+    getPlainDeep(): BrowserInterface {
         return {
-            id: this.id,
-            relative: this.relative.plain,
-            scaled: this.scaled ? this.scaled.plain : undefined,
-            device: this.device ? this.device.plain : undefined,
+            ... super.getPlainDeep() as BrowserInterface,
+            relative: this.relative.getPlainDeep(),
+            scaled: this.scaled?.getPlainDeep(),
+            device: this.device?.getPlainDeep(),
             config: this.config,
         };
     }
 
+    // @computed
+    getPlainFlat(): BrowserInterface {
+        return {
+            ... super.getPlainFlat() as BrowserInterface,
+            relative: this.relative.getPlainFlat(),
+            scaled: this.scaled?.getPlainFlat(),
+            device: this.device?.getPlainFlat(),
+            config: this.config,
+        };
+    }
+
+    @action
     update(update: BrowserInterface): void {
-        if (!isEqual(this.relative.plain, update.relative)) {
-            console.log(`${this.constructor.name}[${this.id}].update(): relative`, { ...this.relative.plain }, { ...update.relative });
+        if (!isEqual(this.relative.getPlainDeep(), update.relative)) {
+            console.log(`${this.constructor.name}[${this.id}].update(): relative`, { ...this.relative.getPlainDeep() }, { ...update.relative });
 
             this.relative = new Rectangle(update.relative);
         }
         if (update.device) {
-            if (!isEqual(this.device?.plain, update.device)) {
-                console.log(`${this.constructor.name}[${this.id}].update(): device`, { ...this.device?.plain }, { ...update.device });
+            if (!isEqual(this.device?.getPlainDeep(), update.device)) {
+                console.log(`${this.constructor.name}[${this.id}].update(): device`, { ...this.device?.getPlainDeep() }, { ...update.device });
 
                 this.device = new Rectangle(update.device);
             }
         }
         if (update.scaled) {
-            if (!isEqual(this.scaled?.plain, update.scaled)) {
-                console.log(`${this.constructor.name}[${this.id}].update(): scaled`, { ...this.scaled?.plain }, { ...update.scaled });
+            if (!isEqual(this.scaled?.getPlainDeep(), update.scaled)) {
+                console.log(`${this.constructor.name}[${this.id}].update(): scaled`, { ...this.scaled?.getPlainDeep() }, { ...update.scaled });
 
                 this.scaled = new Rectangle(update.scaled);
             }
@@ -125,79 +346,31 @@ export class Browser implements BrowserInterface {
     }
 }
 
-export interface DisplayInterface {
-    id: string;
-
-    browsers: Dictionary<BrowserInterface>;
+export interface DisplayInterface extends SetupContainerInterface<BrowserInterface> {
+    className: 'Display';
 }
 
 
-export class Display {
-    @observable public id: string;
-    @observable browsers: BrowserIterableDictionary;
+export class Display extends SetupContainer<Browser, BrowserInterface> {
 
-    constructor(displayId: string, onLocalBrowsersChange?) {
-        this.id = displayId;
-        this.browsers = new BrowserIterableDictionary();
-        if (onLocalBrowsersChange) {
-            this.browsers.observe(onLocalBrowsersChange, false);
-        }
-    }
-
-    get plain(): DisplayInterface {
-        const newDisplay: DisplayInterface = { id: this.id, browsers: {} };
-
-        for (const browser of this.browsers.values()) {
-            newDisplay.browsers[browser.id] = browser.plain;
-        }
-
-        return newDisplay;
+    createChild(source: BrowserInterface): Browser {
+        return new Browser(source);
     }
 }
 
-export interface SetupInterface {
-    displays: Dictionary<DisplayInterface>;
+export type SetupID = 'Setup';
+
+export interface SetupInterface extends SetupContainerInterface<DisplayInterface> {
+    id: SetupID;
+    className: 'Setup';
 }
 
-export class Setup {
-    @observable displays: DisplayIterableDictionary;
+export class Setup extends SetupContainer<Display, DisplayInterface> {
 
-    constructor() {
-        this.displays = new DisplayIterableDictionary();
+    createChild(source: DisplayInterface): Display {
+        return new Display(source);
     }
-
-    get plain(): SetupInterface {
-        const plainSetup: SetupInterface = { displays: {} };
-
-        for (const display of this.displays.values()) {
-            plainSetup.displays[display.id] = display.plain;
-        }
-
-        return plainSetup;
-    }
-
-    fromPlain(plainSetup: SetupInterface, onLocalBrowsersChange, onLocalBrowserChange: (browser: BrowserInterface, r: IReactionPublic) => void): void {
-        for (const display of Object.values(plainSetup.displays)) {
-            const newDisplay = new Display(display.id);
-
-            this.displays.set(display.id, newDisplay);
-
-            for (const browser of Object.values(display.browsers)) {
-                const newBrowser = observable(new Browser(browser));
-                newDisplay.browsers.set(browser.id, newBrowser);
-
-                reaction(
-                    () => newBrowser.plain,
-                    onLocalBrowserChange,
-                    { name: this.constructor.name + ' browser change', delay: 1 }
-                );
-            }
-            newDisplay.browsers.observe(onLocalBrowsersChange, false);
-        }
-    }
-
 }
-
 
 export interface Config {
     contentrating: string;
@@ -232,3 +405,11 @@ export interface Property {
     options?: Option[];
 }
 
+export const createSetupItem = (plain: SetupItemInterface): Setup | Display | Browser => {
+    switch (plain.className) {
+        case 'Setup': return new Setup(plain as SetupInterface);
+        case 'Display': return new Display(plain as DisplayInterface);
+        case 'Browser': return new Browser(plain as BrowserInterface);
+    }
+    throw new Error(`createSetupItem( -> ${plain.className} <-, ${JSON.stringify(plain)}) unkown className`);
+};

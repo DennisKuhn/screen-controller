@@ -1,6 +1,6 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import controller from './Configuration/Controller';
-import { Setup, Browser, Display } from './Configuration/WallpaperSetup';
+import { Setup, Browser, Display, SetupID } from './Configuration/WallpaperSetup';
 import { autorun } from 'mobx';
 
 
@@ -20,13 +20,9 @@ export default class WallpapersManager {
     public static async run(): Promise<void> {
         //console.log('WallpapersManager.run');
 
-        controller.on('init', WallpapersManager.onSetupInit);
-    }
+        const setupId: SetupID = 'Setup';
 
-    private static onSetupInit = (setup: Setup): void => {
-        // console.log('WallpapersManager.onSetupInit:', setup);
-
-        WallpapersManager.setup = setup;
+        WallpapersManager.setup = (await controller.getSetup(setupId, 2)) as Setup;
 
         autorun(
             WallpapersManager.updateDisplays
@@ -68,7 +64,7 @@ export default class WallpapersManager {
                     console.error(`WallpapersManager.createWallpaperWindow[${browser.id}]: Failed loading: ${reason} = ${WALLPAPER_WEBPACK_ENTRY}`);
                 });
 
-            WallpapersManager.papers.set(browser.id,  window);
+            WallpapersManager.papers.set(browser.id, window);
         } catch (error) {
             console.error(error);
         }
@@ -83,11 +79,13 @@ export default class WallpapersManager {
 
         console.log('WallpapersManager.updateDisplays()');
 
-        for (const display of WallpapersManager.setup.displays.values()) {
-            autorun( () => WallpapersManager.updateBrowsers(display) );
+        for (const display of WallpapersManager.setup.children.values()) {
+            if (display) {
+                autorun(() => WallpapersManager.updateBrowsers(display));
+            }
         }
         for (const paper of WallpapersManager.papers.values()) {
-            if (!WallpapersManager.setup.displays.has(paper.displayId.toFixed(0))) {
+            if (!WallpapersManager.setup.children.has(paper.displayId.toFixed(0))) {
                 console.log(`WallpapersManager.updateDisplays(${paper.displayId}) close ${paper.browser.id}`);
                 paper.browserWindow.close();
                 WallpapersManager.papers.delete(paper.browser.id);
@@ -97,8 +95,10 @@ export default class WallpapersManager {
 
     private static updateBrowsers(display: Display): void {
         console.log(`WallpapersManager.updateBrowsers(${display.id})`);
-        for (const browser of display.browsers.values()) {
-            WallpapersManager.updateBrowser(Number(display.id), browser);
+        for (const browser of display.children.values()) {
+            if (browser) {
+                WallpapersManager.updateBrowser(Number(display.id), browser);
+            }
             // autorun(
             //     () => WallpapersManager.updateBrowser(Number(display.id), browser),
             //     {
@@ -108,7 +108,7 @@ export default class WallpapersManager {
             // );
         }
         for (const paper of WallpapersManager.papers.values()) {
-            if ((paper.displayId == Number(display.id)) && (!display.browsers.has(paper.browser.id))) {
+            if ((paper.displayId == Number(display.id)) && (!display.children.has(paper.browser.id))) {
                 console.log(`WallpapersManager.updateBrowsers(${display.id}) close ${paper.browser.id}`);
                 paper.browserWindow.close();
                 WallpapersManager.papers.delete(paper.browser.id);

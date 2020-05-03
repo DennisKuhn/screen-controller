@@ -1,35 +1,40 @@
-import { IMapDidChange, reaction, autorun, observable } from 'mobx';
+import { IMapDidChange, reaction, autorun } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
-import { Setup, Config, Properties, Display, Browser, SetupInterface, BrowserInterface, DisplayInterface } from './WallpaperSetup';
-import { cloneDeep, isEqual } from 'lodash';
+import {
+    Setup, Properties, Display, Browser, SetupInterface, SetupItem, createSetupItem, SetupItemInterface, SetupContainer, SetupID, SetupItemId
+} from './WallpaperSetup';
 
 import DefaultConfig from '../../wallpaper/project.json';
 
-interface BrowserConfig {
-    [key: number]: Config;
-}
 
-type InitChannel = 'init';
 type ChangeChannel = 'change';
+type RegisterChannel = 'register';
+type InitChannel = 'init';
+type GetSetupChannel = 'getsetup';
+type SetSetupChannel = 'setsetup';
 
 interface IpcRenderer extends electron.IpcRenderer {
-    send(channel: InitChannel, setup: SetupInterface): void;
+    send(channel: InitChannel): void;
 
-    send(channel: ChangeChannel, args: IpcChangeArgs): void;
-    // send(channel: ChangeChannel, args: IpcAddBrowserArgs): void;
-    // send(channel: ChangeChannel, args: IpcAddDisplayArgs): void;
-    // send(channel: ChangeChannel, args: IpcDeleteArgs): void;
-    // send(channel: ChangeChannel, args: IpcUpdateBrowserArgs): void;
+    send(channel: ChangeChannel, update: SetupItemInterface): void;
+
+    send(channel: RegisterChannel, args: IpcRegisterArgs): void;
+
+    send(channel: SetSetupChannel, args: SetupItemInterface): void;
 
     /// From IpcWindow.send
-    on(channel: ChangeChannel, listener: (event: IpcRendererEvent, args: IpcChangeArgs, persist?: boolean) => void): this;
+    on(channel: ChangeChannel, listener: (event: IpcRendererEvent, update: SetupItemInterface) => void): this;
+
+    on(channel: GetSetupChannel, listener: (event: IpcRendererEvent, id: SetupItemId, depth: number) => void): void;
 }
 
 interface IpcMain extends electron.IpcMain {
-    once(channel: InitChannel, listener: (event: IpcMainEvent, setup: SetupInterface) => void): this;
+    once(channel: InitChannel, listener: (event: IpcMainEvent) => void): this;
 
-    on(channel: ChangeChannel, listener: (event: IpcMainEvent, args: IpcChangeArgs) => void): this;
+    on(channel: ChangeChannel, listener: (event: IpcMainEvent, update: SetupItemInterface) => void): this;
+    on(channel: RegisterChannel, listener: (event: IpcMainEvent, args: IpcRegisterArgs) => void): this;
+    on(channel: SetSetupChannel, listener: (event: IpcMainEvent, args: SetupItemInterface) => void): this;
 }
 
 interface IpcWindow extends electron.WebContents {
@@ -37,342 +42,251 @@ interface IpcWindow extends electron.WebContents {
     // send(channel: ChangeChannel, args: IpcAddDisplayArgs, persist?: boolean): void;
     // send(channel: ChangeChannel, args: IpcDeleteArgs, persist?: boolean): void;
     // send(channel: ChangeChannel, args: IpcUpdateBrowserArgs, persist?: boolean): void;
-    send(channel: ChangeChannel, args: IpcChangeArgs, persist?: boolean): void;
+    send(channel: GetSetupChannel, id: SetupItemId, depth: number): void;
+    send(channel: ChangeChannel, update: SetupItemInterface): void;
 }
 
-type ChangeType = 'add' | 'delete' | 'update';
-type ChangeComponent = 'displays' | 'browsers' | 'browser';
-
-interface IpcChangeArgs {
-    type: ChangeType;
-    component: ChangeComponent;
-}
-
-interface IpcAddDisplayArgs extends IpcChangeArgs {
-    type: 'add';
-    component: 'displays';
-
-    id: string;
-    display: DisplayInterface;
-}
-
-interface IpcAddBrowserArgs extends IpcChangeArgs {
-    type: 'add';
-    component: 'browsers';
-
-    displayId: string;
-    id: string;
-    browser: BrowserInterface;
-}
-
-interface IpcUpdateBrowserArgs extends IpcChangeArgs {
-    type: 'update';
-    component: 'browser';
-
-    browser: BrowserInterface;
-}
-
-interface IpcDeleteArgs extends IpcChangeArgs {
-    type: 'delete';
-    component: 'displays' | 'browsers';
-
-    id: string;
+interface IpcRegisterArgs {
+    windowId: number;
+    itemId: SetupItemId;
+    depth: number;
 }
 
 
 type InitialSetupEvent = 'init';
 
-type SetupListener = (setup: Setup) => void;
-
+export type LevelName = 'Setup' | 'Display' | 'Browser';
 
 export declare interface Controller {
-    on(event: InitialSetupEvent, listener: SetupListener): this;
-
-    once(event: InitialSetupEvent, listener: SetupListener): this;
-
-    getSetup(includeConfig: boolean): Promise<Setup>;
+    /**
+    *
+    * @param id
+    * @param depth 0=do not resolve children, -1 resolve all descendants, <n> resolve n-levels of decendants
+    */
+    getSetup(id: string, depth: number): Promise<SetupItem>;
 
     log(): void;
 }
 
-declare interface ControllerImpl {
-    emit(event: InitialSetupEvent, setup: Setup): boolean;
-
-    // send(type: ChangeType, component: ChangeComponent, args: IpcChangeArgs): void;
-    send(args: IpcAddBrowserArgs): void;
-    send(args: IpcAddDisplayArgs): void;
-    send(args: IpcDeleteArgs): void;
-    send(args: IpcUpdateBrowserArgs): void;
+interface SetupPromise {
+    id: string;
+    depth: number;
+    resolve: (setup: SetupItem) => void;
+    reject: (reason: string) => void;
 }
 
 /**
  */
 abstract class ControllerImpl extends EventEmitter implements Controller {
-    protected setup: Setup;
-    protected configs: BrowserConfig;
-    protected loadedAllConfig = false;
-    protected abstract getAllWindows: () => Electron.BrowserWindow[];
-    protected abstract getWindowById: (id: number) => Electron.BrowserWindow;
+    protected configs: Map<string, SetupItem> = new Map<string, SetupItem>();
 
     protected constructor() {
         super();
-        // console.log(`Config.ControllerImpl(${this.constructor.name})`);
-        this.setup = new Setup();
-        this.configs = {};
+        // console.log(`ControllerImpl[${this.constructor.name}]`);
     }
-
-    initObservers = (): void => {
-        // debugger;
-        // reaction(
-        //     this.setup.getPlainSetup,
-        //     this.persist,
-        //     { name: this.constructor.name + ' persist change', delay: 1000 }
-        // );
-        this.setup.displays.observe(
-            this.onLocalDisplaysChange,
-            false
-        );
-    }
-
-    protected onLocalDisplaysChange = (changes: IMapDidChange<string, Display>): void => {
-        //console.log(`${this.constructor.name}.onLocalDisplaysChange(${changes.type}): `, changes);
-
-        switch (changes.type) {
-            case 'add':
-                console.log(`${this.constructor.name}.onLocalDisplaysChange(${changes.type}): ${changes.newValue.id}`);
-                this.send({ type: 'add', component: 'displays', id: changes.newValue.id, display: changes.newValue.plain });
-                break;
-            case 'delete':
-                console.log(`${this.constructor.name}.onLocalDisplaysChange(${changes.type}): ${changes.oldValue.id}`);
-                this.send({ type: 'delete', component: 'displays', id: changes.oldValue.id });
-                break;
-            case 'update':
-            default:
-                console.error(`${this.constructor.name}.onLocalDisplaysChange(${changes}): invalid changes.type: ${changes.type} - should be 'add' or 'delete'`);
-            // throw new Error(`${this.constructor.name}.onLocalDisplaysChange(${changes}): invalid changes.type: ${changes.type} - should be 'add' or 'delete'`);
-        }
-    }
-
-    protected onLocalBrowsersChange = (changes: IMapDidChange<string, Browser>): void => {
-        // console.log(`${this.constructor.name}.onLocalBrowsersChange(${changes.type})`);
-
-        switch (changes.type) {
-            case 'add':
-                {
-                    console.log(`${this.constructor.name}.onLocalBrowsersChange(${changes.type}): ${changes.newValue.id}`);
-                    reaction(
-                        () => changes.newValue.plain,
-                        this.onLocalBrowserChange,
-                        { name: this.constructor.name + '.onLocalBrowsersChange browser change', delay: 1 }
-                    );
-
-                    let displayId: string | undefined;
-
-                    for (const display of this.setup.displays.values()) {
-                        if (display.browsers.has(changes.newValue.id)) {
-                            displayId = display.id;
-                            break;
-                        }
-                    }
-                    if (!displayId) throw new Error(`${this.constructor.name}.onLocalBrowsersChange(${changes.type}) no display for browser id ${changes.newValue.id} `);
-
-                    this.send({ type: 'add', component: 'browsers', displayId: displayId, id: changes.newValue.id, browser: changes.newValue.plain } );
-
-                }
-                break;
-            case 'delete':
-                console.log(`${this.constructor.name}.onLocalBrowsersChange(${changes.type}): ${changes.oldValue.id}`);
-                this.send({ type: 'delete', component: 'browsers', id: changes.oldValue.id });
-                break;
-            case 'update':
-            default:
-                console.error(`${this.constructor.name}.onLocalBrowsersChange(${changes}): invalid changes.type: ${changes.type} - should be 'add' or 'delete'`);
-            // throw new Error(`${this.constructor.name}.onLocalBrowsersChange(${changes}): invalid changes.type: ${changes.type} - should be 'add' or 'delete'`);
-        }
-    }
-
-    protected onLocalBrowserChange = (browser: BrowserInterface /*, r */): void => {
-        console.log(`${this.constructor.name}.onLocalBrowserChange(${browser.id})`);
-
-        this.send({ type: 'update', component: 'browser', browser: browser });
-    }
-
-    protected shouldSendChange = (change: IpcChangeArgs): boolean => {
-        const i = this.receivedChanges.findIndex(
-            received => isEqual(change, received)
-        );
-        if (i > -1) {
-            console.log(`${this.constructor.name}.shouldSendChange: found @${i} don't send: ${change.type} - ${change.component}`);
-            this.receivedChanges.splice(i, 1);
-
-            return false;
-        }
-        console.log(`${this.constructor.name}.shouldSendChange: send ${change.type} - ${change.component}`);
-        this.persist(this.setup.plain);
-        return true;
-    }
-
-    // abstract send(type: ChangeType, component: ChangeComponent, args: IpcChangeArgs): void;
-
 
     log(): void {
         console.log(`${this.constructor.name}.log()`);
     }
 
-    protected get fullSetup(): Setup {
-        // this.setup = this.init();
-        const fullSetup: Setup = cloneDeep(this.setup);
+    setupPromises: SetupPromise[] = new Array<SetupPromise>();
 
-        for (const display of fullSetup.displays.values()) {
-            for (const [browserId, browser] of display.browsers) {
-                if (browserId in this.configs) {
-                    browser.config = this.configs[browserId];
+    test(item: SetupItem, depth: number): boolean {
+        if (depth && item instanceof SetupContainer) {
+            const container = item as SetupContainer<SetupItem, SetupInterface>;
+
+            for (const child of container.children.values()) {
+                if ((child == null) || (!this.test(child, depth - 1))) {
+                    return false;
                 }
             }
         }
-
-        return fullSetup;
+        return true;
     }
 
-    protected updateAllWindows(args: IpcChangeArgs, senderId: number, persist?: boolean): void {
-        // console.log(`${this.constructor.name}.updateAllWindows: ${update}`);
+    tryGetItem(id: string, depth: number): SetupItem | undefined {
+        const responseItem: SetupItem | undefined = this.configs.get(id);
 
-        for (const window of this.getAllWindows()) {
+        if (responseItem && this.test(responseItem, depth)) {
+            return responseItem;
+        }
+        return undefined;
+    }
 
-            if (window.id != senderId) {
-                const ipcWindow = window.webContents as IpcWindow;
-                const started = window.eventNames().indexOf('ready-to-show') < 0;
+    protected onCached: ((item: SetupItem, depth: number) => void) | undefined;
 
-                // If a window was just closed, checks like:
-                // window.isDestroyed(), doubleCheck = this.getWindowById(window.id), ipcWindow.isDestroyed()
-                // didn't help to avoid throwing:
-                // Uncaught(in promise) TypeError: Object has been destroyed
-                // at electron / js2c / browser_init.js: 6754
-                // at IpcMainImpl.<anonymous>(electron / js2c / browser_init.js: 6597)
-                // at IpcMainImpl.emit(events.js: 210)
-                // at WebContents.<anonymous>(electron / js2c / browser_init.js: 3873)
-                // at WebContents.emit(events.js: 210)
+    getSetup(id: string, depth: number): Promise<SetupItem> {
+        // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth})`);
 
-                if (started) {
-                    console.log(`${this.constructor.name}.updateAllWindows(${senderId}): send to ${window.id}, ${persist}`);
-                    ipcWindow.send('change', args, persist);
-                    persist = undefined;
+        return new Promise(
+            (resolve: (setup: SetupItem) => void, reject: (reason: string) => void) => {
+
+                const responseItem: SetupItem | undefined = this.tryGetItem(id, depth);
+
+                if (responseItem) {
+                    console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`);
+                    if (this.onCached)
+                        this.onCached(responseItem, depth);
+                    resolve(responseItem);
                 } else {
-                    console.warn(`${this.constructor.name}.updateAllWindows(${senderId}, ${persist}): skipping ${window.id} started=${started}`);
+                    if (this.setupPromises.push({ resolve: resolve, reject: reject, id: id, depth: depth }) == 1) {
+                        console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) process now promises=${this.setupPromises.length}`);
+                        this.processPromise();
+                    } else {
+                        console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) wait promises=${this.setupPromises.length}`);
+                    }
+                }
+            }
+        );
+    }
+
+    async getTree(id: string, depth: number): Promise<SetupItem> {
+        let responseItem: SetupItem | undefined = this.configs.get(id);
+
+        if (responseItem) {
+            if (depth && responseItem instanceof SetupContainer) {
+                const container = responseItem as SetupContainer<SetupItem, SetupInterface>;
+
+                for (const [childId, child] of container.children.entries()) {
+                    const childTree = await this.getTree(childId, depth - 1);
+                    if (child == null) {
+                        container.children.set(
+                            childId,
+                            childTree
+                        );
+                    }
+                }
+            }
+        } else {
+            responseItem = await this.getSetupImpl(id, depth);
+        }
+
+        return responseItem;
+    }
+
+    async processPromise(): Promise<void> {
+
+        do {
+            const { id, depth, resolve } = this.setupPromises[0];
+            // console.log(`ControllerImpl[${this.constructor.name}].processPromise(${oldestPromise.id}, ${oldestPromise.depth}) 1/${this.setupPromises.length} ...`);
+
+            const tree = await this.getTree(id, depth);
+            this.connectItem(tree, true, false);
+            // console.log(`... ControllerImpl[${this.constructor.name}].processPromise(${oldestPromise.id}, ${oldestPromise.depth}) resolve 1/${this.setupPromises.length}`);
+            resolve(tree);
+            this.setupPromises.splice(0, 1);
+
+        } while (this.setupPromises.length);
+    }
+
+    protected onItemConnected: ((item: SetupItem, newItem: boolean) => void) | undefined;
+
+    protected connectItem(item: SetupItem, connectParent: boolean, newItem: boolean): void {
+
+        if (!this.configs.has(item.id)) {
+            console.log(`${this.constructor.name}.connectItem(${item.className}[${item.id}], ${connectParent}, ${newItem})`);
+            if (connectParent) {
+                const parent = this.configs.get(item.parentId);
+                if (parent && parent instanceof SetupContainer && parent.children.get(item.id) == null) {
+                    // console.log(`${this.constructor.name}.connectItem(${item.className}[${item.id}], ${connectParent}, ${newItem}) to ${parent.className}[${parent.id}]`);
+                    parent.children.set(item.id, item);
+                }
+            }
+            // console.log(`${this.constructor.name}.connectItem(${item.id}, ${persist})`);
+
+            this.configs.set(item.id, item);
+
+            if (this.persist) {
+                // console.log(`${this.constructor.name}.connectItem(${item.id}) persist fireImmediately=${persist}`);
+                reaction(
+                    () => {
+                        // console.log(`${this.constructor.name}.connectItem(${item.id}).persist.expression= `, item.getPlainFlat());
+                        return item.getPlainFlat();
+                    },
+                    this.persist,
+                    {
+                        name: `${this.constructor.name}[${item.id}].persist`,
+                        delay: 5000,
+                        fireImmediately: newItem
+                    }
+                );
+            }
+
+            if (this.propagate) {
+                // console.log(`${this.constructor.name}.connectItem(${item.id}) popagate`);
+                reaction(
+                    () => {
+                        // console.log(`${this.constructor.name}.connectItem(${item.id}).propagate.expression=`, item.getPlainFlat());
+                        return item.getPlainFlat();
+                    },
+                    this.propagate,
+                    {
+                        name: `${this.constructor.name}[${item.id}].propagate`,
+                        delay: 1
+                    }
+                );
+            }
+
+            if (item instanceof SetupContainer) {
+                item.children.observe(this.onMapChange);
+            }
+            if (this.onItemConnected) {
+                this.onItemConnected(item, newItem);
+            }
+        } else {
+            // console.log(`${this.constructor.name}.connectItem(${item.id}) skip already connected`);
+        }
+        if (item instanceof SetupContainer) {
+            for (const child of item.children.values()) {
+                if (child) {
+                    this.connectItem(child, false, newItem);
                 }
             }
         }
     }
 
-    protected setupFromPlain(plainSetup: SetupInterface): void {
-        console.log(`${this.constructor.name}.setupFromPlain:`, plainSetup);
-        this.setup.fromPlain(plainSetup, this.onLocalBrowsersChange, this.onLocalBrowserChange);
-        this.initObservers();
+    private onMapChange = (changes: IMapDidChange<string, SetupItem | undefined>): void => {
+        // console.log(`${this.constructor.name}.onMapChange(${changes.type} - ${changes.name})`);
+        switch (changes.type) {
+            case 'add':
+                if (changes.newValue) {
+                    this.connectItem(changes.newValue, false, true);
+                }
+                break;
+            case 'delete':
+                break;
+            case 'update':
+                if (changes.oldValue)
+                    throw new Error(`${this.constructor.name}.onMapChange(-> ${changes.type} <-) no re-assigning`);
+        }
     }
 
+    protected abstract getSetupImpl(id: string, depth: number): Promise<SetupItem>;
 
-    abstract getSetup(includeConfig: boolean): Promise<Setup>;
+    protected propagate: ((item: SetupItemInterface) => void) | undefined;
 
-    protected persist = (plainSetup): void => {
-        // console.log(`${this.constructor.name}.persist not implemented`, plainSetup);
-    }
+    protected persist: ((item: SetupItemInterface) => void) | undefined;
 
-    receivedChanges: IpcChangeArgs[] = new Array<IpcChangeArgs>();
+    onSetupChanged = (e, update: SetupItemInterface): void => {
+        // console.log(`${this.constructor.name}.onSetupChanged(${update.className}[${update.id}]):`);
+        let localItem = this.configs.get(update.id);
 
-    protected processSetupChange(args: IpcChangeArgs): void {
-        this.receivedChanges.push(args);
-
-        switch (args.component) {
-            case 'browser':
-                if (args.type == 'update') {
-                    const update = args as IpcUpdateBrowserArgs;
-
-                    for (const display of this.setup.displays.values()) {
-                        for (const browser of display.browsers.values()) {
-                            if (browser.id == update.browser.id) {
-                                console.log(
-                                    `${this.constructor.name}.processSetupChange: ${args.component} - ${args.type}: ${update.browser.id} @${display.id}:`,
-                                    { ...update.browser });
-
-                                browser.update(update.browser);
-                                return;
-                            }
-                        }
-                    }
-                    console.error(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type} - can't find: ${update.browser.id}`);
-                    // throw new Error(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type} - can't find: ${update.browser.id}`);
-                } else
-                    console.error(`${this.constructor.name}.processSetupChange: ${args.component} - incorrect type: ${args.type}`);
-                // throw new Error(`${this.constructor.name}.processSetupChange: ${args.component} - incorrect type: ${args.type}`);
-                break;
-            case 'browsers':
-                if (args.type == 'add') {
-                    const addition = args as IpcAddBrowserArgs;
-
-                    for (const display of this.setup.displays.values()) {
-                        if (display.id == addition.displayId) {
-                            console.log(
-                                `${this.constructor.name}.processSetupChange: ${args.component} - ${args.type}: ${addition.browser.id} @${display.id}:`,
-                                { ...addition.browser });
-                            const newBrowser = observable(new Browser(addition.browser));
-                            display.browsers.set(addition.browser.id, newBrowser);
-                            reaction(
-                                () => newBrowser.plain,
-                                this.onLocalBrowserChange,
-                                { name: this.constructor.name + '.processSetupChange browser change', delay: 1 }
-                            );
-                            return;
-                        }
-                    }
-                    console.error(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type} - ${addition.browser.id} - can't find: ${addition.displayId}`);
-                    //throw new Error(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type} - ${addition.browser.id} - can't find: ${addition.displayId}`);
-                } else if (args.type == 'delete') {
-                    const id = (args as IpcDeleteArgs).id;
-
-                    for (const display of this.setup.displays.values()) {
-                        if (display.browsers.has(id)) {
-                            console.log(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type}: ${id} @${display.id}`);
-                            display.browsers.delete(id);
-                            return;
-                        }
-                    }
-                    console.error(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type} - can't find: ${id}`);
-                    // throw new Error(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type} - can't find: ${id}`);
-                } else
-                    console.error(`${this.constructor.name}.processSetupChange: ${args.component} - incorrect type: ${args.type}`);
-                // throw new Error(`${this.constructor.name}.processSetupChange: ${args.component} - incorrect type: ${args.type}`);
-                break;
-            case 'displays':
-                if (args.type == 'add') {
-                    const addition = args as IpcAddDisplayArgs;
-                    console.log(`${this.constructor.name}.processSetupChange: ${args.component} - ${args.type}: ${addition.id}`);
-                    this.setup.displays.set(
-                        addition.id,
-                        new Display(addition.id, this.onLocalBrowsersChange));
-                } else if (args.type == 'delete') {
-                    this.setup.displays.delete((args as IpcDeleteArgs).id);
-                } else
-                    console.error(`${this.constructor.name}.processSetupChange: ${args.component} - incorrect type: ${args.type}`);
-                // throw new Error(`${this.constructor.name}.processSetupChange: ${args.component} - incorrect type: ${args.type}`);
-                break;
-            default:
-                console.error(`${this.constructor.name}.processSetupChange: incorrect component: ${args.component}`);
-            // throw new Error(`${this.constructor.name}.processSetupChange: incorrect component: ${args.component}`);
+        if (localItem) {
+            console.log(`${this.constructor.name}.onSetupChanged: ${update.className}[${update.id}] update`, { ...update });
+            localItem.update(update);
+        } else {
+            // console.log(`${this.constructor.name}.processSetupChange: ${update.className}[${update.id}] create`, { ...update });
+            localItem = createSetupItem(update);
+            this.connectItem(localItem, true, true);
         }
     }
 }
 
 
-
 class Renderer extends ControllerImpl {
-    protected getAllWindows = electron.remote.BrowserWindow.getAllWindows;
-    protected getWindowById = electron.remote.BrowserWindow.fromId;
+    protected ipc: IpcRenderer = electronIpcRenderer;
 
-    private static SETUP_KEY = 'Setup';
-
-    private ipc: IpcRenderer = electronIpcRenderer;
-
-    private windowId;
+    private windowId: number;
 
     constructor() {
         super();
@@ -381,123 +295,87 @@ class Renderer extends ControllerImpl {
 
         console.log(`${this.constructor.name}() ${this.windowId}`);
 
-        this.setup = this.loadSetup();
-
-        this.ipc.send('init', this.setup.plain);
-
         this.ipc.on('change', this.onSetupChanged);
     }
 
-    send = (args: IpcChangeArgs): void => {
-        if (this.shouldSendChange(args)) {
-            this.ipc.send('change', args);
-            this.updateAllWindows(args, this.windowId, false);
-        }
-    }
 
-    onSetupChanged = (e, args: IpcChangeArgs, persist?: boolean): void => {
-        console.log(`${this.constructor.name}.onSetupChanged(${args.type}, ${args.component}, ${persist}):`);
-        this.processSetupChange(args);
+    protected getSetupSync(id: string, depth: number): SetupItem {
 
-        if (persist && (persist === true)) {
-            this.storeSetup();
-        }
-    }
+        const responseItem: SetupItem = this.configs.get(id) ?? this.load(id);
 
-    async getSetup(includeConfig: boolean): Promise<Setup> {
-        let response: Setup;
+        if (depth && responseItem instanceof SetupContainer) {
+            const container = responseItem as SetupContainer<SetupItem, SetupInterface>;
 
-        if (includeConfig && (!this.loadedAllConfig)) {
-            this.loadAllConfig();
-        }
-
-        if (includeConfig) {
-            response = this.fullSetup;
-        } else {
-            if (!this.setup) throw new Error(`${this.constructor.name}.getSetup(${includeConfig}): no setup`);
-
-            response = this.setup;
-        }
-
-        return response;
-    }
-
-    private loadSetup(): Setup {
-        console.log(`${this.constructor.name}: loadSetup`);
-        const setupString = localStorage.getItem(Renderer.SETUP_KEY);
-
-        if (setupString) {
-            const plainSetup = JSON.parse(setupString);
-
-            this.setupFromPlain(plainSetup);
-        } else {
-            console.warn(`${this.constructor.name}: loadSetup: no setup`);
-        }
-        return this.setup;
-    }
-
-    protected persist = (plainSetup): void => {
-        console.log(`${this.constructor.name}.persist implemented`, plainSetup);
-        this.storeSetup();
-    }
-
-
-    private storeSetup(): void {
-        const setupString = JSON.stringify(this.setup);
-        console.log(`${this.constructor.name}.storeSetup: ${setupString} `, this.setup);
-
-        localStorage.setItem(Renderer.SETUP_KEY, setupString);
-    }
-
-
-    private static getConfigKey(browserId: string): string {
-        return `browser-${browserId}-config`;
-    }
-
-    protected defaultConfig: Config = DefaultConfig;
-
-    private loadAllConfig(): void {
-        console.log(`${this.constructor.name}: loadAllConfig`);
-
-        if (!this.setup) throw new Error(`${this.constructor.name}.loadAllConfig(): no setup`);
-
-        for (const display of this.setup.displays.values()) {
-            for (const browser of display.browsers.keys()) {
-                this.loadConfig(browser);
+            for (const itemId of container.children.keys()) {
+                container.children.set(
+                    itemId,
+                    this.getSetupSync(itemId, depth - 1)
+                );
             }
         }
-        this.loadedAllConfig = true;
+
+        return responseItem;
     }
 
-    protected loadConfig(browserId: string): Config {
-        try {
-            let config: Config;
+    private registrations = new Array<{ itemId: SetupItemId; depth: number }>()
 
-            if (!this.configs) throw new Error(`${this.constructor.name}.loadConfig(${browserId}) configs undefined`);
+    protected onCached = (item: SetupItem, depth: number): void => {
 
-            if (browserId in this.configs) {
-                config = this.configs[browserId];
+        this.registerWithMain(item, depth);
+    }
+
+    protected registerWithMain(item: SetupItem, depth: number): void {
+
+        let registration = this.registrations.find(candidate => candidate.itemId == item.id);
+
+        if (!(registration && registration.depth >= depth)) {
+            if (!registration) {
+                registration = { itemId: item.id, depth: depth };
+                this.registrations.push(registration);
             } else {
-                const configString = localStorage.getItem(Renderer.getConfigKey(browserId));
-                if (null == configString) {
-                    config = cloneDeep(this.defaultConfig);
-                } else {
-                    config = JSON.parse(configString);
-                }
-                this.configs[browserId] = config;
-                if (null == configString) {
-                    this.storeConfig(browserId, JSON.stringify(config));
-                }
+                registration.depth = depth;
             }
-            return config;
-        } catch (loadConfigError) {
-            console.error(`${this.constructor.name}: loadConfig[${browserId}]: ${loadConfigError}: `, loadConfigError);
-            throw new Error(`${this.constructor.name}: loadConfig[${browserId}]: ${loadConfigError}: `);
+            this.ipc.send('register', { windowId: this.windowId, itemId: item.id, depth: depth });
         }
     }
 
-    private storeConfig(browserId: string, config: string | null): void {
-        localStorage.setItem(Renderer.getConfigKey(browserId), config ? config : '');
+    protected async getSetupImpl(id: string, depth: number): Promise<SetupItem> {
+        const item = this.getSetupSync(id, depth);
+
+        this.registerWithMain(item, depth);
+
+        return item;
+    }
+
+    private load(id: string): Setup | Display | Browser {
+        // console.log(`${this.constructor.name}: load(${id})`);
+        const itemString = localStorage.getItem(id);
+        let item: Setup | Display | Browser;
+
+        if (itemString) {
+            console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
+
+            const itemPlain: SetupItemInterface = JSON.parse(itemString);
+
+            item = createSetupItem(itemPlain);
+        } else if (id == 'Setup' as SetupID) {
+            item = new Setup({ id: 'Setup', parentId: 'Setup', className: 'Setup', children: {} });
+            console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
+        } else {
+            throw new Error(`${this.constructor.name}: load(-> ${id} <-): not found`);
+        }
+        return item;
+    }
+
+    protected propagate = (item: SetupItemInterface): void => {
+        console.log(`${this.constructor.name}.propapgate(${item.id}) send to main=`, item);
+        this.ipc.send('change', item);
+    }
+
+    protected persist = (item: SetupItemInterface): void => {
+        console.log(`${this.constructor.name}.persist(${item.id})`, item);
+
+        localStorage.setItem(item.id, JSON.stringify(item));
     }
 }
 
@@ -520,7 +398,7 @@ type Listeners = { user?: UserCallback; size?: SizeCallback };
 class Paper extends Renderer {
     private browserId: string;
     private paper: Listeners = {};
-    private browser: Browser;
+    private browser: Browser | undefined;
 
 
     constructor() {
@@ -528,30 +406,24 @@ class Paper extends Renderer {
 
         const browserIdArg = process.argv.find((arg) => /^--browserid=/.test(arg));
 
-        if (!browserIdArg ) {
+        if (!browserIdArg) {
             console.error(`${this.constructor.name}() missing arguments: browserId=${browserIdArg}`, process.argv);
             throw new Error(`${this.constructor.name}() missing arguments: browserId=${browserIdArg}: ${process.argv.join()}`);
         }
         this.browserId = browserIdArg.split('=')[1];
 
-        let browser: Browser | undefined;
-        for (const display of this.setup.displays.values()) {
-            browser = display.browsers.get(this.browserId);
-            if (browser) {
-                break;
+        console.log(`${this.constructor.name}[${this.browserId}]()`, process.argv);
+
+        this.getSetup(this.browserId, -1).then(
+            browser => {
+                this.browser = browser as Browser;
+
+                console.log(
+                    `${this.constructor.name}[${this.browserId}](): got Browser:` +
+                    ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
+                    ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`
+                );
             }
-        }
-
-        if (!browser)
-            throw new Error(`${this.constructor.name}() can't find browser ${this.browserId}`);        
-
-        this.browser = browser;
-        
-        console.log(
-            `${this.constructor.name}[${this.browserId}]():` +
-            ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
-            ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`,
-            process.argv
         );
 
         this.connectToWallpaper();
@@ -570,15 +442,30 @@ class Paper extends Renderer {
 
     private initUserListener(): void {
         if (this.paper.user) {
-            const setting = this.loadConfig(this.browserId);
-
             try {
-                this.paper.user(setting.general.properties);
+                if (this.browser) {
+                    if (this.browser.config) {
+                        this.paper.user(this.browser.config.general.properties);
+                    } else {
+                        console.error(`${this.constructor.name}.initUserListener(): no config`);
+                    }
+                } else {
+                    console.warn(`${this.constructor.name}.initUserListener(): wait for browser`);
+
+                    this.getSetup(this.browserId, -1).then(
+                        browser => {
+                            console.warn(`${this.constructor.name}[${this.browserId}].initUserListener: got Browser: this.browser=${this.browser}`);
+
+                            this.browser = browser as Browser;
+                            this.initUserListener();
+                        }
+                    );
+                }
             } catch (initialError) {
                 console.error(
                     `${this.constructor.name}[${this.browserId}]: ERROR initial user setting:${initialError}:`,
                     initialError,
-                    setting.general);
+                    this.browser?.config?.general.properties);
             }
         }
     }
@@ -587,23 +474,39 @@ class Paper extends Renderer {
         if (this.paper.size) {
             // console.log(`${this.constructor.name}[${this.browserId}]: set size=${JSON.stringify(size)}`, size);
 
-            autorun(
-                () => {
-                    try {
+            if (this.browser) {
+                autorun(
+                    () => {
                         if (!this.paper.size) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: lost size handler`);
-                        if (!this.browser.scaled) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: no scaled size to set`);
+                        if (!this.browser) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: lost browser`);
 
-                        this.paper.size({ width: this.browser.scaled.width, height: this.browser.scaled.height });
-                    } catch (initialError) {
-                        console.error(
-                            `${this.constructor.name}[${this.browserId}]: ${JSON.stringify(this.browser)}: ERROR setting size:${initialError}:`,
-                            initialError,
-                            this.browser);
+                        try {
+                            if (!this.browser.scaled) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: no scaled size to set`);
+
+                            this.paper.size({ width: this.browser.scaled.width, height: this.browser.scaled.height });
+                        } catch (initialError) {
+                            console.error(
+                                `${this.constructor.name}[${this.browserId}]: ${JSON.stringify(this.browser)}: ERROR setting size:${initialError}:`,
+                                initialError,
+                                this.browser);
+                        }
                     }
-                }
-            );
+                );
+            } else {
+                console.warn(`${this.constructor.name}.initSizeListener(): wait for browser`);
+
+                this.getSetup(this.browserId, -1).then(
+                    browser => {
+                        console.warn(`${this.constructor.name}[${this.browserId}].initSizeListener: got Browser: this.browser=${this.browser}`);
+
+                        this.browser = browser as Browser;
+                        this.initSizeListener();
+                    }
+                );
+            }
         }
     }
+
 
     /**
      * Exposes interface to wallpaper window, e.g. window.wallpaper.register(listeners)
@@ -618,42 +521,185 @@ class Paper extends Renderer {
 
 }
 
+class MainWindow extends Renderer {
+
+    setup: Setup | undefined;
+
+    constructor() {
+        super();
+
+        console.log(`${this.constructor.name}()`, process.argv);
+
+        this.ipc.send('init');
+
+        this.ipc.on('getsetup', this.onGetSetup);
+    }
+
+    onGetSetup = async (e, id: string, depth: number): Promise<void> => {
+        this.ipc.send(
+            'setsetup',
+            (await this.getSetup(id, depth)).getPlainDeep()
+        );
+    }
+}
+
+interface ChangeListener {
+    windowId: number;
+    ipc: IpcWindow;
+    itemId: SetupItemId;
+    depth: number;
+}
+
 class Main extends ControllerImpl {
     protected getAllWindows = BrowserWindow.getAllWindows;
     protected getWindowById = BrowserWindow.fromId;
 
     private ipc: IpcMain = electronIpcMain;
 
+    private ipcStorage: IpcWindow | undefined;
+
+    private promises = new Array<SetupPromise>();
+    private changeListeners = new Array<ChangeListener>();
+
     constructor() {
         super();
 
-        this.ipc.once('init', this.onInitialSetup);
+        this.ipc.once('init', this.onInit);
+
         this.ipc.on('change', this.onSetupChanged);
+        this.ipc.on('register', this.onRegister);
+        this.ipc.on('setsetup', this.onSetSetup);
     }
 
-    onInitialSetup = (e, setup: SetupInterface): void => {
-        this.setupFromPlain(setup);
+    private onRegister = (e: IpcMainEvent, { windowId, itemId, depth }: IpcRegisterArgs): void => {
+        const existingWindowListeners = this.changeListeners.filter(listener => listener.windowId == windowId);
+        let listener: ChangeListener | undefined;
 
-        // console.log(`${this.constructor.name}.onInitialSetup: ${this.setup}`);
-        if (!this.setup) throw new Error(`${this.constructor.name}.onInitialSetup no setup`);
+        if (existingWindowListeners.length) {
+            for (const existingListener of existingWindowListeners) {
+                if (existingListener.itemId == itemId) {
+                    console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}](${windowId}, ${itemId}, ${depth} ): listening (${existingListener.depth})`);
+                    listener = existingListener;
 
-        this.emit('init', this.setup);
-    }
-
-    getSetup(includeConfig: boolean): Promise<Setup> {
-        throw new Error(`Main.getSetup(${includeConfig}): Use events instead: init, change`);
-    }
-
-    send = (args: IpcChangeArgs): void => {
-        if (this.shouldSendChange(args)) {
-            this.updateAllWindows(args, -1, true);
+                    if (existingListener.depth < depth) {
+                        existingListener.depth = depth;
+                    }
+                    break;
+                } else {
+                    // console.error(`${this.constructor.name}.register(${windowId}, ${item.id}, ${depth} ): Implement checking for children with depth`);
+                }
+            }
+        }
+        if (!listener) {
+            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}](${windowId}, ${itemId}, ${depth} ): new listener`);
+            listener = {
+                windowId: windowId,
+                ipc: BrowserWindow.fromId(windowId).webContents,
+                itemId: itemId,
+                depth: depth
+            };
+            this.changeListeners.push(listener);
         }
     }
 
-    onSetupChanged = (e, args: IpcChangeArgs, persist?: boolean): void => {
-        console.log(`${this.constructor.name}.onSetupChanged(${args.type}, ${args.component}, ${persist}):`);
-        // this.emit(Controller.change, new SetupDiff(update));
-        this.processSetupChange(args);
+
+    private connectListener(item: SetupItem, listener: ChangeListener, fireImmediately: boolean, offset = 0): void {
+        // console.log(`${this.constructor.name}.connectListener[${listener.windowId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
+        reaction(
+            (/*r*/) => {
+                // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].expression ${item.id} @${listener.depth - offset}`);
+                return item.getPlainFlat();
+            },
+            (updatedItem, /*r*/) => {
+                console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
+                listener.ipc.send('change', updatedItem);
+            },
+            {
+                name: `changeListener[${listener.windowId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`,
+                fireImmediately: fireImmediately
+            }
+        );
+    }
+
+    private connectListeners(item: SetupItem, fireImmediately: boolean): void {
+        // console.log(`${this.constructor.name}.connectListeners[${this.changeListeners.length}](${item.id},${fireImmediately})`);
+        for (const listener of this.changeListeners) {
+            /// Check if ancestor in within depth is listening
+            for (let offset = 0, ancestor: SetupItem | undefined = item; (offset <= listener.depth) && (ancestor); offset += 1, ancestor = this.configs.get(ancestor.parentId)) {
+                if (listener.itemId == ancestor.id) {
+                    this.connectListener(item, listener, fireImmediately, offset);
+                    break;
+                }
+            }
+        }
+    }
+
+    protected onItemConnected = (item: SetupItem, newItem: boolean): void => {
+        console.log(`${this.constructor.name}.onItemConnected(${item.id})`);
+        this.connectListeners(item, newItem);
+    }
+
+    private onSetSetup = (e, item: SetupItemInterface): void => {
+
+        console.log(`${this.constructor.name}.onSetSetup: promises=${this.promises.length}` /* , item */);
+
+        const currentPromise = this.promises[0];
+
+        const response = createSetupItem(item);
+
+        if (this.promises.length != 1) {
+            console.error(`${this.constructor.name}.onSetSetup: promises.length=${this.promises.length} should be 1`);
+        }
+        this.promises.splice(0, 1);
+
+        currentPromise.resolve(response);
+    }
+
+
+    private onInit = (e: IpcMainEvent): void => {
+        /// Probably received Setup through register triggered by getting setup
+
+        console.log(`${this.constructor.name}.onInit: sender=${e.sender}`);
+        this.ipcStorage = e.sender;
+
+        this.requestPromises();
+    }
+
+    private requestPromises(): void {
+        // console.log(`${this.constructor.name}.requestPromises[${this.promises.length}]`);
+
+        if (!this.ipcStorage) throw new Error(`${this.constructor.name}.requestPromises[${this.promises.length}]: no ipcStorage`);
+
+        if (this.promises.length) {
+            if (this.promises.length != 1) {
+                console.error(`${this.constructor.name}.requestPromises: promises.length=${this.promises.length} should be 1`);
+            }
+            const firstPromise = this.promises[0];
+
+            this.ipcStorage.send('getsetup', firstPromise.id, firstPromise.depth);
+        }
+    }
+
+    protected getSetupImpl(id: string, depth: number): Promise<SetupItem> {
+        return new Promise(
+            (resolve, reject) => {
+                const responseItem: SetupItem | undefined = this.configs.get(id);
+
+                if (!responseItem) {
+                    this.promises.push({ id: id, depth: depth, resolve: resolve, reject: reject });
+
+                    if (this.ipcStorage) {
+                        console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): requesting promises=${this.promises.length}`);
+                        this.requestPromises();
+                    } else {
+                        console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): wait for init promises=${this.promises.length}`);
+                    }
+                } else {
+                    console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve` /*, responseItem.getPlainDeep() */);
+                    resolve(responseItem);
+                }
+                return responseItem;
+            });
     }
 }
 
@@ -675,6 +721,9 @@ switch (process.type) {
         if (process.argv.some((arg) => /^--browserid=/.test(arg))) {
             // console.log(`Config.Controller[${process.type}]: create Paper`);
             controller = new Paper();
+        } else if (process.argv.some((arg) => /^--mainwindow/.test(arg))) {
+            // console.log(`Config.Controller[${process.type}]: create Renderer`);
+            controller = new MainWindow();
         } else {
             // console.log(`Config.Controller[${process.type}]: create Renderer`);
             controller = new Renderer();

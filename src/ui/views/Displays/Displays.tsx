@@ -16,7 +16,7 @@ import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 
-import { Setup, Display, Browser, DisplayIterableDictionary } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { Setup, Display, Browser, DisplayMap } from '../../../infrastructure/Configuration/WallpaperSetup';
 import { remote } from 'electron';
 import Browsers from './Browsers';
 import controller from '../../../infrastructure/Configuration/Controller';
@@ -85,7 +85,7 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
     </GridItem>;
 }
 
-function DisplayContainer({ displays }: { displays: DisplayIterableDictionary }): JSX.Element {
+function DisplayContainer({ displays }: { displays: DisplayMap }): JSX.Element {
     console.log(`Displays.tsx: Electron is ready=${remote.app.isReady()}`);
 
     const electronDisplays = remote.screen.getAllDisplays().reduce((result, display) => {

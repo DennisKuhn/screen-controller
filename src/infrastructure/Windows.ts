@@ -54,10 +54,13 @@ class Windows {
         const windowKey: WindowsKeys = 'MainWindow';
         const main = new BrowserWindow({
             webPreferences: {
-                nodeIntegration: true
+                nodeIntegration: true,
+                additionalArguments: [
+                    '--mainwindow'
+                ]
             },
-            width: 800,
-            height: 600,
+            width: 400,
+            height: 300,
         });
         main.on('closed', app.quit);
         main.webContents.openDevTools();

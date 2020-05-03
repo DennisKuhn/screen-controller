@@ -1,29 +1,35 @@
-import { screen } from 'electron';
+import { screen, Display as ElectronDisplay } from 'electron';
 import controller from './Configuration/Controller';
-import { Setup, Display } from './Configuration/WallpaperSetup';
+import { Setup, Display, SetupID } from './Configuration/WallpaperSetup';
 
 
 
 export default class DisplaysManager {
-    public static async run(): Promise<void> {
-        controller.once('init', DisplaysManager.checkDisplays);
+    public static run(): void {
+        const setupId: SetupID = 'Setup';
+
+        controller.getSetup(setupId, 2)
+            .then(setup => DisplaysManager.checkDisplays(setup as Setup));
     }
 
-    private static _actualSetup: Setup | undefined;
+    private static _actualDisplays: Map<string, ElectronDisplay> | undefined;
 
     /**
      * Gets setup on first call from Electron.screen,
      * returns the cached/updated otherwise
      */
-    protected static get actualSetup(): Setup {
-        if (!DisplaysManager._actualSetup) {
-            DisplaysManager._actualSetup = new Setup();
+    protected static get actualDisplays(): Map<string, ElectronDisplay> {
+        if (!DisplaysManager._actualDisplays) {
+            DisplaysManager._actualDisplays = new Map<string, ElectronDisplay>();
 
             for (const display of screen.getAllDisplays()) {
-                DisplaysManager._actualSetup.displays.set(display.id.toFixed(0), new Display( display.id.toFixed(0) ) );
+                DisplaysManager._actualDisplays.set(
+                    display.id.toFixed(0),
+                    display
+                );
             }
         }
-        return DisplaysManager._actualSetup;
+        return DisplaysManager._actualDisplays;
     }
 
     /**
@@ -33,16 +39,19 @@ export default class DisplaysManager {
     private static checkDisplays(setup: Setup): void {
         // console.log('DisplaysManager.checkDisplays:', setup);
 
-        for (const display of DisplaysManager.actualSetup.displays.values()) {
-            if (!setup.displays.has(display.id)) {
-                console.log(`DisplaysManager.checkDisplays: add ${display.id}`);
-                setup.displays.set(display.id, display);
+        for (const displayId of DisplaysManager.actualDisplays.keys()) {
+            if (!setup.children.has(displayId)) {
+                console.log(`DisplaysManager.checkDisplays: add ${displayId}`);
+                setup.children.set(
+                    displayId,
+                    new Display({ id: displayId, parentId: setup.id, className: 'Display', children: {} })
+                );
             }
         }
-        for (const displayId of setup.displays.keys()) {
-            if (! DisplaysManager.actualSetup.displays.has(displayId)) {
+        for (const displayId of setup.children.keys()) {
+            if (!DisplaysManager.actualDisplays.has(displayId)) {
                 console.log(`DisplaysManager.checkDisplays: delete ${displayId}`);
-                setup.displays.delete(displayId);
+                setup.children.delete(displayId);
             }
         }
     }

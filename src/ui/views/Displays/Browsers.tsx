@@ -15,35 +15,37 @@ import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
 import controller from '../../../infrastructure/Configuration/Controller';
-import { BrowserIterableDictionary, Browser, Rectangle } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { BrowserMap, Browser, Rectangle, Setup } from '../../../infrastructure/Configuration/WallpaperSetup';
 
-const Row = observer(({browser}: { browser: Browser }): JSX.Element => {
+const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
 
     const [configVisible, setConfigVisible] = useState(false);
 
     function deleteBrowser(): void {
-        controller.getSetup(false).then(
+        controller.getSetup('Setup', 3).then(
             setup => {
-                for (const display of setup.displays.values()) {
-                    if (display.browsers.has(browser.id)) {
+                for (const display of (setup as Setup).children.values()) {
+                    if (display?.children.has(browser.id)) {
                         console.log(`${display.id}.Row[${browser.id}].deleteBrowser`);
-                        display.browsers.delete(browser.id);
+                        display.children.delete(browser.id);
                         return;
                     }
                 }
                 throw new Error(`Row[${browser.id}].deleteBrowser can not find display`);
-            }                
+            }
         );
     }
 
     function toggleFullScreen(): void {
         const newFullScreen = !(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1);
 
-        browser.relative = new Rectangle(
-            newFullScreen ?
+        browser.relative = new Rectangle({
+            ...browser.relative,
+            ...(newFullScreen ?
                 { x: 0, y: 0, width: 1, height: 1 } :
                 { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
-        );
+            )
+        });
     }
 
     function toggleConfigVisible(): void {
@@ -105,7 +107,7 @@ const Row = observer(({browser}: { browser: Browser }): JSX.Element => {
 });
 
 
-const Browsers = observer(({browsers}: { browsers: BrowserIterableDictionary }): JSX.Element => {
+const Browsers = observer(({ browsers }: { browsers: BrowserMap }): JSX.Element => {
 
     return (
         <Table>
