@@ -1,6 +1,6 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import controller from './Configuration/Controller';
-import { Setup, Browser, Display, SetupID } from './Configuration/WallpaperSetup';
+import { Screen, Browser, Display, ScreenID } from './Configuration/WallpaperSetup';
 import { autorun } from 'mobx';
 
 
@@ -10,7 +10,7 @@ declare const WALLPAPER_WEBPACK_ENTRY: string;
 
 export default class WallpapersManager {
 
-    private static setup: Setup | undefined;
+    private static screen: Screen | undefined;
 
     /**
      * Maps Browser.id to WallpaperWindow
@@ -20,9 +20,9 @@ export default class WallpapersManager {
     public static async run(): Promise<void> {
         //console.log('WallpapersManager.run');
 
-        const setupId: SetupID = 'Setup';
+        const screenId: ScreenID = 'Screen';
 
-        WallpapersManager.setup = (await controller.getSetup(setupId, 2)) as Setup;
+        WallpapersManager.screen = (await controller.getSetup(screenId, 2)) as Screen;
 
         autorun(
             WallpapersManager.updateDisplays
@@ -75,17 +75,17 @@ export default class WallpapersManager {
      */
     private static updateDisplays = (): void => {
 
-        if (!WallpapersManager.setup) throw new Error('WallpapersManager.updateDisplays(): no setup');
+        if (!WallpapersManager.screen) throw new Error('WallpapersManager.updateDisplays(): no screen');
 
         console.log('WallpapersManager.updateDisplays()');
 
-        for (const display of WallpapersManager.setup.children.values()) {
+        for (const display of WallpapersManager.screen.children.values()) {
             if (display) {
                 autorun(() => WallpapersManager.updateBrowsers(display));
             }
         }
         for (const paper of WallpapersManager.papers.values()) {
-            if (!WallpapersManager.setup.children.has(paper.displayId.toFixed(0))) {
+            if (!WallpapersManager.screen.children.has(paper.displayId.toFixed(0))) {
                 console.log(`WallpapersManager.updateDisplays(${paper.displayId}) close ${paper.browser.id}`);
                 paper.browserWindow.close();
                 WallpapersManager.papers.delete(paper.browser.id);

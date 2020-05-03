@@ -1,15 +1,15 @@
-import { screen, Display as ElectronDisplay } from 'electron';
+import { screen as electronScreen, Display as ElectronDisplay } from 'electron';
 import controller from './Configuration/Controller';
-import { Setup, Display, SetupID } from './Configuration/WallpaperSetup';
+import { Screen, Display, ScreenID } from './Configuration/WallpaperSetup';
 
 
 
 export default class DisplaysManager {
     public static run(): void {
-        const setupId: SetupID = 'Setup';
+        const screenId: ScreenID = 'Screen';
 
-        controller.getSetup(setupId, 2)
-            .then(setup => DisplaysManager.checkDisplays(setup as Setup));
+        controller.getSetup(screenId, 2)
+            .then(setup => DisplaysManager.checkDisplays(setup as Screen));
     }
 
     private static _actualDisplays: Map<string, ElectronDisplay> | undefined;
@@ -22,7 +22,7 @@ export default class DisplaysManager {
         if (!DisplaysManager._actualDisplays) {
             DisplaysManager._actualDisplays = new Map<string, ElectronDisplay>();
 
-            for (const display of screen.getAllDisplays()) {
+            for (const display of electronScreen.getAllDisplays()) {
                 DisplaysManager._actualDisplays.set(
                     display.id.toFixed(0),
                     display
@@ -36,22 +36,22 @@ export default class DisplaysManager {
      * If setup differs from actual Setup.displays, Configuration/controller.updateSetup is called
      * @param setup to check with actual setup
      */
-    private static checkDisplays(setup: Setup): void {
+    private static checkDisplays(screen: Screen): void {
         // console.log('DisplaysManager.checkDisplays:', setup);
 
         for (const displayId of DisplaysManager.actualDisplays.keys()) {
-            if (!setup.children.has(displayId)) {
+            if (!screen.children.has(displayId)) {
                 console.log(`DisplaysManager.checkDisplays: add ${displayId}`);
-                setup.children.set(
+                screen.children.set(
                     displayId,
-                    new Display({ id: displayId, parentId: setup.id, className: 'Display', children: {} })
+                    Display.createNew(displayId)
                 );
             }
         }
-        for (const displayId of setup.children.keys()) {
+        for (const displayId of screen.children.keys()) {
             if (!DisplaysManager.actualDisplays.has(displayId)) {
                 console.log(`DisplaysManager.checkDisplays: delete ${displayId}`);
-                setup.children.delete(displayId);
+                screen.children.delete(displayId);
             }
         }
     }

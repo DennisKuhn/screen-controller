@@ -2,7 +2,7 @@ import { IMapDidChange, reaction, autorun } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
 import {
-    Setup, Properties, Display, Browser, SetupInterface, SetupItem, createSetupItem, SetupItemInterface, SetupContainer, SetupID, SetupItemId
+    Setup, Properties, Display, Browser, SetupInterface, SetupItem, createSetupItem, SetupItemInterface, SetupContainer, SetupID, SetupItemId, Screen, ScreenID
 } from './WallpaperSetup';
 
 import DefaultConfig from '../../wallpaper/project.json';
@@ -52,8 +52,6 @@ interface IpcRegisterArgs {
     depth: number;
 }
 
-
-type InitialSetupEvent = 'init';
 
 export type LevelName = 'Setup' | 'Display' | 'Browser';
 
@@ -195,6 +193,14 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             // console.log(`${this.constructor.name}.connectItem(${item.id}, ${persist})`);
 
             this.configs.set(item.id, item);
+
+            // register properties like screen, rectangles, 
+            for (const value of Object.values(item)) {
+                if (value instanceof SetupItem) {
+                    console.log(`${this.constructor.name}.connectItem(${item.className}[${item.id}], ${connectParent}, ${newItem}) add property ${value.className}[${value.id}]`);
+                    this.connectItem(value, false, newItem);
+                }
+            }
 
             if (this.persist) {
                 // console.log(`${this.constructor.name}.connectItem(${item.id}) persist fireImmediately=${persist}`);
@@ -347,10 +353,10 @@ class Renderer extends ControllerImpl {
         return item;
     }
 
-    private load(id: string): Setup | Display | Browser {
+    private load(id: string): Setup | Display | Browser | Screen {
         // console.log(`${this.constructor.name}: load(${id})`);
         const itemString = localStorage.getItem(id);
-        let item: Setup | Display | Browser;
+        let item: Setup | Display | Browser | Screen;
 
         if (itemString) {
             console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
@@ -358,9 +364,14 @@ class Renderer extends ControllerImpl {
             const itemPlain: SetupItemInterface = JSON.parse(itemString);
 
             item = createSetupItem(itemPlain);
-        } else if (id == 'Setup' as SetupID) {
-            item = new Setup({ id: 'Setup', parentId: 'Setup', className: 'Setup', children: {} });
+        } else if (id as SetupID == 'Setup') {
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
+            item = Setup.createNewBlank();
+            this.persist(item);
+        } else if (id as ScreenID == 'Screen') {
+            console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
+            item = Screen.createNewBlank();
+            this.persist(item);
         } else {
             throw new Error(`${this.constructor.name}: load(-> ${id} <-): not found`);
         }
@@ -607,7 +618,7 @@ class Main extends ControllerImpl {
         // console.log(`${this.constructor.name}.connectListener[${listener.windowId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
         reaction(
             (/*r*/) => {
-                // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].expression ${item.id} @${listener.depth - offset}`);
+                // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].expression ${item.id}@${listener.depth-offset}`);
                 return item.getPlainFlat();
             },
             (updatedItem, /*r*/) => {

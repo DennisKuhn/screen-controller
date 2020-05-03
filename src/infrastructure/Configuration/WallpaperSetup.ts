@@ -80,10 +80,10 @@ export abstract class SetupItem {
     getPlainFlat(): SetupItemInterface {
         return { id: this.id, parentId: this.parentId, className: this.className };
     }
+
     getPlainDeep(): SetupItemInterface {
         return { id: this.id, parentId: this.parentId, className: this.className };
     }
-
 
     update(update: SetupItemInterface): void {
         if (update.id != this.id)
@@ -96,7 +96,6 @@ export abstract class SetupItem {
             throw new Error(`SetupItem[${this.constructor.name}][${this.id}, ${this.parentId}, -> ${this.className} <-].update =`
                 + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
     }
-
 
     static usedIDs = new Array<string>();
 
@@ -114,6 +113,7 @@ export abstract class SetupItem {
             }
         );
     }
+
     public static getNewId(className: string): string {
         let id = 0;
         return SetupItem.usedIDs.reduce(
@@ -128,6 +128,7 @@ export abstract class SetupItem {
             }
         );
     }
+
 }
 
 export abstract class SetupContainer<ChildType extends SetupItem, ChildInterface extends SetupItemInterface> extends SetupItem {
@@ -344,31 +345,89 @@ export class Browser extends SetupItem implements BrowserInterface {
             }
         }
     }
+
+    static createNew(parentId: SetupItemId, relative: { x: number; y: number; width: number; height: number } ): Browser {
+        const newID = SetupItem.getNewId('Browser');
+        return new Browser({
+            id: newID,
+            parentId: parentId,
+            className: 'Browser',
+            relative: {
+                className: 'Rectangle',
+                id: SetupItem.getNewId('Rectangle'),
+                parentId: newID,
+                ...relative
+            }
+        });
+    }
+
 }
 
 export interface DisplayInterface extends SetupContainerInterface<BrowserInterface> {
+    parentId: ScreenID;
     className: 'Display';
 }
 
 
 export class Display extends SetupContainer<Browser, BrowserInterface> {
 
+    constructor(source: DisplayInterface) {
+        super(source);
+    }
+
     createChild(source: BrowserInterface): Browser {
         return new Browser(source);
     }
+
+    static createNew(displayId: SetupItemId): Display {
+        return new Display({ id: displayId, parentId: 'Screen', className: 'Display', children: {} });
+    }
 }
 
-export type SetupID = 'Setup';
+export type ScreenID = 'Screen';
 
-export interface SetupInterface extends SetupContainerInterface<DisplayInterface> {
-    id: SetupID;
-    className: 'Setup';
+export interface ScreenInterface extends SetupContainerInterface<DisplayInterface> {
+    id: ScreenID;
+    parentId: SetupID;
+    className: 'Screen';
 }
 
-export class Setup extends SetupContainer<Display, DisplayInterface> {
+export class Screen extends SetupContainer<Display, DisplayInterface> {
+
+    constructor(source: ScreenInterface) {
+        super(source);
+    }
 
     createChild(source: DisplayInterface): Display {
         return new Display(source);
+    }
+
+    static createNewBlank(): Screen {
+        return new Screen({ id: 'Screen', parentId: 'Setup', className: 'Screen', children: {} });
+    }
+}
+
+
+export type SetupID = 'Setup';
+
+export interface SetupInterface extends SetupItemInterface {
+    id: SetupID;
+    className: 'Setup';
+    screen: ScreenInterface;
+}
+
+export class Setup extends SetupItem {
+
+    @observable
+    screen: Screen;
+
+    constructor(source: SetupInterface) {
+        super(source);
+        this.screen = new Screen(source.screen);
+    }
+
+    static createNewBlank(): Setup {
+        return new Setup({ id: 'Setup', parentId: 'Setup', className: 'Setup', screen: { id: 'Screen', parentId: 'Setup', className: 'Screen', children: {} } });
     }
 }
 
@@ -405,9 +464,10 @@ export interface Property {
     options?: Option[];
 }
 
-export const createSetupItem = (plain: SetupItemInterface): Setup | Display | Browser => {
+export const createSetupItem = (plain: SetupItemInterface): Setup | Screen | Display | Browser => {
     switch (plain.className) {
         case 'Setup': return new Setup(plain as SetupInterface);
+        case 'Screen': return new Screen(plain as ScreenInterface);
         case 'Display': return new Display(plain as DisplayInterface);
         case 'Browser': return new Browser(plain as BrowserInterface);
     }
