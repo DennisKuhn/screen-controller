@@ -365,12 +365,12 @@ class Renderer extends ControllerImpl {
 
             item = createSetupItem(itemPlain);
         } else if (id as SetupID == 'Setup') {
-            console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             item = Setup.createNewBlank();
+            console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             this.persist(item);
         } else if (id as ScreenID == 'Screen') {
-            console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             item = Screen.createNewBlank();
+            console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             this.persist(item);
         } else {
             throw new Error(`${this.constructor.name}: load(-> ${id} <-): not found`);
