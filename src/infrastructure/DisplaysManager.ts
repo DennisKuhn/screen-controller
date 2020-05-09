@@ -41,7 +41,7 @@ export default class DisplaysManager {
 
         for (const displayId of DisplaysManager.actualDisplays.keys()) {
             if (!screen.children.has(displayId)) {
-                console.log(`DisplaysManager.checkDisplays: add ${displayId}`);
+                // console.log(`DisplaysManager.checkDisplays: add ${displayId}`);
                 screen.children.set(
                     displayId,
                     Display.createNew(displayId)
@@ -50,7 +50,7 @@ export default class DisplaysManager {
         }
         for (const displayId of screen.children.keys()) {
             if (!DisplaysManager.actualDisplays.has(displayId)) {
-                console.log(`DisplaysManager.checkDisplays: delete ${displayId}`);
+                // console.log(`DisplaysManager.checkDisplays: delete ${displayId}`);
                 screen.children.delete(displayId);
             }
         }

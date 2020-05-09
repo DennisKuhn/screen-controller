@@ -141,16 +141,16 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 const responseItem: SetupItem | undefined = this.tryGetItem(id, depth);
 
                 if (responseItem) {
-                    console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`);
                     if (this.onCached)
                         this.onCached(responseItem, depth);
                     resolve(responseItem);
                 } else {
                     if (this.setupPromises.push({ resolve: resolve, reject: reject, id: id, depth: depth }) == 1) {
-                        console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) process now promises=${this.setupPromises.length}`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) process now promises=${this.setupPromises.length}`);
                         this.processPromise();
                     } else {
-                        console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) wait promises=${this.setupPromises.length}`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) wait promises=${this.setupPromises.length}`);
                     }
                 }
             }
@@ -203,7 +203,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         const { item, connectParent, persist, propagate } = args;
 
         if (!this.configs.has(item.id)) {
-            console.log(`${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
+            // console.log(`${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
             if (connectParent) {
                 const parent = this.configs.get(item.parentId);
                 if (parent && parent instanceof SetupContainer && parent.children.get(item.id) == null) {
@@ -235,7 +235,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     },
                     (update: SetupItemInterface): void => {
                         if (isEqual(update, this.remoteUpdates.get(update.id))) {
-                            console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist skip received=`, update);
+                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist skip received=`, update);
                         } else {
                             fPersist(update);
                         }
@@ -259,7 +259,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     },
                     (update: SetupItemInterface): void => {
                         if (isEqual(update, this.remoteUpdates.get(update.id))) {
-                            console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).propagate skip received=`, update);
+                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).propagate skip received=`, update);
                         } else {
                             fPropagate(update);
                         }
@@ -335,10 +335,10 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         this.addRemoteUpdate(update);
 
         if (localItem) {
-            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`, { ...update });
+            // console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`, { ...update });
             localItem.update(update);
         } else {
-            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`, { ...update });
+            // console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`, { ...update });
             localItem = createSetupItem(update);
             this.connectPersistPropagate({ item: localItem, connectParent: true, persist: false, propagate: false });
         }
@@ -359,7 +359,7 @@ class Renderer extends ControllerImpl {
 
         this.windowId = remote.getCurrentWindow().id;
 
-        console.log(`${this.constructor.name}() ${this.windowId}`);
+        // console.log(`${this.constructor.name}() ${this.windowId}`);
 
         this.ipc.on('change', this.onSetupChanged);
     }
@@ -419,7 +419,7 @@ class Renderer extends ControllerImpl {
         let item: SetupItem;
 
         if (itemString) {
-            console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
+            // console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
 
             const itemPlain: SetupItemInterface = JSON.parse(itemString);
 
@@ -439,12 +439,12 @@ class Renderer extends ControllerImpl {
     }
 
     protected readonly propagate = (item: SetupItemInterface): void => {
-        console.log(`${this.constructor.name}.propapgate(${item.id}) send to main=`, item);
+        // console.log(`${this.constructor.name}.propapgate(${item.id}) send to main=`, item);
         this.ipc.send('change', item);
     }
 
     protected persist = (item: SetupItemInterface): void => {
-        console.log(`${this.constructor.name}.persist(${item.id})`, item);
+        // console.log(`${this.constructor.name}.persist(${item.id})`, item);
 
         localStorage.setItem(item.id, JSON.stringify(item));
     }
@@ -483,17 +483,17 @@ class Paper extends Renderer {
         }
         this.browserId = browserIdArg.split('=')[1];
 
-        console.log(`${this.constructor.name}[${this.browserId}]()`, process.argv);
+        // console.log(`${this.constructor.name}[${this.browserId}]()`, process.argv);
 
         this.getSetup(this.browserId, -1).then(
             browser => {
                 this.browser = browser as Browser;
 
-                console.log(
-                    `${this.constructor.name}[${this.browserId}](): got Browser:` +
-                    ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
-                    ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`
-                );
+                // console.log(
+                //     `${this.constructor.name}[${this.browserId}](): got Browser:` +
+                //     ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
+                //     ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`
+                // );
             }
         );
 
@@ -599,7 +599,7 @@ class MainWindow extends Renderer {
     constructor() {
         super();
 
-        console.log(`${this.constructor.name}()`, process.argv);
+        // console.log(`${this.constructor.name}()`, process.argv);
 
         this.ipc.send('init');
 
@@ -650,8 +650,8 @@ class Main extends ControllerImpl {
         if (existingWindowListeners.length) {
             for (const existingListener of existingWindowListeners) {
                 if (existingListener.itemId == itemId) {
-                    console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-                        `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth}): listening (${existingListener.depth})`);
+                    // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+                    //     `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth}): listening (${existingListener.depth})`);
                     listener = existingListener;
 
                     if (existingListener.depth < depth) {
@@ -663,8 +663,8 @@ class Main extends ControllerImpl {
             }
         }
         if (!listener) {
-            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-                `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth} ): new listener`);
+            // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+            //     `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth} ): new listener`);
             listener = {
                 windowId: windowId,
                 ipc: BrowserWindow.fromId(windowId).webContents,
@@ -683,12 +683,12 @@ class Main extends ControllerImpl {
                 itemOffset += 1, ancestor = this.configs.get(ancestor.parentId)) {
                 if (listener.itemId == ancestor.id) {
                     if (itemOffset >= listenerOffset) {
-                        console.log(`${this.constructor.name}.connectChangeListenerToExisting([${listener.windowId},${listener.itemId},${listener.depth}], ${listenerOffset})` +
-                            ` connect ${item.id} @${listener.depth - itemOffset}`);
+                        // console.log(`${this.constructor.name}.connectChangeListenerToExisting([${listener.windowId},${listener.itemId},${listener.depth}], ${listenerOffset})` +
+                        //     ` connect ${item.id} @${listener.depth - itemOffset}`);
                         this.connectChangeListener(item, listener, false, itemOffset);
                     } else {
-                        console.log(`${this.constructor.name}.connectChangeListenerToExisting([${listener.windowId},${listener.itemId},${listener.depth}], ${listenerOffset})` +
-                            ` already connected ${item.id} @${listener.depth - itemOffset}`);
+                        // console.log(`${this.constructor.name}.connectChangeListenerToExisting([${listener.windowId},${listener.itemId},${listener.depth}], ${listenerOffset})` +
+                        //     ` already connected ${item.id} @${listener.depth - itemOffset}`);
                     }
                     break;
                 }
@@ -704,7 +704,7 @@ class Main extends ControllerImpl {
                 return item.shallow;
             },
             (updatedItem, /*r*/) => {
-                console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
+                // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
                 listener.ipc.send('change', updatedItem, false);
             },
             {
@@ -729,13 +729,13 @@ class Main extends ControllerImpl {
     }
 
     protected onItemConnected = (item: SetupItem, fireImmediately: boolean): void => {
-        console.log(`${this.constructor.name}.onItemConnected(${item.id}) fireImmediately=${fireImmediately}`);
+        // console.log(`${this.constructor.name}.onItemConnected(${item.id}) fireImmediately=${fireImmediately}`);
         this.connectChangeListeners(item, fireImmediately);
     }
 
     private onSetSetup = (e, item: SetupItemInterface): void => {
 
-        console.log(`${this.constructor.name}.onSetSetup: promises=${this.promises.length}` /* , item */);
+        // console.log(`${this.constructor.name}.onSetSetup: promises=${this.promises.length}` /* , item */);
 
         const currentPromise = this.promises[0];
 
@@ -753,7 +753,7 @@ class Main extends ControllerImpl {
     private onInit = (e: IpcMainEvent): void => {
         /// Probably received Setup through register triggered by getting setup
 
-        console.log(`${this.constructor.name}.onInit: sender=${e.sender}`);
+        // console.log(`${this.constructor.name}.onInit: sender=${e.sender}`);
         this.ipcStorage = e.sender;
 
         this.requestPromises();
@@ -783,13 +783,13 @@ class Main extends ControllerImpl {
                     this.promises.push({ id: id, depth: depth, resolve: resolve, reject: reject });
 
                     if (this.ipcStorage) {
-                        console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): requesting promises=${this.promises.length}`);
+                        // console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): requesting promises=${this.promises.length}`);
                         this.requestPromises();
                     } else {
-                        console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): wait for init promises=${this.promises.length}`);
+                        // console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): wait for init promises=${this.promises.length}`);
                     }
                 } else {
-                    console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve` /*, responseItem.getPlainDeep() */);
+                    // console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve` /*, responseItem.getPlainDeep() */);
                     resolve(responseItem);
                 }
                 return responseItem;
@@ -801,7 +801,7 @@ class Main extends ControllerImpl {
     // }
 
     protected persist = (item: SetupItemInterface): void => {
-        console.log(`${this.constructor.name}.persist(${item.id})`, item);
+        // console.log(`${this.constructor.name}.persist(${item.id})`, item);
 
         this.ipcStorage?.send('change', item, true);
     }

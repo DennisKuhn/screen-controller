@@ -90,11 +90,11 @@ class WallpaperWindow extends EventEmitter {
 
 
         if (!isEqual( this.browser.device?.simple, newDevice )) {
-            console.log(
-                `${this.constructor.name}[${this.browser.id}].updateBrowserBounds device` +
-                (this.browser.device ? ` ${this.browser.device.x},${this.browser.device.y} ${this.browser.device.width}*${this.browser.device.height}` : ' noDevice') +
-                ` ${newDevice.x}, ${newDevice.y} ${newDevice.width} * ${newDevice.height}`
-            );
+            // console.log(
+            //     `${this.constructor.name}[${this.browser.id}].updateBrowserBounds device` +
+            //     (this.browser.device ? ` ${this.browser.device.x},${this.browser.device.y} ${this.browser.device.width}*${this.browser.device.height}` : ' noDevice') +
+            //     ` ${newDevice.x}, ${newDevice.y} ${newDevice.width} * ${newDevice.height}`
+            // );
             this.browser.device = Rectangle.createNew(this.browser.id, newDevice);
             changed = true;
         }
@@ -107,11 +107,11 @@ class WallpaperWindow extends EventEmitter {
         };
 
         if (!isEqual(this.browser.scaled?.simple, newScaled)) {
-            console.log(
-                `${this.constructor.name}[${this.browser.id}].updateBrowserBounds scaled` +
-                (this.browser.scaled ? ` ${this.browser.scaled.x},${this.browser.scaled.y} ${this.browser.scaled.width}*${this.browser.scaled.height}` : ' noDevice') +
-                ` ${newScaled.x}, ${newScaled.y} ${newScaled.width} * ${newScaled.height}`
-            );
+            // console.log(
+            //     `${this.constructor.name}[${this.browser.id}].updateBrowserBounds scaled` +
+            //     (this.browser.scaled ? ` ${this.browser.scaled.x},${this.browser.scaled.y} ${this.browser.scaled.width}*${this.browser.scaled.height}` : ' noDevice') +
+            //     ` ${newScaled.x}, ${newScaled.y} ${newScaled.width} * ${newScaled.height}`
+            // );
             this.browser.scaled = Rectangle.createNew(this.browser.id, newScaled);
             changed = true;
         }
@@ -134,15 +134,15 @@ class WallpaperWindow extends EventEmitter {
 
             reaction(
                 (/*r*/) => {
-                    console.log(
-                        `${this.constructor.name}[${this.browser.id}]-updateBounds get` +
-                        ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
+                    // console.log(
+                    //     `${this.constructor.name}[${this.browser.id}]-updateBounds get` +
+                    //     ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
                     return this.browser.relative;
                 },
                 () => {
-                    console.log(
-                        `${this.constructor.name}[${this.browser.id}]-updateBounds set` +
-                        ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
+                    // console.log(
+                    //     `${this.constructor.name}[${this.browser.id}]-updateBounds set` +
+                    //     ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
                     this.updateBrowserBounds();
                     this.fitToDisplay();
                 },
@@ -151,10 +151,10 @@ class WallpaperWindow extends EventEmitter {
                     fireImmediately: true,
                     equals: (a, b) => {
                         const result = a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
-                        console.log(
-                            `${this.constructor.name}[${this.browser.id}]-updateBounds test ${result}=` +
-                            ` ${a.x},${a.y} ${a.width}*${a.height} =?= ${b.x},${b.y} ${b.width}*${b.height}`
-                        );
+                        // console.log(
+                        //     `${this.constructor.name}[${this.browser.id}]-updateBounds test ${result}=` +
+                        //     ` ${a.x},${a.y} ${a.width}*${a.height} =?= ${b.x},${b.y} ${b.width}*${b.height}`
+                        // );
 
                         return result;
                     }

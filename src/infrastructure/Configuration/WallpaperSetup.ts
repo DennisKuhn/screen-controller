@@ -375,20 +375,20 @@ export class Browser extends SetupItem implements BrowserInterface {
     @action
     update(update: BrowserInterface): void {
         if (!isEqual(this.relative.deep, update.relative)) {
-            console.log(`${this.constructor.name}[${this.id}].update(): relative`, { ...this.relative.deep }, { ...update.relative });
+            // console.log(`${this.constructor.name}[${this.id}].update(): relative`, { ...this.relative.deep }, { ...update.relative });
 
             this.relative = new Rectangle(update.relative);
         }
         if (update.device) {
             if (!isEqual(this.device?.deep, update.device)) {
-                console.log(`${this.constructor.name}[${this.id}].update(): device`, { ...this.device?.deep }, { ...update.device });
+                // console.log(`${this.constructor.name}[${this.id}].update(): device`, { ...this.device?.deep }, { ...update.device });
 
                 this.device = new Rectangle(update.device);
             }
         }
         if (update.scaled) {
             if (!isEqual(this.scaled?.deep, update.scaled)) {
-                console.log(`${this.constructor.name}[${this.id}].update(): scaled`, { ...this.scaled?.deep }, { ...update.scaled });
+                // console.log(`${this.constructor.name}[${this.id}].update(): scaled`, { ...this.scaled?.deep }, { ...update.scaled });
 
                 this.scaled = new Rectangle(update.scaled);
             }

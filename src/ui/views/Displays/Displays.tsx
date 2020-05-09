@@ -67,7 +67,7 @@ const DisplayCard = observer(({ config, specs }: { config: Display; specs: Elect
 });
 
 const DisplayContainer = observer(({ displays }: { displays: DisplayMap }): JSX.Element => {
-    console.log(`Displays.tsx: Electron is ready=${remote.app.isReady()}`);
+    // console.log(`Displays.tsx: DisplayContainer ready=${remote.app.isReady()}`);
 
     const electronDisplays = remote.screen.getAllDisplays().reduce((result, display) => {
         result[display.id] = display;
