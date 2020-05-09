@@ -2,9 +2,21 @@ import { IMapDidChange, reaction, autorun } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
 import {
-    Setup, Properties, Display, Browser, SetupInterface, SetupItem, createSetupItem, SetupItemInterface, SetupContainer, SetupID, SetupItemId, Screen, ScreenID
+    Setup,
+    Properties,
+    Browser,
+    SetupInterface,
+    SetupItem,
+    createSetupItem,
+    SetupItemInterface,
+    SetupContainer,
+    SetupID,
+    SetupItemId,
+    Screen,
+    ScreenID,
+    SetupContainerInterface
 } from './WallpaperSetup';
-
+import { isEqual } from 'lodash';
 import DefaultConfig from '../../wallpaper/project.json';
 
 
@@ -24,7 +36,7 @@ interface IpcRenderer extends electron.IpcRenderer {
     send(channel: SetSetupChannel, args: SetupItemInterface): void;
 
     /// From IpcWindow.send
-    on(channel: ChangeChannel, listener: (event: IpcRendererEvent, update: SetupItemInterface) => void): this;
+    on(channel: ChangeChannel, listener: (event: IpcRendererEvent, update: SetupItemInterface, persist: boolean) => void): this;
 
     on(channel: GetSetupChannel, listener: (event: IpcRendererEvent, id: SetupItemId, depth: number) => void): void;
 }
@@ -43,7 +55,7 @@ interface IpcWindow extends electron.WebContents {
     // send(channel: ChangeChannel, args: IpcDeleteArgs, persist?: boolean): void;
     // send(channel: ChangeChannel, args: IpcUpdateBrowserArgs, persist?: boolean): void;
     send(channel: GetSetupChannel, id: SetupItemId, depth: number): void;
-    send(channel: ChangeChannel, update: SetupItemInterface): void;
+    send(channel: ChangeChannel, update: SetupItemInterface, persist: boolean): void;
 }
 
 interface IpcRegisterArgs {
@@ -71,6 +83,13 @@ interface SetupPromise {
     depth: number;
     resolve: (setup: SetupItem) => void;
     reject: (reason: string) => void;
+}
+
+interface ConnectItemArgs {
+    item: SetupItem;
+    connectParent: boolean;
+    persist: boolean;
+    propagate: boolean;
 }
 
 /**
@@ -169,7 +188,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             // console.log(`ControllerImpl[${this.constructor.name}].processPromise(${oldestPromise.id}, ${oldestPromise.depth}) 1/${this.setupPromises.length} ...`);
 
             const tree = await this.getTree(id, depth);
-            this.connectItem(tree, true, false);
+            this.connectPersistPropagate({ item: tree, connectParent: true, persist: false, propagate: false });
             // console.log(`... ControllerImpl[${this.constructor.name}].processPromise(${oldestPromise.id}, ${oldestPromise.depth}) resolve 1/${this.setupPromises.length}`);
             resolve(tree);
             this.setupPromises.splice(0, 1);
@@ -179,56 +198,76 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
     protected onItemConnected: ((item: SetupItem, newItem: boolean) => void) | undefined;
 
-    protected connectItem(item: SetupItem, connectParent: boolean, newItem: boolean): void {
+
+    protected connectPersistPropagate(args: ConnectItemArgs): void {
+        const { item, connectParent, persist, propagate } = args;
 
         if (!this.configs.has(item.id)) {
-            console.log(`${this.constructor.name}.connectItem(${item.className}[${item.id}], ${connectParent}, ${newItem})`);
+            console.log(`${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
             if (connectParent) {
                 const parent = this.configs.get(item.parentId);
                 if (parent && parent instanceof SetupContainer && parent.children.get(item.id) == null) {
-                    // console.log(`${this.constructor.name}.connectItem(${item.className}[${item.id}], ${connectParent}, ${newItem}) to ${parent.className}[${parent.id}]`);
+                    // console.log(`${this.constructor.name}.connectPersistPropagate(${item.className}[${item.id}], ${connectParent}, ${newItem})` + 
+                    // ` to ${parent.className}[${parent.id}]`);
                     parent.children.set(item.id, item);
                 }
             }
-            // console.log(`${this.constructor.name}.connectItem(${item.id}, ${persist})`);
+            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}, ${persist})`);
 
             this.configs.set(item.id, item);
 
             // register properties like screen, rectangles, 
-            for (const value of Object.values(item)) {
-                if (value instanceof SetupItem) {
-                    console.log(`${this.constructor.name}.connectItem(${item.className}[${item.id}], ${connectParent}, ${newItem}) add property ${value.className}[${value.id}]`);
-                    this.connectItem(value, false, newItem);
-                }
-            }
+            // for (const value of Object.values(item)) {
+            //     if (value instanceof SetupItem) {
+            //         console.log(`${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent},` + `
+            //             persist = ${ persist }, propagate = ${ propagate }) add property ${value.className}[${value.id}]`);
+            //         this.connectPersistPropagate({ ...args, item: value });
+            //     }
+            // }
 
             if (this.persist) {
-                // console.log(`${this.constructor.name}.connectItem(${item.id}) persist fireImmediately=${persist}`);
+                const fPersist = this.persist;
+                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}) persist fireImmediately=${persist}`);
                 reaction(
                     () => {
-                        // console.log(`${this.constructor.name}.connectItem(${item.id}).persist.expression= `, item.getPlainFlat());
-                        return item.getPlainFlat();
+                        // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist.expression= `, item.shallow);
+                        return item.shallow;
                     },
-                    this.persist,
+                    (update: SetupItemInterface): void => {
+                        if (isEqual(update, this.remoteUpdates.get(update.id))) {
+                            console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist skip received=`, update);
+                        } else {
+                            fPersist(update);
+                        }
+                    },
                     {
                         name: `${this.constructor.name}[${item.id}].persist`,
                         delay: 5000,
-                        fireImmediately: newItem
+                        fireImmediately: persist
                     }
                 );
             }
 
             if (this.propagate) {
-                // console.log(`${this.constructor.name}.connectItem(${item.id}) popagate`);
+                const fPropagate = this.propagate;
+
+                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}) popagate`);
                 reaction(
                     () => {
-                        // console.log(`${this.constructor.name}.connectItem(${item.id}).propagate.expression=`, item.getPlainFlat());
-                        return item.getPlainFlat();
+                        // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).propagate.expression=`, item.shallow);
+                        return item.shallow;
                     },
-                    this.propagate,
+                    (update: SetupItemInterface): void => {
+                        if (isEqual(update, this.remoteUpdates.get(update.id))) {
+                            console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).propagate skip received=`, update);
+                        } else {
+                            fPropagate(update);
+                        }
+                    },
                     {
                         name: `${this.constructor.name}[${item.id}].propagate`,
-                        delay: 1
+                        delay: 1,
+                        fireImmediately: propagate
                     }
                 );
             }
@@ -237,15 +276,15 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 item.children.observe(this.onMapChange);
             }
             if (this.onItemConnected) {
-                this.onItemConnected(item, newItem);
+                this.onItemConnected(item, propagate);
             }
         } else {
-            // console.log(`${this.constructor.name}.connectItem(${item.id}) skip already connected`);
+            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}) skip already connected`);
         }
         if (item instanceof SetupContainer) {
             for (const child of item.children.values()) {
                 if (child) {
-                    this.connectItem(child, false, newItem);
+                    this.connectPersistPropagate({ ...args, item: child, connectParent: false, propagate: false });
                 }
             }
         }
@@ -256,7 +295,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         switch (changes.type) {
             case 'add':
                 if (changes.newValue) {
-                    this.connectItem(changes.newValue, false, true);
+                    this.connectPersistPropagate({ item: changes.newValue, connectParent: false, persist: true, propagate: true });
                 }
                 break;
             case 'delete':
@@ -269,21 +308,42 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
     protected abstract getSetupImpl(id: string, depth: number): Promise<SetupItem>;
 
-    protected propagate: ((item: SetupItemInterface) => void) | undefined;
+    protected readonly propagate: ((item: SetupItemInterface) => void) | undefined;
 
     protected persist: ((item: SetupItemInterface) => void) | undefined;
 
-    onSetupChanged = (e, update: SetupItemInterface): void => {
+    private remoteUpdates: Map<string, SetupItemInterface> = new Map<string, SetupItemInterface>();
+
+    private addRemoteUpdate(item: SetupItemInterface): void {
+        this.remoteUpdates.set(item.id, item);
+
+        const children = (item as SetupContainerInterface<SetupItemInterface>).children;
+
+        if (children) {
+            for (const child of Object.values(children)) {
+                if (child)
+                    this.addRemoteUpdate(child);
+            }
+        }
+    }
+
+    onSetupChanged = (e: Event, update: SetupItemInterface, persist?: boolean): void => {
         // console.log(`${this.constructor.name}.onSetupChanged(${update.className}[${update.id}]):`);
         let localItem = this.configs.get(update.id);
+        const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
+
+        this.addRemoteUpdate(update);
 
         if (localItem) {
-            console.log(`${this.constructor.name}.onSetupChanged: ${update.className}[${update.id}] update`, { ...update });
+            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`, { ...update });
             localItem.update(update);
         } else {
-            // console.log(`${this.constructor.name}.processSetupChange: ${update.className}[${update.id}] create`, { ...update });
+            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`, { ...update });
             localItem = createSetupItem(update);
-            this.connectItem(localItem, true, true);
+            this.connectPersistPropagate({ item: localItem, connectParent: true, persist: false, propagate: false });
+        }
+        if (this.persist && persist) {
+            this.persist(update);
         }
     }
 }
@@ -353,10 +413,10 @@ class Renderer extends ControllerImpl {
         return item;
     }
 
-    private load(id: string): Setup | Display | Browser | Screen {
+    private load(id: string): SetupItem {
         // console.log(`${this.constructor.name}: load(${id})`);
         const itemString = localStorage.getItem(id);
-        let item: Setup | Display | Browser | Screen;
+        let item: SetupItem;
 
         if (itemString) {
             console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
@@ -378,7 +438,7 @@ class Renderer extends ControllerImpl {
         return item;
     }
 
-    protected propagate = (item: SetupItemInterface): void => {
+    protected readonly propagate = (item: SetupItemInterface): void => {
         console.log(`${this.constructor.name}.propapgate(${item.id}) send to main=`, item);
         this.ipc.send('change', item);
     }
@@ -549,7 +609,7 @@ class MainWindow extends Renderer {
     onGetSetup = async (e, id: string, depth: number): Promise<void> => {
         this.ipc.send(
             'setsetup',
-            (await this.getSetup(id, depth)).getPlainDeep()
+            (await this.getSetup(id, depth)).deep
         );
     }
 }
@@ -585,24 +645,26 @@ class Main extends ControllerImpl {
     private onRegister = (e: IpcMainEvent, { windowId, itemId, depth }: IpcRegisterArgs): void => {
         const existingWindowListeners = this.changeListeners.filter(listener => listener.windowId == windowId);
         let listener: ChangeListener | undefined;
+        let offset = 0;
 
         if (existingWindowListeners.length) {
             for (const existingListener of existingWindowListeners) {
                 if (existingListener.itemId == itemId) {
-                    console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}](${windowId}, ${itemId}, ${depth} ): listening (${existingListener.depth})`);
+                    console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+                        `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth}): listening (${existingListener.depth})`);
                     listener = existingListener;
 
                     if (existingListener.depth < depth) {
+                        offset = existingListener.depth;
                         existingListener.depth = depth;
                     }
                     break;
-                } else {
-                    // console.error(`${this.constructor.name}.register(${windowId}, ${item.id}, ${depth} ): Implement checking for children with depth`);
                 }
             }
         }
         if (!listener) {
-            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}](${windowId}, ${itemId}, ${depth} ): new listener`);
+            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+                `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth} ): new listener`);
             listener = {
                 windowId: windowId,
                 ipc: BrowserWindow.fromId(windowId).webContents,
@@ -611,43 +673,64 @@ class Main extends ControllerImpl {
             };
             this.changeListeners.push(listener);
         }
+        this.connectChangeListenerToExisting(listener, offset);
     }
 
-
-    private connectListener(item: SetupItem, listener: ChangeListener, fireImmediately: boolean, offset = 0): void {
-        // console.log(`${this.constructor.name}.connectListener[${listener.windowId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
-        reaction(
-            (/*r*/) => {
-                // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].expression ${item.id}@${listener.depth-offset}`);
-                return item.getPlainFlat();
-            },
-            (updatedItem, /*r*/) => {
-                console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
-                listener.ipc.send('change', updatedItem);
-            },
-            {
-                name: `changeListener[${listener.windowId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`,
-                fireImmediately: fireImmediately
-            }
-        );
-    }
-
-    private connectListeners(item: SetupItem, fireImmediately: boolean): void {
-        // console.log(`${this.constructor.name}.connectListeners[${this.changeListeners.length}](${item.id},${fireImmediately})`);
-        for (const listener of this.changeListeners) {
-            /// Check if ancestor in within depth is listening
-            for (let offset = 0, ancestor: SetupItem | undefined = item; (offset <= listener.depth) && (ancestor); offset += 1, ancestor = this.configs.get(ancestor.parentId)) {
+    connectChangeListenerToExisting(listener: ChangeListener, listenerOffset: number): void {
+        for (const item of this.configs.values()) {
+            for (let itemOffset = 0, ancestor: SetupItem | undefined = item;
+                ((listener.depth == -1) || (itemOffset <= listener.depth)) && (ancestor);
+                itemOffset += 1, ancestor = this.configs.get(ancestor.parentId)) {
                 if (listener.itemId == ancestor.id) {
-                    this.connectListener(item, listener, fireImmediately, offset);
+                    if (itemOffset >= listenerOffset) {
+                        console.log(`${this.constructor.name}.connectChangeListenerToExisting([${listener.windowId},${listener.itemId},${listener.depth}], ${listenerOffset})` +
+                            ` connect ${item.id} @${listener.depth - itemOffset}`);
+                        this.connectChangeListener(item, listener, false, itemOffset);
+                    } else {
+                        console.log(`${this.constructor.name}.connectChangeListenerToExisting([${listener.windowId},${listener.itemId},${listener.depth}], ${listenerOffset})` +
+                            ` already connected ${item.id} @${listener.depth - itemOffset}`);
+                    }
                     break;
                 }
             }
         }
     }
 
-    protected onItemConnected = (item: SetupItem, newItem: boolean): void => {
-        console.log(`${this.constructor.name}.onItemConnected(${item.id})`);
-        this.connectListeners(item, newItem);
+    private connectChangeListener(item: SetupItem, listener: ChangeListener, fireImmediately: boolean, offset = 0): void {
+        // console.log(`${this.constructor.name}.connectChangeListener[${listener.windowId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
+        reaction(
+            (/*r*/) => {
+                // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].expression ${item.id}@${listener.depth-offset}`);
+                return item.shallow;
+            },
+            (updatedItem, /*r*/) => {
+                console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
+                listener.ipc.send('change', updatedItem, false);
+            },
+            {
+                name: `changeListener[${listener.windowId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`,
+                fireImmediately: fireImmediately,
+                delay: 1
+            }
+        );
+    }
+
+    private connectChangeListeners(item: SetupItem, fireImmediately: boolean): void {
+        // console.log(`${this.constructor.name}.connectChangeListeners[${this.changeListeners.length}](${item.id},${fireImmediately})`);
+        for (const listener of this.changeListeners) {
+            /// Check if ancestor in within depth is listening
+            for (let offset = 0, ancestor: SetupItem | undefined = item; (offset <= listener.depth) && (ancestor); offset += 1, ancestor = this.configs.get(ancestor.parentId)) {
+                if (listener.itemId == ancestor.id) {
+                    this.connectChangeListener(item, listener, fireImmediately, offset);
+                    break;
+                }
+            }
+        }
+    }
+
+    protected onItemConnected = (item: SetupItem, fireImmediately: boolean): void => {
+        console.log(`${this.constructor.name}.onItemConnected(${item.id}) fireImmediately=${fireImmediately}`);
+        this.connectChangeListeners(item, fireImmediately);
     }
 
     private onSetSetup = (e, item: SetupItemInterface): void => {
@@ -711,6 +794,16 @@ class Main extends ControllerImpl {
                 }
                 return responseItem;
             });
+    }
+
+    // protected readonly propagate = (item: SetupItemInterface): void => {
+    //     console.log(`${this.constructor.name}.propapgate(${item.id})`, item);
+    // }
+
+    protected persist = (item: SetupItemInterface): void => {
+        console.log(`${this.constructor.name}.persist(${item.id})`, item);
+
+        this.ipcStorage?.send('change', item, true);
     }
 }
 

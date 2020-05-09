@@ -15,37 +15,27 @@ import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
 import controller from '../../../infrastructure/Configuration/Controller';
-import { BrowserMap, Browser, Rectangle, Setup } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { BrowserMap, Browser, Rectangle, Display } from '../../../infrastructure/Configuration/WallpaperSetup';
 
 const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
 
     const [configVisible, setConfigVisible] = useState(false);
 
     function deleteBrowser(): void {
-        controller.getSetup('Setup', 3).then(
-            setup => {
-                for (const display of (setup as Setup).children.values()) {
-                    if (display?.children.has(browser.id)) {
-                        console.log(`${display.id}.Row[${browser.id}].deleteBrowser`);
-                        display.children.delete(browser.id);
-                        return;
-                    }
-                }
-                throw new Error(`Row[${browser.id}].deleteBrowser can not find display`);
-            }
+        controller.getSetup(browser.parentId, 0).then(
+            display => (display as Display).children.delete(browser.id)
         );
     }
 
     function toggleFullScreen(): void {
         const newFullScreen = !(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1);
 
-        browser.relative = new Rectangle({
-            ...browser.relative,
-            ...(newFullScreen ?
+        browser.relative = Rectangle.createNew(
+            browser.id,
+            newFullScreen ?
                 { x: 0, y: 0, width: 1, height: 1 } :
                 { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
-            )
-        });
+        );
     }
 
     function toggleConfigVisible(): void {
@@ -112,8 +102,8 @@ const Browsers = observer(({ browsers }: { browsers: BrowserMap }): JSX.Element 
     return (
         <Table>
             <TableBody>
-                {browsers.map(browser =>
-                    <Row key={browser.id} browser={browser} />)}
+                {browsers.map(browser => browser).filter(browser => browser != undefined).map(browser =>
+                    <Row key={(browser as Browser).id} browser={(browser as Browser)} />)}
             </TableBody>
         </Table>
     );

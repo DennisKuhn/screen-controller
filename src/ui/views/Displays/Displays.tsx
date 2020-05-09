@@ -16,43 +16,24 @@ import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 
-import { Setup, Display, Browser, DisplayMap } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { Screen, Display, Browser, DisplayMap } from '../../../infrastructure/Configuration/WallpaperSetup';
 import { remote } from 'electron';
 import Browsers from './Browsers';
 import controller from '../../../infrastructure/Configuration/Controller';
-import { observable } from 'mobx';
+import { observer } from 'mobx-react-lite';
 
-function DisplayCard({ config, specs }: { config: Display; specs: Electron.Display }): JSX.Element {
+const DisplayCard = observer(({ config, specs }: { config: Display; specs: Electron.Display }): JSX.Element => {
 
     function addPaper(): void {
-        controller.getSetup(false).then(
-            setup => {
-                let newBrowserId = 0;
-                const ids: string[] = new Array<string>();
-
-                for (const display of setup.displays.values())
-                    for (const browserId of display.browsers.keys())
-                        ids.push(browserId);
-
-                while (ids.indexOf(newBrowserId.toFixed()) >= 0) {
-                    newBrowserId += 1;
-                }
-                console.log(`DisplayCard[${config.id}].addPaper: id=${newBrowserId}`);
-                config.browsers.set(
-                    newBrowserId.toFixed(),
-                    observable(
-                        new Browser({
-                            id: newBrowserId.toFixed(),
-                            relative: {
-                                x: 0,
-                                y: 0,
-                                height: 1,
-                                width: 1
-                            }
-                        })
-                    )
-                );
-            }
+        const newBrowser = Browser.createNew(config.id, {
+            x: 0,
+            y: 0,
+            height: 1,
+            width: 1
+        });
+        config.children.set(
+            newBrowser.id,
+            newBrowser
         );
     }
     //xs, sm, md, lg, and xl
@@ -76,40 +57,43 @@ function DisplayCard({ config, specs }: { config: Display; specs: Electron.Displ
                 </Tooltip>
             </CardHeader>
             <CardBody>
-                <Browsers browsers={config.browsers} />
+                <Browsers browsers={config.children} />
             </CardBody>
             <CardFooter stats={true}>
                 <p>{config.id} - {specs.scaleFactor}* {specs.workArea.width} x {specs.workArea.height}</p>
             </CardFooter>
         </Card>
     </GridItem>;
-}
+});
 
-function DisplayContainer({ displays }: { displays: DisplayMap }): JSX.Element {
+const DisplayContainer = observer(({ displays }: { displays: DisplayMap }): JSX.Element => {
     console.log(`Displays.tsx: Electron is ready=${remote.app.isReady()}`);
 
     const electronDisplays = remote.screen.getAllDisplays().reduce((result, display) => {
         result[display.id] = display;
         return result;
     }, {});
+
     return <GridContainer>
         {
-            displays.map(
+            displays.map(display => display).filter(display => display != undefined).map((display) => display as Display).map(
                 display => <DisplayCard key={display.id} config={display} specs={electronDisplays[display.id]} />
             )
         }
     </GridContainer>;
-}
+});
 
 
 // export default function DisplaysPage(): JSX.Element {
-export default function DisplaysPage(): JSX.Element {
-    const [setup, setSetup] = useState(new Setup());
+const DisplaysPage = observer((): JSX.Element => {
+    const [displays, setDisplays] = useState(new DisplayMap());
 
     useEffect(() => {
-        controller.getSetup(false)
-            .then(setup => setSetup(setup));
+        controller.getSetup('Screen', 2)
+            .then(screen => setDisplays((screen as Screen).children));
     }, []);
 
-    return <DisplayContainer displays={setup.displays} />;
-}
+    return <DisplayContainer displays={displays} />;
+});
+
+export default DisplaysPage;

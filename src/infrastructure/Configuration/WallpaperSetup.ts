@@ -77,12 +77,16 @@ export abstract class SetupItem {
      *   };
      * }
      */
-    getPlainFlat(): SetupItemInterface {
+    get shallow(): SetupItemInterface {
         return { id: this.id, parentId: this.parentId, className: this.className };
     }
 
-    getPlainDeep(): SetupItemInterface {
+    get deep(): SetupItemInterface {
         return { id: this.id, parentId: this.parentId, className: this.className };
+    }
+
+    plain(reqdepth: number): SetupItemInterface {
+        return this.shallow;
     }
 
     update(update: SetupItemInterface): void {
@@ -100,18 +104,7 @@ export abstract class SetupItem {
     static usedIDs = new Array<string>();
 
     public getNewId(): string {
-        let id = 0;
-        return SetupItem.usedIDs.reduce(
-            (result: string, usedId: string): string => {
-                const parts = usedId.split('-');
-
-                if ((parts.length == 2) && (parts[0] == this.constructor.name)) {
-                    const usedIdNumber = Number(parts[1]);
-                    id = usedIdNumber >= id ? usedIdNumber + 1 : id;
-                }
-                return `${this.constructor.name}-${id}`;
-            }
-        );
+        return SetupItem.getNewId(this.constructor.name);
     }
 
     public static getNewId(className: string): string {
@@ -128,7 +121,6 @@ export abstract class SetupItem {
             }
         );
     }
-
 }
 
 export abstract class SetupContainer<ChildType extends SetupItem, ChildInterface extends SetupItemInterface> extends SetupItem {
@@ -170,22 +162,36 @@ export abstract class SetupContainer<ChildType extends SetupItem, ChildInterface
     }
 
     // @computed
-    getPlainDeep(): SetupContainerInterface<ChildInterface> {
-        const plainObject: SetupContainerInterface<ChildInterface> = { ...super.getPlainDeep(), children: {} };
+    get deep(): SetupContainerInterface<ChildInterface> {
+        const plainObject: SetupContainerInterface<ChildInterface> = { ...super.deep, children: {} };
 
         for (const [id, child] of this.children.entries()) {
-            plainObject.children[id] = child?.getPlainDeep() as ChildInterface;
+            plainObject.children[id] = child?.deep as ChildInterface;
         }
 
         return plainObject;
     }
 
     // @computed
-    getPlainFlat(): SetupContainerInterface<ChildInterface> {
-        const plainObject: SetupContainerInterface<ChildInterface> = { ...super.getPlainFlat(), children: {} };
+    get shallow(): SetupContainerInterface<ChildInterface> {
+        const plainObject: SetupContainerInterface<ChildInterface> = { ...super.shallow, children: {} };
 
         for (const id of this.children.keys()) {
             plainObject.children[id] = null;
+        }
+
+        return plainObject;
+    }
+
+    plain(depth: number): SetupItemInterface {
+        const plainObject: SetupContainerInterface<ChildInterface> = { ...super.plain(depth), children: {} };
+
+        for (const [id, child] of this.children.entries()) {
+            if (depth != 0) {
+                plainObject.children[id] = child?.plain(depth - 1) as ChildInterface;
+            } else {
+                plainObject.children[id] = null;
+            }
         }
 
         return plainObject;
@@ -227,9 +233,9 @@ export class Rectangle extends SetupItem implements RectangleInterface {
     }
 
     // @computed
-    getPlainDeep(): RectangleInterface {
+    get deep(): RectangleInterface {
         return {
-            ... super.getPlainDeep() as RectangleInterface,
+            ... super.deep as RectangleInterface,
             x: this.x,
             y: this.y,
             width: this.width,
@@ -238,9 +244,27 @@ export class Rectangle extends SetupItem implements RectangleInterface {
     }
 
     // @computed
-    getPlainFlat(): RectangleInterface {
+    get shallow(): RectangleInterface {
         return {
-            ... super.getPlainFlat() as RectangleInterface,
+            ... super.shallow as RectangleInterface,
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height
+        };
+    }
+
+    plain(depth: number): SetupItemInterface {
+        if (depth == 0) {
+            return this.shallow;
+        } else {
+            return this.deep;
+        }
+    }
+
+
+    get simple(): SimpleRectangle {
+        return {
             x: this.x,
             y: this.y,
             width: this.width,
@@ -257,10 +281,27 @@ export class Rectangle extends SetupItem implements RectangleInterface {
         if (this.width != update.width) this.width = update.width;
         if (this.height != update.height) this.height = update.height;
     }
+
+    static createNew(parentId: SetupItemId, source: SimpleRectangle): Rectangle {
+
+        return new Rectangle({
+            id: SetupItem.getNewId('Rectangle'),
+            parentId: parentId,
+            className: 'Rectangle',
+            ...source
+        });
+    }
+}
+
+export interface SimpleRectangle {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 }
 
 export interface BrowserInterface extends SetupItemInterface {
-    className: 'Browser';
+    readonly className: 'Browser';
 
     /**
      * Relative to display
@@ -282,7 +323,7 @@ export interface BrowserInterface extends SetupItemInterface {
 
 export class Browser extends SetupItem implements BrowserInterface {
 
-    className: 'Browser' = 'Browser';
+    readonly className: 'Browser' = 'Browser';
 
     @observable relative: Rectangle;
     @observable scaled?: Rectangle;
@@ -302,51 +343,59 @@ export class Browser extends SetupItem implements BrowserInterface {
     }
 
     // @computed
-    getPlainDeep(): BrowserInterface {
+    get deep(): BrowserInterface {
         return {
-            ... super.getPlainDeep() as BrowserInterface,
-            relative: this.relative.getPlainDeep(),
-            scaled: this.scaled?.getPlainDeep(),
-            device: this.device?.getPlainDeep(),
+            ... super.deep as BrowserInterface,
+            relative: this.relative.deep,
+            scaled: this.scaled?.deep,
+            device: this.device?.deep,
             config: this.config,
         };
     }
 
     // @computed
-    getPlainFlat(): BrowserInterface {
+    get shallow(): BrowserInterface {
         return {
-            ... super.getPlainFlat() as BrowserInterface,
-            relative: this.relative.getPlainFlat(),
-            scaled: this.scaled?.getPlainFlat(),
-            device: this.device?.getPlainFlat(),
+            ... super.shallow as BrowserInterface,
+            relative: this.relative.shallow,
+            scaled: this.scaled?.shallow,
+            device: this.device?.shallow,
             config: this.config,
         };
     }
 
+    plain(depth: number): SetupItemInterface {
+        if (depth == 0) {
+            return this.shallow;
+        } else {
+            return this.deep;
+        }
+    }    
+    
     @action
     update(update: BrowserInterface): void {
-        if (!isEqual(this.relative.getPlainDeep(), update.relative)) {
-            console.log(`${this.constructor.name}[${this.id}].update(): relative`, { ...this.relative.getPlainDeep() }, { ...update.relative });
+        if (!isEqual(this.relative.deep, update.relative)) {
+            console.log(`${this.constructor.name}[${this.id}].update(): relative`, { ...this.relative.deep }, { ...update.relative });
 
             this.relative = new Rectangle(update.relative);
         }
         if (update.device) {
-            if (!isEqual(this.device?.getPlainDeep(), update.device)) {
-                console.log(`${this.constructor.name}[${this.id}].update(): device`, { ...this.device?.getPlainDeep() }, { ...update.device });
+            if (!isEqual(this.device?.deep, update.device)) {
+                console.log(`${this.constructor.name}[${this.id}].update(): device`, { ...this.device?.deep }, { ...update.device });
 
                 this.device = new Rectangle(update.device);
             }
         }
         if (update.scaled) {
-            if (!isEqual(this.scaled?.getPlainDeep(), update.scaled)) {
-                console.log(`${this.constructor.name}[${this.id}].update(): scaled`, { ...this.scaled?.getPlainDeep() }, { ...update.scaled });
+            if (!isEqual(this.scaled?.deep, update.scaled)) {
+                console.log(`${this.constructor.name}[${this.id}].update(): scaled`, { ...this.scaled?.deep }, { ...update.scaled });
 
                 this.scaled = new Rectangle(update.scaled);
             }
         }
     }
 
-    static createNew(parentId: SetupItemId, relative: { x: number; y: number; width: number; height: number } ): Browser {
+    static createNew(parentId: SetupItemId, relative: SimpleRectangle ): Browser {
         const newID = SetupItem.getNewId('Browser');
         return new Browser({
             id: newID,
@@ -354,13 +403,12 @@ export class Browser extends SetupItem implements BrowserInterface {
             className: 'Browser',
             relative: {
                 className: 'Rectangle',
-                id: SetupItem.getNewId('Rectangle'),
                 parentId: newID,
+                id: SetupItem.getNewId('Rectangle'),
                 ...relative
             }
         });
     }
-
 }
 
 export interface DisplayInterface extends SetupContainerInterface<BrowserInterface> {
@@ -429,6 +477,33 @@ export class Setup extends SetupItem {
     static createNewBlank(): Setup {
         return new Setup({ id: 'Setup', parentId: 'Setup', className: 'Setup', screen: { id: 'Screen', parentId: 'Setup', className: 'Screen', children: {} } });
     }
+
+    // @computed
+    get deep(): SetupInterface {
+        return {
+            ... super.deep as SetupInterface,
+            screen: this.screen.deep as ScreenInterface
+        };
+    }
+
+    // @computed
+    get shallow(): SetupInterface {
+        return {
+            ... super.shallow as SetupInterface,
+            screen: this.screen.shallow as ScreenInterface
+        };
+    }
+
+    plain(depth: number): SetupInterface {
+        if (depth == 0) {
+            return this.shallow;
+        } else {
+            return {
+                ... super.deep as SetupInterface,
+                screen: this.screen.plain(depth - 1) as ScreenInterface
+            };
+        }
+    }
 }
 
 export interface Config {
@@ -464,12 +539,13 @@ export interface Property {
     options?: Option[];
 }
 
-export const createSetupItem = (plain: SetupItemInterface): Setup | Screen | Display | Browser => {
+export const createSetupItem = (plain: SetupItemInterface): SetupItem => {
     switch (plain.className) {
         case 'Setup': return new Setup(plain as SetupInterface);
         case 'Screen': return new Screen(plain as ScreenInterface);
         case 'Display': return new Display(plain as DisplayInterface);
         case 'Browser': return new Browser(plain as BrowserInterface);
+        case 'Rectangle': return new Rectangle(plain as RectangleInterface);
     }
     throw new Error(`createSetupItem( -> ${plain.className} <-, ${JSON.stringify(plain)}) unkown className`);
 };

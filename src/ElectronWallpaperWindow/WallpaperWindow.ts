@@ -2,8 +2,8 @@ import { Rectangle as ElectronRectangle, BrowserWindow, BrowserWindowConstructor
 import nodeWinWallpaper from 'node-win-wallpaper';
 import ScreenBounds, { DisplayBounds } from './ScreenBounds';
 import { EventEmitter } from 'events';
-import { Browser, Rectangle, RectangleInterface, SetupItem } from '../infrastructure/Configuration/WallpaperSetup';
-import { autorun, reaction } from 'mobx';
+import { Browser, Rectangle, SimpleRectangle } from '../infrastructure/Configuration/WallpaperSetup';
+import { reaction } from 'mobx';
 import { isEqual } from 'lodash';
 
 interface WallpaperWindowConstructorOptions extends BrowserWindowConstructorOptions {
@@ -81,41 +81,38 @@ class WallpaperWindow extends EventEmitter {
     private updateBrowserBounds(): boolean {
         let changed = false;
 
-        const newDevice: RectangleInterface = {
-            id: this.browser.device?.id ?? SetupItem.getNewId('Rectangle'),
-            className: 'Rectangle',
+        const newDevice: SimpleRectangle = {
             x: this.displayBounds.x + (this.browser.relative.x * this.displayBounds.width),
             y: this.displayBounds.y + (this.browser.relative.y * this.displayBounds.height),
             width: this.browser.relative.width * this.displayBounds.width,
             height: this.browser.relative.height * this.displayBounds.height
         };
 
-        if (!isEqual(this.browser.device?.getPlainFlat(), newDevice)) {
+
+        if (!isEqual( this.browser.device?.simple, newDevice )) {
             console.log(
                 `${this.constructor.name}[${this.browser.id}].updateBrowserBounds device` +
                 (this.browser.device ? ` ${this.browser.device.x},${this.browser.device.y} ${this.browser.device.width}*${this.browser.device.height}` : ' noDevice') +
                 ` ${newDevice.x}, ${newDevice.y} ${newDevice.width} * ${newDevice.height}`
             );
-            this.browser.device = new Rectangle(newDevice);
+            this.browser.device = Rectangle.createNew(this.browser.id, newDevice);
             changed = true;
         }
 
-        const newScaled: RectangleInterface = {
-            id: this.browser.scaled?.id ?? SetupItem.getNewId('Rectangle'),
-            className: 'Rectangle',
+        const newScaled: SimpleRectangle = {
             x: this.displayScaledBounds.x + (this.displayScaledBounds.width * this.browser.relative.x),
             y: this.displayScaledBounds.y + (this.displayScaledBounds.height * this.browser.relative.x),
             width: this.displayScaledBounds.width * this.browser.relative.width,
             height: this.displayScaledBounds.height * this.browser.relative.height
         };
 
-        if (!isEqual(this.browser.scaled?.getPlainFlat(), newScaled)) {
+        if (!isEqual(this.browser.scaled?.simple, newScaled)) {
             console.log(
                 `${this.constructor.name}[${this.browser.id}].updateBrowserBounds scaled` +
                 (this.browser.scaled ? ` ${this.browser.scaled.x},${this.browser.scaled.y} ${this.browser.scaled.width}*${this.browser.scaled.height}` : ' noDevice') +
                 ` ${newScaled.x}, ${newScaled.y} ${newScaled.width} * ${newScaled.height}`
             );
-            this.browser.scaled = new Rectangle( newScaled);
+            this.browser.scaled = Rectangle.createNew(this.browser.id, newScaled);
             changed = true;
         }
 

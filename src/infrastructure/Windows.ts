@@ -75,8 +75,8 @@ class Windows {
             webPreferences: {
                 nodeIntegration: true
             },
-            width: 800,
-            height: 600,
+            width: 500,
+            height: 1050,
         });
         screenManager.webContents.openDevTools();
 
