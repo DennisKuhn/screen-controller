@@ -1,7 +1,7 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import controller from './Configuration/Controller';
 import { Screen, Browser, Display, ScreenID } from './Configuration/WallpaperSetup';
-import { autorun } from 'mobx';
+import { IMapDidChange } from 'mobx';
 
 
 declare const WALLPAPER_PRELOAD_WEBPACK_ENTRY: string;
@@ -24,14 +24,13 @@ export default class WallpapersManager {
 
         WallpapersManager.screen = (await controller.getSetup(screenId, 2)) as Screen;
 
-        autorun(
-            WallpapersManager.updateDisplays
-        );
+        WallpapersManager.screen.children.observe(WallpapersManager.updateDisplays);
+
+        WallpapersManager.connectDisplays();
+
+        /** @TODO Create existing */
     }
 
-    /**
-     * Called by loadFile, ready-to-show sets initial bounds, calls show to trigger attaching to the desktop and adding to browsers
-     *  */
     private static createWallpaperWindow(displayId: number, browser: Browser): void {
         const wallpaperProperties = {
             webPreferences: {
@@ -70,65 +69,93 @@ export default class WallpapersManager {
         }
     }
 
+    private static connectDisplays(): void {
+        if (!WallpapersManager.screen) throw new Error('WallpapersManager.connectDisplays(): no screen');
+
+        for (const display of WallpapersManager.screen.children.values()) {
+            if (!display) throw new Error('WallpapersManager.connectDisplays() null display');
+            
+            display.children.observe(WallpapersManager.updateBrowsers);
+            
+            for (const browser of display.children.values()) {
+                if (!browser) throw new Error(`WallpapersManager.connectDisplays[${display.id}] null browser`);
+
+                WallpapersManager.createWallpaperWindow(
+                    Number(display.id),
+                    browser
+                );
+            }
+        }
+    }
+
     /**
      * creates a WallpaperWindow for each configured browser
      */
-    private static updateDisplays = (): void => {
+    private static updateDisplays = (changes: IMapDidChange<string, Display | null>): void => {
 
         if (!WallpapersManager.screen) throw new Error('WallpapersManager.updateDisplays(): no screen');
 
         // console.log('WallpapersManager.updateDisplays()');
 
-        for (const display of WallpapersManager.screen.children.values()) {
-            if (display) {
-                autorun(() => WallpapersManager.updateBrowsers(display));
-            }
+        switch (changes.type) {
+            case 'add':
+                if (changes.newValue) {
+                    changes.newValue.children.observe(WallpapersManager.updateBrowsers);
+                }
+                break;
+            case 'delete':
+                if (!changes.oldValue)
+                    throw new Error(`WallpapersManager.updateDisplays(${changes.type}}) no oldValue`);
+
+                for (const browser of changes.oldValue.children.values()) {
+                    if (!browser)
+                        throw new Error(`WallpapersManager.updateDisplays(${changes.type}}) null browser`);
+                    
+                    const paper = WallpapersManager.papers.get(browser.id);
+
+                    if (!paper)
+                        throw new Error(`WallpapersManager.updateDisplays(${changes.type}, ${changes.oldValue.id}) no paper for ${browser.id}`);
+                    
+                    // console.log(`WallpapersManager.updateDisplays(${paper.displayId}) close ${paper.browser.id}`);
+                    paper.browserWindow.close();
+                    WallpapersManager.papers.delete(paper.browser.id);
+                }
+                break;
+            case 'update':
+                throw new Error(`WallpapersManager.updateDisplays(${changes.type}})`);
+                break;
         }
-        for (const paper of WallpapersManager.papers.values()) {
-            if (!WallpapersManager.screen.children.has(paper.displayId.toFixed(0))) {
-                // console.log(`WallpapersManager.updateDisplays(${paper.displayId}) close ${paper.browser.id}`);
-                paper.browserWindow.close();
-                WallpapersManager.papers.delete(paper.browser.id);
-            }
-        }
+
     }
 
-    private static updateBrowsers(display: Display): void {
+    private static updateBrowsers(changes: IMapDidChange<string, Browser | null>): void {
         // console.log(`WallpapersManager.updateBrowsers(${display.id})`);
-        for (const browser of display.children.values()) {
-            if (browser) {
-                WallpapersManager.updateBrowser(Number(display.id), browser);
-            }
-            // autorun(
-            //     () => WallpapersManager.updateBrowser(Number(display.id), browser),
-            //     {
-            //         delay: 1,
-            //         name: `WallpapersManager.updateBrowser(${display.id}, ${browser.id})`
-            //     }
-            // );
+        switch (changes.type) {
+            case 'add':
+                if (!changes.newValue) throw new Error(`WallpapersManager.updateBrowsers(${changes.type}}) no newValue`);
+
+                WallpapersManager.createWallpaperWindow(
+                    Number(changes.newValue.parentId),
+                    changes.newValue
+                );
+                break;
+            case 'delete':
+                if (!changes.oldValue)
+                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}}) no oldValue`);
+                else {
+                    const paper = WallpapersManager.papers.get(changes.oldValue.id);
+
+                    if (!paper)
+                        throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.oldValue.id}}) no paper`);
+
+                    // console.log(`WallpapersManager.updateBrowsers(${display.id}) close ${paper.browser.id}`);
+                    paper.browserWindow.close();
+                    WallpapersManager.papers.delete(paper.browser.id);
+                }
+                break;
+            case 'update':
+                throw new Error(`WallpapersManager.updateBrowsers(${changes.type})`);
+                break;
         }
-        for (const paper of WallpapersManager.papers.values()) {
-            if ((paper.displayId == Number(display.id)) && (!display.children.has(paper.browser.id))) {
-                // console.log(`WallpapersManager.updateBrowsers(${display.id}) close ${paper.browser.id}`);
-                paper.browserWindow.close();
-                WallpapersManager.papers.delete(paper.browser.id);
-            }
-        }
-    }
-
-    private static updateBrowser(displayId: number, browser: Browser): void {
-        const paper = WallpapersManager.papers.get(browser.id);
-
-        // console.log(`WallpapersManager.updateBrowser(${displayId}, ${browser.id}) ${paper}`);
-
-        if (paper) {
-            console.error(`WallpapersManager.updateBrowser(${displayId}, ${browser.id}) already exists`);
-        } else {
-            WallpapersManager.createWallpaperWindow(
-                displayId,
-                browser
-            );
-        }
-
     }
 }
