@@ -1,6 +1,10 @@
 import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
 import { JSONSchema7 } from 'json-schema';
 
+export interface SetupConstructor<SetupType extends SetupBase> {
+    new(config: SetupBaseInterface): SetupType;
+}
+
 export abstract class SetupBase {
     readonly id: SetupItemId;
     readonly parentId: SetupItemId;
@@ -11,7 +15,7 @@ export abstract class SetupBase {
         $id: 'https://github.com/DennisKuhn/screen-controller/schemas/SetupSchema.json',
         definitions: {
             SetupBase: {
-                $id: '#SetupBase',
+                $id: '#' + SetupBase.name,
                 type: 'object',
                 properties: {
                     id: {
@@ -35,38 +39,22 @@ export abstract class SetupBase {
         if (!schema.$id) throw new Error(`SetupBase.addSchema() no $id: ${JSON.stringify(schema)}`);
 
         if (schema.$id in SetupBase.activeSchema.definitions) {
-            console.log(`SetupBase.addSchema(${schema.$id}) already registered`);
+            console.log(`SetupBase.addSchema(${schema.$id}) already registered`, SetupBase.activeSchema.definitions[schema.$id], schema);
         } else {
             SetupBase.activeSchema.definitions[schema.$id] = schema;
         }
     }
 
-    constructor(source: SetupBaseInterface, schema: JSONSchema7) {
+    constructor(source: SetupBaseInterface) {
         if (SetupBase.usedIDs.includes(source.id))
             throw new Error(`SetupItem[${this.constructor.name}] id=${source.id} already in use`);
         
-        SetupBase.addSchema(schema);
-            
         this.id = source.id;
         this.parentId = source.parentId;
         this.className = source.className;
         SetupBase.usedIDs.push(this.id);
     }
 
-    /**
-     * Returns a plain javascript object. Needs be implemented by any extending class calling super.
-     * @example
-     * class Rectangle extends SetupItem implements RectangleInterface {
-     * getPlain(): RectangleInterface {
-     *   return {
-     *       ... super.getPlain(),
-     *       x: this.x,
-     *       y: this.y,
-     *       width: this.width,
-     *       height: this.height
-     *   };
-     * }
-     */
     getShallow(): SetupBaseInterface {
         return { id: this.id, parentId: this.parentId, className: this.className };
     }
@@ -92,19 +80,16 @@ export abstract class SetupBase {
     }
 
     static usedIDs = new Array<string>();
-    public getNewId(): string {
-        return SetupBase.getNewId(this.constructor.name);
-    }
 
-    public static getNewId(className: string): string {
+    public static getNewId<SetupType extends SetupBase>(classConstructor: SetupConstructor<SetupType>): string {
         let id = 0;
         return SetupBase.usedIDs.reduce((result: string, usedId: string): string => {
             const parts = usedId.split('-');
-            if ((parts.length == 2) && (parts[0] == className)) {
+            if ((parts.length == 2) && (parts[0] == classConstructor.name)) {
                 const usedIdNumber = Number(parts[1]);
                 id = usedIdNumber >= id ? usedIdNumber + 1 : id;
             }
-            return `${className}-${id}`;
+            return `${classConstructor.name}-${id}`;
         });
     }
 }

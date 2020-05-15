@@ -2,28 +2,25 @@ import { Display } from './Display';
 import { SetupItem } from './SetupItem';
 import { ObservableSetupBaseMap } from './Container';
 import { SetupBaseInterface } from './SetupBaseInterface';
-import { register } from './SetupFactory';
 import { JSONSchema7 } from 'json-schema';
 
 export class Screen extends SetupItem {
-    static id: 'Screen' = 'Screen';
-
     static schema: JSONSchema7 = {
-        $id: 'Screen',
+        $id: Screen.name,
         title: 'Screen',
         description: 'Screen element for setup',
         allOf: [
             {
-                $ref: '#SetupBase'
+                $ref: '#' + SetupBase.name
             },
             {
                 properties: {
-                    id: { const: 'Screen' },
-                    className: { const: 'Screen' },
+                    id: { const: Screen.name },
+                    className: { const: Screen.name },
                     parentId: { const: 'Root' },
                     displays: {
                         type: 'object',
-                        additionalProperties: { $ref: '#Display' }
+                        additionalProperties: { $ref: '#' + Display.name }
                     }
                 },
                 required: ['displays']
@@ -34,30 +31,20 @@ export class Screen extends SetupItem {
     displays = new ObservableSetupBaseMap<Display>();
 
     constructor(source: SetupBaseInterface) {
-        super(source, Screen.schema);
+        super(source);
         super.update(source);
     }
 
     static createNewBlank(): Screen {
-        return new Screen({ id: 'Screen', parentId: 'Root', className: 'Screen', displays: {} });
+        return new Screen({ id: Screen.name, parentId: 'Root', className: Screen.name, displays: {} });
+    }
+
+    static register(): void {
+        SetupItem.register({
+            factory: Screen,
+            schema: Screen.schema
+        });
     }
 }
 
-let registered = false;
-
-export const registerWithFactory = (): void => {
-    // console.log(`Screen.registerWithFactory registered=${registered}`);
-    if (!registered) {
-        register(
-            'Screen',
-            {
-                factory: (config: SetupBaseInterface): Screen => {
-                    return new Screen(config);
-                }
-            }
-        );
-        registered = true;
-    }
-};
-
-registerWithFactory();
+Screen.register();

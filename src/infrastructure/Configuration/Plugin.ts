@@ -9,23 +9,23 @@ export abstract class Plugin extends SetupItem {
     scaledBounds: Rectangle | undefined;
 
     protected static readonly schema: JSONSchema7 = {
-        $id: '#PluginSetupItem',
+        $id: '#' + Plugin.name,
         allOf: [
             {
-                $ref: '#SetupBase'
+                $ref: '#' + SetupBase.name
             },
             {
                 properties: {
-                    relativeBounds: { $ref: '#Rectangle' },
-                    scaledBounds: { $ref: '#Rectangle' }
+                    relativeBounds: { $ref: '#' + Rectangle.name },
+                    scaledBounds: { $ref: '#' + Rectangle.name }
                 },
                 required: ['relativeBounds']
             }
         ]
     }
 
-    constructor(setup: SetupBaseInterface, schema: JSONSchema7) {
-        super(setup, schema);
+    constructor(setup: SetupBaseInterface) {
+        super(setup);
         SetupBase.addSchema(Plugin.schema);
     }
 }

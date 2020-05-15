@@ -1,29 +1,31 @@
-import { SetupBase } from './SetupBase';
+import { SetupBase, SetupConstructor } from './SetupBase';
 import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
-import { JSONSchema7 } from 'json-schema';
 
-export interface SetupRegistration<SType extends SetupBase> {
-    factory: (config: SetupBaseInterface) => SType;
-    schema?: JSONSchema7;
+export interface SetupRegistration<SetupClass extends SetupBase> {
+    //factory: (config: SetupBaseInterface) => SetupClass;
+    factory: SetupConstructor<SetupClass>;
 }
 
-const creators = new Map<SetupItemId, SetupRegistration<SetupBase>>();
+const factories = new Map<SetupItemId, SetupConstructor<SetupBase>>();
 
-export function register<S extends SetupBase>(className: string, registration: SetupRegistration<S>): void {
+export function register<S extends SetupBase>(factory: SetupConstructor<S>): void {
 
-    if (creators.has(className)) {
-        console.error(`SetupFactory.register: already registered ${className}`);
+    const className = factory.name;
+
+    if (factories.has(  className )) {
+        console.error(`SetupFactory.register: already registered ${className}`, factories.get(className), factory);
     } else {
-        console.log(`SetupFactory.register: ${className} schema=${registration.schema}`);
+        console.log(`SetupFactory.register: ${className}`);
 
-        creators.set(className, registration);
+        factories.set(className, factory);
     }
 }
 
 export function create(plain: SetupBaseInterface): SetupBase {
-    const creator = creators.get(plain.className);
+    const creator = factories.get(plain.className);
 
     if (!creator) throw new Error(`SetupFactory.create: no creator for className=${plain.className}`);
 
-    return creator.factory(plain);
+    return new creator(plain);
+//    return creator.factory(plain);
 }

@@ -6,37 +6,34 @@ import { ObservableSetupBaseMap } from './Container';
 import { Plugin } from './Plugin';
 import { SetupBase } from './SetupBase';
 import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
-import { register } from './SetupFactory';
 import { JSONSchema7 } from 'json-schema';
 
 
 export class Browser extends SetupItem {
 
     static schema: JSONSchema7 = {
-        $id: 'Browser',
+        $id: Browser.name,
         title: 'Browser',
         description: 'Container for plugins',
         allOf: [
             {
-                $ref: '#SetupBase'
+                $ref: '#' + SetupBase.name
             },
             {
                 properties: {
-                    className: { const: 'Browser' },
-                    relative: { $ref: '#Rectangle' },
-                    scaled: { $ref: '#Rectangle' },
-                    device: { $ref: '#Rectangle' },
+                    className: { const: Browser.name },
+                    relative: { $ref: '#' + Rectangle.name },
+                    scaled: { $ref: '#' + Rectangle.name },
+                    device: { $ref: '#' + Rectangle.name },
                     plugins: {
                         type: 'object',
-                        additionalProperties: { $ref: '#Plugin' }
+                        additionalProperties: { $ref: '#' + Plugin.name }
                     }
                 },
                 required: ['relative', 'plugins']
             }
         ]
     };
-
-    readonly className: 'Browser' = 'Browser';
 
     @observable relative: Rectangle;
     @observable scaled?: Rectangle;
@@ -45,7 +42,7 @@ export class Browser extends SetupItem {
     plugins: ObservableSetupBaseMap<Plugin> = new ObservableSetupBaseMap<Plugin>();
 
     constructor(source: SetupBaseInterface) {
-        super(source, Browser.schema);
+        super(source);
         
         const { relative, scaled, device } = (super.update(source) as Browser);
         this.relative = relative;
@@ -56,39 +53,28 @@ export class Browser extends SetupItem {
 
 
     static createNew(parentId: SetupItemId, relative: SimpleRectangle): Browser {
-        const newID = SetupBase.getNewId('Browser');
+        const newID = SetupBase.getNewId(Browser);
         return new Browser({
             id: newID,
             parentId: parentId,
-            className: 'Browser',
+            className: Browser.name,
             plugins: {},
             relative: {
-                id: SetupBase.getNewId('Rectangle'),
-                className: 'Rectangle',
+                id: SetupBase.getNewId(Rectangle),
+                className: Rectangle.name,
                 parentId: newID,
 
                 ...relative
             }
         });
     }
+
+    static register(): void {
+        SetupItem.register({
+            factory: Browser,
+            schema: Browser.schema
+        });
+    }
 }
 
-
-let registered = false;
-
-export const registerWithFactory = (): void => {
-    // console.log(`Browser.registerWithFactory registered=${registered}`);
-    if (!registered) {
-        register(
-            'Browser',
-            {
-                factory: (config: SetupBaseInterface): Browser => {
-                    return new Browser(config);
-                }
-            }
-        );
-        registered = true;
-    }
-};
-
-registerWithFactory();
+Browser.register();

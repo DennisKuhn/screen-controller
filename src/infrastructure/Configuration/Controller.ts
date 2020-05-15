@@ -9,19 +9,19 @@ import { ObservableSetupBaseMap } from './Container';
 
 /**
  * Import basic required Setup Classes to call SetupFactory.register
- * Currently Setup->Screen->Display->Browser
+ * Currently Setup->Screen->Display->Browser->Rectangle
  */
-import { Root, registerWithFactory as explicitRegisterRoot } from './Root';
-import { Screen, registerWithFactory as explicitRegisterScreen } from './Screen';
-import { registerWithFactory as explicitRegisterDisplay } from './Display';
-import { Browser, registerWithFactory as explicitRegisterBrowser } from './Browser';
-import { registerWithFactory as explicitRegisterRectangle } from './Rectangle';
+import { Root } from './Root';
+import { Screen } from './Screen';
+import { Display } from './Display';
+import { Browser } from './Browser';
+import { Rectangle } from './Rectangle';
 
-explicitRegisterRoot();
-explicitRegisterScreen();
-explicitRegisterDisplay();
-explicitRegisterBrowser();
-explicitRegisterRectangle();
+Root.register();
+Screen.register();
+Display.register();
+Browser.register();
+Rectangle.register();
 
 type ChangeChannel = 'change';
 type RegisterChannel = 'register';

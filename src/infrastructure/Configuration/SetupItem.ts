@@ -1,16 +1,26 @@
-import { SetupBase } from './SetupBase';
+import { SetupBase, SetupConstructor } from './SetupBase';
 import { SetupBaseInterface } from './SetupBaseInterface';
-import { create } from './SetupFactory';
+import { create, register } from './SetupFactory';
 import { ObservableSetupBaseMap } from './Container';
 import { JSONSchema7 } from 'json-schema';
 import { Dictionary } from 'lodash';
 
+
+export interface SetupRegistration<SetupClass extends SetupBase> {
+    //factory: (config: SetupBaseInterface) => SetupClass;
+    factory: SetupConstructor<SetupClass>;
+    schema: JSONSchema7;
+}
+
+
 export abstract class SetupItem extends SetupBase {
-    constructor(source: SetupBaseInterface, schema: JSONSchema7) {
-        super(source, schema);
+    constructor(source: SetupBaseInterface) {
+        super(source);
     }
+
     /**
-     * Returns a plain javascript object.
+     * Returns a shallow(ish) plain javascript object.
+     * Children/values in Maps are set to null
      */
     getShallow(): SetupBaseInterface {
         return this.getPlain(0);
@@ -63,6 +73,9 @@ export abstract class SetupItem extends SetupBase {
         return shallow;
     }
 
+    /**
+     * Returns a deep plain javascript object.
+     */
     getDeep(): SetupBaseInterface {
         return this.getPlain(-1);
     }
@@ -138,5 +151,10 @@ export abstract class SetupItem extends SetupBase {
             }
         }
         return this;
+    }
+
+    protected static register<S extends SetupBase>(registration: SetupRegistration<S>): void {
+        SetupBase.addSchema(registration.schema);
+        register(registration.factory);
     }
 }

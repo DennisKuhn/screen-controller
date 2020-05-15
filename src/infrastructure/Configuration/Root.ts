@@ -2,7 +2,6 @@ import { observable } from 'mobx';
 import { SetupItem } from './SetupItem';
 import { Screen } from './Screen';
 import { SetupBaseInterface } from './SetupBaseInterface';
-import { register } from './SetupFactory';
 import { JSONSchema7 } from 'json-schema';
 
 export class Root extends SetupItem {
@@ -14,14 +13,14 @@ export class Root extends SetupItem {
         description: 'Root element for setup',
         allOf: [
             {
-                $ref: '#SetupBase'
+                $ref: '#' + SetupBase.name
             },
             {
                 properties: {
                     id: { const: 'Root' },
                     className: { const: 'Root' },
                     parentId: { const: 'Root' },
-                    screen: { $ref: '#Screen' }
+                    screen: { $ref: '#' + Screen.name }
                 },
                 required: ['screen']
             }
@@ -32,7 +31,7 @@ export class Root extends SetupItem {
     screen: Screen;
 
     constructor(source: SetupBaseInterface) {
-        super(source, Root.schema);
+        super(source);
 
         const { screen } = (super.update(source) as Root);
         this.screen = screen;
@@ -43,27 +42,16 @@ export class Root extends SetupItem {
             id: 'Root',
             parentId: 'Root',
             className: 'Root',
-            screen: { id: 'Screen', parentId: 'Root', className: 'Screen', displays: {} }
+            screen: { id: Screen.name, parentId: 'Root', className: Screen.name, displays: {} }
+        });
+    }
+
+    static register(): void {
+        SetupItem.register({
+            factory: Root,
+            schema: Root.schema
         });
     }
 }
 
-
-let registered = false;
-
-export const registerWithFactory = (): void => {
-    // console.log(`Root.registerWithFactory registered=${registered}`);
-    if (!registered) {
-        register(
-            'Root',
-            {
-                factory: (config: SetupBaseInterface): Root => {
-                    return new Root(config);
-                }
-            }
-        );
-        registered = true;
-    }
-};
-
-registerWithFactory();
+Root.register();

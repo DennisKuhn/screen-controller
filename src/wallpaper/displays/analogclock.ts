@@ -20,7 +20,7 @@ class AnalogClockSetup extends PluginSetupItem {
         description: 'Analog clock with optional seconds hand or markers',
         allOf: [
             {
-                $ref: '#Plugin'
+                $ref: '#' + Plugin.name
             },
             {
                 properties: {

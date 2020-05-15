@@ -20,7 +20,7 @@
 //         $id: 'https://github.com/DennisKuhn/screen-controller/schemas/PluginSchema.json',
 //         definitions: {
 //             Rectangle: {
-//                 $id: '#Rectangle',
+//                 $id: '#' + Rectangle.name,
 //                 type: 'object',
 //                 properties: {
 //                     x: { type: 'number' },
@@ -31,7 +31,7 @@
 //                 required: ['x', 'y', 'width', 'height']
 //             },
 //             SetupItem: {
-//                 $id: '#SetupItem',
+//                 $id: '#' + SetupItem.name,
 //                 type: 'object',
 //                 properties: {
 //                     id: {
@@ -47,15 +47,15 @@
 //                 required: ['id', 'parentId', 'className']
 //             },
 //             PluginSetupItem: {
-//                 $id: '#PluginSetupItem',
+//                 $id: '#' + PluginSetupItem.name,
 //                 allOff: [
 //                     {
-//                         $ref: '#SetupItem'
+//                         $ref: '#' + SetupItem.name
 //                     },
 //                     {
 //                         properties: {
-//                             relativeBounds: { $ref: '#Rectangle' },
-//                             scaledBounds: { $ref: '#Rectangle' }
+//                             relativeBounds: { $ref: '#' + Rectangle.name },
+//                             scaledBounds: { $ref: '#' + Rectangle.name }
 //                         },
 //                         required: ['relativeBounds', 'scaledBounds']
 //                     }
