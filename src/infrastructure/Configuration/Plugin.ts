@@ -1,10 +1,9 @@
-import { SetupItem } from './SetupItem';
+import { SetupBase } from './SetupBase';
 import { Rectangle } from './Rectangle';
 import { JSONSchema7 } from 'json-schema';
-import { SetupBase } from './SetupBase';
 import { SetupBaseInterface } from './SetupBaseInterface';
 
-export abstract class Plugin extends SetupItem {
+export abstract class Plugin extends SetupBase {
     relativeBounds: Rectangle;
     scaledBounds: Rectangle | undefined;
 

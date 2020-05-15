@@ -7,7 +7,7 @@ import { Display } from './Configuration/Display';
 
 export default class DisplaysManager {
     public static run(): void {
-        controller.getSetup(Screen.id, 2)
+        controller.getSetup(Screen.name, 2)
             .then(setup => DisplaysManager.checkDisplays(setup as Screen));
     }
 

@@ -1,7 +1,6 @@
 import { Rectangle } from './Rectangle';
 import { SimpleRectangle } from './RectangleInterface';
 import { observable } from 'mobx';
-import { SetupItem } from './SetupItem';
 import { ObservableSetupBaseMap } from './Container';
 import { Plugin } from './Plugin';
 import { SetupBase } from './SetupBase';
@@ -9,7 +8,7 @@ import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
 import { JSONSchema7 } from 'json-schema';
 
 
-export class Browser extends SetupItem {
+export class Browser extends SetupBase {
 
     static schema: JSONSchema7 = {
         $id: Browser.name,
@@ -69,12 +68,7 @@ export class Browser extends SetupItem {
         });
     }
 
-    static register(): void {
-        SetupItem.register({
-            factory: Browser,
-            schema: Browser.schema
-        });
-    }
+    static register = (): void => SetupBase.register( Browser, Browser.schema );
 }
 
 Browser.register();

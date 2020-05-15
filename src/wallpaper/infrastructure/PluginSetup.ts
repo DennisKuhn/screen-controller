@@ -1,4 +1,4 @@
-// import { SetupItemInterface, SetupItem, Rectangle, RectangleInterface } from '../../infrastructure/Configuration/WallpaperSetup';
+// import { SetupItemInterface, SetupBase, Rectangle, RectangleInterface } from '../../infrastructure/Configuration/WallpaperSetup';
 
 // export interface PluginSetupInterface extends SetupItemInterface {
 //     relativeBounds: RectangleInterface;
@@ -9,7 +9,7 @@
 //     (config: PluginSetupInterface): PluginSetupItem;
 // }
 
-// export abstract class PluginSetupItem extends SetupItem {
+// export abstract class PluginSetupItem extends SetupBase {
 //     relativeBounds: Rectangle;
 //     scaledBounds: Rectangle | undefined;
 
@@ -30,8 +30,8 @@
 //                 },
 //                 required: ['x', 'y', 'width', 'height']
 //             },
-//             SetupItem: {
-//                 $id: '#' + SetupItem.name,
+//             SetupBase: {
+//                 $id: '#' + SetupBase.name,
 //                 type: 'object',
 //                 properties: {
 //                     id: {
@@ -50,7 +50,7 @@
 //                 $id: '#' + PluginSetupItem.name,
 //                 allOff: [
 //                     {
-//                         $ref: '#' + SetupItem.name
+//                         $ref: '#' + SetupBase.name
 //                     },
 //                     {
 //                         properties: {

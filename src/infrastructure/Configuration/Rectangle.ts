@@ -1,13 +1,13 @@
 import { observable } from 'mobx';
-import { SetupItem } from './SetupItem';
+import { SetupBase } from './SetupBase';
 import { SimpleRectangle } from './RectangleInterface';
 import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
 import { JSONSchema7 } from 'json-schema';
 
 
-export class Rectangle extends SetupItem {
+export class Rectangle extends SetupBase {
     static readonly schema: JSONSchema7 = {
-        $id: '#' + Rectangle.name,
+        $id: Rectangle.name,
         allOf: [
             {
                 $ref: '#' + SetupBase.name
@@ -61,19 +61,14 @@ export class Rectangle extends SetupItem {
 
     static createNew(parentId: SetupItemId, source: SimpleRectangle): Rectangle {
         return new Rectangle({
-            id: SetupItem.getNewId(Rectangle),
+            id: SetupBase.getNewId(Rectangle),
             parentId: parentId,
             className: Rectangle.name,
             ...source
         });
     }
 
-    static register(): void {
-        SetupItem.register({
-            factory: Rectangle,
-            schema: Rectangle.schema
-        });
-    }
+    static register= (): void => SetupBase.register( Rectangle, Rectangle.schema );
 }
 
 Rectangle.register();

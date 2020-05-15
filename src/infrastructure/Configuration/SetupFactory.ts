@@ -1,19 +1,14 @@
 import { SetupBase, SetupConstructor } from './SetupBase';
 import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
 
-export interface SetupRegistration<SetupClass extends SetupBase> {
-    //factory: (config: SetupBaseInterface) => SetupClass;
-    factory: SetupConstructor<SetupClass>;
-}
-
 const factories = new Map<SetupItemId, SetupConstructor<SetupBase>>();
 
 export function register<S extends SetupBase>(factory: SetupConstructor<S>): void {
 
     const className = factory.name;
 
-    if (factories.has(  className )) {
-        console.error(`SetupFactory.register: already registered ${className}`, factories.get(className), factory);
+    if (factories.has( className )) {
+        console.warn(`SetupFactory.register: already registered ${className}`, factories.get(className), factory);
     } else {
         console.log(`SetupFactory.register: ${className}`);
 

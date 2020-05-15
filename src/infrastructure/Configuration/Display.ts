@@ -1,10 +1,10 @@
 import { Browser } from './Browser';
-import { SetupItem } from './SetupItem';
+import { SetupBase } from './SetupBase';
 import { ObservableSetupBaseMap } from './Container';
 import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
 import { JSONSchema7 } from 'json-schema';
 
-export class Display extends SetupItem {
+export class Display extends SetupBase {
     static schema: JSONSchema7 = {
         $id: Display.name,
         title: 'Display',
@@ -38,12 +38,7 @@ export class Display extends SetupItem {
         return new Display({ id: displayId, parentId: 'Screen', className: Display.name, browsers: {} });
     }
 
-    static register(): void {
-        SetupItem.register({
-            factory: Display,
-            schema: Display.schema
-        });
-    }
+    static register= (): void => SetupBase.register( Display, Display.schema );
 }
 
 Display.register();

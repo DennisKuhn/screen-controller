@@ -22,7 +22,7 @@ export default class WallpapersManager {
     public static async run(): Promise<void> {
         //console.log('WallpapersManager.run');
 
-        WallpapersManager.screen = (await controller.getSetup(Screen.id, 2)) as Screen;
+        WallpapersManager.screen = (await controller.getSetup(Screen.name, 2)) as Screen;
 
         WallpapersManager.screen.displays.observe(WallpapersManager.updateDisplays);
 

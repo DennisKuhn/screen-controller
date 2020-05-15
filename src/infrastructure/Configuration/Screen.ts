@@ -1,10 +1,10 @@
 import { Display } from './Display';
-import { SetupItem } from './SetupItem';
+import { SetupBase } from './SetupBase';
 import { ObservableSetupBaseMap } from './Container';
 import { SetupBaseInterface } from './SetupBaseInterface';
 import { JSONSchema7 } from 'json-schema';
 
-export class Screen extends SetupItem {
+export class Screen extends SetupBase {
     static schema: JSONSchema7 = {
         $id: Screen.name,
         title: 'Screen',
@@ -39,12 +39,7 @@ export class Screen extends SetupItem {
         return new Screen({ id: Screen.name, parentId: 'Root', className: Screen.name, displays: {} });
     }
 
-    static register(): void {
-        SetupItem.register({
-            factory: Screen,
-            schema: Screen.schema
-        });
-    }
+    static register = (): void => SetupBase.register( Screen, Screen.schema );
 }
 
 Screen.register();

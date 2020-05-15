@@ -1,14 +1,12 @@
 import { observable } from 'mobx';
-import { SetupItem } from './SetupItem';
+import { SetupBase } from './SetupBase';
 import { Screen } from './Screen';
 import { SetupBaseInterface } from './SetupBaseInterface';
 import { JSONSchema7 } from 'json-schema';
 
-export class Root extends SetupItem {
-    static id: 'Root' = 'Root';
-
+export class Root extends SetupBase {
     static schema: JSONSchema7 = {
-        $id: 'Root',
+        $id: Root.name,
         title: 'Root',
         description: 'Root element for setup',
         allOf: [
@@ -17,9 +15,9 @@ export class Root extends SetupItem {
             },
             {
                 properties: {
-                    id: { const: 'Root' },
-                    className: { const: 'Root' },
-                    parentId: { const: 'Root' },
+                    id: { const: Root.name },
+                    className: { const: Root.name },
+                    parentId: { const: Root.name },
                     screen: { $ref: '#' + Screen.name }
                 },
                 required: ['screen']
@@ -39,19 +37,14 @@ export class Root extends SetupItem {
 
     static createNewBlank(): Root {
         return new Root({
-            id: 'Root',
-            parentId: 'Root',
-            className: 'Root',
-            screen: { id: Screen.name, parentId: 'Root', className: Screen.name, displays: {} }
+            id: Root.name,
+            parentId: Root.name,
+            className: Root.name,
+            screen: { id: Screen.name, parentId: Root.name, className: Screen.name, displays: {} }
         });
     }
 
-    static register(): void {
-        SetupItem.register({
-            factory: Root,
-            schema: Root.schema
-        });
-    }
+    static register = (): void => SetupBase.register( Root, Root.schema );
 }
 
 Root.register();

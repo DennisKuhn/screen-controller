@@ -4,7 +4,7 @@ import controller from '../infrastructure/Configuration/Controller';
 import { Screen } from '../infrastructure/Configuration/Screen';
 
 export default function MainWindow(): JSX.Element {
-    controller.getSetup(Screen.id, 0).then(
+    controller.getSetup(Screen.name, 0).then(
         screen => {
             if ((screen as Screen).displays.size == 0) {
                 const windowArgs: IpcArgs = {

@@ -174,7 +174,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     }
 
     /**
-     * Retrieves a SetupItem and all its children up to depth.
+     * Retrieves a SetupBase and all its children up to depth.
      * Each property is tested if ObservableSetupBaseMap, if depth != 0, load children otherwise set each child entry to null
      * @param id of the setup item to get
      * @param depth minimum of the resulting tree (The result might be deeper). Use -1 to load all descendants
@@ -495,11 +495,11 @@ class Renderer extends ControllerImpl {
             const itemPlain: SetupBaseInterface = JSON.parse(itemString);
 
             item = create(itemPlain);
-        } else if ( id == Root.id ) {
+        } else if ( id == Root.name ) {
             item = Root.createNewBlank();
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             this.persist(item.getShallow());
-        } else if ( id == Screen.id ) {
+        } else if ( id == Screen.name ) {
             item = Screen.createNewBlank();
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             this.persist(item.getShallow());
