@@ -1,19 +1,58 @@
 import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
+import { JSONSchema7 } from 'json-schema';
 
 export abstract class SetupBase {
     readonly id: SetupItemId;
     readonly parentId: SetupItemId;
     readonly className: string;
 
-    constructor(source: SetupBaseInterface) {
+    public static activeSchema: JSONSchema7 = {
+        $schema: 'http://json-schema.org/draft/2019-09/schema#',
+        $id: 'https://github.com/DennisKuhn/screen-controller/schemas/SetupSchema.json',
+        definitions: {
+            SetupBase: {
+                $id: '#SetupBase',
+                type: 'object',
+                properties: {
+                    id: {
+                        type: 'string'
+                    },
+                    parentId: {
+                        type: 'string'
+                    },
+                    className: {
+                        type: 'string'
+                    }
+                },
+                required: ['id', 'parentId', 'className']
+            }
+        }
+    };
+
+    protected static addSchema(schema: JSONSchema7): void {
+        if (!SetupBase.activeSchema.definitions) throw new Error(`SetupBase.addSchema(${schema.$id}) no definitions`);
+        
+        if (!schema.$id) throw new Error(`SetupBase.addSchema() no $id: ${JSON.stringify(schema)}`);
+
+        if (schema.$id in SetupBase.activeSchema.definitions) {
+            console.log(`SetupBase.addSchema(${schema.$id}) already registered`);
+        } else {
+            SetupBase.activeSchema.definitions[schema.$id] = schema;
+        }
+    }
+
+    constructor(source: SetupBaseInterface, schema: JSONSchema7) {
         if (SetupBase.usedIDs.includes(source.id))
             throw new Error(`SetupItem[${this.constructor.name}] id=${source.id} already in use`);
+        
+        SetupBase.addSchema(schema);
+            
         this.id = source.id;
         this.parentId = source.parentId;
         this.className = source.className;
         SetupBase.usedIDs.push(this.id);
     }
-    
+
     /**
      * Returns a plain javascript object. Needs be implemented by any extending class calling super.
      * @example

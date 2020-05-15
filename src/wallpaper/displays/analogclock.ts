@@ -15,12 +15,12 @@ class AnalogClockSetup extends PluginSetupItem {
     showMarkers: boolean;
 
     static readonly schema: JSONSchema7 = {
-        ...PluginSetupItem.schema,
+        $id: 'AnalogClock',
         title: 'Analog clock',
         description: 'Analog clock with optional seconds hand or markers',
         allOf: [
             {
-                $ref: '#PluginSetupItem'
+                $ref: '#Plugin'
             },
             {
                 properties: {

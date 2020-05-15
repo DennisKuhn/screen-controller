@@ -1,10 +1,31 @@
 import { observable } from 'mobx';
 import { SetupItem } from './SetupItem';
-import { RectangleInterface, SimpleRectangle } from './RectangleInterface';
-import { SetupItemId } from './SetupBaseInterface';
+import { SimpleRectangle } from './RectangleInterface';
+import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
+import { JSONSchema7 } from 'json-schema';
+import { register } from './SetupFactory';
 
 
-export class Rectangle extends SetupItem implements RectangleInterface {
+export class Rectangle extends SetupItem {
+    protected static readonly schema: JSONSchema7 = {
+        $id: '#Rectangle',
+        allOf: [
+            {
+                $ref: '#SetupBase'
+            },
+            {
+                properties: {
+                    className: { const: 'Rectangle' },
+                    x: { type: 'number' },
+                    y: { type: 'number' },
+                    width: { type: 'number' },
+                    height: { type: 'number' }
+                },
+                required: ['x', 'y', 'width', 'height']
+            }
+        ]
+    }
+
     @observable
     x: number;
 
@@ -19,12 +40,15 @@ export class Rectangle extends SetupItem implements RectangleInterface {
 
     className: 'Rectangle' = 'Rectangle';
 
-    constructor(source: RectangleInterface) {
-        super(source);
-        this.x = source.x;
-        this.y = source.y;
-        this.width = source.width;
-        this.height = source.height;
+    constructor(source: SetupBaseInterface) {
+        super(source, Rectangle.schema);
+
+        const {x, y, width, height } = (super.update(source) as Rectangle);
+
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
     }
 
     get simple(): SimpleRectangle {
@@ -45,3 +69,22 @@ export class Rectangle extends SetupItem implements RectangleInterface {
         });
     }
 }
+
+let registered = false;
+
+export const registerWithFactory = (): void => {
+    // console.log(`Root.registerWithFactory registered=${registered}`);
+    if (!registered) {
+        register(
+            'Rectangle',
+            {
+                factory: (config: SetupBaseInterface): Rectangle => {
+                    return new Rectangle(config);
+                }
+            }
+        );
+        registered = true;
+    }
+};
+
+registerWithFactory();

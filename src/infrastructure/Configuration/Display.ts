@@ -1,16 +1,37 @@
 import { Browser } from './Browser';
-import { DisplayInterface } from './DisplayInterface';
 import { register } from './SetupFactory';
 import { SetupItem } from './SetupItem';
 import { ObservableSetupBaseMap } from './Container';
 import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
+import { JSONSchema7 } from 'json-schema';
 
 export class Display extends SetupItem {
+    static schema: JSONSchema7 = {
+        $id: 'Display',
+        title: 'Display',
+        description: 'Represent a monitor containing browsers',
+        allOf: [
+            {
+                $ref: '#SetupBase'
+            },
+            {
+                properties: {
+                    className: { const: 'Display' },
+                    parentId: { const: 'Screen' },
+                    browsers: {
+                        type: 'object',
+                        additionalProperties: { $ref: '#Browser' }
+                    }
+                },
+                required: ['browsers']
+            }
+        ]
+    };
 
     browsers: ObservableSetupBaseMap<Browser> = new ObservableSetupBaseMap<Browser>();
 
-    constructor(source: DisplayInterface) {
-        super(source);
+    constructor(source: SetupBaseInterface) {
+        super(source, Display.schema);
         super.update(source);
     }
 
@@ -28,7 +49,7 @@ export const registerWithFactory = (): void => {
             'Display',
             {
                 factory: (config: SetupBaseInterface): Display => {
-                    return new Display(config as DisplayInterface);
+                    return new Display(config);
                 }
             }
         );

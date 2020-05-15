@@ -1,12 +1,10 @@
 import { IMapDidChange, reaction } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
-import { isEqual } from 'lodash';
+import { isEqual, Dictionary } from 'lodash';
 import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
 import { SetupBase } from './SetupBase';
 import { create } from './SetupFactory';
-import { RootID } from './RootInterface';
-import { ScreenID } from './ScreenInterface';
 import { ObservableSetupBaseMap } from './Container';
 
 /**
@@ -17,11 +15,13 @@ import { Root, registerWithFactory as explicitRegisterRoot } from './Root';
 import { Screen, registerWithFactory as explicitRegisterScreen } from './Screen';
 import { registerWithFactory as explicitRegisterDisplay } from './Display';
 import { Browser, registerWithFactory as explicitRegisterBrowser } from './Browser';
+import { registerWithFactory as explicitRegisterRectangle } from './Rectangle';
 
 explicitRegisterRoot();
 explicitRegisterScreen();
 explicitRegisterDisplay();
 explicitRegisterBrowser();
+explicitRegisterRectangle();
 
 type ChangeChannel = 'change';
 type RegisterChannel = 'register';
@@ -375,16 +375,19 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         this.remoteUpdates.set(item.id, item);
 
         for (const [propertyName, value] of Object.entries(item)) {
-            if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
-                console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): add children in ${propertyName}`);
-                const container = value as ObservableSetupBaseMap<SetupBase>;
-                for (const child of container.values()) {
-                    if (child) {
-                        this.addRemoteUpdate(child);
+            if (typeof value == 'object') {
+                if ((value as SetupBaseInterface).id != undefined) {
+                    console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): skip child ${propertyName}=[${(value as SetupBaseInterface).id}]`);
+                } else {
+                    console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): add children in ${propertyName}`);
+
+                    for (const child of Object.values( value as Dictionary<SetupBaseInterface> )) {
+                        if (child) {
+                            console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}):${propertyName} add child ${child.id}`);
+                            this.addRemoteUpdate(child);
+                        }
                     }
                 }
-            } else {
-                console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): don't add children in ${propertyName} as not ObservableSetupBaseMap`);
             }
         }
     }
@@ -492,14 +495,14 @@ class Renderer extends ControllerImpl {
             const itemPlain: SetupBaseInterface = JSON.parse(itemString);
 
             item = create(itemPlain);
-        } else if (id as RootID == 'Root') {
+        } else if ( id == Root.id ) {
             item = Root.createNewBlank();
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
-            this.persist(item);
-        } else if (id as ScreenID == 'Screen') {
+            this.persist(item.getShallow());
+        } else if ( id == Screen.id ) {
             item = Screen.createNewBlank();
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
-            this.persist(item);
+            this.persist(item.getShallow());
         } else {
             throw new Error(`${this.constructor.name}: load(-> ${id} <-): not found`);
         }
@@ -573,7 +576,7 @@ class MainWindow extends Renderer {
 
     onGetSetup = async (e, id: string, depth: number): Promise<void> => {
         const setup = (await this.getSetup(id, depth)).getDeep();
-        console.log(`${this.constructor.name}.onGetSetup(${id}, ${depth}) send:`, setup );
+        console.log(`${this.constructor.name}.onGetSetup(${id}, ${depth}) send:`, setup);
 
         this.ipc.send(
             'setsetup',

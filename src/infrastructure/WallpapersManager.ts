@@ -3,7 +3,6 @@ import controller from './Configuration/Controller';
 import { Screen } from './Configuration/Screen';
 import { Browser } from './Configuration/Browser';
 import { Display } from './Configuration/Display';
-import { ScreenID } from './Configuration/ScreenInterface';
 import { IMapDidChange } from 'mobx';
 
 
@@ -23,9 +22,7 @@ export default class WallpapersManager {
     public static async run(): Promise<void> {
         //console.log('WallpapersManager.run');
 
-        const screenId: ScreenID = 'Screen';
-
-        WallpapersManager.screen = (await controller.getSetup(screenId, 2)) as Screen;
+        WallpapersManager.screen = (await controller.getSetup(Screen.id, 2)) as Screen;
 
         WallpapersManager.screen.displays.observe(WallpapersManager.updateDisplays);
 

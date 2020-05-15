@@ -2,12 +2,9 @@ import * as React from 'react';
 import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
 import controller from '../infrastructure/Configuration/Controller';
 import { Screen } from '../infrastructure/Configuration/Screen';
-import { ScreenID } from '../infrastructure/Configuration/ScreenInterface';
 
 export default function MainWindow(): JSX.Element {
-    const screenId: ScreenID = 'Screen';
-
-    controller.getSetup(screenId, 0).then(
+    controller.getSetup(Screen.id, 0).then(
         screen => {
             if ((screen as Screen).displays.size == 0) {
                 const windowArgs: IpcArgs = {

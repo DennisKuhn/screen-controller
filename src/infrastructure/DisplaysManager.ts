@@ -1,16 +1,13 @@
 import { screen as electronScreen, Display as ElectronDisplay } from 'electron';
 import controller from './Configuration/Controller';
 import { Screen } from './Configuration/Screen';
-import { ScreenID } from './Configuration/ScreenInterface';
 import { Display } from './Configuration/Display';
 
 
 
 export default class DisplaysManager {
     public static run(): void {
-        const screenId: ScreenID = 'Screen';
-
-        controller.getSetup(screenId, 2)
+        controller.getSetup(Screen.id, 2)
             .then(setup => DisplaysManager.checkDisplays(setup as Screen));
     }
 

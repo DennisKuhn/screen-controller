@@ -10,9 +10,14 @@ export interface SetupRegistration<SType extends SetupBase> {
 const creators = new Map<SetupItemId, SetupRegistration<SetupBase>>();
 
 export function register<S extends SetupBase>(className: string, registration: SetupRegistration<S>): void {
-    console.log(`SetupFactory.register: ${className} schema=${registration.schema}`);
-    
-    creators.set(className, registration);
+
+    if (creators.has(className)) {
+        console.error(`SetupFactory.register: already registered ${className}`);
+    } else {
+        console.log(`SetupFactory.register: ${className} schema=${registration.schema}`);
+
+        creators.set(className, registration);
+    }
 }
 
 export function create(plain: SetupBaseInterface): SetupBase {

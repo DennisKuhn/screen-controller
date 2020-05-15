@@ -2,15 +2,39 @@ import { Rectangle } from './Rectangle';
 import { SimpleRectangle } from './RectangleInterface';
 import { observable } from 'mobx';
 import { SetupItem } from './SetupItem';
-import { BrowserInterface } from './BrowserInterface';
 import { ObservableSetupBaseMap } from './Container';
 import { Plugin } from './Plugin';
 import { SetupBase } from './SetupBase';
 import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
 import { register } from './SetupFactory';
+import { JSONSchema7 } from 'json-schema';
 
 
 export class Browser extends SetupItem {
+
+    static schema: JSONSchema7 = {
+        $id: 'Browser',
+        title: 'Browser',
+        description: 'Container for plugins',
+        allOf: [
+            {
+                $ref: '#SetupBase'
+            },
+            {
+                properties: {
+                    className: { const: 'Browser' },
+                    relative: { $ref: '#Rectangle' },
+                    scaled: { $ref: '#Rectangle' },
+                    device: { $ref: '#Rectangle' },
+                    plugins: {
+                        type: 'object',
+                        additionalProperties: { $ref: '#Plugin' }
+                    }
+                },
+                required: ['relative', 'plugins']
+            }
+        ]
+    };
 
     readonly className: 'Browser' = 'Browser';
 
@@ -20,15 +44,14 @@ export class Browser extends SetupItem {
 
     plugins: ObservableSetupBaseMap<Plugin> = new ObservableSetupBaseMap<Plugin>();
 
-    constructor(source: BrowserInterface) {
-        super(source);
-
-        this.relative = new Rectangle(source.relative);
-
-        this.scaled = source.scaled ? new Rectangle(source.scaled) : undefined;
-        this.device = source.device ? new Rectangle(source.device) : undefined;
+    constructor(source: SetupBaseInterface) {
+        super(source, Browser.schema);
         
-        super.update(source);
+        const { relative, scaled, device } = (super.update(source) as Browser);
+        this.relative = relative;
+        this.scaled = scaled;
+        this.device = device;
+
     }
 
 
@@ -60,7 +83,7 @@ export const registerWithFactory = (): void => {
             'Browser',
             {
                 factory: (config: SetupBaseInterface): Browser => {
-                    return new Browser(config as BrowserInterface);
+                    return new Browser(config);
                 }
             }
         );

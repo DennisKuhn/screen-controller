@@ -1,19 +1,41 @@
 import { observable } from 'mobx';
 import { SetupItem } from './SetupItem';
-import { RootInterface } from './RootInterface';
 import { Screen } from './Screen';
 import { SetupBaseInterface } from './SetupBaseInterface';
 import { register } from './SetupFactory';
+import { JSONSchema7 } from 'json-schema';
 
 export class Root extends SetupItem {
+    static id: 'Root' = 'Root';
+
+    static schema: JSONSchema7 = {
+        $id: 'Root',
+        title: 'Root',
+        description: 'Root element for setup',
+        allOf: [
+            {
+                $ref: '#SetupBase'
+            },
+            {
+                properties: {
+                    id: { const: 'Root' },
+                    className: { const: 'Root' },
+                    parentId: { const: 'Root' },
+                    screen: { $ref: '#Screen' }
+                },
+                required: ['screen']
+            }
+        ]
+    };
 
     @observable
     screen: Screen;
 
-    constructor(source: RootInterface) {
-        super(source);
-        this.screen = new Screen(source.screen);
-        super.update(source);
+    constructor(source: SetupBaseInterface) {
+        super(source, Root.schema);
+
+        const { screen } = (super.update(source) as Root);
+        this.screen = screen;
     }
 
     static createNewBlank(): Root {
@@ -36,7 +58,7 @@ export const registerWithFactory = (): void => {
             'Root',
             {
                 factory: (config: SetupBaseInterface): Root => {
-                    return new Root(config as RootInterface);
+                    return new Root(config);
                 }
             }
         );
