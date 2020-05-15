@@ -1,24 +1,27 @@
-import { IMapDidChange, reaction, autorun } from 'mobx';
+import { IMapDidChange, reaction } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
-import {
-    Setup,
-    Properties,
-    Browser,
-    SetupInterface,
-    SetupItem,
-    createSetupItem,
-    SetupItemInterface,
-    SetupContainer,
-    SetupID,
-    SetupItemId,
-    Screen,
-    ScreenID,
-    SetupContainerInterface
-} from './WallpaperSetup';
 import { isEqual } from 'lodash';
-import DefaultConfig from '../../wallpaper/project.json';
+import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
+import { SetupBase } from './SetupBase';
+import { create } from './SetupFactory';
+import { RootID } from './RootInterface';
+import { ScreenID } from './ScreenInterface';
+import { ObservableSetupBaseMap } from './Container';
 
+/**
+ * Import basic required Setup Classes to call SetupFactory.register
+ * Currently Setup->Screen->Display->Browser
+ */
+import { Root, registerWithFactory as explicitRegisterRoot } from './Root';
+import { Screen, registerWithFactory as explicitRegisterScreen } from './Screen';
+import { registerWithFactory as explicitRegisterDisplay } from './Display';
+import { Browser, registerWithFactory as explicitRegisterBrowser } from './Browser';
+
+explicitRegisterRoot();
+explicitRegisterScreen();
+explicitRegisterDisplay();
+explicitRegisterBrowser();
 
 type ChangeChannel = 'change';
 type RegisterChannel = 'register';
@@ -29,14 +32,14 @@ type SetSetupChannel = 'setsetup';
 interface IpcRenderer extends electron.IpcRenderer {
     send(channel: InitChannel): void;
 
-    send(channel: ChangeChannel, update: SetupItemInterface): void;
+    send(channel: ChangeChannel, update: SetupBaseInterface): void;
 
     send(channel: RegisterChannel, args: IpcRegisterArgs): void;
 
-    send(channel: SetSetupChannel, args: SetupItemInterface): void;
+    send(channel: SetSetupChannel, args: SetupBaseInterface): void;
 
     /// From IpcWindow.send
-    on(channel: ChangeChannel, listener: (event: IpcRendererEvent, update: SetupItemInterface, persist: boolean) => void): this;
+    on(channel: ChangeChannel, listener: (event: IpcRendererEvent, update: SetupBaseInterface, persist: boolean) => void): this;
 
     on(channel: GetSetupChannel, listener: (event: IpcRendererEvent, id: SetupItemId, depth: number) => void): void;
 }
@@ -44,9 +47,9 @@ interface IpcRenderer extends electron.IpcRenderer {
 interface IpcMain extends electron.IpcMain {
     once(channel: InitChannel, listener: (event: IpcMainEvent) => void): this;
 
-    on(channel: ChangeChannel, listener: (event: IpcMainEvent, update: SetupItemInterface) => void): this;
+    on(channel: ChangeChannel, listener: (event: IpcMainEvent, update: SetupBaseInterface) => void): this;
     on(channel: RegisterChannel, listener: (event: IpcMainEvent, args: IpcRegisterArgs) => void): this;
-    on(channel: SetSetupChannel, listener: (event: IpcMainEvent, args: SetupItemInterface) => void): this;
+    on(channel: SetSetupChannel, listener: (event: IpcMainEvent, args: SetupBaseInterface) => void): this;
 }
 
 interface IpcWindow extends electron.WebContents {
@@ -55,7 +58,7 @@ interface IpcWindow extends electron.WebContents {
     // send(channel: ChangeChannel, args: IpcDeleteArgs, persist?: boolean): void;
     // send(channel: ChangeChannel, args: IpcUpdateBrowserArgs, persist?: boolean): void;
     send(channel: GetSetupChannel, id: SetupItemId, depth: number): void;
-    send(channel: ChangeChannel, update: SetupItemInterface, persist: boolean): void;
+    send(channel: ChangeChannel, update: SetupBaseInterface, persist: boolean): void;
 }
 
 interface IpcRegisterArgs {
@@ -73,7 +76,7 @@ export declare interface Controller {
     * @param id
     * @param depth 0=do not resolve children, -1 resolve all descendants, <n> resolve n-levels of decendants
     */
-    getSetup(id: string, depth: number): Promise<SetupItem>;
+    getSetup(id: string, depth: number): Promise<SetupBase>;
 
     log(): void;
 }
@@ -81,12 +84,12 @@ export declare interface Controller {
 interface SetupPromise {
     id: string;
     depth: number;
-    resolve: (setup: SetupItem) => void;
+    resolve: (setup: SetupBase) => void;
     reject: (reason: string) => void;
 }
 
 interface ConnectItemArgs {
-    item: SetupItem;
+    item: SetupBase;
     connectParent: boolean;
     persist: boolean;
     propagate: boolean;
@@ -95,7 +98,7 @@ interface ConnectItemArgs {
 /**
  */
 abstract class ControllerImpl extends EventEmitter implements Controller {
-    protected configs: Map<string, SetupItem> = new Map<string, SetupItem>();
+    protected configs: Map<string, SetupBase> = new Map<string, SetupBase>();
 
     protected constructor() {
         super();
@@ -108,21 +111,34 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
     setupPromises: SetupPromise[] = new Array<SetupPromise>();
 
-    test(item: SetupItem, depth: number): boolean {
-        if (depth && item instanceof SetupContainer) {
-            const container = item as SetupContainer<SetupItem, SetupInterface>;
+    test(item: SetupBase, depth: number): boolean {
+        if (depth != 0) {
+            for (const [propertyName, value] of Object.entries(item)) {
+                if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
+                    const container = value as ObservableSetupBaseMap<SetupBase>;
+                    console.log(`${this.constructor.name}.test(${item.id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap#${container.size}`);
 
-            for (const child of container.children.values()) {
-                if ((child == null) || (!this.test(child, depth - 1))) {
-                    return false;
+                    for (const [childId, child] of container.entries()) {
+                        if ((child == null) || (!this.test(child, depth - 1))) {
+                            console.warn(`${this.constructor.name}.test(${item.id}, ${depth}):${propertyName} failed: [${childId}] == ${child}`);
+                            return false;
+                        } else {
+                            console.warn(`${this.constructor.name}.test(${item.id}, ${depth}):${propertyName} success: [${childId}]`);
+                        }
+                    }
+                } else {
+                    console.log(`${this.constructor.name}.test(${item.id}, ${depth}): skip ${propertyName}`);
                 }
             }
+        } else {
+            console.log(`${this.constructor.name}.test(${item.id}, ${depth}): reached bottom`);
         }
+        console.log(`${this.constructor.name}.test(${item.id}, ${depth}): successful`);
         return true;
     }
 
-    tryGetItem(id: string, depth: number): SetupItem | undefined {
-        const responseItem: SetupItem | undefined = this.configs.get(id);
+    tryGetItem(id: string, depth: number): SetupBase | undefined {
+        const responseItem: SetupBase | undefined = this.configs.get(id);
 
         if (responseItem && this.test(responseItem, depth)) {
             return responseItem;
@@ -130,18 +146,18 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         return undefined;
     }
 
-    protected onCached: ((item: SetupItem, depth: number) => void) | undefined;
+    protected onCached: ((item: SetupBase, depth: number) => void) | undefined;
 
-    getSetup(id: string, depth: number): Promise<SetupItem> {
+    getSetup(id: string, depth: number): Promise<SetupBase> {
         // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth})`);
 
         return new Promise(
-            (resolve: (setup: SetupItem) => void, reject: (reason: string) => void) => {
+            (resolve: (setup: SetupBase) => void, reject: (reason: string) => void) => {
 
-                const responseItem: SetupItem | undefined = this.tryGetItem(id, depth);
+                const responseItem: SetupBase | undefined = this.tryGetItem(id, depth);
 
                 if (responseItem) {
-                    // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`);
+                    console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
                     if (this.onCached)
                         this.onCached(responseItem, depth);
                     resolve(responseItem);
@@ -157,22 +173,40 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         );
     }
 
-    async getTree(id: string, depth: number): Promise<SetupItem> {
-        let responseItem: SetupItem | undefined = this.configs.get(id);
+    /**
+     * Retrieves a SetupItem and all its children up to depth.
+     * Each property is tested if ObservableSetupBaseMap, if depth != 0, load children otherwise set each child entry to null
+     * @param id of the setup item to get
+     * @param depth minimum of the resulting tree (The result might be deeper). Use -1 to load all descendants
+     */
+    async getTree(id: string, depth: number): Promise<SetupBase> {
+        let responseItem: SetupBase | undefined = this.configs.get(id);
 
         if (responseItem) {
-            if (depth && responseItem instanceof SetupContainer) {
-                const container = responseItem as SetupContainer<SetupItem, SetupInterface>;
+            if (depth != 0) {
+                for (const [propertyName, value] of Object.entries(responseItem)) {
+                    if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
+                        console.log(`${this.constructor.name}.getTree(${id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap`);
+                        const container = value as ObservableSetupBaseMap<SetupBase>;
 
-                for (const [childId, child] of container.children.entries()) {
-                    const childTree = await this.getTree(childId, depth - 1);
-                    if (child == null) {
-                        container.children.set(
-                            childId,
-                            childTree
-                        );
+                        for (const childId of container.keys()) {
+                            const childTree = await this.getTree(childId, depth - 1);
+                            if (container.get(childId) == null) {
+                                console.log(`${this.constructor.name}.getTree(${id}, ${depth}): ${propertyName} set [${childId}]`);
+                                container.set(
+                                    childId,
+                                    childTree
+                                );
+                            } else {
+                                console.log(`${this.constructor.name}.getTree(${id}, ${depth}): ${propertyName} already set [${childId}]`);
+                            }
+                        }
+                    } else {
+                        console.log(`${this.constructor.name}.getTree(${id}, ${depth}): skip ${propertyName}`);
                     }
                 }
+            } else {
+                console.log(`${this.constructor.name}.getTree(${id}, ${depth}): reached bottom`);
             }
         } else {
             responseItem = await this.getSetupImpl(id, depth);
@@ -189,41 +223,52 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
             const tree = await this.getTree(id, depth);
             this.connectPersistPropagate({ item: tree, connectParent: true, persist: false, propagate: false });
-            // console.log(`... ControllerImpl[${this.constructor.name}].processPromise(${oldestPromise.id}, ${oldestPromise.depth}) resolve 1/${this.setupPromises.length}`);
+            console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) resolve 1/${this.setupPromises.length}`, tree);
             resolve(tree);
             this.setupPromises.splice(0, 1);
 
         } while (this.setupPromises.length);
     }
 
-    protected onItemConnected: ((item: SetupItem, newItem: boolean) => void) | undefined;
+    protected onItemConnected: ((item: SetupBase, newItem: boolean) => void) | undefined;
 
 
     protected connectPersistPropagate(args: ConnectItemArgs): void {
         const { item, connectParent, persist, propagate } = args;
 
         if (!this.configs.has(item.id)) {
-            // console.log(`${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
+            console.log(`${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
             if (connectParent) {
                 const parent = this.configs.get(item.parentId);
-                if (parent && parent instanceof SetupContainer && parent.children.get(item.id) == null) {
-                    // console.log(`${this.constructor.name}.connectPersistPropagate(${item.className}[${item.id}], ${connectParent}, ${newItem})` + 
-                    // ` to ${parent.className}[${parent.id}]`);
-                    parent.children.set(item.id, item);
+
+                if (parent) {
+                    for (const [propertyName, value] of Object.entries(parent)) {
+                        if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
+                            console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: try ${propertyName}`);
+                            const container = value as ObservableSetupBaseMap<SetupBase>;
+
+                            const prospect = container.get(item.id);
+
+                            if (prospect == null) {
+                                console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: set in ${propertyName}`);
+                                container.set(item.id, item);
+                                break;
+                            } else if (prospect == undefined) {
+                                console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: not in ${propertyName}`);
+                            } else {
+                                console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: already in ${propertyName}`, item, prospect);
+                            }
+                        } else {
+                            console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: skip ${propertyName}`);
+                        }
+                    }
+                } else {
+                    console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId} doesn't exist (yet)`);
                 }
             }
             // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}, ${persist})`);
 
             this.configs.set(item.id, item);
-
-            // register properties like screen, rectangles, 
-            // for (const value of Object.values(item)) {
-            //     if (value instanceof SetupItem) {
-            //         console.log(`${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent},` + `
-            //             persist = ${ persist }, propagate = ${ propagate }) add property ${value.className}[${value.id}]`);
-            //         this.connectPersistPropagate({ ...args, item: value });
-            //     }
-            // }
 
             if (this.persist) {
                 const fPersist = this.persist;
@@ -231,18 +276,18 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 reaction(
                     () => {
                         // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist.expression= `, item.shallow);
-                        return item.shallow;
+                        return item.getShallow();
                     },
-                    (update: SetupItemInterface): void => {
+                    (update: SetupBaseInterface): void => {
                         if (isEqual(update, this.remoteUpdates.get(update.id))) {
-                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist skip received=`, update);
+                            console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist skip received=`, update);
                         } else {
                             fPersist(update);
                         }
                     },
                     {
                         name: `${this.constructor.name}[${item.id}].persist`,
-                        delay: 5000,
+                        delay: 1,
                         fireImmediately: persist
                     }
                 );
@@ -255,9 +300,9 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 reaction(
                     () => {
                         // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).propagate.expression=`, item.shallow);
-                        return item.shallow;
+                        return item.getShallow();
                     },
-                    (update: SetupItemInterface): void => {
+                    (update: SetupBaseInterface): void => {
                         if (isEqual(update, this.remoteUpdates.get(update.id))) {
                             // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).propagate skip received=`, update);
                         } else {
@@ -271,26 +316,38 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     }
                 );
             }
-
-            if (item instanceof SetupContainer) {
-                item.children.observe(this.onMapChange);
+            for (const [propertyName, value] of Object.entries(item)) {
+                if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
+                    console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
+                    const container = value as ObservableSetupBaseMap<SetupBase>;
+                    container.observe(this.onMapChange);
+                } else {
+                    console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): not observe ${propertyName} as not ObservableSetupBaseMap`);
+                }
             }
+
             if (this.onItemConnected) {
                 this.onItemConnected(item, propagate);
             }
         } else {
             // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}) skip already connected`);
         }
-        if (item instanceof SetupContainer) {
-            for (const child of item.children.values()) {
-                if (child) {
-                    this.connectPersistPropagate({ ...args, item: child, connectParent: false, propagate: false });
+        for (const [propertyName, value] of Object.entries(item)) {
+            if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
+                console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): connect children ${propertyName} as ObservableSetupBaseMap`);
+                const container = value as ObservableSetupBaseMap<SetupBase>;
+                for (const child of container.values()) {
+                    if (child) {
+                        this.connectPersistPropagate({ ...args, item: child, connectParent: false, propagate: false });
+                    }
                 }
+            } else {
+                console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): not connect children ${propertyName} as not ObservableSetupBaseMap`);
             }
         }
     }
 
-    private onMapChange = (changes: IMapDidChange<string, SetupItem | undefined>): void => {
+    private onMapChange = (changes: IMapDidChange<string, SetupBase | null>): void => {
         // console.log(`${this.constructor.name}.onMapChange(${changes.type} - ${changes.name})`);
         switch (changes.type) {
             case 'add':
@@ -306,40 +363,45 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         }
     }
 
-    protected abstract getSetupImpl(id: string, depth: number): Promise<SetupItem>;
+    protected abstract getSetupImpl(id: string, depth: number): Promise<SetupBase>;
 
-    protected readonly propagate: ((item: SetupItemInterface) => void) | undefined;
+    protected readonly propagate: ((item: SetupBaseInterface) => void) | undefined;
 
-    protected persist: ((item: SetupItemInterface) => void) | undefined;
+    protected persist: ((item: SetupBaseInterface) => void) | undefined;
 
-    private remoteUpdates: Map<string, SetupItemInterface> = new Map<string, SetupItemInterface>();
+    private remoteUpdates: Map<string, SetupBaseInterface> = new Map<string, SetupBaseInterface>();
 
-    private addRemoteUpdate(item: SetupItemInterface): void {
+    private addRemoteUpdate(item: SetupBaseInterface): void {
         this.remoteUpdates.set(item.id, item);
 
-        const children = (item as SetupContainerInterface<SetupItemInterface>).children;
-
-        if (children) {
-            for (const child of Object.values(children)) {
-                if (child)
-                    this.addRemoteUpdate(child);
+        for (const [propertyName, value] of Object.entries(item)) {
+            if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
+                console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): add children in ${propertyName}`);
+                const container = value as ObservableSetupBaseMap<SetupBase>;
+                for (const child of container.values()) {
+                    if (child) {
+                        this.addRemoteUpdate(child);
+                    }
+                }
+            } else {
+                console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): don't add children in ${propertyName} as not ObservableSetupBaseMap`);
             }
         }
     }
 
-    onSetupChanged = (e: Event, update: SetupItemInterface, persist?: boolean): void => {
-        // console.log(`${this.constructor.name}.onSetupChanged(${update.className}[${update.id}]):`);
+    onSetupChanged = (e: Event, update: SetupBaseInterface, persist?: boolean): void => {
+        // console.log(`${this.constructor.name}.onSetupChanged(${update.className}[${update.id}], persist=${persist}):`, update);
         let localItem = this.configs.get(update.id);
         const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
 
         this.addRemoteUpdate(update);
 
         if (localItem) {
-            // console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`, { ...update });
+            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`, { ...update });
             localItem.update(update);
         } else {
-            // console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`, { ...update });
-            localItem = createSetupItem(update);
+            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`, { ...update });
+            localItem = create(update);
             this.connectPersistPropagate({ item: localItem, connectParent: true, persist: false, propagate: false });
         }
         if (this.persist && persist) {
@@ -365,18 +427,24 @@ class Renderer extends ControllerImpl {
     }
 
 
-    protected getSetupSync(id: string, depth: number): SetupItem {
+    protected getSetupSync(id: string, depth: number): SetupBase {
 
-        const responseItem: SetupItem = this.configs.get(id) ?? this.load(id);
+        const responseItem: SetupBase = this.configs.get(id) ?? this.load(id);
 
-        if (depth && responseItem instanceof SetupContainer) {
-            const container = responseItem as SetupContainer<SetupItem, SetupInterface>;
-
-            for (const itemId of container.children.keys()) {
-                container.children.set(
-                    itemId,
-                    this.getSetupSync(itemId, depth - 1)
-                );
+        if (depth != 0) {
+            for (const [propertyName, value] of Object.entries(responseItem)) {
+                if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
+                    console.log(`${this.constructor.name}.getSetupSync(${id}): add children in ${propertyName}`);
+                    const container = value as ObservableSetupBaseMap<SetupBase>;
+                    for (const itemId of container.keys()) {
+                        container.set(
+                            itemId,
+                            this.getSetupSync(itemId, depth - 1)
+                        );
+                    }
+                } else {
+                    console.log(`${this.constructor.name}.getSetupSync(${id}): don't add children in ${propertyName} as not ObservableSetupBaseMap`);
+                }
             }
         }
 
@@ -385,12 +453,12 @@ class Renderer extends ControllerImpl {
 
     private registrations = new Array<{ itemId: SetupItemId; depth: number }>()
 
-    protected onCached = (item: SetupItem, depth: number): void => {
+    protected onCached = (item: SetupBase, depth: number): void => {
 
         this.registerWithMain(item, depth);
     }
 
-    protected registerWithMain(item: SetupItem, depth: number): void {
+    protected registerWithMain(item: SetupBase, depth: number): void {
 
         let registration = this.registrations.find(candidate => candidate.itemId == item.id);
 
@@ -405,7 +473,7 @@ class Renderer extends ControllerImpl {
         }
     }
 
-    protected async getSetupImpl(id: string, depth: number): Promise<SetupItem> {
+    protected async getSetupImpl(id: string, depth: number): Promise<SetupBase> {
         const item = this.getSetupSync(id, depth);
 
         this.registerWithMain(item, depth);
@@ -413,19 +481,19 @@ class Renderer extends ControllerImpl {
         return item;
     }
 
-    private load(id: string): SetupItem {
+    private load(id: string): SetupBase {
         // console.log(`${this.constructor.name}: load(${id})`);
         const itemString = localStorage.getItem(id);
-        let item: SetupItem;
+        let item: SetupBase;
 
         if (itemString) {
-            // console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
+            console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
 
-            const itemPlain: SetupItemInterface = JSON.parse(itemString);
+            const itemPlain: SetupBaseInterface = JSON.parse(itemString);
 
-            item = createSetupItem(itemPlain);
-        } else if (id as SetupID == 'Setup') {
-            item = Setup.createNewBlank();
+            item = create(itemPlain);
+        } else if (id as RootID == 'Root') {
+            item = Root.createNewBlank();
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             this.persist(item);
         } else if (id as ScreenID == 'Screen') {
@@ -438,37 +506,27 @@ class Renderer extends ControllerImpl {
         return item;
     }
 
-    protected readonly propagate = (item: SetupItemInterface): void => {
-        // console.log(`${this.constructor.name}.propapgate(${item.id}) send to main=`, item);
+    protected readonly propagate = (item: SetupBaseInterface): void => {
+        console.log(`${this.constructor.name}.propapgate(${item.id}) send to main=`, item);
         this.ipc.send('change', item);
     }
 
-    protected persist = (item: SetupItemInterface): void => {
-        // console.log(`${this.constructor.name}.persist(${item.id})`, item);
+    protected persist = (item: SetupBaseInterface): void => {
+        console.log(`${this.constructor.name}.persist(${item.id})`, item);
 
         localStorage.setItem(item.id, JSON.stringify(item));
     }
 }
 
-declare global {
-    interface Window {
-        wallpaper: {
-            register: (listeners: { user: (settings: Properties) => void }) => void;
-        };
-    }
-}
 
 type Size = { width: number; height: number };
-type UserCallback = (settings: Properties) => void;
 type SizeCallback = (size: Size) => void;
-type Listeners = { user?: UserCallback; size?: SizeCallback };
 
 /**
  * Renderer Config Controller for Wallpaper Browsers. Deal with size
  */
 class Paper extends Renderer {
     private browserId: string;
-    private paper: Listeners = {};
     private browser: Browser | undefined;
 
 
@@ -496,105 +554,12 @@ class Paper extends Renderer {
                 // );
             }
         );
-
-        this.connectToWallpaper();
     }
 
-
-    private onRegisterPaper = (listeners: Listeners): void => {
-        this.paper = listeners;
-
-        // console.log(`${this.constructor.name}[${this.browserId}]: register`, listeners);
-
-        this.initUserListener();
-
-        this.initSizeListener();
-    }
-
-    private initUserListener(): void {
-        if (this.paper.user) {
-            try {
-                if (this.browser) {
-                    if (this.browser.config) {
-                        this.paper.user(this.browser.config.general.properties);
-                    } else {
-                        console.error(`${this.constructor.name}.initUserListener(): no config`);
-                    }
-                } else {
-                    console.warn(`${this.constructor.name}.initUserListener(): wait for browser`);
-
-                    this.getSetup(this.browserId, -1).then(
-                        browser => {
-                            console.warn(`${this.constructor.name}[${this.browserId}].initUserListener: got Browser: this.browser=${this.browser}`);
-
-                            this.browser = browser as Browser;
-                            this.initUserListener();
-                        }
-                    );
-                }
-            } catch (initialError) {
-                console.error(
-                    `${this.constructor.name}[${this.browserId}]: ERROR initial user setting:${initialError}:`,
-                    initialError,
-                    this.browser?.config?.general.properties);
-            }
-        }
-    }
-
-    private initSizeListener(): void {
-        if (this.paper.size) {
-            // console.log(`${this.constructor.name}[${this.browserId}]: set size=${JSON.stringify(size)}`, size);
-
-            if (this.browser) {
-                autorun(
-                    () => {
-                        if (!this.paper.size) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: lost size handler`);
-                        if (!this.browser) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: lost browser`);
-
-                        try {
-                            if (!this.browser.scaled) throw new Error(`${this.constructor.name}[${this.browserId}]: autorun size: no scaled size to set`);
-
-                            this.paper.size({ width: this.browser.scaled.width, height: this.browser.scaled.height });
-                        } catch (initialError) {
-                            console.error(
-                                `${this.constructor.name}[${this.browserId}]: ${JSON.stringify(this.browser)}: ERROR setting size:${initialError}:`,
-                                initialError,
-                                this.browser);
-                        }
-                    }
-                );
-            } else {
-                console.warn(`${this.constructor.name}.initSizeListener(): wait for browser`);
-
-                this.getSetup(this.browserId, -1).then(
-                    browser => {
-                        console.warn(`${this.constructor.name}[${this.browserId}].initSizeListener: got Browser: this.browser=${this.browser}`);
-
-                        this.browser = browser as Browser;
-                        this.initSizeListener();
-                    }
-                );
-            }
-        }
-    }
-
-
-    /**
-     * Exposes interface to wallpaper window, e.g. window.wallpaper.register(listeners)
-     */
-    private connectToWallpaper(): void {
-        // Expose protected methods that allow the renderer process to use
-        // the ipcRenderer without exposing the entire object
-        window.wallpaper = {
-            register: this.onRegisterPaper
-        };
-    }
 
 }
 
 class MainWindow extends Renderer {
-
-    setup: Setup | undefined;
 
     constructor() {
         super();
@@ -607,9 +572,12 @@ class MainWindow extends Renderer {
     }
 
     onGetSetup = async (e, id: string, depth: number): Promise<void> => {
+        const setup = (await this.getSetup(id, depth)).getDeep();
+        console.log(`${this.constructor.name}.onGetSetup(${id}, ${depth}) send:`, setup );
+
         this.ipc.send(
             'setsetup',
-            (await this.getSetup(id, depth)).deep
+            setup
         );
     }
 }
@@ -678,7 +646,7 @@ class Main extends ControllerImpl {
 
     connectChangeListenerToExisting(listener: ChangeListener, listenerOffset: number): void {
         for (const item of this.configs.values()) {
-            for (let itemOffset = 0, ancestor: SetupItem | undefined = item;
+            for (let itemOffset = 0, ancestor: SetupBase | undefined = item;
                 ((listener.depth == -1) || (itemOffset <= listener.depth)) && (ancestor);
                 itemOffset += 1, ancestor = this.configs.get(ancestor.parentId)) {
                 if (listener.itemId == ancestor.id) {
@@ -696,15 +664,15 @@ class Main extends ControllerImpl {
         }
     }
 
-    private connectChangeListener(item: SetupItem, listener: ChangeListener, fireImmediately: boolean, offset = 0): void {
+    private connectChangeListener(item: SetupBase, listener: ChangeListener, fireImmediately: boolean, offset = 0): void {
         // console.log(`${this.constructor.name}.connectChangeListener[${listener.windowId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
         reaction(
             (/*r*/) => {
                 // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].expression ${item.id}@${listener.depth-offset}`);
-                return item.shallow;
+                return item.getShallow();
             },
             (updatedItem, /*r*/) => {
-                // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
+                console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
                 listener.ipc.send('change', updatedItem, false);
             },
             {
@@ -715,11 +683,11 @@ class Main extends ControllerImpl {
         );
     }
 
-    private connectChangeListeners(item: SetupItem, fireImmediately: boolean): void {
+    private connectChangeListeners(item: SetupBase, fireImmediately: boolean): void {
         // console.log(`${this.constructor.name}.connectChangeListeners[${this.changeListeners.length}](${item.id},${fireImmediately})`);
         for (const listener of this.changeListeners) {
             /// Check if ancestor in within depth is listening
-            for (let offset = 0, ancestor: SetupItem | undefined = item; (offset <= listener.depth) && (ancestor); offset += 1, ancestor = this.configs.get(ancestor.parentId)) {
+            for (let offset = 0, ancestor: SetupBase | undefined = item; (offset <= listener.depth) && (ancestor); offset += 1, ancestor = this.configs.get(ancestor.parentId)) {
                 if (listener.itemId == ancestor.id) {
                     this.connectChangeListener(item, listener, fireImmediately, offset);
                     break;
@@ -728,18 +696,18 @@ class Main extends ControllerImpl {
         }
     }
 
-    protected onItemConnected = (item: SetupItem, fireImmediately: boolean): void => {
+    protected onItemConnected = (item: SetupBase, fireImmediately: boolean): void => {
         // console.log(`${this.constructor.name}.onItemConnected(${item.id}) fireImmediately=${fireImmediately}`);
         this.connectChangeListeners(item, fireImmediately);
     }
 
-    private onSetSetup = (e, item: SetupItemInterface): void => {
+    private onSetSetup = (e, item: SetupBaseInterface): void => {
 
-        // console.log(`${this.constructor.name}.onSetSetup: promises=${this.promises.length}` /* , item */);
+        console.log(`${this.constructor.name}.onSetSetup: promises=${this.promises.length}`, item);
 
         const currentPromise = this.promises[0];
 
-        const response = createSetupItem(item);
+        const response = create(item);
 
         if (this.promises.length != 1) {
             console.error(`${this.constructor.name}.onSetSetup: promises.length=${this.promises.length} should be 1`);
@@ -774,10 +742,10 @@ class Main extends ControllerImpl {
         }
     }
 
-    protected getSetupImpl(id: string, depth: number): Promise<SetupItem> {
+    protected getSetupImpl(id: string, depth: number): Promise<SetupBase> {
         return new Promise(
             (resolve, reject) => {
-                const responseItem: SetupItem | undefined = this.configs.get(id);
+                const responseItem: SetupBase | undefined = this.configs.get(id);
 
                 if (!responseItem) {
                     this.promises.push({ id: id, depth: depth, resolve: resolve, reject: reject });
@@ -796,12 +764,12 @@ class Main extends ControllerImpl {
             });
     }
 
-    // protected readonly propagate = (item: SetupItemInterface): void => {
+    // protected readonly propagate = (item: SetupBaseInterface): void => {
     //     console.log(`${this.constructor.name}.propapgate(${item.id})`, item);
     // }
 
-    protected persist = (item: SetupItemInterface): void => {
-        // console.log(`${this.constructor.name}.persist(${item.id})`, item);
+    protected persist = (item: SetupBaseInterface): void => {
+        console.log(`${this.constructor.name}.persist(${item.id})`, item);
 
         this.ipcStorage?.send('change', item, true);
     }

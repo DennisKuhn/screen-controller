@@ -1,4 +1,4 @@
-import { SetupItemInterface, SetupItem, Rectangle, RectangleInterface } from '../../infrastructure/Configuration/WallpaperSetup';
+// import { SetupItemInterface, SetupItem, Rectangle, RectangleInterface } from '../../infrastructure/Configuration/WallpaperSetup';
 
 // export interface PluginSetupInterface extends SetupItemInterface {
 //     relativeBounds: RectangleInterface;

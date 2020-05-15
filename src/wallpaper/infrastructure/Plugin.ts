@@ -1,16 +1,16 @@
-import { PluginSetupItem } from './PluginSetup';
+import { Plugin as PluginSetup } from '../../infrastructure/Configuration/Plugin';
 
 export interface PluginFactory {
-    (config: PluginSetupItem): Plugin;
+    (config: PluginSetup): Plugin;
 }
 
 export class Plugin {
-    constructor(protected setup: PluginSetupItem) {
+    constructor(protected setup: PluginSetup) {
     }
 
     private static factories = new Map<string, PluginFactory>();
 
-    public static create(config: PluginSetupItem): Plugin {
+    public static create(config: PluginSetup): Plugin {
         const factory = Plugin.factories.get(config.className);
 
         if (!factory) throw new Error(`Plugin.create() no factory for ${config.className}`);

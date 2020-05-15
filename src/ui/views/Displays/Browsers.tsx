@@ -15,7 +15,9 @@ import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
 import controller from '../../../infrastructure/Configuration/Controller';
-import { BrowserMap, Browser, Rectangle, Display } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { BrowserMap, Browser, Display } from '../../../infrastructure/Configuration/Root';
+import { Rectangle } from "../../../infrastructure/Configuration/Rectangle";
+import Plugins from './Plugins';
 
 const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
 
@@ -91,6 +93,9 @@ const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
                         <Delete />
                     </IconButton>
                 </Tooltip>
+            </TableCell>
+            <TableCell>
+                <Plugins browser={browser} />
             </TableCell>
         </TableRow>
     );

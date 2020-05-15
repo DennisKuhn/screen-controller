@@ -16,7 +16,7 @@ import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 
-import { Screen, Display, Browser, DisplayMap } from '../../../infrastructure/Configuration/WallpaperSetup';
+import { Screen, Display, Browser, DisplayMap } from '../../../infrastructure/Configuration/Root';
 import { remote } from 'electron';
 import Browsers from './Browsers';
 import controller from '../../../infrastructure/Configuration/Controller';

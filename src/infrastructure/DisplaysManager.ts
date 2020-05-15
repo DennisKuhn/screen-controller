@@ -1,6 +1,8 @@
 import { screen as electronScreen, Display as ElectronDisplay } from 'electron';
 import controller from './Configuration/Controller';
-import { Screen, Display, ScreenID } from './Configuration/WallpaperSetup';
+import { Screen } from './Configuration/Screen';
+import { ScreenID } from './Configuration/ScreenInterface';
+import { Display } from './Configuration/Display';
 
 
 
@@ -40,18 +42,18 @@ export default class DisplaysManager {
         // console.log('DisplaysManager.checkDisplays:', setup);
 
         for (const displayId of DisplaysManager.actualDisplays.keys()) {
-            if (!screen.children.has(displayId)) {
+            if (!screen.displays.has(displayId)) {
                 // console.log(`DisplaysManager.checkDisplays: add ${displayId}`);
-                screen.children.set(
+                screen.displays.set(
                     displayId,
                     Display.createNew(displayId)
                 );
             }
         }
-        for (const displayId of screen.children.keys()) {
+        for (const displayId of screen.displays.keys()) {
             if (!DisplaysManager.actualDisplays.has(displayId)) {
                 // console.log(`DisplaysManager.checkDisplays: delete ${displayId}`);
-                screen.children.delete(displayId);
+                screen.displays.delete(displayId);
             }
         }
     }

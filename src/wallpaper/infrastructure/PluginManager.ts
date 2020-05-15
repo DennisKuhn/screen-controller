@@ -1,5 +1,5 @@
 import controller from '../../infrastructure/Configuration/Controller';
-import { Browser } from '../../infrastructure/Configuration/WallpaperSetup';
+import { Browser } from '../../infrastructure/Configuration/Root';
 
 
 export class PluginManager {

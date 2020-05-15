@@ -1,6 +1,9 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
 import controller from './Configuration/Controller';
-import { Screen, Browser, Display, ScreenID } from './Configuration/WallpaperSetup';
+import { Screen } from './Configuration/Screen';
+import { Browser } from './Configuration/Browser';
+import { Display } from './Configuration/Display';
+import { ScreenID } from './Configuration/ScreenInterface';
 import { IMapDidChange } from 'mobx';
 
 
@@ -24,7 +27,7 @@ export default class WallpapersManager {
 
         WallpapersManager.screen = (await controller.getSetup(screenId, 2)) as Screen;
 
-        WallpapersManager.screen.children.observe(WallpapersManager.updateDisplays);
+        WallpapersManager.screen.displays.observe(WallpapersManager.updateDisplays);
 
         WallpapersManager.connectDisplays();
 
@@ -72,12 +75,12 @@ export default class WallpapersManager {
     private static connectDisplays(): void {
         if (!WallpapersManager.screen) throw new Error('WallpapersManager.connectDisplays(): no screen');
 
-        for (const display of WallpapersManager.screen.children.values()) {
+        for (const display of WallpapersManager.screen.displays.values()) {
             if (!display) throw new Error('WallpapersManager.connectDisplays() null display');
             
-            display.children.observe(WallpapersManager.updateBrowsers);
+            display.browsers.observe(WallpapersManager.updateBrowsers);
             
-            for (const browser of display.children.values()) {
+            for (const browser of display.browsers.values()) {
                 if (!browser) throw new Error(`WallpapersManager.connectDisplays[${display.id}] null browser`);
 
                 WallpapersManager.createWallpaperWindow(
@@ -100,14 +103,14 @@ export default class WallpapersManager {
         switch (changes.type) {
             case 'add':
                 if (changes.newValue) {
-                    changes.newValue.children.observe(WallpapersManager.updateBrowsers);
+                    changes.newValue.browsers.observe(WallpapersManager.updateBrowsers);
                 }
                 break;
             case 'delete':
                 if (!changes.oldValue)
                     throw new Error(`WallpapersManager.updateDisplays(${changes.type}}) no oldValue`);
 
-                for (const browser of changes.oldValue.children.values()) {
+                for (const browser of changes.oldValue.browsers.values()) {
                     if (!browser)
                         throw new Error(`WallpapersManager.updateDisplays(${changes.type}}) null browser`);
                     

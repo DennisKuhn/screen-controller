@@ -1,6 +1,7 @@
-import { PluginSetupItem, PluginSetupInterface } from '../../infrastructure/Configuration/WallpaperSetup';
+import { PluginSetupItem, PluginSetupInterface } from '../../infrastructure/Configuration/Root';
 // import { PluginSetupItem, PluginSetupInterface } from '../infrastructure/PluginSetup';
 import { Plugin } from '../infrastructure/Plugin';
+import { JSONSchema7 } from 'json-schema';
 
 
 interface AnalogClockSetupInterface extends PluginSetupInterface {
@@ -13,11 +14,11 @@ class AnalogClockSetup extends PluginSetupItem {
     showSeconds: boolean;
     showMarkers: boolean;
 
-    static readonly schema = {
+    static readonly schema: JSONSchema7 = {
         ...PluginSetupItem.schema,
         title: 'Analog clock',
         description: 'Analog clock with optional seconds hand or markers',
-        allOff: [
+        allOf: [
             {
                 $ref: '#PluginSetupItem'
             },
@@ -53,8 +54,6 @@ class AnalogClockSetup extends PluginSetupItem {
             showMarkers: this.showMarkers
         };
     }
-
-
 }
 
 /**

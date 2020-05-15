@@ -1,3 +1,6 @@
+
+
+
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 'use strict';
 
@@ -267,7 +270,7 @@ function render(timestamp) {// requestAnimationFrame supplies its own timestamp.
                 break;
         }
 
-        analogClock.render(context, gradient);
+        // analogClock.render(context, gradient);
 
         shapeList.render(context, gradient, renderer.interpolationSteps, renderer.interpolationBalanced, renderer.renderMethod);
 
