@@ -1,7 +1,8 @@
-import { SetupBase } from './SetupBase';
-import { Rectangle } from './Rectangle';
+import { SetupBase, SetupConstructor, SetupBaseInterface } from '../SetupBase';
+import { Rectangle } from '../Default/Rectangle';
 import { JSONSchema7 } from 'json-schema';
-import { SetupBaseInterface } from './SetupBaseInterface';
+
+export type { SetupBaseInterface };
 
 export abstract class Plugin extends SetupBase {
     relativeBounds: Rectangle;
@@ -9,6 +10,8 @@ export abstract class Plugin extends SetupBase {
 
     protected static readonly schema: JSONSchema7 = {
         $id: '#' + Plugin.name,
+        title: 'Plugin base',
+        description: 'Abstract base for plugins',
         allOf: [
             {
                 $ref: '#' + SetupBase.name
@@ -25,6 +28,14 @@ export abstract class Plugin extends SetupBase {
 
     constructor(setup: SetupBaseInterface) {
         super(setup);
-        SetupBase.addSchema(Plugin.schema);
+    }
+
+    // static register = (): void => SetupBase.register(Plugin, Plugin.schema);
+    static register = (): void => SetupBase.addSchema(Plugin.schema);
+
+    static add<SetupType extends Plugin>(factory: SetupConstructor<SetupType>, schema: JSONSchema7): void {
+        SetupBase.register(factory, schema);
     }
 }
+
+Plugin.register();

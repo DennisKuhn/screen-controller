@@ -1,5 +1,5 @@
-import controller from '../../infrastructure/Configuration/Controller';
-import { Browser } from '../../infrastructure/Configuration/Root';
+import controller from '../../Setup/Controller';
+import { Browser } from '../../Setup/Application/Browser';
 
 
 export class PluginManager {

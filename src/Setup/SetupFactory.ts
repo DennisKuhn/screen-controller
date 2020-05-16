@@ -1,5 +1,4 @@
-import { SetupBase, SetupConstructor } from './SetupBase';
-import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
+import { SetupBase, SetupConstructor, SetupBaseInterface, SetupItemId } from './SetupBase';
 
 const factories = new Map<SetupItemId, SetupConstructor<SetupBase>>();
 

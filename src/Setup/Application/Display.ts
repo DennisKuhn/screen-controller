@@ -1,7 +1,6 @@
 import { Browser } from './Browser';
-import { SetupBase } from './SetupBase';
-import { ObservableSetupBaseMap } from './Container';
-import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
+import { SetupBase, SetupItemId, SetupBaseInterface } from '../SetupBase';
+import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
 
 export class Display extends SetupBase {

@@ -2,8 +2,7 @@ import { IMapDidChange, reaction } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
 import { isEqual, Dictionary } from 'lodash';
-import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
-import { SetupBase } from './SetupBase';
+import { SetupBase, SetupItemId, SetupBaseInterface } from './SetupBase';
 import { create } from './SetupFactory';
 import { ObservableSetupBaseMap } from './Container';
 
@@ -11,17 +10,18 @@ import { ObservableSetupBaseMap } from './Container';
  * Import basic required Setup Classes to call SetupFactory.register
  * Currently Setup->Screen->Display->Browser->Rectangle
  */
-import { Root } from './Root';
-import { Screen } from './Screen';
-import { Display } from './Display';
-import { Browser } from './Browser';
-import { Rectangle } from './Rectangle';
 
-Root.register();
-Screen.register();
-Display.register();
-Browser.register();
-Rectangle.register();
+import { Root } from './Application/Root';
+import { Screen } from './Application/Screen';
+import { Browser } from './Application/Browser';
+
+//Rectangle.register();
+
+// Root.register();
+// 
+// Display.register();
+// 
+// 
 
 type ChangeChannel = 'change';
 type RegisterChannel = 'register';
@@ -113,12 +113,12 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
     test(item: SetupBase, depth: number): boolean {
         if (depth != 0) {
-            for (const [propertyName, value] of Object.entries(item)) {
+            for (const [/*propertyName*/, value] of Object.entries(item)) {
                 if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                     const container = value as ObservableSetupBaseMap<SetupBase>;
                     // console.log(`${this.constructor.name}.test(${item.id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap#${container.size}`);
 
-                    for (const [childId, child] of container.entries()) {
+                    for (const [/*childId*/, child] of container.entries()) {
                         if ((child == null) || (!this.test(child, depth - 1))) {
                             // console.log(`${this.constructor.name}.test(${item.id}, ${depth}):${propertyName} failed: [${childId}] == ${child}`);
                             return false;
@@ -184,7 +184,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
         if (responseItem) {
             if (depth != 0) {
-                for (const [propertyName, value] of Object.entries(responseItem)) {
+                for (const [/*propertyName*/, value] of Object.entries(responseItem)) {
                     if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                         // console.log(`${this.constructor.name}.getTree(${id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap`);
                         const container = value as ObservableSetupBaseMap<SetupBase>;
@@ -237,12 +237,13 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         const { item, connectParent, persist, propagate } = args;
 
         if (!this.configs.has(item.id)) {
-            // console.log(`${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
+            // console.log(
+            // `${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
             if (connectParent) {
                 const parent = this.configs.get(item.parentId);
 
                 if (parent) {
-                    for (const [propertyName, value] of Object.entries(parent)) {
+                    for (const [/*propertyName*/, value] of Object.entries(parent)) {
                         if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                             // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: try ${propertyName}`);
                             const container = value as ObservableSetupBaseMap<SetupBase>;
@@ -316,7 +317,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     }
                 );
             }
-            for (const [propertyName, value] of Object.entries(item)) {
+            for (const [/*propertyName*/, value] of Object.entries(item)) {
                 if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                     // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
                     const container = value as ObservableSetupBaseMap<SetupBase>;
@@ -332,7 +333,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         } else {
             // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}) skip already connected`);
         }
-        for (const [propertyName, value] of Object.entries(item)) {
+        for (const [/*propertyName*/, value] of Object.entries(item)) {
             if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                 // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): connect children ${propertyName} as ObservableSetupBaseMap`);
                 const container = value as ObservableSetupBaseMap<SetupBase>;
@@ -374,7 +375,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     private addRemoteUpdate(item: SetupBaseInterface): void {
         this.remoteUpdates.set(item.id, item);
 
-        for (const [propertyName, value] of Object.entries(item)) {
+        for (const [/*propertyName*/, value] of Object.entries(item)) {
             if (typeof value == 'object') {
                 if ((value as SetupBaseInterface).id != undefined) {
                     // console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): skip child ${propertyName}=[${(value as SetupBaseInterface).id}]`);
@@ -395,7 +396,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     onSetupChanged = (e: Event, update: SetupBaseInterface, persist?: boolean): void => {
         // console.log(`${this.constructor.name}.onSetupChanged(${update.className}[${update.id}], persist=${persist}):`, update);
         let localItem = this.configs.get(update.id);
-        const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
+        // const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
 
         this.addRemoteUpdate(update);
 
@@ -435,7 +436,7 @@ class Renderer extends ControllerImpl {
         const responseItem: SetupBase = this.configs.get(id) ?? this.load(id);
 
         if (depth != 0) {
-            for (const [propertyName, value] of Object.entries(responseItem)) {
+            for (const [/*propertyName*/, value] of Object.entries(responseItem)) {
                 if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                     // console.log(`${this.constructor.name}.getSetupSync(${id}): add children in ${propertyName}`);
                     const container = value as ObservableSetupBaseMap<SetupBase>;

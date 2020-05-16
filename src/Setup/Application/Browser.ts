@@ -1,16 +1,15 @@
-import { Rectangle } from './Rectangle';
-import { SimpleRectangle } from './RectangleInterface';
+import { Rectangle } from '../Default/Rectangle';
+import { SimpleRectangle } from '../Default/RectangleInterface';
 import { observable } from 'mobx';
-import { ObservableSetupBaseMap } from './Container';
+import { ObservableSetupBaseMap } from '../Container';
 import { Plugin } from './Plugin';
-import { SetupBase } from './SetupBase';
-import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
+import { SetupBase, SetupItemId, SetupBaseInterface } from '../SetupBase';
 import { JSONSchema7 } from 'json-schema';
 
 
 export class Browser extends SetupBase {
 
-    static schema: JSONSchema7 = {
+    static readonly schema: JSONSchema7 = {
         $id: '#' + Browser.name,
         title: 'Browser',
         description: 'Container for plugins',
@@ -24,10 +23,10 @@ export class Browser extends SetupBase {
                     relative: { $ref: '#' + Rectangle.name },
                     scaled: { $ref: '#' + Rectangle.name },
                     device: { $ref: '#' + Rectangle.name },
-                    // plugins: {
-                    //     type: 'object',
-                    //     additionalProperties: { $ref: '#' + Plugin.name }
-                    // }
+                    plugins: {
+                        type: 'object',
+                        additionalProperties: { $ref: '#' + Plugin.name }
+                    }
                 },
                 required: ['relative', 'plugins']
             }

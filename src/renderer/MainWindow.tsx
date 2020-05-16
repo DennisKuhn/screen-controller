@@ -1,7 +1,8 @@
 import * as React from 'react';
 import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
-import controller from '../infrastructure/Configuration/Controller';
-import { Screen } from '../infrastructure/Configuration/Screen';
+import controller from '../Setup/Controller';
+import { Screen } from '../Setup/Application/Screen';
+import { Manager } from '../plugins/manager';
 
 export default function MainWindow(): JSX.Element {
     controller.getSetup(Screen.name, 0).then(
@@ -15,7 +16,13 @@ export default function MainWindow(): JSX.Element {
             }
         }
     );
-    
+
+    Manager.loadAll()
+        .then(() => console.log('MainWindow.tsx: loaded all Plugins'))
+        .catch(
+            reason => console.error(`MainWindow.tsx: load all plugins failed: ${reason}: ${reason.message}`)
+        );
+
     return <>
         <h1>Main index</h1>
         <div id="wrapper">

@@ -1,4 +1,4 @@
-import { Plugin as PluginSetup } from '../../infrastructure/Configuration/Plugin';
+import { Plugin as PluginSetup } from '../../Setup/Application/Plugin';
 
 export interface PluginFactory {
     (config: PluginSetup): Plugin;

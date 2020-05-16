@@ -9,20 +9,22 @@ import GridListTileBar from '@material-ui/core/GridListTileBar';
 import IconButton from '@material-ui/core/IconButton';
 import AddIcon from '@material-ui/icons/Add';
 
-import { Browser, PluginSetupItem } from '../../../infrastructure/Configuration/Root';
-import { JSONSchema7 } from 'json-schema';
-
+import { Browser } from '../../../Setup/Application/Browser';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { SetupBase } from '../../../Setup/SetupBase';
 
 const Plugins = observer(({ browser }: { browser: Browser }): JSX.Element => {
+    if (!SetupBase.activeSchema.definitions)
+        return <GridList />;
 
     return (
         <GridList>
             {
-                PluginSetupItem.schemas.map(
-                    (schema: JSONSchema7) => (
-                        <GridListTile key={schema.$id}>
+                Object.values( SetupBase.activeSchema.definitions ).map(
+                    (schema: JSONSchema7Definition) => (
+                        <GridListTile key={(schema as JSONSchema7).$id}>
                             <GridListTileBar
-                                title={schema.title}
+                                title={(schema as JSONSchema7).title}
                                 actionIcon={
                                     <IconButton>
                                         <AddIcon />

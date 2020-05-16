@@ -1,16 +1,9 @@
-import { PluginSetupItem, PluginSetupInterface } from '../../infrastructure/Configuration/Root';
-// import { PluginSetupItem, PluginSetupInterface } from '../infrastructure/PluginSetup';
-import { Plugin } from '../infrastructure/Plugin';
+import { SetupBaseInterface, Plugin as PluginSetup } from '../src/Setup/Application/Plugin';
+import { PluginBase, Registration } from '../src/plugins/PluginBase';
 import { JSONSchema7 } from 'json-schema';
 
 
-interface AnalogClockSetupInterface extends PluginSetupInterface {
-    readonly className: 'AnalogClock';
-    showSeconds: boolean;
-    showMarkers: boolean;
-}
-
-class AnalogClockSetup extends PluginSetupItem {
+export class AnalogClockSetup extends PluginSetup {
     showSeconds: boolean;
     showMarkers: boolean;
 
@@ -32,38 +25,29 @@ class AnalogClockSetup extends PluginSetupItem {
         ]
     };
 
-    constructor(setup: AnalogClockSetupInterface) {
-        super(setup);
+    constructor(source: SetupBaseInterface) {
+        super(source);
 
-        this.showSeconds = setup.showSeconds;
-        this.showMarkers = setup.showMarkers;
-    }
+        const { showSeconds, showMarkers } = (super.update(source) as AnalogClockSetup);
 
-    get shallow(): AnalogClockSetupInterface {
-        return {
-            ...super.shallow as AnalogClockSetupInterface,
-            showSeconds: this.showSeconds,
-            showMarkers: this.showMarkers
-        };
-    }
-
-    get deep(): AnalogClockSetupInterface {
-        return {
-            ...super.deep as AnalogClockSetupInterface,
-            showSeconds: this.showSeconds,
-            showMarkers: this.showMarkers
-        };
+        this.showSeconds = showSeconds;
+        this.showMarkers = showMarkers;
     }
 }
+
 
 /**
  * Displays an analog clock, optional markers and seconds hand.
  */
-export default class AnalogClock extends Plugin {
+export class AnalogClock extends PluginBase {
     visible = true;
 
-    constructor(protected setup: AnalogClockSetup) {
+    setup: AnalogClockSetup;
+
+    constructor(setup: PluginSetup) {        
         super(setup);
+
+        this.setup = setup as AnalogClockSetup;
     }
 
     /**
@@ -135,13 +119,10 @@ export default class AnalogClock extends Plugin {
 
 }
 
-Plugin.register(
-    'AnalogClock',
-    (setup: PluginSetupItem) => new AnalogClock(setup as AnalogClockSetup)
-);
+const registration: Registration<AnalogClock, AnalogClockSetup> = {
+    plugin: AnalogClock,
+    setup: AnalogClockSetup,
+    schema: AnalogClockSetup.schema
+};
 
-PluginSetupItem.register(
-    'AnalogClock',
-    AnalogClockSetup.schema,
-    (setup: PluginSetupInterface) => new AnalogClockSetup(setup as AnalogClockSetupInterface)
-);
+export default registration;

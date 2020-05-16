@@ -2,9 +2,9 @@ import { Rectangle as ElectronRectangle, BrowserWindow, BrowserWindowConstructor
 import nodeWinWallpaper from 'node-win-wallpaper';
 import ScreenBounds, { DisplayBounds } from './ScreenBounds';
 import { EventEmitter } from 'events';
-import { Browser } from '../infrastructure/Configuration/Browser';
-import { SimpleRectangle } from '../infrastructure/Configuration/RectangleInterface';
-import { Rectangle } from '../infrastructure/Configuration/Rectangle';
+import { Browser } from '../Setup/Application/Browser';
+import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
+import { Rectangle } from '../Setup/Default/Rectangle';
 import { reaction } from 'mobx';
 import { isEqual } from 'lodash';
 

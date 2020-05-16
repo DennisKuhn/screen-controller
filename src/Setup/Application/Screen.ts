@@ -1,7 +1,6 @@
 import { Display } from './Display';
-import { SetupBase } from './SetupBase';
-import { ObservableSetupBaseMap } from './Container';
-import { SetupBaseInterface } from './SetupBaseInterface';
+import { SetupBase, SetupBaseInterface } from '../SetupBase';
+import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
 
 export class Screen extends SetupBase {

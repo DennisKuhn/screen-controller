@@ -1,7 +1,6 @@
 import { ObservableMap } from 'mobx';
 import { Dictionary } from 'lodash';
-import { SetupBaseInterface, SetupItemId } from './SetupBaseInterface';
-import { SetupBase } from './SetupBase';
+import { SetupBase, SetupBaseInterface, SetupItemId } from './SetupBase';
 
 class ObservableArrayMap<K, V> extends ObservableMap<K, V> {
 

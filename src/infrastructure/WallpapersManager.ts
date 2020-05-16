@@ -1,8 +1,8 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
-import controller from './Configuration/Controller';
-import { Screen } from './Configuration/Screen';
-import { Browser } from './Configuration/Browser';
-import { Display } from './Configuration/Display';
+import controller from '../Setup/Controller';
+import { Screen } from '../Setup/Application/Screen';
+import { Browser } from '../Setup/Application/Browser';
+import { Display } from '../Setup/Application/Display';
 import { IMapDidChange } from 'mobx';
 
 
@@ -132,16 +132,18 @@ export default class WallpapersManager {
         // console.log(`WallpapersManager.updateBrowsers(${display.id})`);
         switch (changes.type) {
             case 'add':
-                if (!changes.newValue) throw new Error(`WallpapersManager.updateBrowsers(${changes.type}}) no newValue`);
-
-                WallpapersManager.createWallpaperWindow(
-                    Number(changes.newValue.parentId),
-                    changes.newValue
-                );
+                if (changes.newValue == null) {
+                    console.log((`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}}) = null`));
+                } else {
+                    WallpapersManager.createWallpaperWindow(
+                        Number(changes.newValue.parentId),
+                        changes.newValue
+                    );
+                }
                 break;
             case 'delete':
                 if (!changes.oldValue)
-                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}}) no oldValue`);
+                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}}) no oldValue`);
                 else {
                     const paper = WallpapersManager.papers.get(changes.oldValue.id);
 
@@ -154,7 +156,16 @@ export default class WallpapersManager {
                 }
                 break;
             case 'update':
-                throw new Error(`WallpapersManager.updateBrowsers(${changes.type})`);
+                if (changes.oldValue != null) {
+                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}) from ${changes.oldValue.id} to ${changes.newValue?.id}`);
+                } else if (changes.newValue == null) {
+                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}) from null to null`);
+                } else {
+                    WallpapersManager.createWallpaperWindow(
+                        Number(changes.newValue.parentId),
+                        changes.newValue
+                    );
+                }
                 break;
         }
     }

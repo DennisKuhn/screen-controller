@@ -14,10 +14,12 @@ import FullscreenExit from '@material-ui/icons/FullscreenExit';
 import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
-import controller from '../../../infrastructure/Configuration/Controller';
-import { BrowserMap, Browser, Display } from '../../../infrastructure/Configuration/Root';
-import { Rectangle } from "../../../infrastructure/Configuration/Rectangle";
+import controller from '../../../Setup/Controller';
+import { Browser } from '../../../Setup/Application/Browser';
+import { Display } from '../../../Setup/Application/Display';
+import { Rectangle } from '../../../Setup/Default/Rectangle';
 import Plugins from './Plugins';
+import { ObservableSetupBaseMap } from '../../../Setup/Container';
 
 const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
 
@@ -25,7 +27,7 @@ const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
 
     function deleteBrowser(): void {
         controller.getSetup(browser.parentId, 0).then(
-            display => (display as Display).children.delete(browser.id)
+            display => (display as Display).browsers.delete(browser.id)
         );
     }
 
@@ -63,7 +65,8 @@ const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
             <TableCell style={{ padding: '8px 0px 8px 0px' }}>
                 <Tooltip
                     id={'tooltip-' + browser.id + '-config'}
-                    title={(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1) ? 'Make part screen' : 'Make Full Screen'}
+                    title={(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1) ?
+                        'Make part screen' : 'Make Full Screen'}
                     placement="top"
                 >
                     <IconButton
@@ -102,7 +105,7 @@ const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
 });
 
 
-const Browsers = observer(({ browsers }: { browsers: BrowserMap }): JSX.Element => {
+const Browsers = observer(({ browsers }: { browsers: ObservableSetupBaseMap<Browser> }): JSX.Element => {
 
     return (
         <Table>

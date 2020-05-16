@@ -1,4 +1,4 @@
-import controller from './Configuration/Controller';
+import controller from '../Setup/Controller';
 import PluginLoader from '../pluginloader';
 console.log('preload included');
 

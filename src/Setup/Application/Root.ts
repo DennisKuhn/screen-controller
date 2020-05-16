@@ -1,7 +1,6 @@
 import { observable } from 'mobx';
-import { SetupBase } from './SetupBase';
+import { SetupBase, SetupBaseInterface } from '../SetupBase';
 import { Screen } from './Screen';
-import { SetupBaseInterface } from './SetupBaseInterface';
 import { JSONSchema7 } from 'json-schema';
 
 export class Root extends SetupBase {

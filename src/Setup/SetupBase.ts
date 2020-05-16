@@ -1,10 +1,19 @@
-import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
 import { JSONSchema7 } from 'json-schema';
 import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
-import { Dictionary, omit } from 'lodash';
+import { Dictionary } from 'lodash';
 import Ajv, { ValidateFunction } from 'ajv';
 
+export type SetupItemId = string;
+
+export interface SetupBaseInterface {
+    /** Application unique, persistent, e.g. <ClassName>-<auto increment> */
+    id: SetupItemId;
+    parentId: SetupItemId;
+    className: string;
+
+    [key: string]: SetupBaseInterface | Dictionary<SetupBaseInterface> | string | number | boolean;
+}
 
 export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
@@ -53,6 +62,7 @@ export abstract class SetupBase {
         if (schemaName in SetupBase.activeSchema.definitions) {
             // console.warn(`SetupBase.addSchema(${schema.$id}) already registered (${schemaName})`, SetupBase.activeSchema.definitions[schema.$id], schema);
         } else {
+            console.log(`SetupBase.addSchema(${schema.$id}) @${Object.keys(SetupBase.activeSchema.definitions).length}`);
             SetupBase.activeSchema.definitions[schemaName] = schema;
 
             if (SetupBase.validate != undefined) {
@@ -161,8 +171,10 @@ export abstract class SetupBase {
                     case 'symbol':
                         console.log(`${this.constructor.name}.getShallow: ignore ${propertyName} of type ${typeof value}`);
                         break;
-                    case 'bigint':
                     case 'undefined':
+                        console.log(`${this.constructor.name}.getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        break;
+                    case 'bigint':
                         throw new Error(`${this.constructor.name}.getShallow: Invalid type ${typeof value} for ${propertyName}`);
                     default:
                         throw new Error(`${this.constructor.name}.getShallow: Unkown type ${typeof value} for ${propertyName}`);

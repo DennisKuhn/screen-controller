@@ -98,7 +98,7 @@ import svgImportMenu from './svgimportmenu';
 import shapeEditMenu from './shapeeditmenu';
 import mainMenu, { SHAPE_STORAGE_SLOT_AUTO_SAVE } from './mainmenu';
 
-import AnalogClock from './displays/analogclock';
+import AnalogClock from '../../plugins/analogclock';
 
 import './displays/digidisplay';
 import DigiDate from './displays/digidate';

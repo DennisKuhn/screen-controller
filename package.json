@@ -137,6 +137,7 @@
         "react-router-dom": "^5.1.2",
         "react-scripts": "^3.4.1",
         "react-swipeable-views": "^0.13.9",
+        "require-glob": "^3.2.0",
         "typescript": "^3.8.3",
         "worker-loader": "^2.0.0"
     }

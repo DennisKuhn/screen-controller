@@ -16,11 +16,14 @@ import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 
-import { Screen, Display, Browser, DisplayMap } from '../../../infrastructure/Configuration/Root';
+import { Screen } from '../../../Setup/Application/Screen';
+import { Display } from '../../../Setup/Application/Display';
+import { Browser } from '../../../Setup/Application/Browser';
 import { remote } from 'electron';
 import Browsers from './Browsers';
-import controller from '../../../infrastructure/Configuration/Controller';
+import controller from '../../../Setup/Controller';
 import { observer } from 'mobx-react-lite';
+import { ObservableSetupBaseMap } from '../../../Setup/Container';
 
 const DisplayCard = observer(({ config, specs }: { config: Display; specs: Electron.Display }): JSX.Element => {
 
@@ -31,7 +34,7 @@ const DisplayCard = observer(({ config, specs }: { config: Display; specs: Elect
             height: 1,
             width: 1
         });
-        config.children.set(
+        config.browsers.set(
             newBrowser.id,
             newBrowser
         );
@@ -57,7 +60,7 @@ const DisplayCard = observer(({ config, specs }: { config: Display; specs: Elect
                 </Tooltip>
             </CardHeader>
             <CardBody>
-                <Browsers browsers={config.children} />
+                <Browsers browsers={config.browsers} />
             </CardBody>
             <CardFooter stats={true}>
                 <p>{config.id} - {specs.scaleFactor}* {specs.workArea.width} x {specs.workArea.height}</p>
@@ -66,7 +69,7 @@ const DisplayCard = observer(({ config, specs }: { config: Display; specs: Elect
     </GridItem>;
 });
 
-const DisplayContainer = observer(({ displays }: { displays: DisplayMap }): JSX.Element => {
+const DisplayContainer = observer(({ displays }: { displays: ObservableSetupBaseMap<Display> }): JSX.Element => {
     // console.log(`Displays.tsx: DisplayContainer ready=${remote.app.isReady()}`);
 
     const electronDisplays = remote.screen.getAllDisplays().reduce((result, display) => {
@@ -86,11 +89,11 @@ const DisplayContainer = observer(({ displays }: { displays: DisplayMap }): JSX.
 
 // export default function DisplaysPage(): JSX.Element {
 const DisplaysPage = observer((): JSX.Element => {
-    const [displays, setDisplays] = useState(new DisplayMap());
+    const [displays, setDisplays] = useState(new ObservableSetupBaseMap<Display>());
 
     useEffect(() => {
         controller.getSetup('Screen', 2)
-            .then(screen => setDisplays((screen as Screen).children));
+            .then(screen => setDisplays((screen as Screen).displays));
     }, []);
 
     return <DisplayContainer displays={displays} />;
