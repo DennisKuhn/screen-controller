@@ -7,7 +7,7 @@ import { JSONSchema7 } from 'json-schema';
 
 export class Rectangle extends SetupBase {
     static readonly schema: JSONSchema7 = {
-        $id: Rectangle.name,
+        $id: '#' + Rectangle.name,
         allOf: [
             {
                 $ref: '#' + SetupBase.name

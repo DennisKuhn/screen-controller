@@ -6,7 +6,7 @@ import { JSONSchema7 } from 'json-schema';
 
 export class Root extends SetupBase {
     static schema: JSONSchema7 = {
-        $id: Root.name,
+        $id: '#' + Root.name,
         title: 'Root',
         description: 'Root element for setup',
         allOf: [

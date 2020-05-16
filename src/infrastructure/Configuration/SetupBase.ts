@@ -1,8 +1,10 @@
 import { SetupItemId, SetupBaseInterface } from './SetupBaseInterface';
-import { JSONSchema7, validate } from 'json-schema';
+import { JSONSchema7 } from 'json-schema';
 import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary, omit } from 'lodash';
+import Ajv, { ValidateFunction } from 'ajv';
+
 
 export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
@@ -13,9 +15,11 @@ export abstract class SetupBase {
     readonly parentId: SetupItemId;
     readonly className: string;
 
+    static readonly schemaUri = 'https://github.com/DennisKuhn/screen-controller/schemas/SetupSchema.json#';
+
     public static activeSchema: JSONSchema7 = {
-        $schema: 'http://json-schema.org/draft/2019-09/schema#',
-        $id: 'https://github.com/DennisKuhn/screen-controller/schemas/SetupSchema.json',
+        // $schema: 'http://json-schema.org/draft/2019-09/schema#',
+        $id: SetupBase.schemaUri,
         definitions: {
             SetupBase: {
                 $id: '#' + SetupBase.name,
@@ -35,16 +39,27 @@ export abstract class SetupBase {
             }
         }
     };
+    private static ajv = new Ajv();
+    private static validate: ValidateFunction | undefined;
+
 
     protected static addSchema(schema: JSONSchema7): void {
         if (!SetupBase.activeSchema.definitions) throw new Error(`SetupBase.addSchema(${schema.$id}) no definitions`);
 
         if (!schema.$id) throw new Error(`SetupBase.addSchema() no $id: ${JSON.stringify(schema)}`);
 
-        if (schema.$id in SetupBase.activeSchema.definitions) {
-            console.warn(`SetupBase.addSchema(${schema.$id}) already registered`, SetupBase.activeSchema.definitions[schema.$id], schema);
+        const schemaName = schema.$id.substr(1);
+
+        if (schemaName in SetupBase.activeSchema.definitions) {
+            // console.warn(`SetupBase.addSchema(${schema.$id}) already registered (${schemaName})`, SetupBase.activeSchema.definitions[schema.$id], schema);
         } else {
-            SetupBase.activeSchema.definitions[schema.$id] = schema;
+            SetupBase.activeSchema.definitions[schemaName] = schema;
+
+            if (SetupBase.validate != undefined) {
+                console.warn(`SetupBase.addSchema(${schema.$id}) already compiled`, schema, SetupBase.activeSchema);
+                SetupBase.validate = undefined;
+                // SetupBase.validate = SetupBase.ajv.compile(SetupBase.activeSchema);
+            }
         }
     }
 
@@ -58,30 +73,35 @@ export abstract class SetupBase {
         if (this.constructor.name != source.className)
             throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
         
-        const schema = SetupBase.activeSchema.definitions[source.className];
-
-        //const validation = validate(source, schema as JSONSchema7);
-        const validation = validate(source, SetupBase.activeSchema);
-
-        if (!validation.valid) {
-            throw new Error(
-                `SetupBase[${this.constructor.name}@${source.id}]: Validation errors:\n` +
-                `${validation.errors.map(error => error.property + ':' + error.message).join(';\n')} `);
+        if (SetupBase.validate == undefined) {
+            console.log(`SetupBase[${this.constructor.name}] compile schema`, SetupBase.activeSchema);
+            SetupBase.validate = SetupBase.ajv.compile(SetupBase.activeSchema);
         }
 
-        const invalidSource = { ...omit(source, 'id', 'parentId'), className: 'InvalidClassName' };
+        try {
+            const valid = SetupBase.ajv.validate(SetupBase.schemaUri + '/definitions/' + source.className, source);
 
-        const invalidation1 = validate(invalidSource, SetupBase.activeSchema);
+            if (!valid) {
+                console.error(
+                    `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
+                    `${SetupBase.ajv.errors?.map(
+                        error => error.schemaPath + ' // ' + error.dataPath + ' @' + error.propertyName + ': ' + error.message + ':' + JSON.stringify(error.params)
+                    ).join(';\n')}\n`,
+                    source,
+                    { ...SetupBase.ajv.errors });
+                throw new Error(
+                    `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
+                    `${SetupBase.ajv.errors?.map(
+                        error => error.schemaPath + ' // ' + error.dataPath + ' @' + error.propertyName + ': ' + error.message + ':' + JSON.stringify(error.params)
+                    ).join(';\n')}\n` +
+                    `source:\n${JSON.stringify}`);
+            } else {
+                console.log( `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: validated` );
+            }
+        } catch (e) {
+            console.error(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation exception: ${e.message}`, source, { ...e });
+        }
 
-        console.warn(
-            `SetupBase[${this.constructor.name}@${source.id}]: Invalid1 errors:${invalidation1.valid}:\n` +
-            `${invalidation1.errors.map(error => error.property + ':' + error.message).join(';\n')} `);
-
-        const invalidation2 = validate(invalidSource, schema as JSONSchema7);
-
-        console.warn(
-            `SetupBase[${this.constructor.name}@${source.id}]: Invalid2 errors:${invalidation2.valid}:\n` +
-            `${invalidation2.errors.map(error => error.property + ':' + error.message).join(';\n')} `);
 
         this.id = source.id;
         this.parentId = source.parentId;
@@ -109,22 +129,22 @@ export abstract class SetupBase {
 
         for (const propertyName in this) {
             if (propertyName in shallow) {
-                console.log(`${this.constructor.name}.getShallow: ${propertyName} exists`);
+                // console.log(`${this.constructor.name}.getShallow: ${propertyName} exists`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
                     case 'boolean':
                     case 'number':
                     case 'string':
-                        console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of type ${typeof value}`);
+                        // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of type ${typeof value}`);
                         shallow[propertyName] = value;
                         break;
                     case 'object':
                         if (value instanceof SetupBase) {
-                            console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of SetupBase`);
+                            // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of SetupBase`);
                             shallow[propertyName] = value.getShallow();
                         } else if (value instanceof ObservableSetupBaseMap) {
-                            console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
+                            // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
                             for (const [id, child] of value.entries()) {
                                 if (depth == 0) {
@@ -174,10 +194,10 @@ export abstract class SetupBase {
                 case 'number':
                 case 'string':
                     if (currentValue != newValue) {
-                        console.log(`${this.constructor.name}.update:[${propertyName}/${typeof currentValue}]==${currentValue} = ${newValue}`);
+                        // console.log(`${this.constructor.name}.update:[${propertyName}/${typeof currentValue}]==${currentValue} = ${newValue}`);
                         this[propertyName] = newValue;
                     } else {
-                        console.log(`${this.constructor.name}.update:[${propertyName}/${typeof currentValue}]==${currentValue} == ${newValue}`);
+                        // console.log(`${this.constructor.name}.update:[${propertyName}/${typeof currentValue}]==${currentValue} == ${newValue}`);
                     }
                     break;
                 case 'undefined':
@@ -188,17 +208,17 @@ export abstract class SetupBase {
                             const object = currentValue.get(id);
                             if (plainObject) {
                                 if (object) {
-                                    console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}].update`, plainObject);
+                                    // console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}].update`, plainObject);
                                     object.update(plainObject);
                                 } else {
-                                    console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}]=create`, plainObject);
+                                    // console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}]=create`, plainObject);
                                     currentValue.set(
                                         id,
                                         create(plainObject as SetupBaseInterface)
                                     );
                                 }
                             } else if (!currentValue.has(id)) {
-                                console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}] add null`);
+                                // console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}] add null`);
                                 currentValue.set(id, null);
                             }
                         }
@@ -211,10 +231,10 @@ export abstract class SetupBase {
                     } else if ((newValue as SetupBaseInterface).id) {
                         const updateSetup = newValue as SetupBaseInterface;
                         if (currentValue?.id == updateSetup.id) {
-                            console.log(`${this.constructor.name}.update:[${propertyName}/Setup].update[${updateSetup.id}]`, updateSetup);
+                            // console.log(`${this.constructor.name}.update:[${propertyName}/Setup].update[${updateSetup.id}]`, updateSetup);
                             currentValue.update(updateSetup);
                         } else {
-                            console.log(`${this.constructor.name}.update:[${propertyName}/Setup]=create[${updateSetup.id}]`, updateSetup);
+                            // console.log(`${this.constructor.name}.update:[${propertyName}/Setup]=create[${updateSetup.id}]`, updateSetup);
                             this[propertyName] = create(updateSetup);
                         }
                     } else {
@@ -252,8 +272,8 @@ export abstract class SetupBase {
     protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7 ): void {
         if (!schema.$id) throw new Error(`SetupBase.register() no $id: ${JSON.stringify(schema)}`);
 
-        if (schema.$id != factory.name)
-            throw new Error(`SetupBase.register(): (Class name) factory.name != schema.$id: ${factory.name} != ${schema.$id} schema=${JSON.stringify(schema)}`);
+        if (schema.$id != ('#' + factory.name))
+            throw new Error(`SetupBase.register(): (Class name) #factory.name != schema.$id: #${factory.name} != ${schema.$id} schema=${JSON.stringify(schema)}`);
 
         SetupBase.addSchema(schema);
         register(factory);

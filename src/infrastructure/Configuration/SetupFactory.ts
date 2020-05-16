@@ -8,7 +8,7 @@ export function register<S extends SetupBase>(factory: SetupConstructor<S>): voi
     const className = factory.name;
 
     if (factories.has( className )) {
-        console.warn(`SetupFactory.register: already registered ${className}`, factories.get(className), factory);
+        // console.warn(`SetupFactory.register: already registered ${className}`, factories.get(className), factory);
     } else {
         console.log(`SetupFactory.register: ${className}`);
 
