@@ -121,10 +121,55 @@ export abstract class SetupBase {
 
     /**
      * Returns a shallow(ish) plain javascript object.
-     * Children/values in Maps are set to null
+     * Child objects like screen, rectangle are included as plain.
+     * Children/values in Maps are set to null.
+     * This does only iterate/accesses keys of Maps,
+     * value changes (like null to object) are ignored
      */
     getShallow(): SetupBaseInterface {
-        return this.getPlain(0);
+        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, className: this.className };
+
+        for (const propertyName in this) {
+            if (propertyName in shallow) {
+                // console.log(`${this.constructor.name}.getShallow: ${propertyName} exists`);
+            } else {
+                const value = this[propertyName];
+                switch (typeof value) {
+                    case 'boolean':
+                    case 'number':
+                    case 'string':
+                        // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of type ${typeof value}`);
+                        shallow[propertyName] = value;
+                        break;
+                    case 'object':
+                        if (value instanceof SetupBase) {
+                            // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of SetupBase`);
+                            shallow[propertyName] = value.getShallow();
+                        } else if (value instanceof ObservableSetupBaseMap) {
+                            // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
+                            shallow[propertyName as string] = {};
+                            for (const id of value.keys()) {
+                                shallow[propertyName][id] = null;
+                            }
+                        } else {
+                            throw new Error(`${this.constructor.name}.getShallow: Invalid class type ${typeof value} for ${propertyName}`);
+                        }
+                        break;
+                    case 'function':
+                    case 'symbol':
+                        console.log(`${this.constructor.name}.getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        break;
+                    case 'undefined':
+                        console.log(`${this.constructor.name}.getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        break;
+                    case 'bigint':
+                        throw new Error(`${this.constructor.name}.getShallow: Invalid type ${typeof value} for ${propertyName}`);
+                    default:
+                        throw new Error(`${this.constructor.name}.getShallow: Unkown type ${typeof value} for ${propertyName}`);
+                }
+            }
+        }
+        return shallow;
     }
 
     /**
@@ -164,20 +209,20 @@ export abstract class SetupBase {
                                 }
                             }
                         } else {
-                            throw new Error(`${this.constructor.name}.getShallow: Invalid class type ${typeof value} for ${propertyName}`);
+                            throw new Error(`${this.constructor.name}.getPlain: Invalid class type ${typeof value} for ${propertyName}`);
                         }
                         break;
                     case 'function':
                     case 'symbol':
-                        console.log(`${this.constructor.name}.getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        console.log(`${this.constructor.name}.getPlain: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'undefined':
-                        console.log(`${this.constructor.name}.getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        console.log(`${this.constructor.name}.getPlain: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'bigint':
-                        throw new Error(`${this.constructor.name}.getShallow: Invalid type ${typeof value} for ${propertyName}`);
+                        throw new Error(`${this.constructor.name}.getPlain: Invalid type ${typeof value} for ${propertyName}`);
                     default:
-                        throw new Error(`${this.constructor.name}.getShallow: Unkown type ${typeof value} for ${propertyName}`);
+                        throw new Error(`${this.constructor.name}.getPlain: Unkown type ${typeof value} for ${propertyName}`);
                 }
             }
         }
