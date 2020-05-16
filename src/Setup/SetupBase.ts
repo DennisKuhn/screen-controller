@@ -3,6 +3,7 @@ import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
 import Ajv, { ValidateFunction } from 'ajv';
+import { action } from 'mobx';
 
 export type SetupItemId = string;
 
@@ -229,6 +230,7 @@ export abstract class SetupBase {
         return shallow;
     }
 
+    @action
     update(update: SetupBaseInterface): SetupBase {
         if (update.id != this.id)
             throw new Error(`SetupBase[${this.constructor.name}][-> ${this.id} <-, ${this.parentId}, ${this.className}].update =`
