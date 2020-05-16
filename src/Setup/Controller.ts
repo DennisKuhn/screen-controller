@@ -283,6 +283,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                         if (isEqual(update, this.remoteUpdates.get(update.id))) {
                             // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist skip received=`, update);
                         } else {
+                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist`, {...update});
                             fPersist(update);
                         }
                     },
@@ -396,15 +397,15 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     onSetupChanged = (e: Event, update: SetupBaseInterface, persist?: boolean): void => {
         // console.log(`${this.constructor.name}.onSetupChanged(${update.className}[${update.id}], persist=${persist}):`, update);
         let localItem = this.configs.get(update.id);
-        // const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
+        const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
 
         this.addRemoteUpdate(update);
 
         if (localItem) {
-            // console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`, { ...update });
+            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`/*, { ...update }*/);
             localItem.update(update);
         } else {
-            // console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`, { ...update });
+            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`/*, { ...update }*/);
             localItem = create(update);
             this.connectPersistPropagate({ item: localItem, connectParent: true, persist: false, propagate: false });
         }
@@ -511,12 +512,12 @@ class Renderer extends ControllerImpl {
     }
 
     protected readonly propagate = (item: SetupBaseInterface): void => {
-        console.log(`${this.constructor.name}.propapgate(${item.id}) send to main=`, item);
+        console.log(`${this.constructor.name}.propapgate(${item.id}) send to main`/*, item*/);
         this.ipc.send('change', item);
     }
 
     protected persist = (item: SetupBaseInterface): void => {
-        console.log(`${this.constructor.name}.persist(${item.id})`, item);
+        console.log(`${this.constructor.name}.persist(${item.id})`/*, item*/);
 
         localStorage.setItem(item.id, JSON.stringify(item));
     }
@@ -773,7 +774,7 @@ class Main extends ControllerImpl {
     // }
 
     protected persist = (item: SetupBaseInterface): void => {
-        console.log(`${this.constructor.name}.persist(${item.id})`, item);
+        console.log(`${this.constructor.name}.persist(${item.id}) ipc=${this.ipcStorage}`/*, item*/);
 
         this.ipcStorage?.send('change', item, true);
     }
