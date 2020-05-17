@@ -3,7 +3,8 @@ import { SimpleRectangle } from '../Default/RectangleInterface';
 import { observable } from 'mobx';
 import { ObservableSetupBaseMap } from '../Container';
 import { Plugin } from './Plugin';
-import { SetupBase, SetupItemId, SetupBaseInterface } from '../SetupBase';
+import { SetupBase } from '../SetupBase';
+import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { JSONSchema7 } from 'json-schema';
 
 
@@ -41,7 +42,7 @@ export class Browser extends SetupBase {
 
     constructor(source: SetupBaseInterface) {
         super(source);
-        
+
         const { relative, scaled, device } = (super.update(source) as Browser);
         this.relative = relative;
         this.scaled = scaled;
@@ -52,22 +53,23 @@ export class Browser extends SetupBase {
 
     static createNew(parentId: SetupItemId, relative: SimpleRectangle): Browser {
         const newID = SetupBase.getNewId(Browser);
-        return new Browser({
-            id: newID,
-            parentId: parentId,
-            className: Browser.name,
-            plugins: {},
-            relative: {
-                id: SetupBase.getNewId(Rectangle),
-                className: Rectangle.name,
-                parentId: newID,
-
-                ...relative
-            }
-        });
+        return new Browser(
+            {
+                id: newID,
+                parentId: parentId,
+                className: Browser.name,
+                plugins: {},
+                relative: {
+                    id: SetupBase.getNewId(Rectangle),
+                    className: Rectangle.name,
+                    parentId: newID,
+                    ...relative
+                }
+            } as SetupBaseInterface
+        );
     }
 
-    static register = (): void => SetupBase.register( Browser, Browser.schema );
+    static register = (): void => SetupBase.register(Browser, Browser.schema);
 }
 
 Browser.register();

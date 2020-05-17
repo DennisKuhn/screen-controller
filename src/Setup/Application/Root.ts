@@ -1,5 +1,6 @@
 import { observable } from 'mobx';
-import { SetupBase, SetupBaseInterface } from '../SetupBase';
+import { SetupBase } from '../SetupBase';
+import { SetupBaseInterface } from '../SetupInterface';
 import { Screen } from './Screen';
 import { JSONSchema7 } from 'json-schema';
 
@@ -35,15 +36,17 @@ export class Root extends SetupBase {
     }
 
     static createNewBlank(): Root {
-        return new Root({
-            id: Root.name,
-            parentId: Root.name,
-            className: Root.name,
-            screen: { id: Screen.name, parentId: Root.name, className: Screen.name, displays: {} }
-        });
+        return new Root(
+            {
+                id: Root.name,
+                parentId: Root.name,
+                className: Root.name,
+                screen: { id: Screen.name, parentId: Root.name, className: Screen.name, displays: {} }
+            } as SetupBaseInterface
+        );
     }
 
-    static register = (): void => SetupBase.register( Root, Root.schema );
+    static register = (): void => SetupBase.register(Root, Root.schema);
 }
 
 Root.register();

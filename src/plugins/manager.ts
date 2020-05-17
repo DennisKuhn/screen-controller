@@ -1,10 +1,10 @@
 import { Plugin as Setup } from '../Setup/Application/Plugin';
-import { Registration, PluginBase } from './PluginBase';
+import { Registration, PluginInterface } from './PluginInterface';
 import requireGlob from 'require-glob';
 
 const pluginDir = 'D:\\Dennis\\Projects\\screen-controller\\plugins';
 
-type PluginReg = Registration<PluginBase, Setup>;
+type PluginReg = Registration<PluginInterface>;
 type InnerPlugin = { default: PluginReg };
 type PluginModule = InnerPlugin | PluginReg;
 type PluginImports = { [key: string]: PluginModule };
@@ -31,7 +31,7 @@ export class Manager {
             if (!(id in Manager.registrations)) {
                 console.log(`${this.constructor.name}.loadAll() add ${id}`);
                 Manager.registrations[id] = registration;
-                Setup.add(registration.setup, registration.schema);
+                Setup.add(registration.schema);
             }
         }
     }

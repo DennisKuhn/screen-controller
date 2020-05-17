@@ -4,17 +4,7 @@ import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
 import Ajv, { ValidateFunction } from 'ajv';
 import { action } from 'mobx';
-
-export type SetupItemId = string;
-
-export interface SetupBaseInterface {
-    /** Application unique, persistent, e.g. <ClassName>-<auto increment> */
-    id: SetupItemId;
-    parentId: SetupItemId;
-    className: string;
-
-    [key: string]: SetupBaseInterface | Dictionary<SetupBaseInterface> | string | number | boolean;
-}
+import { SetupItemId, SetupBaseInterface } from './SetupInterface';
 
 export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
@@ -140,17 +130,17 @@ export abstract class SetupBase {
                     case 'number':
                     case 'string':
                         // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of type ${typeof value}`);
-                        shallow[propertyName] = value;
+                        shallow[propertyName as string] = value;
                         break;
                     case 'object':
                         if (value instanceof SetupBase) {
                             // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of SetupBase`);
-                            shallow[propertyName] = value.getShallow();
+                            shallow[propertyName as string] = value.getShallow();
                         } else if (value instanceof ObservableSetupBaseMap) {
                             // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
                             for (const id of value.keys()) {
-                                shallow[propertyName][id] = null;
+                                shallow[propertyName as string][id] = null;
                             }
                         } else {
                             throw new Error(`${this.constructor.name}.getShallow: Invalid class type ${typeof value} for ${propertyName}`);
@@ -193,20 +183,20 @@ export abstract class SetupBase {
                     case 'number':
                     case 'string':
                         // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of type ${typeof value}`);
-                        shallow[propertyName] = value;
+                        shallow[propertyName as string] = value;
                         break;
                     case 'object':
                         if (value instanceof SetupBase) {
                             // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of SetupBase`);
-                            shallow[propertyName] = value.getShallow();
+                            shallow[propertyName as string] = value.getShallow();
                         } else if (value instanceof ObservableSetupBaseMap) {
                             // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
                             for (const [id, child] of value.entries()) {
                                 if (depth == 0) {
-                                    shallow[propertyName][id] = null;
+                                    shallow[propertyName as string][id] = null;
                                 } else {
-                                    shallow[propertyName][id] = (child as SetupBase).getPlain(depth - 1);
+                                    shallow[propertyName as string][id] = (child as SetupBase).getPlain(depth - 1);
                                 }
                             }
                         } else {
@@ -331,10 +321,15 @@ export abstract class SetupBase {
     protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7 ): void {
         if (!schema.$id) throw new Error(`SetupBase.register() no $id: ${JSON.stringify(schema)}`);
 
-        if (schema.$id != ('#' + factory.name))
-            throw new Error(`SetupBase.register(): (Class name) #factory.name != schema.$id: #${factory.name} != ${schema.$id} schema=${JSON.stringify(schema)}`);
-
+        // if (schema.$id != ('#' + factory.name))
+        //     throw new Error(`SetupBase.register(): (Class name) #factory.name != schema.$id: #${factory.name} != ${schema.$id} schema=${JSON.stringify(schema)}`);
         SetupBase.addSchema(schema);
-        register(factory);
+
+        if (schema.$id != ('#' + factory.name)) {
+            console.warn(`SetupBsae.register: register ${factory.name} as ${schema.$id.substr(1)}`);
+            register(factory, schema.$id.substr(1));
+        } else {
+            register(factory);
+        }
     }
 }

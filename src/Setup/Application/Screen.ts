@@ -1,5 +1,6 @@
 import { Display } from './Display';
-import { SetupBase, SetupBaseInterface } from '../SetupBase';
+import { SetupBase } from '../SetupBase';
+import { SetupBaseInterface } from '../SetupInterface';
 import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
 
@@ -40,7 +41,7 @@ export class Screen extends SetupBase {
     }
 
     static createNewBlank(): Screen {
-        return new Screen({ id: Screen.name, parentId: 'Root', className: Screen.name, displays: {} });
+        return new Screen({ id: Screen.name, parentId: 'Root', className: Screen.name, displays: {} } as SetupBaseInterface);
     }
 
     static register = (): void => SetupBase.register( Screen, Screen.schema );

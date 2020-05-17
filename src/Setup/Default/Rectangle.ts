@@ -1,9 +1,10 @@
 import { observable } from 'mobx';
-import { SetupBase, SetupItemId, SetupBaseInterface } from '../SetupBase';
-import { SimpleRectangle } from './RectangleInterface';
+import { SetupBase } from '../SetupBase';
+import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
+import { SimpleRectangle, RectangleInterface } from './RectangleInterface';
 import { JSONSchema7 } from 'json-schema';
 
-export class Rectangle extends SetupBase {
+export class Rectangle extends SetupBase implements SimpleRectangle, RectangleInterface {
     static readonly schema: JSONSchema7 = {
         $id: '#' + Rectangle.name,
         allOf: [

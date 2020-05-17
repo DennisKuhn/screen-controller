@@ -1,5 +1,6 @@
 import { Browser } from './Browser';
-import { SetupBase, SetupItemId, SetupBaseInterface } from '../SetupBase';
+import { SetupBase } from '../SetupBase';
+import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
 
@@ -39,7 +40,7 @@ export class Display extends SetupBase {
     }
 
     static createNew(displayId: SetupItemId): Display {
-        return new Display({ id: displayId, parentId: 'Screen', className: Display.name, browsers: {} });
+        return new Display({ id: displayId, parentId: 'Screen', className: Display.name, browsers: {} } as SetupBaseInterface);
     }
 
     static register= (): void => SetupBase.register( Display, Display.schema );

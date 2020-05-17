@@ -2,7 +2,8 @@ import { IMapDidChange, reaction } from 'mobx';
 import { EventEmitter } from 'events';
 import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
 import { isEqual, Dictionary } from 'lodash';
-import { SetupBase, SetupItemId, SetupBaseInterface } from './SetupBase';
+import { SetupBase } from './SetupBase';
+import { SetupItemId, SetupBaseInterface } from './SetupInterface';
 import { create } from './SetupFactory';
 import { ObservableSetupBaseMap } from './Container';
 
