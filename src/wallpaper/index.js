@@ -98,8 +98,6 @@ import svgImportMenu from './svgimportmenu';
 import shapeEditMenu from './shapeeditmenu';
 import mainMenu, { SHAPE_STORAGE_SLOT_AUTO_SAVE } from './mainmenu';
 
-import AnalogClock from '../../plugins/analogclock';
-
 import './displays/digidisplay';
 import DigiDate from './displays/digidate';
 import DigiTime from './displays/digitime';
@@ -142,7 +140,6 @@ const htmlTime = new DigiTime();
 
 const htmlDate = new DigiDate();
 
-const analogClock = new AnalogClock();
 
 
 
@@ -347,7 +344,6 @@ function onInit() {
 
 function setupPropertyPropagator() {
     //     addReceiver( propertyPrefix, receiver, generalPrefix, windowPrefix, pausedPrefix, loaded, user, general, filesAndDirectories, paused, windowProperties )
-    proPro.addReceiver('analogClock_', analogClock, null, null, null, null, true, false, false, false, true);
     proPro.addReceiver('audioFrame_', frame2.config, null, null, null, null, true, false, false, false, false);
     proPro.addReceiver('audioShapeRender_', audioShapeRender, null, null, null, null, true, false, false, false, false);
     proPro.addReceiver('backgroundGradient_', multiShow.gradient, null, null, null, null, true, false, false, false, false);

@@ -2,7 +2,7 @@ import { Plugin as Setup } from '../Setup/Application/Plugin';
 import { Registration, PluginInterface } from './PluginInterface';
 import requireGlob from 'require-glob';
 
-const pluginDir = 'D:\\Dennis\\Projects\\screen-controller\\plugins';
+const pluginDir = 'D:\\Dennis\\Projects\\plugins\\dist\\';
 
 type PluginReg = Registration<PluginInterface>;
 type InnerPlugin = { default: PluginReg };
@@ -22,12 +22,13 @@ export class Manager {
 
         const mixed: PluginImports = await requireGlob(['*.js'], { cwd: pluginDir });
         const flat: FlatImports = {};
-
+        console.log(mixed);
         for (const [id, mix] of Object.entries(mixed)) {
             flat[id] = (mix as InnerPlugin).default ?? mix as PluginReg;
         }
 
         for (const [id, registration] of Object.entries(flat)) {
+            
             if (!(id in Manager.registrations)) {
                 console.log(`${this.constructor.name}.loadAll() add ${id}`);
                 Manager.registrations[id] = registration;
