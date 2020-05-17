@@ -6,12 +6,12 @@ import { JSONSchema7 } from 'json-schema';
 
 export class Screen extends SetupBase {
     static schema: JSONSchema7 = {
-        $id: '#' + Screen.name,
+        $id: Screen.name,
         title: 'Screen',
         description: 'Screen element for setup',
         allOf: [
             {
-                $ref: '#' + SetupBase.name
+                $ref: SetupBase.name
             },
             {
                 properties: {
@@ -22,7 +22,7 @@ export class Screen extends SetupBase {
                         type: 'object',
                         additionalProperties: {
                             oneOf: [
-                                { $ref: '#' + Display.name },
+                                { $ref: Display.name },
                                 { type: 'null' }
                             ]
                         }

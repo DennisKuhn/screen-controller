@@ -15,32 +15,34 @@ export abstract class SetupBase {
     readonly parentId: SetupItemId;
     readonly className: string;
 
-    static readonly schemaUri = 'https://github.com/DennisKuhn/screen-controller/schemas/SetupSchema.json#';
+    static readonly schemaUri = 'https://github.com/maoriora/screen-controller/schemas/SetupSchema.json#';
+
+    public static baseSchema: JSONSchema7 = {
+        $id: SetupBase.name,
+        type: 'object',
+        properties: {
+            id: {
+                type: 'string'
+            },
+            parentId: {
+                type: 'string'
+            },
+            className: {
+                type: 'string'
+            }
+        },
+        required: ['id', 'parentId', 'className']
+    };
 
     public static activeSchema: JSONSchema7 = {
         // $schema: 'http://json-schema.org/draft/2019-09/schema#',
         $id: SetupBase.schemaUri,
         definitions: {
-            SetupBase: {
-                $id: '#' + SetupBase.name,
-                type: 'object',
-                properties: {
-                    id: {
-                        type: 'string'
-                    },
-                    parentId: {
-                        type: 'string'
-                    },
-                    className: {
-                        type: 'string'
-                    }
-                },
-                required: ['id', 'parentId', 'className']
-            }
+            SetupBase: SetupBase.baseSchema
         }
     };
-    private static ajv = new Ajv();
-    private static validate: ValidateFunction | undefined;
+
+    private static ajv = (new Ajv()).addSchema(SetupBase.baseSchema, SetupBase.name);
 
 
     protected static addSchema(schema: JSONSchema7): void {
@@ -48,39 +50,29 @@ export abstract class SetupBase {
 
         if (!schema.$id) throw new Error(`SetupBase.addSchema() no $id: ${JSON.stringify(schema)}`);
 
-        const schemaName = schema.$id.substr(1);
-
-        if (schemaName in SetupBase.activeSchema.definitions) {
-            // console.warn(`SetupBase.addSchema(${schema.$id}) already registered (${schemaName})`, SetupBase.activeSchema.definitions[schema.$id], schema);
+        if (schema.$id in SetupBase.activeSchema.definitions) {
+            console.log(`SetupBase.addSchema(${schema.$id}) already registered`, SetupBase.activeSchema.definitions[schema.$id], schema);
         } else {
             console.log(`SetupBase.addSchema(${schema.$id}) @${Object.keys(SetupBase.activeSchema.definitions).length}`);
-            SetupBase.activeSchema.definitions[schemaName] = schema;
+            SetupBase.activeSchema.definitions[schema.$id] = schema;
 
-            if (SetupBase.validate != undefined) {
-                console.warn(`SetupBase.addSchema(${schema.$id}) already compiled`, schema, SetupBase.activeSchema);
-                SetupBase.validate = undefined;
-                // SetupBase.validate = SetupBase.ajv.compile(SetupBase.activeSchema);
-            }
+            SetupBase.ajv.addSchema(schema, schema.$id);
         }
     }
 
     constructor(source: SetupBaseInterface) {
         if (SetupBase.usedIDs.includes(source.id))
             throw new Error(`SetupBase[${this.constructor.name}] id=${source.id} already in use`);
-        
+
         if (!SetupBase.activeSchema.definitions)
             throw new Error(`SetupBase[${this.constructor.name}] no definitions in activeSchema: ${JSON.stringify(SetupBase.activeSchema)}`);
 
         if (this.constructor.name != source.className)
             throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
-        
-        if (SetupBase.validate == undefined) {
-            console.log(`SetupBase[${this.constructor.name}] compile schema`, SetupBase.activeSchema);
-            SetupBase.validate = SetupBase.ajv.compile(SetupBase.activeSchema);
-        }
 
         try {
-            const valid = SetupBase.ajv.validate(SetupBase.schemaUri + '/definitions/' + source.className, source);
+            // const valid = SetupBase.ajv.validate(SetupBase.schemaUri + '/definitions/' + source.className, source);
+            const valid = SetupBase.ajv.validate( source.className, source);
 
             if (!valid) {
                 console.error(
@@ -97,7 +89,7 @@ export abstract class SetupBase {
                     ).join(';\n')}\n` +
                     `source:\n${JSON.stringify}`);
             } else {
-                console.log( `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: validated` );
+                console.log(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: validated`);
             }
         } catch (e) {
             console.error(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation exception: ${e.message}`, source, { ...e });
@@ -231,7 +223,7 @@ export abstract class SetupBase {
         if (update.className != this.className)
             throw new Error(`SetupBase[${this.constructor.name}][${this.id}, ${this.parentId}, -> ${this.className} <-].update =`
                 + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
-        
+
         for (const propertyName in update) {
             const currentValue = this[propertyName];
             const newValue = update[propertyName];
@@ -301,7 +293,7 @@ export abstract class SetupBase {
             }
         }
         return this;
-        
+
     }
 
     static usedIDs = new Array<string>();
@@ -318,16 +310,16 @@ export abstract class SetupBase {
         });
     }
 
-    protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7 ): void {
+    protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7): void {
         if (!schema.$id) throw new Error(`SetupBase.register() no $id: ${JSON.stringify(schema)}`);
 
         // if (schema.$id != ('#' + factory.name))
         //     throw new Error(`SetupBase.register(): (Class name) #factory.name != schema.$id: #${factory.name} != ${schema.$id} schema=${JSON.stringify(schema)}`);
         SetupBase.addSchema(schema);
 
-        if (schema.$id != ('#' + factory.name)) {
-            console.warn(`SetupBsae.register: register ${factory.name} as ${schema.$id.substr(1)}`);
-            register(factory, schema.$id.substr(1));
+        if (schema.$id != factory.name) {
+            console.warn(`SetupBsae.register: register ${factory.name} as ${schema.$id}`);
+            register(factory, schema.$id);
         } else {
             register(factory);
         }

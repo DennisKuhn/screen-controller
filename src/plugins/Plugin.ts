@@ -14,6 +14,7 @@ export class Plugin {
     constructor(setup: PluginSetup, factory: PluginConstructor<PluginInterface>) {
 
         this.canvas = window.document.createElement('canvas');
+        this.canvas.id = setup.id;
 
         if (!setup.scaledBounds)
             throw new Error(`${this.constructor.name}[${setup.className}][${setup.id}] no scaledBounds`);
@@ -23,6 +24,12 @@ export class Plugin {
         this.canvas.style.width = setup.scaledBounds.width + 'px';
         this.canvas.style.height = setup.scaledBounds.height + 'px';
         
+        window.document.body.appendChild(this.canvas);
+
         this.plugin = new factory(setup, this.canvas);
+    }
+
+    close = (): void => {
+        window.document.body.removeChild(this.canvas);
     }
 }

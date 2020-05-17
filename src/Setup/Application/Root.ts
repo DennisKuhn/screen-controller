@@ -6,19 +6,19 @@ import { JSONSchema7 } from 'json-schema';
 
 export class Root extends SetupBase {
     static schema: JSONSchema7 = {
-        $id: '#' + Root.name,
+        $id: Root.name,
         title: 'Root',
         description: 'Root element for setup',
         allOf: [
             {
-                $ref: '#' + SetupBase.name
+                $ref: SetupBase.name
             },
             {
                 properties: {
                     id: { const: Root.name },
                     className: { const: Root.name },
                     parentId: { const: Root.name },
-                    screen: { $ref: '#' + Screen.name }
+                    screen: { $ref: Screen.name }
                 },
                 required: ['screen']
             }

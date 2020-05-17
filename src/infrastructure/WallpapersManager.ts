@@ -141,6 +141,18 @@ export default class WallpapersManager {
                     );
                 }
                 break;
+            case 'update':
+                if (changes.oldValue != null) {
+                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}) from ${changes.oldValue.id} to ${changes.newValue?.id}`);
+                } else if (changes.newValue == null) {
+                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}) from null to null`);
+                } else {
+                    WallpapersManager.createWallpaperWindow(
+                        Number(changes.newValue.parentId),
+                        changes.newValue
+                    );
+                }
+                break;
             case 'delete':
                 if (!changes.oldValue)
                     throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}}) no oldValue`);
@@ -153,18 +165,6 @@ export default class WallpapersManager {
                     // console.log(`WallpapersManager.updateBrowsers(${display.id}) close ${paper.browser.id}`);
                     paper.browserWindow.close();
                     WallpapersManager.papers.delete(paper.browser.id);
-                }
-                break;
-            case 'update':
-                if (changes.oldValue != null) {
-                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}) from ${changes.oldValue.id} to ${changes.newValue?.id}`);
-                } else if (changes.newValue == null) {
-                    throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.name}) from null to null`);
-                } else {
-                    WallpapersManager.createWallpaperWindow(
-                        Number(changes.newValue.parentId),
-                        changes.newValue
-                    );
                 }
                 break;
         }

@@ -13,17 +13,17 @@ export class Plugin extends SetupBase implements PluginInterface {
     scaledBounds?: Rectangle;
 
     private static readonly schema: JSONSchema7 = {
-        $id: '#' + Plugin.name,
+        $id: Plugin.name,
         title: 'Plugin base',
         description: 'Base and wrapper for plugins',
         allOf: [
             {
-                $ref: '#' + SetupBase.name
+                $ref: SetupBase.name
             },
             {
                 properties: {
-                    relativeBounds: { $ref: '#' + Rectangle.name },
-                    scaledBounds: { $ref: '#' + Rectangle.name }
+                    relativeBounds: { $ref: Rectangle.name },
+                    scaledBounds: { $ref: Rectangle.name }
                 },
                 required: ['relativeBounds']
             }

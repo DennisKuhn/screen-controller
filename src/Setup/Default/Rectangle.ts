@@ -6,10 +6,10 @@ import { JSONSchema7 } from 'json-schema';
 
 export class Rectangle extends SetupBase implements SimpleRectangle, RectangleInterface {
     static readonly schema: JSONSchema7 = {
-        $id: '#' + Rectangle.name,
+        $id: Rectangle.name,
         allOf: [
             {
-                $ref: '#' + SetupBase.name
+                $ref: SetupBase.name
             },
             {
                 properties: {

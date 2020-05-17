@@ -11,22 +11,22 @@ import { JSONSchema7 } from 'json-schema';
 export class Browser extends SetupBase {
 
     static readonly schema: JSONSchema7 = {
-        $id: '#' + Browser.name,
+        $id: Browser.name,
         title: 'Browser',
         description: 'Container for plugins',
         allOf: [
             {
-                $ref: '#' + SetupBase.name
+                $ref: SetupBase.name
             },
             {
                 properties: {
                     className: { const: Browser.name },
-                    relative: { $ref: '#' + Rectangle.name },
-                    scaled: { $ref: '#' + Rectangle.name },
-                    device: { $ref: '#' + Rectangle.name },
+                    relative: { $ref: Rectangle.name },
+                    scaled: { $ref: Rectangle.name },
+                    device: { $ref: Rectangle.name },
                     plugins: {
                         type: 'object',
-                        additionalProperties: { $ref: '#' + Plugin.name }
+                        additionalProperties: { $ref: Plugin.name }
                     }
                 },
                 required: ['relative', 'plugins']

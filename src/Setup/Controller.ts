@@ -384,7 +384,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 } else {
                     // console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): add children in ${propertyName}`);
 
-                    for (const child of Object.values( value as Dictionary<SetupBaseInterface> )) {
+                    for (const child of Object.values(value as Dictionary<SetupBaseInterface>)) {
                         if (child) {
                             // console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}):${propertyName} add child ${child.id}`);
                             this.addRemoteUpdate(child);
@@ -498,11 +498,11 @@ class Renderer extends ControllerImpl {
             const itemPlain: SetupBaseInterface = JSON.parse(itemString);
 
             item = create(itemPlain);
-        } else if ( id == Root.name ) {
+        } else if (id == Root.name) {
             item = Root.createNewBlank();
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             this.persist(item.getShallow());
-        } else if ( id == Screen.name ) {
+        } else if (id == Screen.name) {
             item = Screen.createNewBlank();
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
             this.persist(item.getShallow());
@@ -531,7 +531,7 @@ type SizeCallback = (size: Size) => void;
 /**
  * Renderer Config Controller for Wallpaper Browsers. Deal with size
  */
-class Paper extends Renderer {
+export class Paper extends Renderer {
     private browserId: string;
     private browser: Browser | undefined;
 
@@ -547,23 +547,24 @@ class Paper extends Renderer {
         }
         this.browserId = browserIdArg.split('=')[1];
 
-        // console.log(`${this.constructor.name}[${this.browserId}]()`, process.argv);
-
-        this.getSetup(this.browserId, -1).then(
-            browser => {
-                this.browser = browser as Browser;
-
-                // console.log(
-                //     `${this.constructor.name}[${this.browserId}](): got Browser:` +
-                //     ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
-                //     ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`
-                // );
-            }
-        );
+        console.log(`${this.constructor.name}[${this.browserId}]()`, process.argv);
     }
 
+    async getBrowser(): Promise<Browser> {
+        if (!this.browser) {
+            this.browser = await this.getSetup(this.browserId, -1) as Browser;
 
+            console.log(
+                `${this.constructor.name}[${this.browserId}](): got Browser (${this.browser.plugins.size}):` +
+                ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
+                ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`,
+                this.browser
+            );
+        }
+        return this.browser;        
+    }
 }
+
 
 class MainWindow extends Renderer {
 
