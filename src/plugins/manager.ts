@@ -8,7 +8,7 @@ import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
 import { isEqual } from 'lodash';
 import { Rectangle } from '../Setup/Default/Rectangle';
 
-const pluginDir = 'D:\\Dennis\\Projects\\plugins\\dist\\';
+const pluginDir = 'D:\\Dennis\\Projects\\wallpaper-plugins\\dist\\';
 
 type PluginReg = Registration<PluginInterface>;
 type InnerPlugin = { default: PluginReg };
