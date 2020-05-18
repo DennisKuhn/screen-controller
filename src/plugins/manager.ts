@@ -4,6 +4,9 @@ import requireGlob from 'require-glob';
 import { Browser } from '../Setup/Application/Browser';
 import { IMapDidChange, reaction } from 'mobx';
 import { Plugin } from './Plugin';
+import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
+import { isEqual } from 'lodash';
+import { Rectangle } from '../Setup/Default/Rectangle';
 
 const pluginDir = 'D:\\Dennis\\Projects\\plugins\\dist\\';
 
@@ -19,7 +22,7 @@ export class Manager {
     static readonly registrations = new Map<string, PluginReg>();
 
     static async loadAll(): Promise<void> {
-        console.log(`${this.constructor.name}.loadAll() current=${Object.keys(Manager.registrations).length}`);
+        // console.log(`${this.constructor.name}.loadAll() current=${Object.keys(Manager.registrations).length}`);
 
         await Manager.loadPlugins('*');
     }
@@ -33,7 +36,7 @@ export class Manager {
 
         const mixed: PluginImports = await requireGlob([prefix + '.js'], { cwd: pluginDir });
         const flat: FlatImports = {};
-        console.log(mixed);
+
         for (const [id, mix] of Object.entries(mixed)) {
             flat[id] = (mix as InnerPlugin).default ?? mix as PluginReg;
         }
@@ -60,7 +63,7 @@ export class Manager {
     }
 
     async load(className: string): Promise<PluginConstructor<PluginInterface>> {
-        console.log(`${this.constructor.name}.load(${className}) current=${Object.keys(Manager.registrations).length}`);
+        console.log(`${this.constructor.name}[${this.browser.id}].load(${className}) current=${Object.keys(Manager.registrations).length}`);
 
         let registration = Manager.registrations.get(className);
 
@@ -79,6 +82,8 @@ export class Manager {
         for (const plugin of browser.plugins.values()) {
             if (plugin)
                 this.addPlugin(plugin);
+            else
+                console.error(`${this.constructor.name}[${browser.id}] a plugin is null`);
         }
         browser.plugins.observe(
             this.onPluginsChanged
@@ -125,8 +130,32 @@ export class Manager {
         }
     }
 
+    private updateBounds(setup: Setup): void {
+        if (!this.browser.scaled)
+            throw new Error(`${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) browser has no scaled bounds`);
+        
+        const scaled: SimpleRectangle = {
+            x: this.browser.scaled.width * setup.relativeBounds.x,
+            y: this.browser.scaled.height * setup.relativeBounds.y,
+            width: this.browser.scaled.width * setup.relativeBounds.width,
+            height: this.browser.scaled.height * setup.relativeBounds.height,
+        };
+
+        if ((!setup.scaledBounds) || (!isEqual(setup.scaledBounds.simple, scaled))) {
+            console.log(
+                `${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) new scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
+
+            setup.scaledBounds = Rectangle.createNew(setup.id, scaled);
+        } else {
+            console.log(
+                `${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) keep scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
+        }
+    }
+
     private addPlugin = async (setup: Setup): Promise<void> => {
         console.log(`${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) current=${Object.keys(Manager.registrations).length}`);
+
+        this.updateBounds(setup);
 
         try {
             this.plugins.set(

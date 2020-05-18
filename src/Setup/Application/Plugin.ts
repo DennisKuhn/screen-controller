@@ -38,18 +38,75 @@ export class Plugin extends SetupBase implements PluginInterface {
         this.relativeBounds = relativeBounds;
         this.scaledBounds = scaledBounds;
 
-        for (const propertyName in this) {
-            console.log(`${this.constructor.name}[${setup.className}][${setup.id}] observable(${propertyName})`);
-            observable(this, propertyName);
+        // for (const propertyName in this) {
+        //     console.log(`${this.constructor.name}[${setup.className}][${setup.id}] observable(${propertyName})=${this[propertyName]}`);
+        //     // observable(this, propertyName);
+        // }
+    }
+
+    static storagePrefix = 'PluginSchema-';
+    static storageListKey = Plugin.storagePrefix + 'List';
+    static storageKey = (schemaId: string): string => Plugin.storagePrefix + schemaId;
+
+    static persistSchema = (schema: JSONSchema7): void => {
+        if (!schema.$id) throw new Error(`Plugin.persistSchema() no $id: ${JSON.stringify(schema)}`);
+        const key = Plugin.storageKey(schema.$id);
+
+        console.log(`Plugin.persistSchema(${schema.$id}) @ ${key}`);
+
+        localStorage.setItem( key, JSON.stringify(schema));
+
+        if (!Plugin.storedSchemaKeys.includes(key)) {
+            console.log(`Plugin.persistSchema(${schema.$id}) Add ${key} to ${Plugin.storedSchemaKeys}`, Plugin.storedSchemaKeys);
+            Plugin.storedSchemaKeys.push( key );
+            localStorage.setItem(
+                Plugin.storageListKey,
+                JSON.stringify(Plugin.storedSchemaKeys));
         }
     }
 
-    // static register = (): void => SetupBase.register(Plugin, Plugin.schema);
-    static register = (): void => SetupBase.addSchema(Plugin.schema);
+    static storedSchemaKeys: string[] = [];
 
-    static add(schema: JSONSchema7): void {
+    static loadAllSchemas = (): void => {
+        const storedSchemaKeysString = localStorage.getItem(Plugin.storageListKey);
+
+        if (storedSchemaKeysString) {
+            try {
+                Plugin.storedSchemaKeys = JSON.parse(storedSchemaKeysString);
+
+                for (const key of Plugin.storedSchemaKeys) {
+                    const schemaString = localStorage.getItem(key);
+
+                    if (schemaString) {
+                        SetupBase.register(
+                            Plugin, 
+                            JSON.parse(schemaString)
+                        );
+                    } else {
+                        console.error(`Plugin.loadAllSchemas() null for ${key}`, storedSchemaKeysString);
+                    }
+                }
+            } catch (error) {
+                console.error(`Plugin.loadAllSchemas(): caught ${error}`, error);
+            }
+        } else {
+            console.warn('Plugin.loadAllSchemas() no stored schemas');
+        }
+    }
+
+    static add = (schema: JSONSchema7): void => {
         SetupBase.register(Plugin, schema);
+        Plugin.persistSchema(schema);
+    }
+
+    static register = (): void => {
+        SetupBase.addSchema(Plugin.schema);
+
+        if (process.type == 'renderer') {
+            Plugin.loadAllSchemas();
+        } else {
+            console.log(`Plugin.register: not loading schema, ${process.type} != 'renderer'`);
+        }
     }
 }
-
 Plugin.register();

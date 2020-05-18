@@ -71,10 +71,7 @@
                                 },
                                 {
                                     "html": "./src/wallpaper/index.html",
-                                    "js": "./src/wallpaper/index.js",
-                                    "preload": {
-                                        "js": "./src/infrastructure/preload.ts"
-                                    },
+                                    "js": "./src/wallpaper/index.tsx",
                                     "name": "wallpaper"
                                 }
                             ]

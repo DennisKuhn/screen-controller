@@ -28,6 +28,13 @@ export function create(plain: SetupBaseInterface): SetupBase {
 
     if (!creator) throw new Error(`SetupFactory.create: no creator for className=${plain.className}`);
 
-    return new creator(plain);
-//    return creator.factory(plain);
+    console.log(`SetupFactory:create(${plain.className}@${plain.id}@${plain.parentId}) creator=${creator.name}`);
+
+    try {
+        const setup = new creator(plain);
+        return setup;
+    } catch (error) {
+        console.error(`SetupFactory:create(${plain.className}@${plain.id}@${plain.parentId}) caught: ${error}`, error, plain);
+        throw error;
+    }
 }

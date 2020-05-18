@@ -158,7 +158,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 const responseItem: SetupBase | undefined = this.tryGetItem(id, depth);
 
                 if (responseItem) {
-                    // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
+                    console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
                     if (this.onCached)
                         this.onCached(responseItem, depth);
                     resolve(responseItem);
@@ -224,7 +224,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
             const tree = await this.getTree(id, depth);
             this.connectPersistPropagate({ item: tree, connectParent: true, persist: false, propagate: false });
-            // console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) resolve 1/${this.setupPromises.length}`, tree);
+            console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) resolve 1/${this.setupPromises.length}`, tree);
             resolve(tree);
             this.setupPromises.splice(0, 1);
 
@@ -493,11 +493,21 @@ class Renderer extends ControllerImpl {
         let item: SetupBase;
 
         if (itemString) {
-            // console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
+            console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
 
-            const itemPlain: SetupBaseInterface = JSON.parse(itemString);
+            try {
+                const itemPlain: SetupBaseInterface = JSON.parse(itemString);
 
-            item = create(itemPlain);
+                try {
+                    item = create(itemPlain);
+                } catch (error) {
+                    console.error(`${this.constructor.name}: load(${id}, ${itemPlain.className}): caught ${error} creating from ${itemString}`, itemPlain, error);
+                    throw error;
+                }
+            } catch (error) {
+                console.error(`${this.constructor.name}: load(${id}): caught ${error} parsing ${itemString}`, error);
+                throw error;
+            }
         } else if (id == Root.name) {
             item = Root.createNewBlank();
             console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
@@ -561,7 +571,7 @@ export class Paper extends Renderer {
                 this.browser
             );
         }
-        return this.browser;        
+        return this.browser;
     }
 }
 
@@ -579,7 +589,7 @@ class MainWindow extends Renderer {
     }
 
     onGetSetup = async (e, id: string, depth: number): Promise<void> => {
-        const setup = (await this.getSetup(id, depth)).getDeep();
+        const setup = (await this.getSetup(id, depth)).getPlain(depth);
         console.log(`${this.constructor.name}.onGetSetup(${id}, ${depth}) send:`, setup);
 
         this.ipc.send(

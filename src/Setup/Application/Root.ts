@@ -18,7 +18,7 @@ export class Root extends SetupBase {
                     id: { const: Root.name },
                     className: { const: Root.name },
                     parentId: { const: Root.name },
-                    screen: { $ref: Screen.name }
+                    screen: { $ref: Screen.name },
                 },
                 required: ['screen']
             }

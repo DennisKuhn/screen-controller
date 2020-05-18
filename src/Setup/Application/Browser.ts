@@ -26,7 +26,12 @@ export class Browser extends SetupBase {
                     device: { $ref: Rectangle.name },
                     plugins: {
                         type: 'object',
-                        additionalProperties: { $ref: Plugin.name }
+                        additionalProperties: {
+                            oneOf: [
+                                { $ref: Plugin.name },
+                                { type: 'null' }
+                            ]
+                        }
                     }
                 },
                 required: ['relative', 'plugins']

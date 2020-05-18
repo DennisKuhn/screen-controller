@@ -68,7 +68,10 @@ export abstract class SetupBase {
             throw new Error(`SetupBase[${this.constructor.name}] no definitions in activeSchema: ${JSON.stringify(SetupBase.activeSchema)}`);
 
         if (this.constructor.name != source.className)
-            throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
+            if (this.constructor.name == 'Plugin') {
+                console.log(`SetupBase[${this.constructor.name}] for ${source.className}: ${JSON.stringify(source)}`);
+            } else
+                throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
 
         try {
             // const valid = SetupBase.ajv.validate(SetupBase.schemaUri + '/definitions/' + source.className, source);
@@ -135,20 +138,20 @@ export abstract class SetupBase {
                                 shallow[propertyName as string][id] = null;
                             }
                         } else {
-                            throw new Error(`${this.constructor.name}.getShallow: Invalid class type ${typeof value} for ${propertyName}`);
+                            throw new Error(`SetupBase[${this.constructor.name}].getShallow: Invalid class type ${typeof value} for ${propertyName}`);
                         }
                         break;
                     case 'function':
                     case 'symbol':
-                        console.log(`${this.constructor.name}.getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'undefined':
-                        console.log(`${this.constructor.name}.getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'bigint':
-                        throw new Error(`${this.constructor.name}.getShallow: Invalid type ${typeof value} for ${propertyName}`);
+                        throw new Error(`SetupBase[${this.constructor.name}].getShallow: Invalid type ${typeof value} for ${propertyName}`);
                     default:
-                        throw new Error(`${this.constructor.name}.getShallow: Unkown type ${typeof value} for ${propertyName}`);
+                        throw new Error(`SetupBase[${this.constructor.name}].getShallow: Unkown type ${typeof value} for ${propertyName}`);
                 }
             }
         }
@@ -242,7 +245,7 @@ export abstract class SetupBase {
                     }
                     break;
                 case 'undefined':
-                    throw new Error(`${this.constructor.name}.update:[${propertyName}/${currentType}]==${currentValue} = ${newValue}/${newType}`);
+                    throw new Error(`SetupBase[${this.constructor.name}].update:[${propertyName}/${currentType}]==${currentValue} = ${newValue}/${newType}`);
                 case 'object':
                     if (currentValue instanceof ObservableSetupBaseMap) {
                         for (const [id, plainObject] of Object.entries(newValue)) {
@@ -318,7 +321,7 @@ export abstract class SetupBase {
         SetupBase.addSchema(schema);
 
         if (schema.$id != factory.name) {
-            console.warn(`SetupBsae.register: register ${factory.name} as ${schema.$id}`);
+            console.warn(`SetupBase.register: register ${factory.name} as ${schema.$id}`);
             register(factory, schema.$id);
         } else {
             register(factory);
