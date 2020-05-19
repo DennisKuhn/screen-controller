@@ -15,20 +15,16 @@ import { ObservableSetupBaseMap } from './Container';
 import { Root } from './Application/Root';
 import { Screen } from './Application/Screen';
 import { Browser } from './Application/Browser';
-
-//Rectangle.register();
-
-// Root.register();
-// 
-// Display.register();
-// 
-// 
+import { Plugin } from './Application/Plugin';
+import { JSONSchema7 } from 'json-schema';
 
 type ChangeChannel = 'change';
 type RegisterChannel = 'register';
 type InitChannel = 'init';
 type GetSetupChannel = 'getsetup';
 type SetSetupChannel = 'setsetup';
+type GetSchemaChannel = 'getschema';
+type SetSchemaChannel = 'setschema';
 
 interface IpcRenderer extends electron.IpcRenderer {
     send(channel: InitChannel): void;
@@ -39,10 +35,13 @@ interface IpcRenderer extends electron.IpcRenderer {
 
     send(channel: SetSetupChannel, args: SetupBaseInterface): void;
 
+    send(channel: SetSchemaChannel, schema: JSONSchema7): void;
+
     /// From IpcWindow.send
     on(channel: ChangeChannel, listener: (event: IpcRendererEvent, update: SetupBaseInterface, persist: boolean) => void): this;
 
     on(channel: GetSetupChannel, listener: (event: IpcRendererEvent, id: SetupItemId, depth: number) => void): void;
+    on(channel: GetSchemaChannel, listener: (event: IpcRendererEvent, id?: string) => void): void;
 }
 
 interface IpcMain extends electron.IpcMain {
@@ -51,6 +50,7 @@ interface IpcMain extends electron.IpcMain {
     on(channel: ChangeChannel, listener: (event: IpcMainEvent, update: SetupBaseInterface) => void): this;
     on(channel: RegisterChannel, listener: (event: IpcMainEvent, args: IpcRegisterArgs) => void): this;
     on(channel: SetSetupChannel, listener: (event: IpcMainEvent, args: SetupBaseInterface) => void): this;
+    on(channel: SetSchemaChannel, listener: (event: IpcMainEvent, schema: JSONSchema7) => void): this;
 }
 
 interface IpcWindow extends electron.WebContents {
@@ -59,6 +59,7 @@ interface IpcWindow extends electron.WebContents {
     // send(channel: ChangeChannel, args: IpcDeleteArgs, persist?: boolean): void;
     // send(channel: ChangeChannel, args: IpcUpdateBrowserArgs, persist?: boolean): void;
     send(channel: GetSetupChannel, id: SetupItemId, depth: number): void;
+    send(channel: GetSchemaChannel, id?: string): void;
     send(channel: ChangeChannel, update: SetupBaseInterface, persist: boolean): void;
 }
 
@@ -107,7 +108,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     }
 
     log(): void {
-        console.log(`${this.constructor.name}.log()`);
+        console.log(`ControllerImpl[${this.constructor.name}].log()`);
     }
 
     setupPromises: SetupPromise[] = new Array<SetupPromise>();
@@ -117,24 +118,24 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             for (const [/*propertyName*/, value] of Object.entries(item)) {
                 if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                     const container = value as ObservableSetupBaseMap<SetupBase>;
-                    // console.log(`${this.constructor.name}.test(${item.id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap#${container.size}`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap#${container.size}`);
 
                     for (const [/*childId*/, child] of container.entries()) {
                         if ((child == null) || (!this.test(child, depth - 1))) {
-                            // console.log(`${this.constructor.name}.test(${item.id}, ${depth}):${propertyName} failed: [${childId}] == ${child}`);
+                            // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}):${propertyName} failed: [${childId}] == ${child}`);
                             return false;
                         } else {
-                            // console.log(`${this.constructor.name}.test(${item.id}, ${depth}):${propertyName} success: [${childId}]`);
+                            // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}):${propertyName} success: [${childId}]`);
                         }
                     }
                 } else {
-                    // console.log(`${this.constructor.name}.test(${item.id}, ${depth}): skip ${propertyName}`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}): skip ${propertyName}`);
                 }
             }
         } else {
-            // console.log(`${this.constructor.name}.test(${item.id}, ${depth}): reached bottom`);
+            // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}): reached bottom`);
         }
-        // console.log(`${this.constructor.name}.test(${item.id}, ${depth}): successful`);
+        // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}): successful`);
         return true;
     }
 
@@ -158,7 +159,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 const responseItem: SetupBase | undefined = this.tryGetItem(id, depth);
 
                 if (responseItem) {
-                    console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
+                    // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
                     if (this.onCached)
                         this.onCached(responseItem, depth);
                     resolve(responseItem);
@@ -187,27 +188,27 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             if (depth != 0) {
                 for (const [/*propertyName*/, value] of Object.entries(responseItem)) {
                     if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
-                        // console.log(`${this.constructor.name}.getTree(${id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap`);
                         const container = value as ObservableSetupBaseMap<SetupBase>;
 
                         for (const childId of container.keys()) {
                             const childTree = await this.getTree(childId, depth - 1);
                             if (container.get(childId) == null) {
-                                // console.log(`${this.constructor.name}.getTree(${id}, ${depth}): ${propertyName} set [${childId}]`);
+                                // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): ${propertyName} set [${childId}]`);
                                 container.set(
                                     childId,
                                     childTree
                                 );
                             } else {
-                                // console.log(`${this.constructor.name}.getTree(${id}, ${depth}): ${propertyName} already set [${childId}]`);
+                                // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): ${propertyName} already set [${childId}]`);
                             }
                         }
                     } else {
-                        // console.log(`${this.constructor.name}.getTree(${id}, ${depth}): skip ${propertyName}`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): skip ${propertyName}`);
                     }
                 }
             } else {
-                // console.log(`${this.constructor.name}.getTree(${id}, ${depth}): reached bottom`);
+                // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): reached bottom`);
             }
         } else {
             responseItem = await this.getSetupImpl(id, depth);
@@ -224,7 +225,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
             const tree = await this.getTree(id, depth);
             this.connectPersistPropagate({ item: tree, connectParent: true, persist: false, propagate: false });
-            console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) resolve 1/${this.setupPromises.length}`, tree);
+            // console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) resolve 1/${this.setupPromises.length}`, tree);
             resolve(tree);
             this.setupPromises.splice(0, 1);
 
@@ -239,57 +240,57 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
         if (!this.configs.has(item.id)) {
             // console.log(
-            // `${this.constructor.name}.connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
+            //     `ControllerImpl[${this.constructor.name}].connectPersistPropagate( ${item.className}[${item.id}], connect=${connectParent}, persist=${persist}, propagate=${propagate} )`);
             if (connectParent) {
                 const parent = this.configs.get(item.parentId);
 
                 if (parent) {
                     for (const [/*propertyName*/, value] of Object.entries(parent)) {
                         if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
-                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: try ${propertyName}`);
+                            // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): parent ${item.parentId}: try ${propertyName}`);
                             const container = value as ObservableSetupBaseMap<SetupBase>;
 
                             const prospect = container.get(item.id);
 
                             if (prospect == null) {
-                                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: set in ${propertyName}`);
+                                // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): parent ${item.parentId}: set in ${propertyName}`);
                                 container.set(item.id, item);
                                 break;
                             } else if (prospect == undefined) {
-                                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: not in ${propertyName}`);
+                                // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): parent ${item.parentId}: not in ${propertyName}`);
                             } else {
-                                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: already in ${propertyName}`, item, prospect);
+                                // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): parent ${item.parentId}: already in ${propertyName}`, item, prospect);
                             }
                         } else {
-                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId}: skip ${propertyName}`);
+                            // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): parent ${item.parentId}: skip ${propertyName}`);
                         }
                     }
                 } else {
-                    // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): parent ${item.parentId} doesn't exist (yet)`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): parent ${item.parentId} doesn't exist (yet)`);
                 }
             }
-            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}, ${persist})`);
+            // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}, ${persist})`);
 
             this.configs.set(item.id, item);
 
             if (this.persist) {
                 const fPersist = this.persist;
-                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}) persist fireImmediately=${persist}`);
+                // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}) persist fireImmediately=${persist}`);
                 reaction(
                     () => {
-                        // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist.expression= `, item.shallow);
+                        // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}).persist.expression= `, item.shallow);
                         return item.getShallow();
                     },
                     (update: SetupBaseInterface): void => {
                         if (isEqual(update, this.remoteUpdates.get(update.id))) {
-                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist skip received=`, update);
+                            // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}).persist skip received=`, update);
                         } else {
-                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).persist`, {...update});
+                            // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}).persist`, {...update});
                             fPersist(update);
                         }
                     },
                     {
-                        name: `${this.constructor.name}[${item.id}].persist`,
+                        name: `ControllerImpl[${this.constructor.name}][${item.id}].persist`,
                         delay: 1,
                         fireImmediately: persist
                     }
@@ -299,21 +300,21 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             if (this.propagate) {
                 const fPropagate = this.propagate;
 
-                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}) popagate`);
+                // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}) popagate`);
                 reaction(
                     () => {
-                        // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).propagate.expression=`, item.shallow);
+                        // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}).propagate.expression=`, item.shallow);
                         return item.getShallow();
                     },
                     (update: SetupBaseInterface): void => {
                         if (isEqual(update, this.remoteUpdates.get(update.id))) {
-                            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}).propagate skip received=`, update);
+                            // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}).propagate skip received=`, update);
                         } else {
                             fPropagate(update);
                         }
                     },
                     {
-                        name: `${this.constructor.name}[${item.id}].propagate`,
+                        name: `ControllerImpl[${this.constructor.name}][${item.id}].propagate`,
                         delay: 1,
                         fireImmediately: propagate
                     }
@@ -321,11 +322,11 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             }
             for (const [/*propertyName*/, value] of Object.entries(item)) {
                 if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
-                    // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
                     const container = value as ObservableSetupBaseMap<SetupBase>;
                     container.observe(this.onMapChange);
                 } else {
-                    // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): not observe ${propertyName} as not ObservableSetupBaseMap`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): not observe ${propertyName} as not ObservableSetupBaseMap`);
                 }
             }
 
@@ -333,11 +334,11 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 this.onItemConnected(item, propagate);
             }
         } else {
-            // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}) skip already connected`);
+            // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}) skip already connected`);
         }
-        for (const [/*propertyName*/, value] of Object.entries(item)) {
+        for (const [ /*propertyName*/, value] of Object.entries(item)) {
             if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
-                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): connect children ${propertyName} as ObservableSetupBaseMap`);
+                // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): connect children ${propertyName} as ObservableSetupBaseMap`);
                 const container = value as ObservableSetupBaseMap<SetupBase>;
                 for (const child of container.values()) {
                     if (child) {
@@ -345,13 +346,13 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     }
                 }
             } else {
-                // console.log(`${this.constructor.name}.connectPersistPropagate(${item.id}): not connect children ${propertyName} as not ObservableSetupBaseMap`);
+                // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): not connect children ${propertyName} as not ObservableSetupBaseMap`);
             }
         }
     }
 
     private onMapChange = (changes: IMapDidChange<string, SetupBase | null>): void => {
-        // console.log(`${this.constructor.name}.onMapChange(${changes.type} - ${changes.name})`);
+        // console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${changes.type} - ${changes.name})`);
         switch (changes.type) {
             case 'add':
                 if (changes.newValue) {
@@ -362,7 +363,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 break;
             case 'update':
                 if (changes.oldValue)
-                    throw new Error(`${this.constructor.name}.onMapChange(-> ${changes.type} <-) no re-assigning`);
+                    throw new Error(`ControllerImpl[${this.constructor.name}].onMapChange(-> ${changes.type} <-) no re-assigning`);
         }
     }
 
@@ -380,13 +381,13 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         for (const [/*propertyName*/, value] of Object.entries(item)) {
             if (typeof value == 'object') {
                 if ((value as SetupBaseInterface).id != undefined) {
-                    // console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): skip child ${propertyName}=[${(value as SetupBaseInterface).id}]`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${item.id}): skip child ${propertyName}=[${(value as SetupBaseInterface).id}]`);
                 } else {
-                    // console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}): add children in ${propertyName}`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${item.id}): add children in ${propertyName}`);
 
                     for (const child of Object.values(value as Dictionary<SetupBaseInterface>)) {
                         if (child) {
-                            // console.log(`${this.constructor.name}.addRemoteUpdate(${item.id}):${propertyName} add child ${child.id}`);
+                            // console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${item.id}):${propertyName} add child ${child.id}`);
                             this.addRemoteUpdate(child);
                         }
                     }
@@ -396,19 +397,19 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     }
 
     onSetupChanged = (e: Event, update: SetupBaseInterface, persist?: boolean): void => {
-        // console.log(`${this.constructor.name}.onSetupChanged(${update.className}[${update.id}], persist=${persist}):`, update);
+        // console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.className}[${update.id}], persist=${persist}):`, update);
         let localItem = this.configs.get(update.id);
         const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
 
         this.addRemoteUpdate(update);
 
         if (localItem) {
-            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`/*, { ...update }*/);
+            console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} update`/*, { ...update }*/);
             localItem.update(update);
         } else {
-            console.log(`${this.constructor.name}.onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`/*, { ...update }*/);
+            console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${sender}): ${update.className}[${update.id}] persist=${persist} create`/*, { ...update }*/);
             localItem = create(update);
-            this.connectPersistPropagate({ item: localItem, connectParent: true, persist: false, propagate: false });
+            this.connectPersistPropagate({ item: localItem, connectParent: true, persist: false, propagate: true });
         }
         if (this.persist && persist) {
             this.persist(update);
@@ -493,7 +494,7 @@ class Renderer extends ControllerImpl {
         let item: SetupBase;
 
         if (itemString) {
-            console.log(`${this.constructor.name}: load(${id}): ${itemString}`);
+            console.log(`${this.constructor.name}: load(${id})` /*: ${itemString}`*/);
 
             try {
                 const itemPlain: SetupBaseInterface = JSON.parse(itemString);
@@ -586,6 +587,7 @@ class MainWindow extends Renderer {
         this.ipc.send('init');
 
         this.ipc.on('getsetup', this.onGetSetup);
+        this.ipc.on('getschema', this.onGetSchema);
     }
 
     onGetSetup = async (e, id: string, depth: number): Promise<void> => {
@@ -596,6 +598,16 @@ class MainWindow extends Renderer {
             'setsetup',
             setup
         );
+    }
+
+    onGetSchema = (e, id?: string): void => {
+        if (id) {
+            if (typeof SetupBase.activeSchema.definitions?.[id] != 'object')
+                throw new Error(`${this.constructor.name}.onGetSchema(${id}) is not an object = ${typeof SetupBase.activeSchema.definitions?.[id]}`);
+            this.ipc.send( 'setschema', SetupBase.activeSchema.definitions[id] as JSONSchema7 );
+        } else {
+            this.ipc.send('setschema', SetupBase.activeSchema);
+        }        
     }
 }
 
@@ -625,6 +637,7 @@ class Main extends ControllerImpl {
         this.ipc.on('change', this.onSetupChanged);
         this.ipc.on('register', this.onRegister);
         this.ipc.on('setsetup', this.onSetSetup);
+        this.ipc.on('setschema', this.onSetSchema);
     }
 
     private onRegister = (e: IpcMainEvent, { windowId, itemId, depth }: IpcRegisterArgs): void => {
@@ -639,7 +652,7 @@ class Main extends ControllerImpl {
                     //     `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth}): listening (${existingListener.depth})`);
                     listener = existingListener;
 
-                    if (existingListener.depth < depth) {
+                    if ((existingListener.depth > 0) && (existingListener.depth < depth)) {
                         offset = existingListener.depth;
                         existingListener.depth = depth;
                     }
@@ -689,7 +702,7 @@ class Main extends ControllerImpl {
                 return item.getShallow();
             },
             (updatedItem, /*r*/) => {
-                // console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
+                console.log(`${this.constructor.name}.changeListener[${listener.windowId},${listener.itemId},${listener.depth}].effect ${item.id} @${listener.depth - offset}`);
                 listener.ipc.send('change', updatedItem, false);
             },
             {
@@ -704,7 +717,11 @@ class Main extends ControllerImpl {
         // console.log(`${this.constructor.name}.connectChangeListeners[${this.changeListeners.length}](${item.id},${fireImmediately})`);
         for (const listener of this.changeListeners) {
             /// Check if ancestor in within depth is listening
-            for (let offset = 0, ancestor: SetupBase | undefined = item; (offset <= listener.depth) && (ancestor); offset += 1, ancestor = this.configs.get(ancestor.parentId)) {
+            for (
+                let offset = 0, ancestor: SetupBase | undefined = item;
+                ((listener.depth == -1) || (offset <= listener.depth)) && (ancestor);
+                offset += 1, ancestor = this.configs.get(ancestor.parentId)
+            ) {
                 if (listener.itemId == ancestor.id) {
                     this.connectChangeListener(item, listener, fireImmediately, offset);
                     break;
@@ -734,12 +751,27 @@ class Main extends ControllerImpl {
         currentPromise.resolve(response);
     }
 
+    private onSetSchema = (e, schema: JSONSchema7): void => {
+
+        console.log(`${this.constructor.name}.onSetSchema(${schema.$id})`, schema);
+
+        if (schema.definitions) {
+            Object.values(schema.definitions)
+                .filter(schemaDef =>
+                    (schemaDef as JSONSchema7).allOf?.some(pluginRefProspect =>
+                        (pluginRefProspect as JSONSchema7).$ref == Plugin.name))
+                .forEach(definition =>
+                    Plugin.add(definition as JSONSchema7));
+        } else {
+            Plugin.add(schema);
+        }
+    }
 
     private onInit = (e: IpcMainEvent): void => {
-        /// Probably received Setup through register triggered by getting setup
+        console.log(`${this.constructor.name}.onInit: sender=${e.sender}`);
 
-        // console.log(`${this.constructor.name}.onInit: sender=${e.sender}`);
         this.ipcStorage = e.sender;
+        this.ipcStorage.send('getschema');
 
         this.requestPromises();
     }

@@ -2,7 +2,7 @@ import { Plugin as Setup } from '../Setup/Application/Plugin';
 import { Registration, PluginInterface, PluginConstructor } from './PluginInterface';
 import requireGlob from 'require-glob';
 import { Browser } from '../Setup/Application/Browser';
-import { IMapDidChange, reaction } from 'mobx';
+import { IMapDidChange, reaction, autorun } from 'mobx';
 import { Plugin } from './Plugin';
 import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
 import { isEqual } from 'lodash';
@@ -32,7 +32,7 @@ export class Manager {
      * @param prefix use '*' to load all, otherwise the className 
      */
     static async loadPlugins(prefix: string): Promise<void> {
-        console.log(`${this.constructor.name}.loadPlugins(${prefix}) current=${Object.keys(Manager.registrations).length}`);
+        // console.log(`${this.constructor.name}.loadPlugins(${prefix}) current=${Object.keys(Manager.registrations).length}`);
 
         const mixed: PluginImports = await requireGlob([prefix + '.js'], { cwd: pluginDir });
         const flat: FlatImports = {};
@@ -44,7 +44,7 @@ export class Manager {
         for (const [id, registration] of Object.entries(flat)) {
 
             if (!(id in Manager.registrations)) {
-                console.log(`${this.constructor.name}.loadAll() add ${id}`);
+                // console.log(`${this.constructor.name}.loadAll() add ${id}`);
 
                 if (registration.schema) {
                     try {
@@ -142,20 +142,22 @@ export class Manager {
         };
 
         if ((!setup.scaledBounds) || (!isEqual(setup.scaledBounds.simple, scaled))) {
-            console.log(
-                `${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) new scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
+            // console.log(
+            //     `${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) new scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
 
             setup.scaledBounds = Rectangle.createNew(setup.id, scaled);
         } else {
-            console.log(
-                `${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) keep scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
+            // console.log(
+            //     `${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) keep scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
         }
     }
 
     private addPlugin = async (setup: Setup): Promise<void> => {
         console.log(`${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) current=${Object.keys(Manager.registrations).length}`);
 
-        this.updateBounds(setup);
+        autorun(
+            () => this.updateBounds(setup)
+        );
 
         try {
             this.plugins.set(
@@ -166,7 +168,7 @@ export class Manager {
                 )
             );
         } catch (error) {
-            console.log(`${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) failed: ${error}`, error );
+            console.error(`${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) failed: ${error}`, error );
         }
     }
 }

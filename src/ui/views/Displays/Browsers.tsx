@@ -1,12 +1,11 @@
 import { observer } from 'mobx-react-lite';
 import React, { useState } from 'react';
+
 // @material-ui/core components
 import Tooltip from '@material-ui/core/Tooltip';
 import IconButton from '@material-ui/core/IconButton';
-import Table from '@material-ui/core/Table';
-import TableRow from '@material-ui/core/TableRow';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
+import { List, ListItem, ListItemIcon, ListItemSecondaryAction } from '@material-ui/core';
+
 // @material-ui/icons
 import Delete from '@material-ui/icons/Delete';
 import Fullscreen from '@material-ui/icons/Fullscreen';
@@ -20,10 +19,76 @@ import { Display } from '../../../Setup/Application/Display';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
 import Plugins from './Plugins';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
+import { makeStyles } from '@material-ui/core/styles';
+import { PercentField } from './PercentField';
 
-const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
+const useStyles = makeStyles((theme) => ({
+    coordField: {
+        width: 60,
+    },
+}));
+
+const BrowserForm = observer(({ browser }: { browser: Browser }): JSX.Element => {
+    let isFullscreen = (browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1);
+
+    function toggleFullScreen(): void {
+        isFullscreen = !isFullscreen;
+
+        browser.relative = Rectangle.createNew(
+            browser.id,
+            isFullscreen ?
+                { x: 0, y: 0, width: 1, height: 1 } :
+                { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
+        );
+    }
+
+    return (
+        <>
+            <Tooltip
+                id={'tooltip-' + browser.id + '-config'}
+                title={isFullscreen ? 'Make part screen' : 'Make Full Screen'}
+                placement="top"
+                >
+                <IconButton aria-label="Fullscreen" onClick={toggleFullScreen} >
+                    {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
+                </IconButton>
+            </Tooltip>
+            <form>
+                <PercentField
+                    value={browser.relative.x * 100}
+                    label='x'
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>): number => browser.relative.x = Number(event.target.value) / 100}
+                />
+                <span>,</span>
+                <PercentField
+                    value={browser.relative.y * 100}
+                    label='y'
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>): number => browser.relative.y = Number(event.target.value) / 100}
+                />
+                <span>-</span>
+                <PercentField
+                    value={browser.relative.width * 100}
+                    label='width'
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>): number => browser.relative.width = Number(event.target.value) / 100}
+                />
+                <span>*</span>
+                <PercentField
+                    value={browser.relative.height * 100}
+                    label='height'
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>): number => browser.relative.height = Number(event.target.value) / 100}
+                />
+            </form>
+        </>
+    );
+});
+
+const BrowserItem = observer(({ browser }: { browser: Browser }): JSX.Element => {
 
     const [configVisible, setConfigVisible] = useState(false);
+
+    function toggleConfigVisible(): void {
+        setConfigVisible(!configVisible);
+    }
 
     function deleteBrowser(): void {
         controller.getSetup(browser.parentId, 0).then(
@@ -31,76 +96,46 @@ const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
         );
     }
 
-    function toggleFullScreen(): void {
-        const newFullScreen = !(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1);
-
-        browser.relative = Rectangle.createNew(
-            browser.id,
-            newFullScreen ?
-                { x: 0, y: 0, width: 1, height: 1 } :
-                { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
-        );
-    }
-
-    function toggleConfigVisible(): void {
-        setConfigVisible(!configVisible);
-    }
 
     return (
-        <TableRow key={browser.id}>
-            <TableCell style={{ padding: '8px 0px 8px 0px' }}>
-                <Tooltip
-                    id={'tooltip-' + browser.id + '-config'}
-                    title="Show configuration"
-                    placement="top"
-                >
-                    <IconButton
-                        aria-label="Menu"
-                        onClick={toggleConfigVisible}
-                    >
-                        {configVisible ? <MenuOpen /> : <Menu />}
-                    </IconButton>
-                </Tooltip>
-            </TableCell>
-            <TableCell style={{ padding: '8px 0px 8px 0px' }}>
-                <Tooltip
-                    id={'tooltip-' + browser.id + '-config'}
-                    title={(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1) ?
-                        'Make part screen' : 'Make Full Screen'}
-                    placement="top"
-                >
-                    <IconButton
-                        aria-label="Fullscreen"
-                        onClick={toggleFullScreen}
-                    >
-                        {(browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1) ? <FullscreenExit /> : <Fullscreen />}
-                    </IconButton>
-                </Tooltip>
-            </TableCell>
-            <TableCell style={{ padding: '8px 0px 8px 4px', textAlign: 'right' }}>{browser.relative.x * 100}%</TableCell>
-            <TableCell style={{ padding: '8px 2px 8px 0px', textAlign: 'center' }}>,</TableCell>
-            <TableCell style={{ padding: '8px 4px 8px 0px', textAlign: 'left' }}>{browser.relative.y * 100}%</TableCell>
-            <TableCell style={{ padding: '8px 0px 8px 4px', textAlign: 'right' }}>{browser.relative.width * 100}%</TableCell>
-            <TableCell style={{ padding: '8px 2px 8px 2px', textAlign: 'center' }}>x</TableCell>
-            <TableCell style={{ padding: '8px 4px 8px 0px', textAlign: 'left' }}>{browser.relative.height * 100}%</TableCell>
-            <TableCell style={{ padding: '8px 0px 8px 0px' }}>
-                <Tooltip
-                    id={'tooltip-' + browser.id + '-delete'}
-                    title="Remove"
-                    placement="top"
-                >
-                    <IconButton
-                        aria-label="Delete"
-                        onClick={deleteBrowser}
-                    >
-                        <Delete />
-                    </IconButton>
-                </Tooltip>
-            </TableCell>
-            <TableCell>
-                <Plugins browser={browser} />
-            </TableCell>
-        </TableRow>
+        <ListItem key={browser.id}>
+            <List>
+                <ListItem>
+                    <ListItemIcon>
+                        <Tooltip
+                            id={'tooltip-' + browser.id + '-config'}
+                            title="Show Plugins"
+                            placement="top"
+                        >
+                            <IconButton
+                                aria-label="Menu"
+                                onClick={toggleConfigVisible}
+                            >
+                                {configVisible ? <MenuOpen /> : <Menu />}
+                            </IconButton>
+                        </Tooltip>
+                    </ListItemIcon>
+                    <BrowserForm browser={browser} />
+                    <ListItemSecondaryAction>
+                        <Tooltip
+                            id={'tooltip-' + browser.id + '-delete'}
+                            title="Remove"
+                            placement="top"
+                        >
+                            <IconButton
+                                aria-label="Delete"
+                                onClick={deleteBrowser}
+                            >
+                                <Delete />
+                            </IconButton>
+                        </Tooltip>
+                    </ListItemSecondaryAction>
+                </ListItem>
+                <ListItem style={{ visibility: configVisible? 'visible' : 'hidden'}}>
+                    <Plugins browser={browser} />
+                </ListItem>
+            </List>
+        </ListItem>
     );
 });
 
@@ -108,12 +143,10 @@ const Row = observer(({ browser }: { browser: Browser }): JSX.Element => {
 const Browsers = observer(({ browsers }: { browsers: ObservableSetupBaseMap<Browser> }): JSX.Element => {
 
     return (
-        <Table>
-            <TableBody>
-                {browsers.map(browser => browser).filter(browser => browser != undefined).map(browser =>
-                    <Row key={(browser as Browser).id} browser={(browser as Browser)} />)}
-            </TableBody>
-        </Table>
+        <List>
+            {browsers.map(browser =>
+                <BrowserItem key={(browser as Browser).id} browser={(browser as Browser)} />)}
+        </List>
     );
 });
 

@@ -40,7 +40,7 @@ const DisplayCard = observer(({ config, specs }: { config: Display; specs: Elect
         );
     }
     //xs, sm, md, lg, and xl
-    return <GridItem xs={12} sm={8} md={6} lg={4} xl={3}>
+    return <GridItem xs={12} sm={12} md={12} lg={8} xl={6}>
         <Card>
             <CardHeader color="success" stats={true} icon={true}>
                 <CardIcon color="success">
@@ -92,7 +92,7 @@ const DisplaysPage = observer((): JSX.Element => {
     const [displays, setDisplays] = useState(new ObservableSetupBaseMap<Display>());
 
     useEffect(() => {
-        controller.getSetup('Screen', 2)
+        controller.getSetup('Screen', -1)
             .then(screen => setDisplays((screen as Screen).displays));
     }, []);
 

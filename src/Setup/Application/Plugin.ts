@@ -1,16 +1,16 @@
 import { SetupBase } from '../SetupBase';
-import { SetupBaseInterface } from '../SetupInterface';
+import { SetupBaseInterface, SetupItemId } from '../SetupInterface';
 import { Rectangle } from '../Default/Rectangle';
 import { JSONSchema7 } from 'json-schema';
-import { observable } from 'mobx';
 import { PluginInterface } from './PluginInterface';
+import { observable } from 'mobx';
 
 /**
  * Template for plugin setup. Registered under plugin-className
  */
 export class Plugin extends SetupBase implements PluginInterface {
-    relativeBounds: Rectangle;
-    scaledBounds?: Rectangle;
+    @observable relativeBounds: Rectangle;
+    @observable scaledBounds?: Rectangle;
 
     private static readonly schema: JSONSchema7 = {
         $id: Plugin.name,
@@ -95,8 +95,59 @@ export class Plugin extends SetupBase implements PluginInterface {
     }
 
     static add = (schema: JSONSchema7): void => {
+        if (!schema.allOf?.some(pluginRefProspect => (pluginRefProspect as JSONSchema7).$ref == Plugin.name))
+            throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.name}`);
+
         SetupBase.register(Plugin, schema);
-        Plugin.persistSchema(schema);
+
+        if (process.type == 'renderer') {
+            Plugin.persistSchema(schema);
+        }
+    }
+
+    static createNew(parentId: SetupItemId, schema: JSONSchema7): Plugin {
+
+        if (!schema.$id) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.$id`);
+        if (!schema.allOf) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.allOf`);
+
+        const newID = SetupBase.getNewId(Plugin);
+
+        const defaultSetup = {};
+
+        for (const entry of schema.allOf) {
+            const subschema = entry as JSONSchema7;
+            if (subschema.properties) {
+                for (const [name, value] of Object.entries ( subschema.properties )) {
+                    const propertyDescriptor = value as JSONSchema7;
+
+                    if (propertyDescriptor.default) {
+                        defaultSetup[name] = propertyDescriptor.default;
+                    }
+                }
+            }
+        }
+
+        // console.log(`Plugin.createNew(${parentId}, ${schema.$id}) defaults=`, { ...defaultSetup });
+
+        const plain: SetupBaseInterface = {
+            ...defaultSetup,
+            id: newID,
+            parentId: parentId,
+            className: schema.$id,
+            relativeBounds: {
+                id: SetupBase.getNewId(Rectangle),
+                className: Rectangle.name,
+                parentId: newID,
+                x: 0,
+                y: 0,
+                width: 1,
+                height: 1
+            } as SetupBaseInterface
+        } as SetupBaseInterface;
+
+        console.log(`Plugin.createNew(${parentId}, ${schema.$id})`, {...plain});
+
+        return new Plugin( plain );
     }
 
     static register = (): void => {

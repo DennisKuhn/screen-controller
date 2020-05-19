@@ -5,7 +5,7 @@ import { EventEmitter } from 'events';
 import { Browser } from '../Setup/Application/Browser';
 import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
 import { Rectangle } from '../Setup/Default/Rectangle';
-import { reaction } from 'mobx';
+import { autorun } from 'mobx';
 import { isEqual } from 'lodash';
 
 interface WallpaperWindowConstructorOptions extends BrowserWindowConstructorOptions {
@@ -134,35 +134,15 @@ class WallpaperWindow extends EventEmitter {
             nodeWinWallpaper.attachWindow(this.nativeHandle);
             this._attached = true;
 
-            reaction(
-                (/*r*/) => {
-                    // console.log(
-                    //     `${this.constructor.name}[${this.browser.id}]-updateBounds get` +
-                    //     ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
-                    return this.browser.relative;
-                },
+            autorun(
                 () => {
                     // console.log(
                     //     `${this.constructor.name}[${this.browser.id}]-updateBounds set` +
                     //     ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
                     this.updateBrowserBounds();
                     this.fitToDisplay();
-                },
-                {
-                    name: `${this.constructor.name}[${this.browser.id}]-updateBounds`,
-                    fireImmediately: true,
-                    equals: (a, b) => {
-                        const result = a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
-                        // console.log(
-                        //     `${this.constructor.name}[${this.browser.id}]-updateBounds test ${result}=` +
-                        //     ` ${a.x},${a.y} ${a.width}*${a.height} =?= ${b.x},${b.y} ${b.width}*${b.height}`
-                        // );
-
-                        return result;
-                    }
                 }
             );
-
         }
     }
 
@@ -179,6 +159,7 @@ class WallpaperWindow extends EventEmitter {
     get attached(): boolean {
         return this._attached;
     }
+
     on(event: 'resized', listener: (event: Event, bounds: DisplayBounds) => void): this {
         return super.on(event, listener);
     }

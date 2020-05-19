@@ -1,10 +1,29 @@
+import shortid from 'shortid';
 import { JSONSchema7 } from 'json-schema';
 import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
-import Ajv, { ValidateFunction } from 'ajv';
+import Ajv from 'ajv';
 import { action } from 'mobx';
 import { SetupItemId, SetupBaseInterface } from './SetupInterface';
+import { remote } from 'electron';
+
+
+switch (process.type) {
+    case 'browser': // Main
+        shortid.worker(0);
+        break;
+    case 'renderer':
+        shortid.worker(remote.getCurrentWindow().id);
+        break;
+    case 'worker':
+        console.error(`SetupBase[${process.type}]: is not supported`);
+        throw new Error(
+            `SetupBase: process.type=${process.type} is not supported`
+        );
+        break;
+}
+
 
 export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
@@ -42,7 +61,7 @@ export abstract class SetupBase {
         }
     };
 
-    private static ajv = (new Ajv()).addSchema(SetupBase.baseSchema, SetupBase.name);
+    protected static ajv = (new Ajv()).addSchema(SetupBase.baseSchema, SetupBase.name);
 
 
     protected static addSchema(schema: JSONSchema7): void {
@@ -51,9 +70,9 @@ export abstract class SetupBase {
         if (!schema.$id) throw new Error(`SetupBase.addSchema() no $id: ${JSON.stringify(schema)}`);
 
         if (schema.$id in SetupBase.activeSchema.definitions) {
-            console.log(`SetupBase.addSchema(${schema.$id}) already registered`, SetupBase.activeSchema.definitions[schema.$id], schema);
+            // console.log(`SetupBase.addSchema(${schema.$id}) already registered`, SetupBase.activeSchema.definitions[schema.$id], schema);
         } else {
-            console.log(`SetupBase.addSchema(${schema.$id}) @${Object.keys(SetupBase.activeSchema.definitions).length}`);
+            // console.log(`SetupBase.addSchema(${schema.$id}) @${Object.keys(SetupBase.activeSchema.definitions).length}`);
             SetupBase.activeSchema.definitions[schema.$id] = schema;
 
             SetupBase.ajv.addSchema(schema, schema.$id);
@@ -73,31 +92,15 @@ export abstract class SetupBase {
             } else
                 throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
 
-        try {
-            // const valid = SetupBase.ajv.validate(SetupBase.schemaUri + '/definitions/' + source.className, source);
-            const valid = SetupBase.ajv.validate( source.className, source);
-
-            if (!valid) {
-                console.error(
-                    `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
-                    `${SetupBase.ajv.errors?.map(
-                        error => error.schemaPath + ' // ' + error.dataPath + ' @' + error.propertyName + ': ' + error.message + ':' + JSON.stringify(error.params)
-                    ).join(';\n')}\n`,
-                    source,
-                    { ...SetupBase.ajv.errors });
-                throw new Error(
-                    `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
-                    `${SetupBase.ajv.errors?.map(
-                        error => error.schemaPath + ' // ' + error.dataPath + ' @' + error.propertyName + ': ' + error.message + ':' + JSON.stringify(error.params)
-                    ).join(';\n')}\n` +
-                    `source:\n${JSON.stringify}`);
-            } else {
-                console.log(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: validated`);
-            }
-        } catch (e) {
-            console.error(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation exception: ${e.message}`, source, { ...e });
+        if (SetupBase.ajv.validate(source.className, source) != true) {
+            throw new Error(
+                `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
+                `${SetupBase.ajv.errors?.map(
+                    error => error.schemaPath + ' // ' + error.dataPath + ' @' + error.propertyName + ': ' + error.message + ':' + JSON.stringify(error.params)
+                ).join(';\n')}\n` +
+                `source:\n${JSON.stringify}`);
         }
-
+        console.log(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: validated`);
 
         this.id = source.id;
         this.parentId = source.parentId;
@@ -117,22 +120,22 @@ export abstract class SetupBase {
 
         for (const propertyName in this) {
             if (propertyName in shallow) {
-                // console.log(`${this.constructor.name}.getShallow: ${propertyName} exists`);
+                // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
                     case 'boolean':
                     case 'number':
                     case 'string':
-                        // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of type ${typeof value}`);
+                        // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of type ${typeof value}`);
                         shallow[propertyName as string] = value;
                         break;
                     case 'object':
                         if (value instanceof SetupBase) {
-                            // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of SetupBase`);
+                            // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of SetupBase`);
                             shallow[propertyName as string] = value.getShallow();
                         } else if (value instanceof ObservableSetupBaseMap) {
-                            // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
+                            // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
                             for (const id of value.keys()) {
                                 shallow[propertyName as string][id] = null;
@@ -143,10 +146,10 @@ export abstract class SetupBase {
                         break;
                     case 'function':
                     case 'symbol':
-                        console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        console.warn(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'undefined':
-                        console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        // console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'bigint':
                         throw new Error(`SetupBase[${this.constructor.name}].getShallow: Invalid type ${typeof value} for ${propertyName}`);
@@ -170,22 +173,22 @@ export abstract class SetupBase {
 
         for (const propertyName in this) {
             if (propertyName in shallow) {
-                // console.log(`${this.constructor.name}.getShallow: ${propertyName} exists`);
+                // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
                     case 'boolean':
                     case 'number':
                     case 'string':
-                        // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of type ${typeof value}`);
+                        // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of type ${typeof value}`);
                         shallow[propertyName as string] = value;
                         break;
                     case 'object':
                         if (value instanceof SetupBase) {
-                            // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of SetupBase`);
+                            // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of SetupBase`);
                             shallow[propertyName as string] = value.getShallow();
                         } else if (value instanceof ObservableSetupBaseMap) {
-                            // console.log(`${this.constructor.name}.getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
+                            // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
                             for (const [id, child] of value.entries()) {
                                 if (depth == 0) {
@@ -195,20 +198,20 @@ export abstract class SetupBase {
                                 }
                             }
                         } else {
-                            throw new Error(`${this.constructor.name}.getPlain: Invalid class type ${typeof value} for ${propertyName}`);
+                            throw new Error(`SetupBase[${this.constructor.name}].getPlain: Invalid class type ${typeof value} for ${propertyName}`);
                         }
                         break;
                     case 'function':
                     case 'symbol':
-                        console.log(`${this.constructor.name}.getPlain: ignore ${propertyName} of type ${typeof value}`);
+                        console.warn(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'undefined':
-                        console.log(`${this.constructor.name}.getPlain: ignore ${propertyName} of type ${typeof value}`);
+                        // console.log(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'bigint':
-                        throw new Error(`${this.constructor.name}.getPlain: Invalid type ${typeof value} for ${propertyName}`);
+                        throw new Error(`SetupBase[${this.constructor.name}].getPlain: Invalid type ${typeof value} for ${propertyName}`);
                     default:
-                        throw new Error(`${this.constructor.name}.getPlain: Unkown type ${typeof value} for ${propertyName}`);
+                        throw new Error(`SetupBase[${this.constructor.name}].getPlain: Unkown type ${typeof value} for ${propertyName}`);
                 }
             }
         }
@@ -217,6 +220,8 @@ export abstract class SetupBase {
 
     @action
     update(update: SetupBaseInterface): SetupBase {
+        // console.log(`SetupBase[${this.constructor.name}][${this.id}].update start`);
+
         if (update.id != this.id)
             throw new Error(`SetupBase[${this.constructor.name}][-> ${this.id} <-, ${this.parentId}, ${this.className}].update =`
                 + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
@@ -238,79 +243,77 @@ export abstract class SetupBase {
                 case 'number':
                 case 'string':
                     if (currentValue != newValue) {
-                        // console.log(`${this.constructor.name}.update:[${propertyName}/${typeof currentValue}]==${currentValue} = ${newValue}`);
+                        // console.log(`SetupBase[${this.constructor.name}].update:[${propertyName}/${typeof currentValue}]==${currentValue} = ${newValue}`);
                         this[propertyName] = newValue;
                     } else {
-                        // console.log(`${this.constructor.name}.update:[${propertyName}/${typeof currentValue}]==${currentValue} == ${newValue}`);
+                        // console.log(`SetupBase[${this.constructor.name}].update:[${propertyName}/${typeof currentValue}]==${currentValue} == ${newValue}`);
                     }
                     break;
                 case 'undefined':
                     throw new Error(`SetupBase[${this.constructor.name}].update:[${propertyName}/${currentType}]==${currentValue} = ${newValue}/${newType}`);
                 case 'object':
                     if (currentValue instanceof ObservableSetupBaseMap) {
-                        for (const [id, plainObject] of Object.entries(newValue)) {
-                            const object = currentValue.get(id);
+                        const map = currentValue as ObservableSetupBaseMap<SetupBase>;
+                        const newMap = newValue as Dictionary<SetupBaseInterface>;
+
+                        for (const [id, plainObject] of Object.entries(newMap)) {
+                            const object = map.get(id);
+
                             if (plainObject) {
                                 if (object) {
-                                    // console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}].update`, plainObject);
+                                    // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Map][${id}].update` /* , plainObject */);
                                     object.update(plainObject);
                                 } else {
-                                    // console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}]=create`, plainObject);
+                                    // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Map][${id}]=create` /* , plainObject */);
                                     currentValue.set(
                                         id,
-                                        create(plainObject as SetupBaseInterface)
+                                        create(plainObject)
                                     );
                                 }
                             } else if (!currentValue.has(id)) {
-                                // console.log(`${this.constructor.name}.update:[${propertyName}/Map][${id}] add null`);
+                                // console.log(`SetupBase[${this.constructor.name}].update:[${propertyName}/Map][${id}] add null`);
                                 currentValue.set(id, null);
                             }
                         }
-                        for (const deleted of currentValue.keys()) {
-                            if (!(deleted in (newValue as Dictionary<SetupBaseInterface>))) {
-                                console.log(`${this.constructor.name}.update:[${propertyName}/Map] delete ${deleted}`);
-                                currentValue.delete(deleted);
+                        for (const deleted of map.keys()) {
+                            if (!(deleted in newMap)) {
+                                // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Map] delete ${deleted}`);
+                                map.delete(deleted);
                             }
                         }
                     } else if ((newValue as SetupBaseInterface).id) {
                         const updateSetup = newValue as SetupBaseInterface;
                         if (currentValue?.id == updateSetup.id) {
-                            // console.log(`${this.constructor.name}.update:[${propertyName}/Setup].update[${updateSetup.id}]`, updateSetup);
+                            // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Setup].update[${updateSetup.id}]` /*, updateSetup */);
                             currentValue.update(updateSetup);
                         } else {
-                            // console.log(`${this.constructor.name}.update:[${propertyName}/Setup]=create[${updateSetup.id}]`, updateSetup);
+                            // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Setup]=create[${updateSetup.id}]` /*, updateSetup */);
                             this[propertyName] = create(updateSetup);
                         }
                     } else {
-                        throw new Error(`${this.constructor.name}.update:[${propertyName}/${currentType}]==${currentValue} = ${newValue}/${newType}`);
+                        throw new Error(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/${currentType}]==${currentValue} = ${newValue}/${newType}`);
                     }
                     break;
                 case 'function':
                 case 'symbol':
-                    console.log(`${this.constructor.name}.update: ignore ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
+                    console.log(`SetupBase[${this.constructor.name}].update: ignore ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
                     break;
                 case 'bigint':
-                    throw new Error(`${this.constructor.name}.update: Invalid for ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
+                    throw new Error(`SetupBase[${this.constructor.name}].update: Invalid for ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
                 default:
-                    throw new Error(`${this.constructor.name}.update: Unkown for ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
+                    throw new Error(`SetupBase[${this.constructor.name}].update: Unkown for ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
             }
         }
-        return this;
 
+        // console.log(`SetupBase[${this.constructor.name}][${this.id}].update end`);
+
+        return this;
     }
 
     static usedIDs = new Array<string>();
 
     public static getNewId<SetupType extends SetupBase>(classConstructor: SetupConstructor<SetupType>): string {
-        let id = 0;
-        return SetupBase.usedIDs.reduce((result: string, usedId: string): string => {
-            const parts = usedId.split('-');
-            if ((parts.length == 2) && (parts[0] == classConstructor.name)) {
-                const usedIdNumber = Number(parts[1]);
-                id = usedIdNumber >= id ? usedIdNumber + 1 : id;
-            }
-            return `${classConstructor.name}-${id}`;
-        });
+        return classConstructor.name + '-' + shortid.generate();
     }
 
     protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7): void {
