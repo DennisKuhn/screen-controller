@@ -44,6 +44,8 @@ export class Plugin {
         this.canvas.style.top = scaledBounds.y + 'px';
         this.canvas.style.width = scaledBounds.width + 'px';
         this.canvas.style.height = scaledBounds.height + 'px';
+        this.canvas.width = scaledBounds.width;
+        this.canvas.height = scaledBounds.height;
     }
 
     close = (): void => {
