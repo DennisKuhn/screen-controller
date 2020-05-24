@@ -32,18 +32,28 @@ export class Display extends SetupBase {
         ]
     };
 
-    browsers: ObservableSetupBaseMap<Browser> = new ObservableSetupBaseMap<Browser>();
+    browsers: ObservableSetupBaseMap<Browser>;
 
     constructor(source: SetupBaseInterface) {
         super(source);
-        super.update(source);
+
+        this.browsers = SetupBase.createMap<Browser>(source['browsers']);
     }
 
     static createNew(displayId: SetupItemId): Display {
-        return new Display({ id: displayId, parentId: 'Screen', className: Display.name, browsers: {} } as SetupBaseInterface);
+        return new Display(
+            {
+                id: displayId,
+                parentId: 'Screen',
+                className: Display.name,
+                browsers: {}
+            } as SetupBaseInterface
+        );
     }
 
-    static register= (): void => SetupBase.register( Display, Display.schema );
+    static register(): void {
+        SetupBase.register(Display, Display.schema);
+    }
 }
 
 Display.register();

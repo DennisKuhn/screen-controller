@@ -1,4 +1,3 @@
-import { observable } from 'mobx';
 import { SetupBase } from '../SetupBase';
 import { SetupBaseInterface } from '../SetupInterface';
 import { Screen } from './Screen';
@@ -25,14 +24,12 @@ export class Root extends SetupBase {
         ]
     };
 
-    @observable
     screen: Screen;
 
     constructor(source: SetupBaseInterface) {
         super(source);
 
-        const { screen } = (super.update(source) as Root);
-        this.screen = screen;
+        this.screen = new Screen(source['screen']);
     }
 
     static createNewBlank(): Root {
@@ -46,7 +43,9 @@ export class Root extends SetupBase {
         );
     }
 
-    static register = (): void => SetupBase.register(Root, Root.schema);
+    static register(): void {
+        SetupBase.register(Root, Root.schema);
+    }
 }
 
 Root.register();

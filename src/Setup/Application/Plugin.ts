@@ -1,9 +1,10 @@
 import { SetupBase } from '../SetupBase';
-import { SetupBaseInterface, SetupItemId } from '../SetupInterface';
+import { SetupBaseInterface, SetupItemId, Dictionary } from '../SetupInterface';
 import { Rectangle } from '../Default/Rectangle';
 import { JSONSchema7 } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
-import { observable } from 'mobx';
+import { create } from '../SetupFactory';
+import { extendObservable, observable } from 'mobx';
 
 /**
  * Template for plugin setup. Registered under plugin-className
@@ -33,32 +34,83 @@ export class Plugin extends SetupBase implements PluginInterface {
     constructor(setup: SetupBaseInterface) {
         super(setup);
 
-        const { relativeBounds, scaledBounds } = (super.update(setup) as Plugin);
+        this.relativeBounds = new Rectangle(setup['relativeBounds']);
 
-        this.relativeBounds = relativeBounds;
-        this.scaledBounds = scaledBounds;
+        if (setup['scaledBounds']) {
+            this.scaledBounds = new Rectangle(setup['scaledBounds']);
+        }
 
+        this.init(setup);
         // for (const propertyName in this) {
         //     console.log(`${this.constructor.name}[${setup.className}][${setup.id}] observable(${propertyName})=${this[propertyName]}`);
         //     // observable(this, propertyName);
         // }
     }
 
+    init(setup: SetupBaseInterface): SetupBase {
+        // console.log(`SetupBase[${this.constructor.name}][${this.id}].update`);
+
+        const observables = {};
+
+        for (const propertyName in setup) {
+            if (!(propertyName in this)) {
+                const value = setup[propertyName];
+                const type = typeof value;
+
+                switch (type) {
+                    case 'boolean':
+                    case 'number':
+                    case 'string':
+                        // console.log(`${this.constructor.name}[${setup.className}][${this.id}].init:[${propertyName}/${typeof value}]= ${value}`);
+                        observables[propertyName] = value;
+                        break;
+                    case 'undefined':
+                        throw new Error(`${this.constructor.name}[${setup.className}][${this.id}].init:[${propertyName}]= ${value}/${type}`);
+                    case 'object':
+                        if ((value as SetupBaseInterface).id) {
+                            // console.log(`${this.constructor.name}[${setup.className}][${this.id}].init:[${propertyName}/Setup]=create[${(value as SetupBaseInterface).id}]` /*, updateSetup */);
+                            observables[propertyName] = create(value as SetupBaseInterface);
+                        } else {
+                            console.warn(`${this.constructor.name}[${setup.className}][${this.id}].init:[${propertyName}/Dictionary]=create` /*, updateSetup */);
+                            this[propertyName] = SetupBase.createMap<SetupBase>(value as Dictionary<SetupBaseInterface>);
+                        }
+                        break;
+                    case 'function':
+                    case 'symbol':
+                        console.warn(`${this.constructor.name}[${setup.className}][${this.id}].init: Invalid ${propertyName}=${value}/${type}`);
+                        break;
+                    case 'bigint':
+                        throw new Error(`${this.constructor.name}[${setup.className}][${this.id}].init: Unsupported for ${propertyName}=${value}/${type}`);
+                    default:
+                        throw new Error(`${this.constructor.name}[${setup.className}][${this.id}].init: Unkown for ${propertyName}=${value}/${type}`);
+                }
+            } else {
+                // console.log(`${this.constructor.name}[${setup.className}][${this.id}].init: skip ${propertyName}=${this[propertyName]}` /*, updateSetup */);
+            }
+        }
+        console.log(`${this.constructor.name}[${setup.className}][${this.id}].init extendObservable(this, `, observables);
+        extendObservable(this, observables);
+        return this;
+    }
+
+
     static storagePrefix = 'PluginSchema-';
     static storageListKey = Plugin.storagePrefix + 'List';
-    static storageKey = (schemaId: string): string => Plugin.storagePrefix + schemaId;
+    static storageKey(schemaId: string): string {
+        return Plugin.storagePrefix + schemaId;
+    }
 
-    static persistSchema = (schema: JSONSchema7): void => {
+    static persistSchema(schema: JSONSchema7): void {
         if (!schema.$id) throw new Error(`Plugin.persistSchema() no $id: ${JSON.stringify(schema)}`);
         const key = Plugin.storageKey(schema.$id);
 
         console.log(`Plugin.persistSchema(${schema.$id}) @ ${key}`);
 
-        localStorage.setItem( key, JSON.stringify(schema));
+        localStorage.setItem(key, JSON.stringify(schema));
 
         if (!Plugin.storedSchemaKeys.includes(key)) {
             console.log(`Plugin.persistSchema(${schema.$id}) Add ${key} to ${Plugin.storedSchemaKeys}`, Plugin.storedSchemaKeys);
-            Plugin.storedSchemaKeys.push( key );
+            Plugin.storedSchemaKeys.push(key);
             localStorage.setItem(
                 Plugin.storageListKey,
                 JSON.stringify(Plugin.storedSchemaKeys));
@@ -67,7 +119,7 @@ export class Plugin extends SetupBase implements PluginInterface {
 
     static storedSchemaKeys: string[] = [];
 
-    static loadAllSchemas = (): void => {
+    static loadAllSchemas(): void {
         const storedSchemaKeysString = localStorage.getItem(Plugin.storageListKey);
 
         if (storedSchemaKeysString) {
@@ -79,7 +131,7 @@ export class Plugin extends SetupBase implements PluginInterface {
 
                     if (schemaString) {
                         SetupBase.register(
-                            Plugin, 
+                            Plugin,
                             JSON.parse(schemaString)
                         );
                     } else {
@@ -94,7 +146,7 @@ export class Plugin extends SetupBase implements PluginInterface {
         }
     }
 
-    static add = (schema: JSONSchema7): void => {
+    static add(schema: JSONSchema7): void {
         if (!schema.allOf?.some(pluginRefProspect => (pluginRefProspect as JSONSchema7).$ref == Plugin.name))
             throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.name}`);
 
@@ -110,14 +162,14 @@ export class Plugin extends SetupBase implements PluginInterface {
         if (!schema.$id) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.$id`);
         if (!schema.allOf) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.allOf`);
 
-        const newID = SetupBase.getNewId(Plugin);
+        const newID = SetupBase.getNewId(schema.$id);
 
         const defaultSetup = {};
 
         for (const entry of schema.allOf) {
             const subschema = entry as JSONSchema7;
             if (subschema.properties) {
-                for (const [name, value] of Object.entries ( subschema.properties )) {
+                for (const [name, value] of Object.entries(subschema.properties)) {
                     const propertyDescriptor = value as JSONSchema7;
 
                     if (propertyDescriptor.default) {
@@ -135,7 +187,7 @@ export class Plugin extends SetupBase implements PluginInterface {
             parentId: parentId,
             className: schema.$id,
             relativeBounds: {
-                id: SetupBase.getNewId(Rectangle),
+                id: SetupBase.getNewId(Rectangle.name),
                 className: Rectangle.name,
                 parentId: newID,
                 x: 0,
@@ -145,12 +197,12 @@ export class Plugin extends SetupBase implements PluginInterface {
             } as SetupBaseInterface
         } as SetupBaseInterface;
 
-        console.log(`Plugin.createNew(${parentId}, ${schema.$id})`, {...plain});
+        console.log(`Plugin.createNew(${parentId}, ${schema.$id})`, { ...plain });
 
-        return new Plugin( plain );
+        return new Plugin(plain);
     }
 
-    static register = (): void => {
+    static register(): void {
         SetupBase.addSchema(Plugin.schema);
 
         if (process.type == 'renderer') {

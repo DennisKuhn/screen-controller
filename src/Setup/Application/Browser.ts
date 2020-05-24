@@ -1,11 +1,11 @@
 import { Rectangle } from '../Default/Rectangle';
 import { SimpleRectangle } from '../Default/RectangleInterface';
-import { observable } from 'mobx';
 import { ObservableSetupBaseMap } from '../Container';
 import { Plugin } from './Plugin';
 import { SetupBase } from '../SetupBase';
 import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { JSONSchema7 } from 'json-schema';
+import { observable } from 'mobx';
 
 
 export class Browser extends SetupBase {
@@ -43,38 +43,43 @@ export class Browser extends SetupBase {
     @observable scaled?: Rectangle;
     @observable device?: Rectangle;
 
-    plugins: ObservableSetupBaseMap<Plugin> = new ObservableSetupBaseMap<Plugin>();
+    plugins: ObservableSetupBaseMap<Plugin>;
 
     constructor(source: SetupBaseInterface) {
         super(source);
-
-        const { relative, scaled, device } = (super.update(source) as Browser);
-        this.relative = relative;
-        this.scaled = scaled;
-        this.device = device;
-
+        
+        this.relative = new Rectangle(source['relative']);
+        if (source['scaled']) {
+            this.scaled = new Rectangle(source['scaled']);
+        }
+        if (source['device']) {
+            this.device = new Rectangle(source['device']);
+        }
+        this.plugins = SetupBase.createMap<Plugin>(source['plugins']);
     }
 
 
     static createNew(parentId: SetupItemId, relative: SimpleRectangle): Browser {
-        const newID = SetupBase.getNewId(Browser);
-        return new Browser(
+        const newID = SetupBase.getNewId(Browser.name);
+        return new Browser( 
             {
                 id: newID,
                 parentId: parentId,
                 className: Browser.name,
                 plugins: {},
                 relative: {
-                    id: SetupBase.getNewId(Rectangle),
+                    id: SetupBase.getNewId(Rectangle.name),
                     className: Rectangle.name,
                     parentId: newID,
                     ...relative
-                }
+                } as SetupBaseInterface
             } as SetupBaseInterface
         );
     }
 
-    static register = (): void => SetupBase.register(Browser, Browser.schema);
+    static register(): void {
+        SetupBase.register(Browser, Browser.schema);
+    }
 }
 
 Browser.register();

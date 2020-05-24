@@ -1,8 +1,8 @@
-import { observable } from 'mobx';
 import { SetupBase } from '../SetupBase';
 import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { SimpleRectangle, RectangleInterface } from './RectangleInterface';
 import { JSONSchema7 } from 'json-schema';
+import { observable } from 'mobx';
 
 export class Rectangle extends SetupBase implements SimpleRectangle, RectangleInterface {
     static readonly schema: JSONSchema7 = {
@@ -24,24 +24,17 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
         ]
     }
 
-    @observable
-    x: number;
-
-    @observable
-    y: number;
-
-    @observable
-    width: number;
-
-    @observable
-    height: number;
+    @observable x: number;
+    @observable y: number;
+    @observable width: number;
+    @observable height: number;
 
     className: 'Rectangle' = 'Rectangle';
 
     constructor(source: SetupBaseInterface) {
         super(source);
 
-        const {x, y, width, height } = (super.update(source) as Rectangle);
+        const { x, y, width, height } = (super.update(source) as Rectangle);
 
         this.x = x;
         this.y = y;
@@ -59,15 +52,19 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
     }
 
     static createNew(parentId: SetupItemId, source: SimpleRectangle): Rectangle {
-        return new Rectangle({
-            id: SetupBase.getNewId(Rectangle),
-            parentId: parentId,
-            className: Rectangle.name,
-            ...source
-        });
+        return new Rectangle(
+            {
+                id: SetupBase.getNewId(Rectangle.name),
+                parentId: parentId,
+                className: Rectangle.name,
+                ...source
+            }
+        );
     }
 
-    static register= (): void => SetupBase.register( Rectangle, Rectangle.schema );
+    static register(): void {
+        SetupBase.register(Rectangle, Rectangle.schema);
+    }
 }
 
 Rectangle.register();

@@ -8,13 +8,13 @@ import { action } from 'mobx';
 import { SetupItemId, SetupBaseInterface } from './SetupInterface';
 import { remote } from 'electron';
 
-
 switch (process.type) {
     case 'browser': // Main
         shortid.worker(0);
         break;
-    case 'renderer':
+    case 'renderer': {
         shortid.worker(remote.getCurrentWindow().id);
+    }
         break;
     case 'worker':
         console.error(`SetupBase[${process.type}]: is not supported`);
@@ -23,6 +23,13 @@ switch (process.type) {
         );
         break;
 }
+
+export type PropertyType =
+    SetupBase |
+    ObservableSetupBaseMap<SetupBase> |
+    string |
+    number |
+    boolean;
 
 
 export interface SetupConstructor<SetupType extends SetupBase> {
@@ -61,7 +68,7 @@ export abstract class SetupBase {
         }
     };
 
-    protected static ajv = (new Ajv()).addSchema(SetupBase.baseSchema, SetupBase.name);
+    public static ajv = (new Ajv()).addSchema(SetupBase.baseSchema, SetupBase.name);
 
 
     protected static addSchema(schema: JSONSchema7): void {
@@ -79,7 +86,7 @@ export abstract class SetupBase {
         }
     }
 
-    constructor(source: SetupBaseInterface) {
+    protected constructor(source: SetupBaseInterface) {
         if (SetupBase.usedIDs.includes(source.id))
             throw new Error(`SetupBase[${this.constructor.name}] id=${source.id} already in use`);
 
@@ -108,8 +115,28 @@ export abstract class SetupBase {
         SetupBase.usedIDs.push(this.id);
     }
 
+
+    protected static createMap<Setup extends SetupBase>(source: Dictionary<SetupBaseInterface>): ObservableSetupBaseMap<Setup> {
+        const map = new ObservableSetupBaseMap<Setup>();
+
+        for (const [id, plain] of Object.entries(source)) {
+            if (plain) {
+                // console.log(`SetupBase[${this.constructor.name}][${this.id}].createMap:[${id}]=create` /* , plain */);
+                map.set(
+                    id,
+                    create(plain) as Setup
+                );
+            } else {
+                // console.log(`SetupBase[${this.constructor.name}].createMap:[${id}] add null`);
+                map.set(id, null);
+            }
+        }
+
+        return map;
+    }
+
     /**
-     * Returns a shallow(ish) plain javascript object.
+     * Returns a shallow plain javascript object.
      * Child objects like screen, rectangle are included as plain.
      * Children/values in Maps are set to null.
      * This does only iterate/accesses keys of Maps,
@@ -186,7 +213,7 @@ export abstract class SetupBase {
                     case 'object':
                         if (value instanceof SetupBase) {
                             // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of SetupBase`);
-                            shallow[propertyName as string] = value.getShallow();
+                            shallow[propertyName as string] = value.getPlain( depth );
                         } else if (value instanceof ObservableSetupBaseMap) {
                             // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
@@ -220,7 +247,7 @@ export abstract class SetupBase {
 
     @action
     update(update: SetupBaseInterface): SetupBase {
-        // console.log(`SetupBase[${this.constructor.name}][${this.id}].update start`);
+        // console.log(`SetupBase[${this.constructor.name}][${this.id}].update`);
 
         if (update.id != this.id)
             throw new Error(`SetupBase[${this.constructor.name}][-> ${this.id} <-, ${this.parentId}, ${this.className}].update =`
@@ -296,7 +323,7 @@ export abstract class SetupBase {
                     break;
                 case 'function':
                 case 'symbol':
-                    console.log(`SetupBase[${this.constructor.name}].update: ignore ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
+                    console.warn(`SetupBase[${this.constructor.name}].update: ignore ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
                     break;
                 case 'bigint':
                     throw new Error(`SetupBase[${this.constructor.name}].update: Invalid for ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
@@ -312,8 +339,8 @@ export abstract class SetupBase {
 
     static usedIDs = new Array<string>();
 
-    public static getNewId<SetupType extends SetupBase>(classConstructor: SetupConstructor<SetupType>): string {
-        return classConstructor.name + '-' + shortid.generate();
+    public static getNewId(prefix: string): string {
+        return prefix + '-' + shortid.generate();
     }
 
     protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7): void {

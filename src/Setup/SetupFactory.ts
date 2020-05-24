@@ -24,14 +24,14 @@ export function register<S extends SetupBase>(factory: SetupConstructor<S>, clas
 }
 
 export function create(plain: SetupBaseInterface): SetupBase {
-    const creator = factories.get(plain.className);
+    const factory = factories.get(plain.className);
 
-    if (!creator) throw new Error(`SetupFactory.create: no creator for className=${plain.className}`);
+    if (!factory) throw new Error(`SetupFactory.create: no creator for className=${plain.className}`);
 
-    console.log(`SetupFactory:create(${plain.className}@${plain.id}@${plain.parentId}) creator=${creator.name}`);
+    console.log(`SetupFactory:create(${plain.className}@${plain.id}@${plain.parentId}) creator=${factory.name}`);
 
     try {
-        const setup = new creator(plain);
+        const setup = new factory( plain );
         return setup;
     } catch (error) {
         console.error(`SetupFactory:create(${plain.className}@${plain.id}@${plain.parentId}) caught: ${error}`, error, plain);

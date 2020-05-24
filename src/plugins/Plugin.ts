@@ -40,6 +40,8 @@ export class Plugin {
         if (! scaledBounds)
             throw new Error(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].setBounds() no scaledBounds`);
         
+        console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].setBounds(${scaledBounds.id}, ${[scaledBounds]})`);
+        
         this.canvas.style.left = scaledBounds.x + 'px';
         this.canvas.style.top = scaledBounds.y + 'px';
         this.canvas.style.width = scaledBounds.width + 'px';

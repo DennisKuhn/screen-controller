@@ -33,18 +33,27 @@ export class Screen extends SetupBase {
         ]
     };
 
-    displays = new ObservableSetupBaseMap<Display>();
+    displays: ObservableSetupBaseMap<Display>;
 
     constructor(source: SetupBaseInterface) {
         super(source);
-        super.update(source);
+
+        this.displays = SetupBase.createMap<Display>(source['displays']);
     }
 
     static createNewBlank(): Screen {
-        return new Screen({ id: Screen.name, parentId: 'Root', className: Screen.name, displays: {} } as SetupBaseInterface);
+        return new Screen (
+            {
+                id: Screen.name,
+                parentId: 'Root',
+                className: Screen.name,
+                displays: {}
+            } as SetupBaseInterface );
     }
 
-    static register = (): void => SetupBase.register( Screen, Screen.schema );
+    static register(): void {
+        SetupBase.register(Screen, Screen.schema);
+    }
 }
 
 Screen.register();
