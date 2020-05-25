@@ -430,64 +430,110 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(`ControllerImpl[${this.constructor.name}].onItemchanged(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
 
-        const itemPlainValue = this.getPlainValue(item[name]);
+        const newValue = 'newValue' in change ? change.newValue : undefined;
+        const newSetup = newValue instanceof SetupBase ? newValue as SetupBase : undefined;
+        const itemPlainValue = newValue != undefined ? this.getPlainValue(newValue) : undefined;
+        const remotePlainValue = this.remoteUpdates.get(item.id)?.[name];
+
         // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) = ${change['newValue']}`);
 
-        if (isEqual(itemPlainValue, this.remoteUpdates.get(item.id)?.[name])) {
-            console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=`, change);
+        if (isEqual(itemPlainValue, remotePlainValue)) {
+            console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=`, change, itemPlainValue, remotePlainValue);
         } else {
             console.log(
-                `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${this.remoteUpdates.get(item.id)?.[name]}`,
+                `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}`,
                 itemPlainValue,
-                { ... this.remoteUpdates.get(item.id)?.[name] }
+                remotePlainValue
             );
             this.propagate && this.propagate({
                 item: item.id,
                 name: change.name,
                 type: change.type,
-                ...('newValue' in change ? { newValue: this.getPlainValue(change.newValue) } : undefined)
+                ...(itemPlainValue != undefined ? { newValue: itemPlainValue } : undefined)
             } as IpcChangeArgsType);
             this.persist && this.persist(change);
+
+            if (newSetup) {
+                this.connectPersistPropagate({
+                    item: newSetup,
+                    persist: false,
+                    propagate: false
+                });
+                this.persist && this.persist({ item: newSetup, type: 'add', name: 'id' });
+            }
         }
     }
 
     private onMapChange = (item: string, map: string, changes: IMapDidChange<string, SetupBase | null>): void => {
-        console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name} - ${changes.type})`);
-        switch (changes.type) {
-            case 'add':
-                if (changes.newValue) {
-                    this.connectPersistPropagate({ item: changes.newValue, persist: true, propagate: true });
+        // console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name} - ${changes.type})`);
+
+        const newValue = 'newValue' in changes ? changes.newValue : undefined;
+        const newSetup = newValue instanceof SetupBase ? newValue as SetupBase : undefined;
+        const itemPlainValue = newValue != undefined ? this.getPlainValue(newValue) : undefined;
+        const hasRemote = this.remoteUpdates.has(item) && changes.name in this.remoteUpdates.get(item)?.[map];
+        const remotePlainValue = this.remoteUpdates.get(item)?.[map][changes.name];
+
+        if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
+            console.log(
+                `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${changes.name}], ${changes.type} ) skip remoteUpdate=`,
+                changes,
+                itemPlainValue,
+                remotePlainValue);
+        } else {
+            switch (changes.type) {
+                case 'add':
+                    if (newSetup != undefined) {
+                        console.log(
+                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${changes.type} ) connect, propagate and persist`,
+                            changes,
+                            itemPlainValue,
+                            remotePlainValue
+                        );
+                        this.connectPersistPropagate({ item: newSetup, persist: true, propagate: true });
+                        this.propagate && this.propagate({
+                            item: item,
+                            map: map,
+                            name: changes.name,
+                            type: changes.type,
+                            newValue: this.getPlainValue(newSetup)
+                        });
+                        this.persist && this.persist({ item: newSetup, type: 'add', name: 'id' });
+                    } else if (newValue) {
+                        console.error(
+                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${changes.type} ) skip undefined newSetup but newValue is defined`,
+                            changes,
+                            itemPlainValue,
+                            remotePlainValue
+                        );
+                    } else {
+                        console.log(
+                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${changes.type} ) skip null`, changes, itemPlainValue, remotePlainValue);
+                    }
+                    break;
+                case 'update':
+                    if ((changes.oldValue == null) && (changes.newValue != null)) {
+                        console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name}) ignore overwriting null`);
+                        return;
+                    }
+                    console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name}, ${changes.type})`);
                     this.propagate && this.propagate({
                         item: item,
                         map: map,
                         name: changes.name,
                         type: changes.type,
-                        newValue: this.getPlainValue(changes.newValue)
+                        newValue: changes.newValue == null ? null : changes.newValue.getShallow()
                     });
-                }
-                break;
-            case 'update':
-                if ((changes.oldValue == null) && (changes.newValue != null)) {
-                    console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name}) ignore overwriting null`);
-                    return;
-                }
-                console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name}, ${changes.type})`);
-                this.propagate && this.propagate({
-                    item: item,
-                    map: map,
-                    name: changes.name,
-                    type: changes.type,
-                    newValue: changes.newValue == null ? null : changes.newValue.getShallow()
-                });
-                break;
-            case 'delete':
-                this.propagate && this.propagate({
-                    item: item,
-                    map: map,
-                    name: changes.name,
-                    type: changes.type
-                });
-                break;
+                    break;
+                case 'delete':
+                    console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name}, ${changes.type}) propagate delete`);
+                    this.propagate && this.propagate({
+                        item: item,
+                        map: map,
+                        name: changes.name,
+                        type: changes.type
+                    });
+                    break;
+            }
         }
     }
 
@@ -538,14 +584,15 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     remoteItem[update.name] = update.newValue;
                     break;
                 case 'remove':
-                    console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = undefined/delete newItem=${newItem}`);
-                    // remoteItem[update.name] = undefined;
-                    delete remoteItem[update.name];
+                    console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = undefined/remove`);
+                    remoteItem[update.name] = undefined;
+                    // delete remoteItem[update.name];
                     break;
                 case 'delete':
                     if (!mapUpdate)
                         throw new Error(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = no map`);
-                    // remoteItem[update.name] = undefined;
+                    console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${mapUpdate.map}.${update.name}, ${update.type}) = undefined/delete`);
+                    remoteItem[update.name] = undefined;
                     // delete (remoteItem[mapUpdate.map] as ObservableSetupBaseMap<SetupBase>).delete(update.name);
                     break;
             }
@@ -863,6 +910,7 @@ interface ChangeListener {
     ipc: IpcWindow;
     itemId: SetupItemId;
     depth: number;
+    disposers: (() => void)[];
 }
 
 class Main extends ControllerImpl {
@@ -912,60 +960,51 @@ class Main extends ControllerImpl {
         console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
             `(senderId=${senderId}, ${itemId}, d=${depth})`);
 
-        
-        const existingWindowListeners = this.changeListeners.filter(listener => listener.senderId == senderId);
-        let listener: ChangeListener | undefined;
-        let offset = 0;
+        const listener: ChangeListener = {
+            senderId,
+            ipc: e.sender,
+            itemId,
+            depth,
+            disposers: new Array<(() => void)>()
+        };
 
-        if (existingWindowListeners.length) {
-            for (const existingListener of existingWindowListeners) {
-                if (existingListener.itemId == itemId) {
-                    // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-                    //     `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth}): listening (${existingListener.depth})`);
-                    listener = existingListener;
+        this.changeListeners.push(listener);
 
-                    if ((existingListener.depth > 0) && (existingListener.depth < depth)) {
-                        offset = existingListener.depth;
-                        existingListener.depth = depth;
-                    }
-                    break;
-                }
-            }
-        } else {
+        if (this.senderUpdates[senderId] == undefined) {
             this.senderUpdates[senderId] = {};
         }
 
-        if (!listener) {
-            // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-            //     `(w=${windowId}/${e.sender.id}, ${itemId}, d=${depth} ): new listener`);
-            listener = {
-                senderId,
-                ipc: e.sender,
-                // ipc: BrowserWindow.fromId(windowId).webContents,
-                itemId,
-                depth
-            };
-            this.changeListeners.push(listener);
-        }
-        this.connectChangeListenerToExisting(listener, offset);
+        this.connectChangeListenerToExisting(listener);
     }
 
-    connectChangeListenerToExisting(listener: ChangeListener, listenerOffset: number): void {
-        for (const item of this.configs.values()) {
-            for (let itemOffset = 0, ancestor: SetupBase | undefined = item;
-                ((listener.depth == -1) || (itemOffset <= listener.depth)) && (ancestor);
-                itemOffset += 1, ancestor = ancestor.parentId == ancestor.id ? undefined : this.configs.get(ancestor.parentId)) {
-                if (listener.itemId == ancestor.id) {
-                    if (itemOffset >= listenerOffset) {
-                        // console.log(`${this.constructor.name}.connectChangeListenerToExisting([${listener.senderId},${listener.itemId},${listener.depth}], ${listenerOffset})` +
-                        //     ` connect ${item.id} @${listener.depth - itemOffset}`);
-                        this.connectChangeListener(item, listener, false, itemOffset);
-                    } else {
-                        // console.log(`${this.constructor.name}.connectChangeListenerToExisting([${listener.senderId},${listener.itemId},${listener.depth}], ${listenerOffset})` +
-                        //     ` already connected ${item.id} @${listener.depth - itemOffset}`);
-                    }
-                    break;
+    connectChangeListenerToExisting(listener: ChangeListener, item?: SetupBase, depth?: number): void {
+
+        item = item ?? this.configs.get(listener.itemId);
+        depth = depth ?? 0;
+
+        if (!item)
+            throw new Error(`${this.constructor.name}.connectChangeListenerToExisting([${listener.senderId},${listener.itemId},${listener.depth}] @ ${depth}`);
+
+        this.connectChangeListener(item, listener, false, depth);
+
+        for (const value of Object.values(item)) {
+            if (((listener.depth == -1) || (depth < listener.depth)) && (value instanceof ObservableSetupBaseMap)) {
+                // console.log(
+                //     `${this.constructor.name}.connectChangeListenerToExisting[${listener.senderId},${listener.itemId},${listener.depth}]:` +
+                //     ` observe ${item.id}.${propertyName} as ObservableSetupBaseMap`);
+
+                for (const child of value.values()) {
+                    if (child)
+                        this.connectChangeListenerToExisting(listener, child, depth + 1);
                 }
+
+            } else if (value instanceof SetupBase) {
+                // console.log(
+                //     `[${this.constructor.name}].connectChangeListenerToExisting[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
+                this.connectChangeListenerToExisting(listener, value, depth);
+            } else {
+                // console.log(
+                //     `${this.constructor.name}.connectChangeListenerToExisting[${listener.senderId},${listener.itemId},${listener.depth}]: ignore ${propertyName}.${item.id}`);
             }
         }
     }
@@ -978,39 +1017,42 @@ class Main extends ControllerImpl {
                 // console.log(
                 //     `${this.constructor.name}.connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]:` +
                 //     ` observe ${item.id}.${propertyName} as ObservableSetupBaseMap`);
-
-                (value as ObservableSetupBaseMap<SetupBase>)
-                    .observe((changes: IMapDidChange<string, SetupBase | null>) => {
-                        if ((changes.type == 'update') && (changes.oldValue == null) && (changes.newValue != null)) {
-                            console.log(
-                                `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
-                                ` (${item.id}.${propertyName}.${changes.name}) ignore overwriting null`);
-                            return;
-                        }
-                        // console.log(
-                        //     `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
-                        //     ` ${item.id}.${propertyName}.${changes.name}, ${changes.type})`);
-                        this.onChangeItemChanged(
-                            listener,
-                            {
-                                item: item,
-                                map: propertyName,
-                                name: changes.name,
-                                type: changes.type,
-                                ...((changes.type == 'add' || changes.type == 'update') ? { newValue: changes.newValue } : undefined)
-                            } as LocalChangeArgsType
-                        );
-                    });
+                listener.disposers.push(
+                    (value as ObservableSetupBaseMap<SetupBase>)
+                        .observe((changes: IMapDidChange<string, SetupBase | null>) => {
+                            if ((changes.type == 'update') && (changes.oldValue == null) && (changes.newValue != null)) {
+                                console.log(
+                                    `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
+                                    ` (${item.id}.${propertyName}.${changes.name}) ignore overwriting null`);
+                                return;
+                            }
+                            // console.log(
+                            //     `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
+                            //     ` ${item.id}.${propertyName}.${changes.name}, ${changes.type})`);
+                            this.onChangeItemChanged(
+                                listener,
+                                {
+                                    item: item,
+                                    map: propertyName,
+                                    name: changes.name,
+                                    type: changes.type,
+                                    ...((changes.type == 'add' || changes.type == 'update') ? { newValue: changes.newValue } : undefined)
+                                } as LocalChangeArgsType
+                            );
+                        })
+                );
             } else if (isObservableProp(item, propertyName)) {
                 // console.log(`[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
 
-                reaction(
-                    () => item[propertyName],
-                    newValue => this.onChangeItemChanged(listener, { item, name: propertyName, type: 'update', newValue }),
-                    {
-                        fireImmediately: fireImmediately,
-                        name: `ChangeListener[${listener.senderId}, ${listener.itemId}, ${listener.depth}] @ ${item.id}.${propertyName} @${offset}`
-                    }
+                listener.disposers.push(
+                    reaction(
+                        () => item[propertyName],
+                        newValue => this.onChangeItemChanged(listener, { item, name: propertyName, type: 'update', newValue }),
+                        {
+                            fireImmediately: fireImmediately,
+                            name: `ChangeListener[${listener.senderId}, ${listener.itemId}, ${listener.depth}] @ ${item.id}.${propertyName} @${offset}`
+                        }
+                    )
                 );
             } else {
                 // console.log(`${this.constructor.name}.connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: ignore ${propertyName}.${item.id}`);
@@ -1023,35 +1065,33 @@ class Main extends ControllerImpl {
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
-                `${this.constructor.name}.onChangeItemChanged(${String(change.name)}, ${change.type} ): Invalid object: ${JSON.stringify(item)}`);
+                `${this.constructor.name}.onChangeItemChanged(${change.name}, ${change.type} ): Invalid object: ${JSON.stringify(item)}`);
 
-        if (typeof change.name != 'string')
-            throw new Error(
-                `${this.constructor.name}.onChangeItemChanged(${String(change.name)}, ${change.type} ): Unsupported key type: ${typeof change.name}`);
-
-        // console.log(
-        //     `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-        //     ` @ ${item.id}.${change['map']}.${change.name}, ${change.type}) = ${change['newValue']}`);
-
-        const updateKey = Main.updateKey(item.id, change.name);
+        const map = (change as LocalMapArgs).map;
+        const updateKey = Main.updateKey(item.id, change.name, map);
         const senderUpdates = this.senderUpdates[listener.senderId];
         const hasUpdate = updateKey in senderUpdates;
         const update = senderUpdates[updateKey];
+        const plainNew = change['newValue'] == undefined ? undefined : this.getPlainValue(change['newValue']);
         let skipChange = false;
 
+        // console.log(
+        //     `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
+        //     ` @ ${item.id}.${map}.${change.name}, ${change.type}) = ${change['newValue']}`);
+
         if (hasUpdate) {
-            skipChange = isEqual(update, this.getPlainValue( change['newValue'] ));
+            skipChange = isEqual(update, plainNew);
 
             if (skipChange)
                 console.log(
                     `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-                    ` @ ${item.id}.${change['map']}.${change.name}, ${change.type}) skip received [${listener.senderId}][${updateKey}]`,
+                    ` @ ${item.id}.${map}.${change.name}, ${change.type}) skip received [${listener.senderId}][${updateKey}]`,
                     change['newValue']
                 );
             else
                 console.log(
                     `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-                    ` @ ${item.id}.${change['map']}.${change.name}, ${change.type}) send newer [${listener.senderId}][${updateKey}]`,
+                    ` @ ${item.id}.${map}.${change.name}, ${change.type}) send newer [${listener.senderId}][${updateKey}]`,
                     update,
                     change['newValue']
                 );
@@ -1060,7 +1100,7 @@ class Main extends ControllerImpl {
         } else
             console.log(
                 `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-                ` @ ${item.id}.${change['map']}.${change.name}, ${change.type}) send `,
+                ` @ ${item.id}.${map}.${change.name}, ${change.type}) send `,
                 change['newValue']
             );
 
@@ -1071,7 +1111,7 @@ class Main extends ControllerImpl {
                     item: item.id,
                     type: change.type,
                     name: change.name,
-                    ...((change as LocalMapArgs).map ? { map: (change as LocalMapArgs).map } : undefined),
+                    ...(map ? { map } : undefined),
                     ...((change.type == 'add' || change.type == 'update') ? { newValue: change.newValue } : undefined)
                 } as IpcChangeArgsType,
                 false
