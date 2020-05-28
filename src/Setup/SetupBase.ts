@@ -40,6 +40,7 @@ export abstract class SetupBase {
     readonly id: SetupItemId;
     readonly parentId: SetupItemId;
     readonly className: string;
+    _parent?: SetupBase;
 
     static readonly schemaUri = 'https://github.com/maoriora/screen-controller/schemas/SetupSchema.json#';
 
@@ -60,7 +61,7 @@ export abstract class SetupBase {
         required: ['id', 'parentId', 'className']
     };
 
-    public static activeSchema: JSONSchema7 = observable( {
+    public static activeSchema: JSONSchema7 = observable({
         // $schema: 'http://json-schema.org/draft/2019-09/schema#',
         $id: SetupBase.schemaUri,
         definitions: {
@@ -87,7 +88,7 @@ export abstract class SetupBase {
     }
 
     protected constructor(source: SetupBaseInterface) {
-        if (SetupBase.usedIDs.includes(source.id))
+        if (source.id in SetupBase.instances)
             throw new Error(`SetupBase[${this.constructor.name}] id=${source.id} already in use`);
 
         if (!SetupBase.activeSchema.definitions)
@@ -112,7 +113,13 @@ export abstract class SetupBase {
         this.id = source.id;
         this.parentId = source.parentId;
         this.className = source.className;
-        SetupBase.usedIDs.push(this.id);
+        this._parent = SetupBase.instances[this.id];
+        SetupBase.instances[this.id] = this;
+    }
+
+
+    get parent(): (SetupBase | undefined) {
+        return SetupBase.instances[this.id];
     }
 
 
@@ -213,7 +220,7 @@ export abstract class SetupBase {
                     case 'object':
                         if (value instanceof SetupBase) {
                             // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of SetupBase`);
-                            shallow[propertyName as string] = value.getPlain( depth );
+                            shallow[propertyName as string] = value.getPlain(depth);
                         } else if (value instanceof ObservableSetupBaseMap) {
                             // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
@@ -364,7 +371,7 @@ export abstract class SetupBase {
 
 
 
-    static usedIDs = new Array<string>();
+    private static instances: { [index: string]: SetupBase } = {};
 
     public static getNewId(prefix: string): string {
         return prefix + '-' + shortid.generate();

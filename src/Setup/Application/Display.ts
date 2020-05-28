@@ -40,6 +40,20 @@ export class Display extends SetupBase {
         this.browsers = SetupBase.createMap<Browser>(source['browsers']);
     }
 
+    addBrowser(): void {
+        const newBrowser = Browser.createNew(
+            this.id, {
+                x: 0,
+                y: 0,
+                height: 1,
+                width: 1
+            });
+        this.browsers.set(
+            newBrowser.id,
+            newBrowser
+        );
+    }
+
     static createNew(displayId: SetupItemId): Display {
         return new Display(
             {

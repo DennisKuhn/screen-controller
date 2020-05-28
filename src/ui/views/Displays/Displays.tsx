@@ -27,18 +27,6 @@ import { ObservableSetupBaseMap } from '../../../Setup/Container';
 
 const DisplayCard = observer(({ config, specs }: { config: Display; specs: Electron.Display }): JSX.Element => {
 
-    function addPaper(): void {
-        const newBrowser = Browser.createNew(config.id, {
-            x: 0,
-            y: 0,
-            height: 1,
-            width: 1
-        });
-        config.browsers.set(
-            newBrowser.id,
-            newBrowser
-        );
-    }
     //xs, sm, md, lg, and xl
     return <GridItem xs={12} sm={12} md={12} lg={8} xl={6}>
         <Card>
@@ -53,7 +41,7 @@ const DisplayCard = observer(({ config, specs }: { config: Display; specs: Elect
                 >
                     <IconButton
                         aria-label="Edit"
-                        onClick={addPaper}
+                        onClick={config.addBrowser}
                     >
                         <LibraryAdd />
                     </IconButton>
@@ -94,17 +82,16 @@ const DisplayContainer = observer(({ displays }: { displays: ObservableSetupBase
 
 
 // export default function DisplaysPage(): JSX.Element {
-const DisplaysPage = observer((): JSX.Element => {
+const DisplaysPage = (): JSX.Element => {
     const [displays, setDisplays] = useState(new ObservableSetupBaseMap<Display>());
-    console.log('Fire render');
 
     useEffect(() => {
         console.log('Fire use effect');
         controller.getSetup('Screen', -1)
             .then(screen => setDisplays((screen as Screen).displays));
     }, []);
-    
+
     return <DisplayContainer displays={displays} />;
-});
+};
 
 export default DisplaysPage;
