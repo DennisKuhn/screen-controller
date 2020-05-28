@@ -32,9 +32,9 @@ export default class WallpapersManager {
     }
 
     private static createWallpaperWindow(displayId: number, browser: Browser): void {
-        console.log(
-            `WallpapersManager.createWallpaperWindow[${displayId}][${browser.id}]: ` +
-            ` ${browser.relative.x},${browser.relative.y} ${browser.relative.width}*${browser.relative.height}`);
+        // console.log(
+        //     `WallpapersManager.createWallpaperWindow[${displayId}][${browser.id}]: ` +
+        //     ` ${browser.relative.x},${browser.relative.y} ${browser.relative.width}*${browser.relative.height}`);
         
         const wallpaperProperties = {
             webPreferences: {
@@ -166,7 +166,7 @@ export default class WallpapersManager {
                     if (!paper)
                         throw new Error(`WallpapersManager.updateBrowsers(${changes.type}, ${changes.oldValue.id}}) no paper`);
 
-                    console.log(`WallpapersManager.updateBrowsers(${paper.browser.parentId}) close ${paper.browser.id}`);
+                    // console.log(`WallpapersManager.updateBrowsers(${paper.browser.parentId}) close ${paper.browser.id}`);
                     paper.browserWindow.close();
                     WallpapersManager.papers.delete(paper.browser.id);
                 }

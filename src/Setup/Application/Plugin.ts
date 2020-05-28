@@ -90,7 +90,7 @@ export class Plugin extends SetupBase implements PluginInterface {
                 // console.log(`${this.constructor.name}[${setup.className}][${this.id}].init: skip ${propertyName}=${this[propertyName]}` /*, updateSetup */);
             }
         }
-        console.log(`${this.constructor.name}[${setup.className}][${this.id}].init extendObservable( ${observables} )`);
+        // console.log(`${this.constructor.name}[${setup.className}][${this.id}].init extendObservable( ${observables} )`);
         extendObservable(this, observables);
         return this;
     }
@@ -106,12 +106,12 @@ export class Plugin extends SetupBase implements PluginInterface {
         if (!schema.$id) throw new Error(`Plugin.persistSchema() no $id: ${JSON.stringify(schema)}`);
         const key = Plugin.storageKey(schema.$id);
 
-        console.log(`Plugin.persistSchema(${schema.$id}) @ ${key}`);
+        // console.log(`Plugin.persistSchema(${schema.$id}) @ ${key}`);
 
         localStorage.setItem(key, JSON.stringify(schema));
 
         if (!Plugin.storedSchemaKeys.includes(key)) {
-            console.log(`Plugin.persistSchema(${schema.$id}) Add ${key} to ${Plugin.storedSchemaKeys}`, Plugin.storedSchemaKeys);
+            // console.log(`Plugin.persistSchema(${schema.$id}) Add ${key} to ${Plugin.storedSchemaKeys}`, Plugin.storedSchemaKeys);
             Plugin.storedSchemaKeys.push(key);
             localStorage.setItem(
                 Plugin.storageListKey,
@@ -199,7 +199,7 @@ export class Plugin extends SetupBase implements PluginInterface {
             } as SetupBaseInterface
         } as SetupBaseInterface;
 
-        console.log(`Plugin.createNew(${parentId}, ${schema.$id})`, { ...plain });
+        // console.log(`Plugin.createNew(${parentId}, ${schema.$id})`, { ...plain });
 
         return new Plugin(plain);
     }
@@ -210,7 +210,7 @@ export class Plugin extends SetupBase implements PluginInterface {
         if (process.type == 'renderer') {
             Plugin.loadAllSchemas();
         } else {
-            console.log(`Plugin.register: not loading schema, ${process.type} != 'renderer'`);
+            // console.log(`Plugin.register: not loading schema, ${process.type} != 'renderer'`);
         }
     }
 }

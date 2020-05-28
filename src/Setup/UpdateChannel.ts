@@ -34,9 +34,9 @@ export class UpdateChannel {
 
     addReceived = (update: IpcChangeArgs): void => {
         const updateKey = UpdateChannel.updateKey(update.item, update.name, (update as IpcMapChangeArgs).map);
-        console.log(
-            `${this.constructor.name}.addReceived() [${this.ipc.id}][${updateKey}] =` +
-            ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
+        // console.log(
+        //     `${this.constructor.name}.addReceived() [${this.ipc.id}][${updateKey}] =` +
+        //     ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
         this.received[updateKey] = update['newValue'];
     }
 
@@ -44,9 +44,10 @@ export class UpdateChannel {
         if (!this.sendSubscriber)
             throw new Error(`${this.constructor.name}.send(${channel},${change.item},${change.name},${change.type}): no sendSubscriber`);
 
-        console.log(
-            `${this.constructor.name}.send(${this.ipc.id}, ` +
-            ` @ ${change.item}.${change['map'] ? change['map'] + '.' : ''}.${change.name}, ${change.type}, ${persist}) = ${change['newValue'] ? (change['newValue']['id'] ?? change['newValue']) : change['newValue']}`);
+        // console.log(
+        //     `${this.constructor.name}.send(${this.ipc.id}, ` +
+        //     ` @ ${change.item}.${change['map'] ? change['map'] + '.' : ''}.${change.name}, ${change.type}, ${persist}) = ` +
+        //     `${change['newValue'] ? (change['newValue']['id'] ?? change['newValue']) : change['newValue']}`);
 
         this.sendSubscriber.next({ channel, change, persist });
     }
@@ -66,23 +67,16 @@ export class UpdateChannel {
         if (hasUpdate) {
             skipChange = isEqual(update, change['newValue']);
 
-            if (skipChange)
-                console.log(
-                    `${this.constructor.name}.sendNow([${this.ipc.id}]` +
-                    ` @ ${item}.${map}.${change.name}, ${change.type}, ${persist}) skip received [${updateKey}]`, /* change['newValue'] */
-                );
-            else
-                console.log(
-                    `${this.constructor.name}.sendNow([${this.ipc.id}]` +
-                    ` @ ${item}.${map}.${change.name}, ${change.type}, ${persist}) send newer [${updateKey}]`/*, update, change['newValue'] */
-                );
-
+            // console.log(
+            //     `${this.constructor.name}.sendNow([${this.ipc.id}]` +
+            //     ` @ ${item}.${map}.${change.name}, ${change.type}, ${persist}) ${skipChange ? 'skip receivd' : 'send newer'} [${updateKey}]`, /* change['newValue'] */
+            // );
             delete this.received[updateKey];
         } else
-            console.log(
-                `${this.constructor.name}.sendNow([${this.ipc.id}]` +
-                ` @ ${item}.${map}.${change.name}, ${change.type}, ${persist}) send `, /* change['newValue'] */
-            );
+            // console.log(
+            //     `${this.constructor.name}.sendNow([${this.ipc.id}]` +
+            //     ` @ ${item}.${map}.${change.name}, ${change.type}, ${persist}) send `, /* change['newValue'] */
+            // );
 
         if (!skipChange)
             this.ipc.send('change', change, persist === true);

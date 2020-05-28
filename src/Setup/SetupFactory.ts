@@ -28,13 +28,13 @@ export function create(plain: SetupBaseInterface): SetupBase {
 
     if (!factory) throw new Error(`SetupFactory.create: no creator for className=${plain.className}`);
 
-    console.log(`SetupFactory:create(${plain.className}@${plain.id}@${plain.parentId}) creator=${factory.name}`);
+    // console.log(`SetupFactory:create( ${plain.className} - ${plain.id} @ ${plain.parentId} ) creator=${factory.name}`);
 
     try {
         const setup = new factory( plain );
         return setup;
     } catch (error) {
-        console.error(`SetupFactory:create(${plain.className}@${plain.id}@${plain.parentId}) caught: ${error}`, error, plain);
+        console.error(`SetupFactory:create( ${plain.className} - ${plain.id} @ ${plain.parentId} ) caught: ${error}`, error, plain);
         throw error;
     }
 }

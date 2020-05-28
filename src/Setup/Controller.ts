@@ -96,7 +96,8 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     }
 
     log(): void {
-        console.log(`ControllerImpl[${this.constructor.name}].log()`);
+        //TODO
+        console.log(`ControllerImpl[${this.constructor.name}].log() REMOVE ME`);
     }
 
     setupPromises: SetupPromise[] = new Array<SetupPromise>();
@@ -147,16 +148,16 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 const responseItem: SetupBase | undefined = this.tryGetItem(id, depth);
 
                 if (responseItem) {
-                    console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
+                    // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
                     if (this.onCached)
                         this.onCached(responseItem, depth);
                     resolve(responseItem);
                 } else {
                     if (this.setupPromises.push({ resolve: resolve, reject: reject, id: id, depth: depth }) == 1) {
-                        console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) process now - promises=${this.setupPromises.length}`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) process now - promises=${this.setupPromises.length}`);
                         this.processPromise();
                     } else {
-                        console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) wait - promises=${this.setupPromises.length}`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) wait - promises=${this.setupPromises.length}`);
                     }
                 }
             }
@@ -332,13 +333,9 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) = ${change['newValue']}`);
 
         if (isEqual(itemPlainValue, remotePlainValue)) {
-            // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=`, change, itemPlainValue, remotePlainValue);
+            // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=${remotePlainValue}`);
         } else {
-            console.log(
-                `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}`,
-                itemPlainValue,
-                remotePlainValue
-            );
+            // console.log( `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}` );
             if (newSetup) {
                 this.connectPersistPropagate({
                     item: newSetup,
@@ -368,20 +365,13 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         const remotePlainValue = hasRemote ? this.remoteUpdates.get(item.id)?.[map][name] : undefined;
 
         if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
-            console.log(
-                `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip remoteUpdate` /*,
-                changes,
-                itemPlainValue,
-                remotePlainValue */);
+            // console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip remoteUpdate ${remotePlainValue}`);
         } else {
             switch (type) {
                 case 'add':
                     if (newSetup != undefined) {
-                        console.log(
-                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) connect, propagate and persist` /*,
-                            changes,
-                            itemPlainValue,
-                            remotePlainValue */ );
+                        // console.log(
+                        //     `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type}) connect, propagate and persist ${newSetup.id}`);
                         this.connectPersistPropagate({ item: newSetup, propagate: true });
                         this.propagate && this.propagate({
                             item: item.id,
@@ -399,15 +389,14 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                             remotePlainValue
                         );
                     } else {
-                        console.log(
-                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip null` /*, changes, itemPlainValue, remotePlainValue */);
+                        console.log( `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip null` );
                     }
                     break;
                 case 'update':
                     console.warn(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type}) ignore`);
                     break;
                 case 'delete':
-                    console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type}) propagate delete`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type}) propagate delete`);
                     this.propagate && this.propagate({
                         item: item.id,
                         map,
@@ -463,18 +452,18 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             switch (update.type) {
                 case 'add':
                 case 'update':
-                    console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = ${update.newValue} newItem=${newItem}`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = ${update.newValue} newItem=${newItem}`);
                     remoteItem[update.name] = update.newValue;
                     break;
                 case 'remove':
-                    console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = undefined/remove`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = undefined/remove`);
                     remoteItem[update.name] = undefined;
                     // delete remoteItem[update.name];
                     break;
                 case 'delete':
                     if (!mapUpdate)
                         throw new Error(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = no map`);
-                    console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${mapUpdate.map}.${update.name}, ${update.type}) = undefined/delete`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${mapUpdate.map}.${update.name}, ${update.type}) = undefined/delete`);
                     remoteItem[update.name] = undefined;
                     // delete (remoteItem[mapUpdate.map] as ObservableSetupBaseMap<SetupBase>).delete(update.name);
                     break;
@@ -498,10 +487,10 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
     async onSetupChanged(e: Event, update: IpcChangeArgsType, persist?: boolean): Promise<void> {
         const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
 
-        console.log(
-            `ControllerImpl[${this.constructor.name}].onSetupChanged(${sender}, ${update.item}.${update['map']}.${update.name}` +
-            ` ${update.type} = ${update['newValue']}, persist=${persist}) hasItem=${this.configs.has(update.item)}`
-        );
+        // console.log(
+        //     `ControllerImpl[${this.constructor.name}].onSetupChanged(${sender}, ${update.item}.${update['map']}.${update.name}` +
+        //     ` ${update.type} = ${update['newValue']}, persist=${persist}) hasItem=${this.configs.has(update.item)}`
+        // );
 
         if ( /* (process.type != 'browser') && */ (!this.configs.has(update.item))) {
             console.error(
@@ -605,15 +594,16 @@ class Renderer extends ControllerImpl {
     }
 
     protected onSchemaDefinitionChanged = (change: IObjectDidChange): void => {
-        console.log(`${this.constructor.name}.onSchemaDefinitionChanged(${change.type} ${String(change.name)})`);
+        
 
         switch (change.type) {
             case 'add':
+                // console.log(`${this.constructor.name}.onSchemaDefinitionChanged(${change.type} ${String(change.name)})`);
                 this.ipc.send('addSchema', {schema: toJS(change.newValue) } );
                 break;
             case 'update':
-                break;
             case 'remove':
+                console.error(`${this.constructor.name}.onSchemaDefinitionChanged(${change.type} ${String(change.name)}) only add is supported`);
                 break;
 
         }
@@ -623,7 +613,7 @@ class Renderer extends ControllerImpl {
         if (depth != 0) {
             for (const [propertyName, value] of Object.entries(item)) {
                 if (value instanceof ObservableSetupBaseMap) {
-                    console.log(`${this.constructor.name}.loadChildren(${item.id}, ${depth}): get children in ${propertyName}`);
+                    // console.log(`${this.constructor.name}.loadChildren(${item.id}, ${depth}): get children in ${propertyName}`);
                     const container = value as ObservableSetupBaseMap<SetupBase>;
                     for (const itemId of container.keys()) {
                         container.set(
@@ -632,7 +622,7 @@ class Renderer extends ControllerImpl {
                         );
                     }
                 } else if (value instanceof SetupBase) {
-                    console.log(`${this.constructor.name}.loadChildren(${item.id}, ${depth}): load children in ${propertyName}`);
+                    // console.log(`${this.constructor.name}.loadChildren(${item.id}, ${depth}): load children in ${propertyName}`);
                     this.loadChildren(value as SetupBase, depth);
                 } else {
                     // console.log(`${this.constructor.name}.getSetupSync(${id}): don't add children in ${propertyName} as not ObservableSetupBaseMap`);
@@ -673,7 +663,7 @@ class Renderer extends ControllerImpl {
     }
 
     private resolveLinks = (item: SetupBaseInterface): void => {
-        console.log(`${this.constructor.name}.resolveLinks(${item.id})`);
+        // console.log(`${this.constructor.name}.resolveLinks(${item.id})`);
 
         for (const [propertyName, value] of Object.entries(item)) {
             if (typeof value == 'object' && ((value as SetupLinkInterface).id)) {
@@ -701,7 +691,6 @@ class Renderer extends ControllerImpl {
 
     private load(id: string): SetupBase {
         // console.log(`${this.constructor.name}: load(${id})`);
-        console.log(`${this.constructor.name}: load(${id})` /*: ${itemString}`*/);
         let item: SetupBase;
 
         try {
@@ -727,7 +716,7 @@ class Renderer extends ControllerImpl {
     }
 
     protected readonly propagate = (update: IpcChangeArgsType): void => {
-        console.log(`${this.constructor.name}.propapgate(${update.item}, ${update.name}, ${update.type}) send to main`/*, item*/);
+        // console.log(`${this.constructor.name}.propapgate(${update.item}, ${update.name}, ${update.type}) send to main`/*, item*/);
         this.ipc.send('change', update);
     }
 
@@ -738,7 +727,7 @@ class Renderer extends ControllerImpl {
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(`ControllerImpl[${this.constructor.name}].onItemchanged(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
 
-        console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}, ${change['newValue']})`/*, item*/);
+        // console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}, ${change['newValue']})`/*, item*/);
         const shallow = item.getShallow();
 
         ControllerImpl.createLinks(shallow);
@@ -761,7 +750,7 @@ class Renderer extends ControllerImpl {
                 this.persist({ item: newSetup, name: 'id', type: 'add', newValue: item.id });    
             }
         } else if (type == 'delete') {
-            console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}) delete ${name}`);
+            // console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}) delete ${name}`);
             localStorage.removeItem(change.name);
         }
     }
@@ -790,19 +779,19 @@ export class Paper extends Renderer {
         }
         this.browserId = browserIdArg.split('=')[1];
 
-        console.log(`${this.constructor.name}[${this.browserId}]()`, process.argv);
+        // console.log(`${this.constructor.name}[${this.browserId}]()`, process.argv);
     }
 
     async getBrowser(): Promise<Browser> {
         if (!this.browser) {
             this.browser = await this.getSetup(this.browserId, -1) as Browser;
 
-            console.log(
-                `${this.constructor.name}[${this.browserId}](): got Browser (${this.browser.plugins.size}):` +
-                ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
-                ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`,
-                this.browser
-            );
+            // console.log(
+            //     `${this.constructor.name}[${this.browserId}](): got Browser (${this.browser.plugins.size}):` +
+            //     ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
+            //     ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`,
+            //     this.browser
+            // );
         }
         return this.browser;
     }
@@ -876,8 +865,9 @@ class Main extends ControllerImpl {
         if (!updateChannel)
             throw new Error(`${this.constructor.name}.onSetupChanged(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
 
-        console.log(
-            `${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
+        // console.log(
+        //     `${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ` +
+        //     ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
 
         updateChannel.addReceived(update);
 
@@ -898,21 +888,21 @@ class Main extends ControllerImpl {
 
 
         if (this.configs.size == 0) {
-            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-                `(senderId=${senderId}, ${itemId}, d=${depth}) ignore - Hopefully own init for full config`);
+            // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+            //     `(senderId=${senderId}, ${itemId}, d=${depth}) ignore - Hopefully own init for full config`);
             return;
         }
 
 
         if (this.updateChannels[senderId] == undefined) {
-            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-                `(senderId=${senderId}, ${itemId}, d=${depth}) create updateChannel`);
+            // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+            //     `(senderId=${senderId}, ${itemId}, d=${depth}) create updateChannel`);
             const sender = target;
 
             this.updateChannels[senderId] = new UpdateChannel(sender);
         } else {
-            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-                `(senderId=${senderId}, ${itemId}, d=${depth}) updateChannel exists`);
+            // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+            //     `(senderId=${senderId}, ${itemId}, d=${depth}) updateChannel exists`);
         }
         const listener: ChangeListener = {
             senderId,
@@ -1160,7 +1150,7 @@ class Main extends ControllerImpl {
     private onInit = (e: IpcMainEvent, init: IpcInitArgs): void => {
         const { schema, root: rootPlain } = init;
 
-        console.log(`${this.constructor.name}.onInit: sender=${e.sender}`);
+        // console.log(`${this.constructor.name}.onInit: sender=${e.sender}`);
 
 
         if (!schema.definitions)
@@ -1180,10 +1170,6 @@ class Main extends ControllerImpl {
         this.ipcStorage = e.sender;
 
         this.resolvePromises();
-
-
-        //this.ipcStorage.send('getschema');
-        //this.requestPromises();
     }
 
     private resolvePromises = (): void => {
@@ -1199,7 +1185,7 @@ class Main extends ControllerImpl {
                 if (!this.ipcStorage)
                     throw new Error(`${this.constructor.name}.getSetupImpl(${promise.id}, ${promise.depth}): no IPC storage to register`);
 
-                console.log(`${this.constructor.name}.resolvePromises( ${promise.id}, ${promise.depth} )`);
+                // console.log(`${this.constructor.name}.resolvePromises( ${promise.id}, ${promise.depth} )`);
 
                 this.register(this.ipcStorage, { itemId: promise.id, depth: promise.depth });
                 promise.resolve(item);
@@ -1219,13 +1205,13 @@ class Main extends ControllerImpl {
                     if (this.ipcStorage) {
                         console.error(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): doesn't exist promises=${this.promises.length}`);
                     } else {
-                        console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): wait for init promises=${this.promises.length}`);
+                        // console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): wait for init promises=${this.promises.length}`);
                     }
                 } else {
                     if (!this.ipcStorage)
                         throw new Error(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): no IPC storage to register`);
                     
-                    console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve` /*, responseItem.getPlainDeep() */);                    
+                    // console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve ${responseItem.id}` /*, responseItem.getPlainDeep() */);                    
 
                     this.register(this.ipcStorage, {itemId: responseItem.id, depth});
                     resolve(responseItem);

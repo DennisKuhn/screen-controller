@@ -45,7 +45,7 @@ export class Manager {
 
             if (!Manager.registrations.has(id)) {
                 if (registration.schema) {
-                    console.log(`${this.constructor.name}.loadPlugins(${prefix}) add ${id}`);
+                    // console.log(`${this.constructor.name}.loadPlugins(${prefix}) add ${id}`);
                     try {
                         Setup.add(registration.schema);
                         Manager.registrations.set(id, registration);
@@ -62,7 +62,7 @@ export class Manager {
     }
 
     async load(className: string): Promise<PluginConstructor<PluginInterface>> {
-        console.log(`${this.constructor.name}[${this.browser.id}].load(${className}) current=${Manager.registrations.size}`);
+        // console.log(`${this.constructor.name}[${this.browser.id}].load(${className}) current=${Manager.registrations.size}`);
 
         let registration = Manager.registrations.get(className);
 
@@ -79,7 +79,7 @@ export class Manager {
 
     constructor(private browser: Browser) {
         this.loadPlugins().then(() => {
-            console.log(`${this.constructor.name}[${browser.id}] loaded Plugins()`);
+            // console.log(`${this.constructor.name}[${browser.id}] loaded Plugins()`);
             browser.plugins.observe(
                 this.onPluginsChanged
             );
@@ -125,7 +125,7 @@ export class Manager {
                     if (!plugin)
                         throw new Error(`${this.constructor.name}[${this.browser.id}].onPluginsChanged(${changes.type}, ${changes.oldValue.id}}) no plugin`);
 
-                    console.log(`${this.constructor.name}[${this.browser.id}] close ${changes.oldValue.id}`);
+                    // console.log(`${this.constructor.name}[${this.browser.id}] close ${changes.oldValue.id}`);
 
                     plugin.close();
 
@@ -147,34 +147,34 @@ export class Manager {
         };
 
         if (!setup.scaledBounds) {
-            console.log(
-                `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) set scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`);
+            // console.log(
+            //     `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) set scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`);
 
             setup.scaledBounds = Rectangle.createNew(setup.id, scaled);
         } else if (!isEqual(setup.scaledBounds.simple, scaled)) {
             if ((setup.scaledBounds.x != scaled.x) && (setup.scaledBounds.y != scaled.y)
                 && (setup.scaledBounds.height != scaled.height) && (setup.scaledBounds.width != scaled.width)) {
-                console.log(
-                    `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) new scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
+                // console.log(
+                //     `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) new scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`);
 
                 setup.scaledBounds = Rectangle.createNew(setup.id, scaled);
             } else {
                 for (const [key, value] of Object.entries(scaled)) {
                     if (setup.scaledBounds[key] != value) {
-                        console.log(
-                            `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) ${key}==${setup.scaledBounds[key]} = ${value}`);
+                        // console.log(
+                        //     `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) ${key}==${setup.scaledBounds[key]} = ${value}`);
                         setup.scaledBounds[key] = value;
                     }
                 }
             }
         } else {
-            console.log(
-                `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) keep scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
+            // console.log(
+            //     `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) keep scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
         }
     }
 
     private addPlugin = async (setup: Setup): Promise<void> => {
-        console.log(`${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) current=${Manager.registrations.size}`);
+        // console.log(`${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) current=${Manager.registrations.size}`);
 
         autorun(
             () => this.updateBounds(setup)

@@ -136,9 +136,9 @@ class WallpaperWindow extends EventEmitter {
 
             autorun(
                 () => {
-                    console.log(
-                        `${this.constructor.name}[${this.browser.id}]-updateBounds set` +
-                        ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
+                    // console.log(
+                    //     `${this.constructor.name}[${this.browser.id}]-updateBounds set` +
+                    //     ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
                     this.updateBrowserBounds();
                     this.fitToDisplay();
                 }

@@ -19,7 +19,7 @@ export class Plugin {
     }
 
     public static register(className: string, factory: PluginFactory): void {
-        console.log(`PluginManager.register ${className}`);
+        // console.log(`Plugin.register ${className}`);
 
         Plugin.factories.set(
             className,
