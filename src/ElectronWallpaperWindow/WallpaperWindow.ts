@@ -91,7 +91,7 @@ class WallpaperWindow extends EventEmitter {
         };
 
 
-        if (!isEqual( this.browser.device?.simple, newDevice )) {
+        if (!isEqual(this.browser.device?.simple, newDevice)) {
             // console.log(
             //     `${this.constructor.name}[${this.browser.id}].updateBrowserBounds device` +
             //     (this.browser.device ? ` ${this.browser.device.x},${this.browser.device.y} ${this.browser.device.width}*${this.browser.device.height}` : ' noDevice') +
@@ -136,9 +136,9 @@ class WallpaperWindow extends EventEmitter {
 
             autorun(
                 () => {
-                    // console.log(
-                    //     `${this.constructor.name}[${this.browser.id}]-updateBounds set` +
-                    //     ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
+                    console.log(
+                        `${this.constructor.name}[${this.browser.id}]-updateBounds set` +
+                        ` ${this.browser.relative.x},${this.browser.relative.y} ${this.browser.relative.width}*${this.browser.relative.height}`);
                     this.updateBrowserBounds();
                     this.fitToDisplay();
                 }
@@ -150,10 +150,16 @@ class WallpaperWindow extends EventEmitter {
         if (!this.nativeHandle) throw new Error(`${this.constructor.name}.fitToDisplay: No handle for browser ${this.browser.id} @ ${this.displayId}`);
         if (!this.browser.device) throw new Error(`${this.constructor.name}.fitToDisplay: No device rectangle for browser ${this.browser.id} @ ${this.displayId}`);
 
-        nodeWinWallpaper.moveWindow(
-            this.nativeHandle,
-            this.browser.device
-        );
+        const handle = this.nativeHandle;
+        const deviceRect = this.browser.device;
+        
+        setTimeout(
+            () =>
+                nodeWinWallpaper.moveWindow(
+                    handle,
+                    deviceRect
+                ),
+            1000);
     }
 
     get attached(): boolean {

@@ -5,7 +5,7 @@ import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
 import Ajv from 'ajv';
 import { action } from 'mobx';
-import { SetupItemId, SetupBaseInterface } from './SetupInterface';
+import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
 
 switch (process.type) {
@@ -95,7 +95,7 @@ export abstract class SetupBase {
 
         if (this.constructor.name != source.className)
             if (this.constructor.name == 'Plugin') {
-                console.log(`SetupBase[${this.constructor.name}] for ${source.className}: ${JSON.stringify(source)}`);
+                // console.log(`SetupBase[${this.constructor.name}] for ${source.className}: ${JSON.stringify(source)}`);
             } else
                 throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
 
@@ -107,7 +107,7 @@ export abstract class SetupBase {
                 ).join(';\n')}\n` +
                 `source:\n${JSON.stringify}`);
         }
-        console.log(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: validated`);
+        // console.log(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: validated`);
 
         this.id = source.id;
         this.parentId = source.parentId;
@@ -336,6 +336,33 @@ export abstract class SetupBase {
 
         return this;
     }
+
+    static getPlainValue = (objectValue: PropertyType): InterfacePropertyType => {
+        switch (typeof objectValue) {
+            case 'boolean':
+            case 'number':
+            case 'string':
+                return objectValue;
+                break;
+            case 'object':
+                if (objectValue instanceof SetupBase) {
+                    return objectValue.getShallow();
+                } else if (objectValue instanceof ObservableSetupBaseMap) {
+                    // console.log(`ControllerImpl[${this.constructor.name}].getPlainValue: copy ${propertyName} of ObservableSetupBaseMap`);
+
+                    const shallow = {};
+                    for (const id of objectValue.keys()) {
+                        shallow[id] = null;
+                    }
+                    return shallow;
+                }
+                throw new Error(`SetupBase.getPlainValue(${objectValue}) not supported so far: ${typeof objectValue}`);
+            default:
+                throw new Error(`SetupBase.getPlainValue(${objectValue}) not supported so far: ${typeof objectValue}`);
+        }
+    }
+
+
 
     static usedIDs = new Array<string>();
 

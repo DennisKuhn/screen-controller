@@ -1,12 +1,12 @@
 import { IMapDidChange, reaction, isObservableProp } from 'mobx';
 import { EventEmitter } from 'events';
-import electron, { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote } from 'electron';
+import { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote, WebContents } from 'electron';
 import { isEqual } from 'lodash';
 import { SetupBase, PropertyType as ObjectPropertyType } from './SetupBase';
-import { SetupItemId, SetupBaseInterface, PropertyKey, PropertyType as InterfacePropertyType, SetupLinkInterface } from './SetupInterface';
+import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType, SetupLinkInterface } from './SetupInterface';
 import { create } from './SetupFactory';
 import { ObservableSetupBaseMap } from './Container';
-
+import { IpcChangeArgsType, IpcMapChangeArgs, IpcRenderer, IpcMain, IpcWindow, IpcRegisterArgs, IpcInitArgs } from './IpcInterface';
 /**
  * Import basic required Setup Classes to call SetupFactory.register
  * Currently Setup->Screen->Display->Browser->Rectangle
@@ -17,88 +17,7 @@ import { Screen } from './Application/Screen';
 import { Browser } from './Application/Browser';
 import { Plugin } from './Application/Plugin';
 import { JSONSchema7 } from 'json-schema';
-
-type ChangeChannel = 'change';
-type RegisterChannel = 'register';
-type InitChannel = 'init';
-
-
-
-interface IpcChangeArgs {
-    item: SetupItemId;
-    name: PropertyKey;
-    type: string;
-}
-
-interface IpcAddArgs extends IpcChangeArgs {
-    type: 'add';
-    newValue: InterfacePropertyType;
-}
-
-interface IpcUpdateArgs extends IpcChangeArgs {
-    type: 'update';
-    newValue: InterfacePropertyType;
-}
-
-interface IpcRemoveArgs extends IpcChangeArgs {
-    type: 'remove';
-}
-
-interface IpcMapChangeArgs extends IpcChangeArgs {
-    map: PropertyKey;
-}
-
-interface IpcMapAddArgs extends IpcMapChangeArgs {
-    type: 'add';
-    newValue: SetupBaseInterface | null;
-}
-
-interface IpcMapUpdateArgs extends IpcMapChangeArgs {
-    type: 'update';
-    newValue: SetupBaseInterface | null;
-}
-
-interface IpcMapDeleteArgs extends IpcMapChangeArgs {
-    type: 'delete';
-}
-
-interface IpcInitArgs {
-    schema: JSONSchema7;
-    root: SetupBaseInterface;
-}
-
-type IpcChangeArgsType = IpcAddArgs | IpcUpdateArgs | IpcRemoveArgs | IpcMapAddArgs | IpcMapUpdateArgs | IpcMapDeleteArgs;
-type IpcItemChangeArgsType = IpcAddArgs | IpcUpdateArgs | IpcRemoveArgs;
-
-
-interface IpcRenderer extends electron.IpcRenderer {
-    send(channel: InitChannel, init: IpcInitArgs): void;
-
-    send(channel: ChangeChannel, update: IpcChangeArgsType): void;
-
-    send(channel: RegisterChannel, args: IpcRegisterArgs): void;
-
-    /// From IpcWindow.send
-    on(channel: ChangeChannel, listener: (event: IpcRendererEvent, update: IpcChangeArgsType, persist?: boolean) => void): this;
-
-}
-
-interface IpcMain extends electron.IpcMain {
-    once(channel: InitChannel, listener: (event: IpcMainEvent, init: IpcInitArgs) => void): this;
-
-    on(channel: ChangeChannel, listener: (event: IpcMainEvent, update: IpcChangeArgsType, persist?: boolean) => void): this;
-
-    on(channel: RegisterChannel, listener: (event: IpcMainEvent, args: IpcRegisterArgs) => void): this;
-}
-
-interface IpcWindow extends electron.WebContents {
-    send(channel: ChangeChannel, update: IpcChangeArgsType, persist: boolean): void;
-}
-
-interface IpcRegisterArgs {
-    itemId: SetupItemId;
-    depth: number;
-}
+import { UpdateChannel } from './UpdateChannel';
 
 
 export declare interface Controller {
@@ -121,7 +40,6 @@ interface SetupPromise {
 
 interface ConnectItemArgs {
     item: SetupBase;
-    persist: boolean;
     propagate: boolean;
 }
 
@@ -163,8 +81,9 @@ interface LocalMapUpdateArgs extends LocalMapArgs {
     newValue: SetupBase | null;
 }
 
-type LocalChangeArgsType = LocalItemUpdateArgs | LocalItemAddArgs | LocalItemRemoveArgs | LocalMapDeleteArgs | LocalMapAddArgs | LocalMapUpdateArgs;
+type LocalChangeArgsType = LocalItemUpdateArgs | LocalItemAddArgs | LocalItemRemoveArgs | LocalMapAddArgs | LocalMapUpdateArgs | LocalMapDeleteArgs;
 type LocalItemChangeArgsType = LocalItemUpdateArgs | LocalItemAddArgs | LocalItemRemoveArgs;
+type LocalMapChangeArgsType = LocalMapUpdateArgs | LocalMapAddArgs | LocalMapDeleteArgs;
 
 /**
  */
@@ -291,12 +210,12 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         do {
             const { id, depth, resolve } = this.setupPromises[0];
 
-            console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) 1/${this.setupPromises.length} ...`);
+            // console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) 1/${this.setupPromises.length} ...`);
 
             const tree = await this.getTree(id, depth);
-            this.connectPersistPropagate({ item: tree, persist: false, propagate: false });
+            this.connectPersistPropagate({ item: tree, propagate: false });
 
-            console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) ... resolve 1/${this.setupPromises.length}`, tree);
+            // console.log(`ControllerImpl[${this.constructor.name}].processPromise(${id}, ${depth}) ... resolve 1/${this.setupPromises.length}`, tree);
             resolve(tree);
             this.setupPromises.splice(0, 1);
 
@@ -307,12 +226,12 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
 
     protected connectPersistPropagate(args: ConnectItemArgs): void {
-        const { item, persist, propagate } = args;
+        const { item, propagate } = args;
 
         if (!this.configs.has(item.id)) {
-            console.log(
-                `ControllerImpl[${this.constructor.name}].connectPersistPropagate( ${item.className}[${item.id}],` +
-                `persist=${persist}, propagate=${propagate} )`);
+            // console.log(
+            //     `ControllerImpl[${this.constructor.name}].connectPersistPropagate( ${item.className}[${item.id}],` +
+            //     `persist=${persist}, propagate=${propagate} )`);
 
             this.configs.set(item.id, item);
 
@@ -320,7 +239,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 if (value instanceof ObservableSetupBaseMap) {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
                     (value as ObservableSetupBaseMap<SetupBase>).observe((changes: IMapDidChange<string, SetupBase | null>) => {
-                        this.onMapChange(item.id, propertyName, changes);
+                        this.onMapChange({ ...changes, item, map: propertyName });
                     });
                 } else if (isObservableProp(item, propertyName)) {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName}` );
@@ -362,31 +281,6 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         }
     }
 
-    getPlainValue = (objectValue: ObjectPropertyType): InterfacePropertyType => {
-        switch (typeof objectValue) {
-            case 'boolean':
-            case 'number':
-            case 'string':
-                return objectValue;
-                break;
-            case 'object':
-                if (objectValue instanceof SetupBase) {
-                    return objectValue.getShallow();
-                } else if (objectValue instanceof ObservableSetupBaseMap) {
-                    // console.log(`ControllerImpl[${this.constructor.name}].getPlainValue: copy ${propertyName} of ObservableSetupBaseMap`);
-
-                    const shallow = {};
-                    for (const id of objectValue.keys()) {
-                        shallow[id] = null;
-                    }
-                    return shallow;
-                }
-                throw new Error(`ControllerImpl[${this.constructor.name}].getPlainValue(${objectValue}) not supported so far: ${typeof objectValue}`);
-            default:
-                throw new Error(`ControllerImpl[${this.constructor.name}].getPlainValue(${objectValue}) not supported so far: ${typeof objectValue}`);
-        }
-    }
-
     static createLinks(item: SetupBaseInterface): void {
         for (const [propertyName, value] of Object.entries(item)) {
             const setup = (value as SetupBaseInterface);
@@ -397,7 +291,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         }
     }
 
-    getValue = (plainValue: InterfacePropertyType, persist: boolean): ObjectPropertyType => {
+    getValue = (plainValue: InterfacePropertyType): ObjectPropertyType => {
         switch (typeof plainValue) {
             case 'boolean':
             case 'number':
@@ -409,7 +303,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     const plainSetup = plainValue as SetupBaseInterface;
 
                     if (plainSetup.className) {
-                        return this.createNewSetup(plainSetup, persist);
+                        return this.createNewSetup(plainSetup);
                     } else {
                         return new ObservableSetupBaseMap<SetupBase>();
                     }
@@ -432,19 +326,25 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
         const newValue = 'newValue' in change ? change.newValue : undefined;
         const newSetup = newValue instanceof SetupBase ? newValue as SetupBase : undefined;
-        const itemPlainValue = newValue != undefined ? this.getPlainValue(newValue) : undefined;
+        const itemPlainValue = newValue != undefined ? SetupBase.getPlainValue(newValue) : undefined;
         const remotePlainValue = this.remoteUpdates.get(item.id)?.[name];
 
         // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) = ${change['newValue']}`);
 
         if (isEqual(itemPlainValue, remotePlainValue)) {
-            console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=`, change, itemPlainValue, remotePlainValue);
+            // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=`, change, itemPlainValue, remotePlainValue);
         } else {
             console.log(
                 `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}`,
                 itemPlainValue,
                 remotePlainValue
             );
+            if (newSetup) {
+                this.connectPersistPropagate({
+                    item: newSetup,
+                    propagate: false
+                });
+            }
             this.propagate && this.propagate({
                 item: item.id,
                 name: change.name,
@@ -453,85 +353,68 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             } as IpcChangeArgsType);
             this.persist && this.persist(change);
 
-            if (newSetup) {
-                this.connectPersistPropagate({
-                    item: newSetup,
-                    persist: false,
-                    propagate: false
-                });
-                this.persist && this.persist({ item: newSetup, type: 'add', name: 'id' });
-            }
         }
     }
 
-    private onMapChange = (item: string, map: string, changes: IMapDidChange<string, SetupBase | null>): void => {
+    //private onMapChange = (item: string, map: string, changes: IMapDidChange<string, SetupBase | null>): void => {
+    private onMapChange = (changes: LocalMapChangeArgsType): void => {
+        const { item, map, name, type } = changes;
         // console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name} - ${changes.type})`);
 
-        const newValue = 'newValue' in changes ? changes.newValue : undefined;
+        const newValue = changes['newValue'];
         const newSetup = newValue instanceof SetupBase ? newValue as SetupBase : undefined;
-        const itemPlainValue = newValue != undefined ? this.getPlainValue(newValue) : undefined;
-        const hasRemote = this.remoteUpdates.has(item) && changes.name in this.remoteUpdates.get(item)?.[map];
-        const remotePlainValue = this.remoteUpdates.get(item)?.[map][changes.name];
+        const itemPlainValue = newValue != undefined ? SetupBase.getPlainValue(newValue) : undefined;
+        const hasRemote = this.remoteUpdates.has(item.id) && name in this.remoteUpdates.get(item.id)?.[map];
+        const remotePlainValue = hasRemote ? this.remoteUpdates.get(item.id)?.[map][name] : undefined;
 
         if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
             console.log(
-                `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${changes.name}], ${changes.type} ) skip remoteUpdate=`,
+                `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip remoteUpdate` /*,
                 changes,
                 itemPlainValue,
-                remotePlainValue);
+                remotePlainValue */);
         } else {
-            switch (changes.type) {
+            switch (type) {
                 case 'add':
                     if (newSetup != undefined) {
                         console.log(
-                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${changes.type} ) connect, propagate and persist`,
+                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) connect, propagate and persist` /*,
                             changes,
                             itemPlainValue,
-                            remotePlainValue
-                        );
-                        this.connectPersistPropagate({ item: newSetup, persist: true, propagate: true });
+                            remotePlainValue */ );
+                        this.connectPersistPropagate({ item: newSetup, propagate: true });
                         this.propagate && this.propagate({
-                            item: item,
-                            map: map,
-                            name: changes.name,
-                            type: changes.type,
-                            newValue: this.getPlainValue(newSetup)
+                            item: item.id,
+                            map,
+                            name,
+                            type,
+                            newValue: newSetup.getShallow()
                         });
-                        this.persist && this.persist({ item: newSetup, type: 'add', name: 'id' });
+                        this.persist && this.persist(changes);
                     } else if (newValue) {
                         console.error(
-                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${changes.type} ) skip undefined newSetup but newValue is defined`,
+                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip undefined newSetup but newValue is defined`,
                             changes,
                             itemPlainValue,
                             remotePlainValue
                         );
                     } else {
                         console.log(
-                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${changes.type} ) skip null`, changes, itemPlainValue, remotePlainValue);
+                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip null` /*, changes, itemPlainValue, remotePlainValue */);
                     }
                     break;
                 case 'update':
-                    if ((changes.oldValue == null) && (changes.newValue != null)) {
-                        console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name}) ignore overwriting null`);
-                        return;
-                    }
-                    console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name}, ${changes.type})`);
-                    this.propagate && this.propagate({
-                        item: item,
-                        map: map,
-                        name: changes.name,
-                        type: changes.type,
-                        newValue: changes.newValue == null ? null : changes.newValue.getShallow()
-                    });
+                    console.warn(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type}) ignore`);
                     break;
                 case 'delete':
-                    console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}.${changes.name}, ${changes.type}) propagate delete`);
+                    console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type}) propagate delete`);
                     this.propagate && this.propagate({
-                        item: item,
-                        map: map,
-                        name: changes.name,
-                        type: changes.type
+                        item: item.id,
+                        map,
+                        name,
+                        type
                     });
+                    this.persist && this.persist(changes);
                     break;
             }
         }
@@ -541,9 +424,9 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
     protected readonly propagate: ((update: IpcChangeArgsType) => void) | undefined;
 
-    protected persist: ((data: LocalChangeArgs) => void) | undefined;
+    protected persist: ((data: LocalChangeArgsType) => void) | undefined;
 
-    private remoteUpdates: Map<string, SetupBaseInterface> = new Map<string, SetupBaseInterface>();
+    protected remoteUpdates: Map<string, SetupBaseInterface> = new Map<string, SetupBaseInterface>();
 
     private addRemoteUpdate(update: IpcChangeArgsType): boolean {
 
@@ -606,9 +489,9 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
 
 
-    createNewSetup(plain: SetupBaseInterface, persist: boolean): SetupBase {
+    createNewSetup(plain: SetupBaseInterface): SetupBase {
         const newSetup = create(plain);
-        this.connectPersistPropagate({ item: newSetup, persist: persist, propagate: false });
+        this.connectPersistPropagate({ item: newSetup, propagate: false });
         return newSetup;
     }
 
@@ -640,17 +523,17 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     case 'add':
                     case 'update':
                         if (update.newValue == null) {
-                            console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${map}.${update.name}, ${update.type}) = ${update.newValue}`);
+                            // console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${map}.${update.name}, ${update.type}) = ${update.newValue}`);
                             localMap.set(
                                 update.name,
                                 null
                             );
                         } else if (typeof update.newValue == 'object') {
-                            console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${map}.${update.name}, ${update.type}) = ${update.newValue}`);
+                            // console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${map}.${update.name}, ${update.type}) = ${update.newValue}`);
                             localMap.set(
                                 update.name,
                                 update.newValue == null ? null :
-                                    this.createNewSetup(update.newValue as SetupBaseInterface, persist == true)
+                                    this.createNewSetup(update.newValue as SetupBaseInterface)
                             );
                         } else
                             throw new Error(
@@ -659,7 +542,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
                         break;
                     case 'delete':
-                        console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${map}.${update.name}, ${update.type}) = undefined/delete`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${map}.${update.name}, ${update.type}) = undefined/delete`);
                         localMap.delete(update.name);
                         break;
                 }
@@ -667,13 +550,13 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 switch (update.type) {
                     case 'add':
                     case 'update':
-                        console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${update.name}, ${update.type}) = ${update.newValue}`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${update.name}, ${update.type}) = ${update.newValue}`);
                         if (update.newValue == null)
                             throw new Error(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${update.name}, ${update.type}) = ${update.newValue}`);
-                        localItem[update.name] = this.getValue(update.newValue, persist == true);
+                        localItem[update.name] = this.getValue(update.newValue);
                         break;
                     case 'remove':
-                        console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${update.name}, ${update.type}) = undefined/delete`);
+                        // console.log(`ControllerImpl[${this.constructor.name}].onSetupChanged(${update.item}.${update.name}, ${update.type}) = undefined/delete`);
                         // remoteItem[update.name] = undefined;
                         delete localItem[update.name];
                         break;
@@ -685,13 +568,15 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                 ` ==? ${update['newValue']} skip remote update`);
         }
 
-        persist && this.persist && this.persist({
+        (persist == true) && this.persist && this.persist({
             item: localItem,
             name: update.name,
             type: update.type,
             ...(map ? { map } : undefined),
-            ...((update.type == 'add' || update.type == 'update') ? { newValue: update.newValue } : undefined)
-        });
+            ...(('newValue' in update) ?
+                { newValue: (update.newValue == null ? null : (update.newValue['id'] ? this.configs.get(update.newValue['id']) : update.newValue)) } :
+                undefined)
+        } as LocalChangeArgsType);
     }
 }
 
@@ -751,17 +636,9 @@ class Renderer extends ControllerImpl {
 
     protected registerWithMain(item: SetupBase, depth: number): void {
 
-        let registration = this.registrations.find(candidate => candidate.itemId == item.id);
+        this.registrations.push({ itemId: item.id, depth: depth });
 
-        if (!(registration && registration.depth >= depth)) {
-            if (!registration) {
-                registration = { itemId: item.id, depth: depth };
-                this.registrations.push(registration);
-            } else {
-                registration.depth = depth;
-            }
-            this.ipc.send('register', { itemId: item.id, depth: depth });
-        }
+        this.ipc.send('register', { itemId: item.id, depth: depth });
     }
 
     protected async getSetupImpl(id: string, depth: number): Promise<SetupBase> {
@@ -777,7 +654,7 @@ class Renderer extends ControllerImpl {
 
         for (const [propertyName, value] of Object.entries(item)) {
             if (typeof value == 'object' && ((value as SetupLinkInterface).id)) {
-                console.log(`${this.constructor.name}.resolveLinks(${item.id}): resolve ${propertyName} - ${(value as SetupLinkInterface).id}`);
+                // console.log(`${this.constructor.name}.resolveLinks(${item.id}): resolve ${propertyName} - ${(value as SetupLinkInterface).id}`);
                 item[propertyName] = this.loadPlain((value as SetupLinkInterface).id);
                 this.resolveLinks(item[propertyName]);
             }
@@ -788,7 +665,7 @@ class Renderer extends ControllerImpl {
         const itemString = localStorage.getItem(id);
 
         if (!itemString)
-            throw new Error(`${this.constructor.name}.loadPlain(): can't load/find ${id}`);
+            throw new Error(`${this.constructor.name}.loadPlain(-> ${id} <-): can't load/find`);
 
         try {
             return JSON.parse(itemString);
@@ -815,13 +692,13 @@ class Renderer extends ControllerImpl {
             if (id == Root.name) {
                 item = Root.createNewBlank();
                 console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
-                this.persist({ item: item, type: 'add', name: 'id' });
+                this.persist({ item: item, type: 'add', name: 'id', newValue: item.id });
             } else if (id == Screen.name) {
                 item = Screen.createNewBlank();
                 console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
-                this.persist({ item: item, type: 'add', name: 'id' });
+                this.persist({ item: item, type: 'add', name: 'id', newValue: item.id });
             } else
-                throw new Error(`${this.constructor.name}: load(-> ${id} <-): not found`);
+                throw error;
         }
         return item;
     }
@@ -832,13 +709,38 @@ class Renderer extends ControllerImpl {
     }
 
 
-    protected persist = ({ item }: LocalChangeArgs): void => {
-        console.log(`${this.constructor.name}.persist(${item.id})`/*, item*/);
+    protected persist = (change: LocalChangeArgsType): void => {
+        const { item, name, type } = change;
+
+        if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
+            throw new Error(`ControllerImpl[${this.constructor.name}].onItemchanged(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
+
+        console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}, ${change['newValue']})`/*, item*/);
         const shallow = item.getShallow();
 
         ControllerImpl.createLinks(shallow);
 
         localStorage.setItem(item.id, JSON.stringify(shallow));
+
+        const newValue = 'newValue' in change ? change.newValue : undefined;
+        const newSetup = newValue instanceof SetupBase ? newValue as SetupBase : undefined;
+
+        if (newSetup) {
+            let persistedChild = false;
+            
+            for (const [propertyName, child] of Object.entries(newSetup)) {
+                if (child instanceof SetupBase) {
+                    this.persist({ item: newSetup, type: 'add', name: propertyName, newValue: child });
+                    persistedChild = true;
+                }
+            }
+            if (!persistedChild) {
+                this.persist({ item: newSetup, name: 'id', type: 'add', newValue: item.id });    
+            }
+        } else if (type == 'delete') {
+            console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}) delete ${name}`);
+            localStorage.removeItem(change.name);
+        }
     }
 }
 
@@ -891,23 +793,26 @@ class MainWindow extends Renderer {
 
         // console.log(`${this.constructor.name}()`, process.argv);
 
-        this.getSetup(Root.name, -1).then(root => {
-
-            this.ipc.send(
-                'init',
-                {
-                    schema: SetupBase.activeSchema,
-                    root: root.getDeep()
-                }
-            );
-        });
+        this.getSetup(Root.name, -1)
+            .then(root => {
+                // console.log(`${this.constructor.name}() gotSetup(${Root.name}) send ...`);
+                this.ipc.send(
+                    'init',
+                    {
+                        schema: SetupBase.activeSchema,
+                        root: root.getDeep()
+                    }
+                );
+            })
+            .catch(error => {
+                console.error(`${this.constructor.name}() getSetup(${Root.name}) caught: ${error}`);
+            });
     }
 }
 
 
 interface ChangeListener {
     senderId: number;
-    ipc: IpcWindow;
     itemId: SetupItemId;
     depth: number;
     disposers: (() => void)[];
@@ -933,36 +838,53 @@ class Main extends ControllerImpl {
         this.ipc.on('register', this.onRegister);
     }
 
-    senderUpdatesOld = new Map<number, Map<SetupItemId, Map<PropertyKey, InterfacePropertyType>>>();
-    senderUpdates = new Array<{}>();
+    private senderUpdates = new Array<{}>();
 
-    static updateKey = (itemID: string, name: string, map?: string): string => `${itemID}.${map ? map + '.' : ''}${name}`;
+    private updateChannels: UpdateChannel[] = new Array<UpdateChannel>();
+
 
     async onSetupChanged(e: Event, update: IpcChangeArgsType, persist?: boolean): Promise<void> {
         const mainEvent = e as IpcMainEvent;
-        const updateKey = Main.updateKey(update.item, update.name, (update as IpcMapChangeArgs).map);
+        const updateChannel = this.updateChannels[mainEvent.sender.id];
 
-        const senderUpdates = this.senderUpdates[mainEvent.sender.id];
-        if (!senderUpdates)
-            throw new Error(`${this.constructor.name}.onSetupChanged(${mainEvent.sender.id} doesn't exist in senderUpdates ${Array.from(this.senderUpdates.keys())})`);
+        if (!updateChannel)
+            throw new Error(`${this.constructor.name}.onSetupChanged(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
 
-        console.log(`${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}][${updateKey}] = `, update['newValue']);
+        console.log(`${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ${update['newValue']['id'] ?? update['newValue']}`);
 
-        senderUpdates[updateKey] = update['newValue'];
+        updateChannel.addReceived(update);
 
         super.onSetupChanged(e, update, persist);
     }
 
 
-    private onRegister = (e: IpcMainEvent, { itemId, depth }: IpcRegisterArgs): void => {
-        const senderId = e.sender.id;
+    private onRegister = (e: IpcMainEvent, args: IpcRegisterArgs): void => {
+        this.register(e.sender, args);
+    }
 
-        console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-            `(senderId=${senderId}, ${itemId}, d=${depth})`);
+    private register = (target: WebContents, { itemId, depth }: IpcRegisterArgs): void => {
+        const senderId = target.id;
 
+
+        if (this.configs.size == 0) {
+            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+                `(senderId=${senderId}, ${itemId}, d=${depth}) ignore - Hopefully own init for full config`);
+            return;
+        }
+
+
+        if (this.updateChannels[senderId] == undefined) {
+            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+                `(senderId=${senderId}, ${itemId}, d=${depth}) create updateChannel`);
+            const sender = target;
+
+            this.updateChannels[senderId] = new UpdateChannel(sender);
+        } else {
+            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+                `(senderId=${senderId}, ${itemId}, d=${depth}) updateChannel exists`);
+        }
         const listener: ChangeListener = {
             senderId,
-            ipc: e.sender,
             itemId,
             depth,
             disposers: new Array<(() => void)>()
@@ -978,6 +900,11 @@ class Main extends ControllerImpl {
     }
 
     connectChangeListenerToExisting(listener: ChangeListener, item?: SetupBase, depth?: number): void {
+
+        if (this.configs.size == 0) {
+            console.log(`${this.constructor.name}.connectChangeListenerToExisting[${listener.senderId},${listener.itemId},${listener.depth}]: no config yet`);
+            return;
+        }
 
         item = item ?? this.configs.get(listener.itemId);
         depth = depth ?? 0;
@@ -1010,7 +937,7 @@ class Main extends ControllerImpl {
     }
 
     private connectChangeListener(item: SetupBase, listener: ChangeListener, fireImmediately: boolean, offset = 0): void {
-        console.log(`${this.constructor.name}.connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
+        // console.log(`${this.constructor.name}.connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
 
         for (const [propertyName, value] of Object.entries(item)) {
             if (value instanceof ObservableSetupBaseMap) {
@@ -1061,62 +988,34 @@ class Main extends ControllerImpl {
     }
 
     private onChangeItemChanged = (listener: ChangeListener, change: LocalChangeArgsType): void => {
-        const { item } = change;
+        const { item, name } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
                 `${this.constructor.name}.onChangeItemChanged(${change.name}, ${change.type} ): Invalid object: ${JSON.stringify(item)}`);
 
         const map = (change as LocalMapArgs).map;
-        const updateKey = Main.updateKey(item.id, change.name, map);
-        const senderUpdates = this.senderUpdates[listener.senderId];
-        const hasUpdate = updateKey in senderUpdates;
-        const update = senderUpdates[updateKey];
-        const plainNew = change['newValue'] == undefined ? undefined : this.getPlainValue(change['newValue']);
-        let skipChange = false;
+        let persist = false;
 
-        // console.log(
-        //     `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-        //     ` @ ${item.id}.${map}.${change.name}, ${change.type}) = ${change['newValue']}`);
+        if (listener.senderId == this.ipcStorage?.id) {
+            const newValue = 'newValue' in change ? change.newValue : undefined;
+            const itemPlainValue = newValue != undefined ? SetupBase.getPlainValue(newValue) : undefined;
+            const remoteUpdate = this.remoteUpdates.get(item.id)?.[name];
 
-        if (hasUpdate) {
-            skipChange = isEqual(update, plainNew);
-
-            if (skipChange)
-                console.log(
-                    `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-                    ` @ ${item.id}.${map}.${change.name}, ${change.type}) skip received [${listener.senderId}][${updateKey}]`,
-                    change['newValue']
-                );
-            else
-                console.log(
-                    `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-                    ` @ ${item.id}.${map}.${change.name}, ${change.type}) send newer [${listener.senderId}][${updateKey}]`,
-                    update,
-                    change['newValue']
-                );
-
-            delete senderUpdates[updateKey];
-        } else
-            console.log(
-                `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-                ` @ ${item.id}.${map}.${change.name}, ${change.type}) send `,
-                change['newValue']
-            );
-
-        if (!skipChange) {
-            listener.ipc.send(
-                'change',
-                {
-                    item: item.id,
-                    type: change.type,
-                    name: change.name,
-                    ...(map ? { map } : undefined),
-                    ...((change.type == 'add' || change.type == 'update') ? { newValue: change.newValue } : undefined)
-                } as IpcChangeArgsType,
-                false
-            );
+            persist = ! isEqual(itemPlainValue, remoteUpdate);
         }
+
+        this.updateChannels[listener.senderId].send(
+            'change',
+            {
+                item: item.id,
+                type: change.type,
+                name: change.name,
+                ...(map ? { map } : undefined),
+                ...((change.type == 'add' || change.type == 'update') ? { newValue: change.newValue } : undefined)
+            } as IpcChangeArgsType,
+            persist
+        );
     }
 
 
@@ -1127,7 +1026,7 @@ class Main extends ControllerImpl {
             for (
                 let offset = 0, ancestor: SetupBase | undefined = item;
                 ((listener.depth == -1) || (offset <= listener.depth)) && (ancestor);
-                offset += 1, ancestor = this.configs.get(ancestor.parentId)
+                offset += 1, ancestor = ancestor.parentId == ancestor.id ? undefined : this.configs.get(ancestor.parentId)
             ) {
                 if (listener.itemId == ancestor.id) {
                     this.connectChangeListener(item, listener, fireImmediately, offset);
@@ -1138,7 +1037,7 @@ class Main extends ControllerImpl {
     }
 
     protected onItemConnected = (item: SetupBase, fireImmediately: boolean): void => {
-        console.log(`${this.constructor.name}.onItemConnected(${item.id}) fireImmediately=${fireImmediately}`);
+        // console.log(`${this.constructor.name}.onItemConnected(${item.id}) fireImmediately=${fireImmediately}`);
         this.connectChangeListeners(item, fireImmediately);
     }
 
@@ -1161,18 +1060,19 @@ class Main extends ControllerImpl {
 
         const root = create(rootPlain);
 
-        this.connectPersistPropagate({ item: root, persist: false, propagate: false });
+        this.connectPersistPropagate({ item: root, propagate: false });
+
+        this.ipcStorage = e.sender;
 
         this.resolvePromises();
 
-        this.ipcStorage = e.sender;
 
         //this.ipcStorage.send('getschema');
         //this.requestPromises();
     }
 
     private resolvePromises = (): void => {
-        console.log(`${this.constructor.name}.resolvePromises[${this.promises.length}]`);
+        // console.log(`${this.constructor.name}.resolvePromises[${this.promises.length}]`);
 
         for (const promise of this.promises) {
             const item = this.configs.get(promise.id);
@@ -1181,7 +1081,12 @@ class Main extends ControllerImpl {
                 console.error(`${this.constructor.name}.resolvePromises() can't resolve ${promise.id}`);
                 promise.reject(`${this.constructor.name}.resolvePromises() can't resolve ${promise.id}`);
             } else {
+                if (!this.ipcStorage)
+                    throw new Error(`${this.constructor.name}.getSetupImpl(${promise.id}, ${promise.depth}): no IPC storage to register`);
+
                 console.log(`${this.constructor.name}.resolvePromises( ${promise.id}, ${promise.depth} )`);
+
+                this.register(this.ipcStorage, { itemId: promise.id, depth: promise.depth });
                 promise.resolve(item);
             }
         }
@@ -1202,43 +1107,15 @@ class Main extends ControllerImpl {
                         console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): wait for init promises=${this.promises.length}`);
                     }
                 } else {
-                    console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve` /*, responseItem.getPlainDeep() */);
+                    if (!this.ipcStorage)
+                        throw new Error(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): no IPC storage to register`);
+                    
+                    console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve` /*, responseItem.getPlainDeep() */);                    
+
+                    this.register(this.ipcStorage, {itemId: responseItem.id, depth});
                     resolve(responseItem);
                 }
-                return responseItem;
             });
-    }
-
-    // protected readonly propagate = (update: IpcChangeArgsType): void => {
-    //     console.log(`${this.constructor.name}.propapgate(${item.id})`, item);
-    // }
-
-    protected persist = (change: LocalChangeArgs): void => {
-        console.log(`${this.constructor.name}.persist(${change.item.id},${change.name},${change.type}) ipc=${this.ipcStorage}`/*, item*/);
-
-        // persist && this.persist && this.persist({
-        //     item: localItem,
-        //     name: update.name,
-        //     type: update.type,
-        //     ...(map ? { map } : undefined),
-        //     ...((update.type == 'add' || update.type == 'update') ? { newValue: update.newValue } : undefined)
-        // });
-
-        this.ipcStorage?.send(
-            'change',
-            {
-                item: change.item.id,
-                name: change.name,
-                type: change.type,
-                ...((change as LocalMapArgs).map ? { map: (change as LocalMapArgs).map } : undefined),
-                ...((change as LocalItemAddArgs | LocalItemUpdateArgs | LocalMapAddArgs | LocalMapUpdateArgs).newValue ?
-                    {
-                        newValue: (change as LocalMapAddArgs | LocalMapUpdateArgs).newValue == null ?
-                            null : this.getPlainValue((change as LocalItemAddArgs | LocalItemUpdateArgs).newValue)
-                    } :
-                    undefined)
-            } as IpcChangeArgsType,
-            true);
     }
 }
 
