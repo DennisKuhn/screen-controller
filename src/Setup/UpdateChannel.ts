@@ -34,7 +34,7 @@ export class UpdateChannel {
 
     addReceived = (update: IpcChangeArgs): void => {
         const updateKey = UpdateChannel.updateKey(update.item, update.name, (update as IpcMapChangeArgs).map);
-        console.log(`${this.constructor.name}.addReceived() [${this.ipc.id}][${updateKey}] = ${update['newValue']['id'] ?? update['newValue']}` );
+        console.log(`${this.constructor.name}.addReceived() [${this.ipc.id}][${updateKey}] = ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}` );
         this.received[updateKey] = update['newValue'];
     }
 
@@ -44,7 +44,7 @@ export class UpdateChannel {
 
         console.log(
             `${this.constructor.name}.send(${this.ipc.id}, ` +
-            ` @ ${change.item}.${change['map'] ? change['map'] + '.' : ''}.${change.name}, ${change.type}, ${persist}) = ${change['newValue']['id'] ?? change['newValue']}`);
+            ` @ ${change.item}.${change['map'] ? change['map'] + '.' : ''}.${change.name}, ${change.type}, ${persist}) = ${change['newValue'] ? (change['newValue']['id'] ?? change['newValue']) : change['newValue']}`);
 
         this.sendSubscriber.next({ channel, change, persist });
     }
@@ -55,7 +55,6 @@ export class UpdateChannel {
         const updateKey = UpdateChannel.updateKey(item, change.name, map);
         const hasUpdate = updateKey in this.received;
         const update = this.received[updateKey];
-        const plainNew = change['newValue'] == undefined ? undefined : SetupBase.getPlainValue(change['newValue']);
         let skipChange = false;
 
         // console.log(
@@ -63,7 +62,7 @@ export class UpdateChannel {
         //     ` @ ${item.id}.${map}.${change.name}, ${change.type}, ${persist}) = ${change['newValue']}`);
 
         if (hasUpdate) {
-            skipChange = isEqual(update, plainNew);
+            skipChange = isEqual(update, change['newValue']);
 
             if (skipChange)
                 console.log(

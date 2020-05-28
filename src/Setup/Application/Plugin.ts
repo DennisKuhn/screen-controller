@@ -90,7 +90,7 @@ export class Plugin extends SetupBase implements PluginInterface {
                 // console.log(`${this.constructor.name}[${setup.className}][${this.id}].init: skip ${propertyName}=${this[propertyName]}` /*, updateSetup */);
             }
         }
-        console.log(`${this.constructor.name}[${setup.className}][${this.id}].init extendObservable(this, `, observables);
+        console.log(`${this.constructor.name}[${setup.className}][${this.id}].init extendObservable( ${observables} )`);
         extendObservable(this, observables);
         return this;
     }

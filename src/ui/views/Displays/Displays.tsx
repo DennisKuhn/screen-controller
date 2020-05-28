@@ -79,7 +79,7 @@ const DisplayContainer = observer(({ displays }: { displays: ObservableSetupBase
 
     return <GridContainer>
         {
-            displays.map(display => display).filter(display => display != undefined).map((display) => display as Display).map(
+            displays.map(display => display).filter(display => display != null).map((display) => display as Display).map(
                 display => <DisplayCard key={display.id} config={display} specs={electronDisplays[display.id]} />
             )
         }

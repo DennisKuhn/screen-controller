@@ -850,7 +850,7 @@ class Main extends ControllerImpl {
         if (!updateChannel)
             throw new Error(`${this.constructor.name}.onSetupChanged(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
 
-        console.log(`${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ${update['newValue']['id'] ?? update['newValue']}`);
+        console.log(`${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
 
         updateChannel.addReceived(update);
 
@@ -1005,17 +1005,101 @@ class Main extends ControllerImpl {
             persist = ! isEqual(itemPlainValue, remoteUpdate);
         }
 
-        this.updateChannels[listener.senderId].send(
-            'change',
-            {
-                item: item.id,
-                type: change.type,
-                name: change.name,
-                ...(map ? { map } : undefined),
-                ...((change.type == 'add' || change.type == 'update') ? { newValue: change.newValue } : undefined)
-            } as IpcChangeArgsType,
-            persist
-        );
+        if ((change as LocalMapChangeArgsType).map != undefined) {
+            const mapChange = change as LocalMapChangeArgsType;
+            switch (mapChange.type) {
+                case 'add':
+                    this.updateChannels[listener.senderId].send(
+                        'change',
+                        {
+                            item: item.id,
+                            type: mapChange.type,
+                            name: mapChange.name,
+                            map: map,
+                            newValue: mapChange.newValue == null ? null : mapChange.newValue.getShallow()
+                        },
+                        persist
+                    );
+                    break;
+                case 'update':
+                    this.updateChannels[listener.senderId].send(
+                        'change',
+                        {
+                            item: item.id,
+                            type: mapChange.type,
+                            name: mapChange.name,
+                            map: map,
+                            newValue: mapChange.newValue == null ? null : mapChange.newValue.getShallow()
+                        },
+                        persist
+                    );
+                    break;
+                case 'delete':
+                    this.updateChannels[listener.senderId].send(
+                        'change',
+                        {
+                            item: item.id,
+                            type: mapChange.type,
+                            name: mapChange.name,
+                            map: map
+                        },
+                        persist
+                    );
+                    break;
+            }
+        } else {
+            const itemChange = change as LocalItemChangeArgsType;
+            switch (itemChange.type) {
+                case 'add':
+                    this.updateChannels[listener.senderId].send(
+                        'change',
+                        {
+                            item: item.id,
+                            type: itemChange.type,
+                            name: itemChange.name,
+                            newValue: SetupBase.getPlainValue(itemChange.newValue),
+                        },
+                        persist
+                    );
+                    break;
+                case 'update':
+                    this.updateChannels[listener.senderId].send(
+                        'change',
+                        {
+                            item: item.id,
+                            type: itemChange.type,
+                            name: itemChange.name,
+                            newValue: SetupBase.getPlainValue(itemChange.newValue),
+                        },
+                        persist
+                    );
+                    break;
+                case 'remove':
+                    this.updateChannels[listener.senderId].send(
+                        'change',
+                        {
+                            item: item.id,
+                            type: itemChange.type,
+                            name: change.name
+                        },
+                        persist
+                    );
+                    break;
+            }
+
+        }
+
+        // this.updateChannels[listener.senderId].send(
+        //     'change',
+        //     {
+        //         item: item.id,
+        //         type: change.type,
+        //         name: change.name,
+        //         ...(map ? { map } : undefined),
+        //         ...((change.type == 'add' || change.type == 'update') ? { newValue: (change.newValue == null ? null : SetupBase.getPlainValue(change.newValue)) } : undefined)
+        //     } as IpcChangeArgsType,
+        //     persist
+        // );
     }
 
 
