@@ -34,7 +34,9 @@ export class UpdateChannel {
 
     addReceived = (update: IpcChangeArgs): void => {
         const updateKey = UpdateChannel.updateKey(update.item, update.name, (update as IpcMapChangeArgs).map);
-        console.log(`${this.constructor.name}.addReceived() [${this.ipc.id}][${updateKey}] = ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}` );
+        console.log(
+            `${this.constructor.name}.addReceived() [${this.ipc.id}][${updateKey}] =` +
+            ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
         this.received[updateKey] = update['newValue'];
     }
 

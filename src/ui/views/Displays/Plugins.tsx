@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
@@ -23,53 +23,57 @@ const useStyles = makeStyles((theme) => ({
         width: 60,
     },
 }));
-
-const Plugins = observer(({ browser }: { browser: Browser }): JSX.Element => {
+const getSchemas = (): JSONSchema7Definition[] => {
     if (!SetupBase.activeSchema.definitions)
         throw new Error('Plugins.tsx: Plugins: no SetupBase.activeSchema.definitions');
 
-    const classes = useStyles();
-    const [schemas, setSchemas] = useState(Object.values(SetupBase.activeSchema.definitions)
+    const schemas = Object.values(SetupBase.activeSchema.definitions)
         .filter(schemaDef => (schemaDef as JSONSchema7)
             .allOf?.some(pluginRefProspect =>
-                (pluginRefProspect as JSONSchema7).$ref == Plugin.name)) );
+                (pluginRefProspect as JSONSchema7).$ref == Plugin.name));
 
-    const updateSchemas = (): void => {
-        if (!SetupBase.activeSchema.definitions)
-            throw new Error('Plugins.tsx: Plugins: no SetupBase.activeSchema.definitions');
+    console.log('Plugins getSchemas', { ...schemas });
 
-        setSchemas(
-            Object.values(SetupBase.activeSchema.definitions)
-                .filter(schemaDef => (schemaDef as JSONSchema7)
-                    .allOf?.some(pluginRefProspect =>
-                        (pluginRefProspect as JSONSchema7).$ref == Plugin.name)));
-    };
+    return schemas;
+};
 
-    if (!SetupBase.activeSchema.definitions)
-        throw new Error('Plugins.tsx: Plugins: no SetupBase.activeSchema.definitions');
+
+
+const Plugins = observer(({ browser }: { browser: Browser }): JSX.Element => {
+    const [schemas, setSchemas] = useState(getSchemas());
 
     if (schemas.length == 0) {
-        console.log('Plugins no plugin schema, use effects');
-        useEffect(() => {
-            Manager.loadAll()
-                .then(() => {
-                    updateSchemas();
-                }
-                );
-        }, [] );
+        console.log('Plugins no plugin schema -> Manager.loadAll()');
+        Manager.loadAll()
+            .then(
+                (): void => setSchemas(getSchemas())
+            );
     } else {
-        console.log('Plugins plugin schemas, call updateSchemas');
+        console.log('Plugins plugin schemas loaded');
     }
 
+    const addPlugin = useCallback((schema: JSONSchema7): void => browser.addPlugin(schema), []);
+    
+    return <PluginsCompnent browser={browser} schemas={schemas} onAdd={addPlugin} />;
 
-    const addPlugin = (schema: JSONSchema7): void => {
-        const plugin = Plugin.createNew(browser.id, schema);
+});
 
-        browser.plugins.set(
-            plugin.id,
-            plugin
-        );
-    };
+const PluginTile = ({ schema, onAdd }: { schema: JSONSchema7; onAdd: (schema: JSONSchema7) => void }): React.ReactElement => (
+    <>
+        <div>{schema.description}</div>
+        <GridListTileBar
+            title={schema.title}
+            actionIcon={
+                <IconButton onClick={(): void => onAdd(schema)}>
+                    <AddIcon />
+                </IconButton>
+            }
+        />
+    </>
+);
+
+const PluginsCompnent = ({ browser, schemas, onAdd }: { browser: Browser; schemas: JSONSchema7Definition[]; onAdd: (schema: JSONSchema7) => void }): JSX.Element => {
+    const classes = useStyles();
 
     return (
         <List>
@@ -77,24 +81,15 @@ const Plugins = observer(({ browser }: { browser: Browser }): JSX.Element => {
                 <GridList>
                     {
                         schemas.map(
-                                (schemaDef: JSONSchema7Definition) => {
-                                    const schema = schemaDef as JSONSchema7;
-
-                                    return (
-                                        <GridListTile key={schema.$id}>
-                                            <div>{schema.description}</div>
-                                            <GridListTileBar
-                                                title={schema.title}
-                                                actionIcon={
-                                                    <IconButton onClick={(): void => addPlugin(schema)}>
-                                                        <AddIcon />
-                                                    </IconButton>
-                                                }
-                                            />
-                                        </GridListTile>
-                                    );
-                                }
-                            )
+                            (schemaDef: JSONSchema7Definition) => {
+                                const schema = schemaDef as JSONSchema7;
+                                return (
+                                    <GridListTile key={schema.$id}>
+                                        <PluginTile schema={schema} onAdd={onAdd} />
+                                    </GridListTile>
+                                );
+                            }
+                        )
                     }
                 </GridList>
             </ListItem>
@@ -103,6 +98,6 @@ const Plugins = observer(({ browser }: { browser: Browser }): JSX.Element => {
             </ListItem>
         </List>
     );
-});
+};
 
 export default Plugins;

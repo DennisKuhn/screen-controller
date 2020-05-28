@@ -5,6 +5,9 @@ import { JSONSchema7 } from 'json-schema';
 export type ChangeChannel = 'change';
 export type RegisterChannel = 'register';
 export type InitChannel = 'init';
+export type AddSchemaChannel = 'addSchema';
+
+
 
 export interface IpcChangeArgs {
     item: SetupItemId;
@@ -49,12 +52,18 @@ export interface IpcInitArgs {
     root: SetupBaseInterface;
 }
 
+export interface IpcAddSchemaArgs {
+    schema: JSONSchema7;
+}
+
+
 export type IpcChangeArgsType = IpcAddArgs | IpcUpdateArgs | IpcRemoveArgs | IpcMapAddArgs | IpcMapUpdateArgs | IpcMapDeleteArgs;
 export type IpcItemChangeArgsType = IpcAddArgs | IpcUpdateArgs | IpcRemoveArgs;
 
 
 export interface IpcRenderer extends electron.IpcRenderer {
     send(channel: InitChannel, init: IpcInitArgs): void;
+    send(channel: AddSchemaChannel, schema: IpcAddSchemaArgs): void;
 
     send(channel: ChangeChannel, update: IpcChangeArgsType): void;
 
@@ -67,6 +76,8 @@ export interface IpcRenderer extends electron.IpcRenderer {
 
 export interface IpcMain extends electron.IpcMain {
     once(channel: InitChannel, listener: (event: IpcMainEvent, init: IpcInitArgs) => void): this;
+
+    on(channel: AddSchemaChannel, listener: (event: IpcMainEvent, update: IpcAddSchemaArgs) => void): this;
 
     on(channel: ChangeChannel, listener: (event: IpcMainEvent, update: IpcChangeArgsType, persist?: boolean) => void): this;
 

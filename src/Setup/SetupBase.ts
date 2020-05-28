@@ -4,7 +4,7 @@ import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
 import Ajv from 'ajv';
-import { action } from 'mobx';
+import { action, observable } from 'mobx';
 import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
 
@@ -60,13 +60,13 @@ export abstract class SetupBase {
         required: ['id', 'parentId', 'className']
     };
 
-    public static activeSchema: JSONSchema7 = {
+    public static activeSchema: JSONSchema7 = observable( {
         // $schema: 'http://json-schema.org/draft/2019-09/schema#',
         $id: SetupBase.schemaUri,
         definitions: {
             SetupBase: SetupBase.baseSchema
         }
-    };
+    });
 
     public static ajv = (new Ajv()).addSchema(SetupBase.baseSchema, SetupBase.name);
 

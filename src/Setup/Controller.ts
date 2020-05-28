@@ -1,4 +1,4 @@
-import { IMapDidChange, reaction, isObservableProp } from 'mobx';
+import { IMapDidChange, reaction, isObservableProp, toJS, observe, IObjectDidChange } from 'mobx';
 import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote, WebContents } from 'electron';
 import { isEqual } from 'lodash';
@@ -6,7 +6,7 @@ import { SetupBase, PropertyType as ObjectPropertyType } from './SetupBase';
 import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType, SetupLinkInterface } from './SetupInterface';
 import { create } from './SetupFactory';
 import { ObservableSetupBaseMap } from './Container';
-import { IpcChangeArgsType, IpcMapChangeArgs, IpcRenderer, IpcMain, IpcWindow, IpcRegisterArgs, IpcInitArgs } from './IpcInterface';
+import { IpcChangeArgsType, IpcMapChangeArgs, IpcRenderer, IpcMain, IpcWindow, IpcRegisterArgs, IpcInitArgs, IpcAddSchemaArgs } from './IpcInterface';
 /**
  * Import basic required Setup Classes to call SetupFactory.register
  * Currently Setup->Screen->Display->Browser->Rectangle
@@ -594,6 +594,29 @@ class Renderer extends ControllerImpl {
         // console.log(`${this.constructor.name}() ${this.windowId}`);
 
         this.ipc.on('change', (...args) => this.onSetupChanged(...args));
+
+        if (!SetupBase.activeSchema.definitions)
+            throw new Error(`${this.constructor.name} no schema definitions`);
+
+        observe(
+            SetupBase.activeSchema.definitions,
+            this.onSchemaDefinitionChanged
+        );
+    }
+
+    protected onSchemaDefinitionChanged = (change: IObjectDidChange): void => {
+        console.log(`${this.constructor.name}.onSchemaDefinitionChanged(${change.type} ${String(change.name)})`);
+
+        switch (change.type) {
+            case 'add':
+                this.ipc.send('addSchema', {schema: toJS(change.newValue) } );
+                break;
+            case 'update':
+                break;
+            case 'remove':
+                break;
+
+        }
     }
 
     protected loadChildren(item: SetupBase, depth: number): void {
@@ -799,7 +822,7 @@ class MainWindow extends Renderer {
                 this.ipc.send(
                     'init',
                     {
-                        schema: SetupBase.activeSchema,
+                        schema: toJS( SetupBase.activeSchema ),
                         root: root.getDeep()
                     }
                 );
@@ -808,6 +831,7 @@ class MainWindow extends Renderer {
                 console.error(`${this.constructor.name}() getSetup(${Root.name}) caught: ${error}`);
             });
     }
+
 }
 
 
@@ -836,6 +860,8 @@ class Main extends ControllerImpl {
 
         this.ipc.on('change', (...args) => this.onSetupChanged(...args));
         this.ipc.on('register', this.onRegister);
+
+        this.ipc.on('addSchema', this.onAddSchema);
     }
 
     private senderUpdates = new Array<{}>();
@@ -850,11 +876,16 @@ class Main extends ControllerImpl {
         if (!updateChannel)
             throw new Error(`${this.constructor.name}.onSetupChanged(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
 
-        console.log(`${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
+        console.log(
+            `${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
 
         updateChannel.addReceived(update);
 
         super.onSetupChanged(e, update, persist);
+    }
+
+    private onAddSchema = (e: IpcMainEvent, args: IpcAddSchemaArgs): void => {
+        Plugin.add(args.schema);
     }
 
 

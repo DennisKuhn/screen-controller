@@ -80,6 +80,15 @@ export class Browser extends SetupBase {
     static register(): void {
         SetupBase.register(Browser, Browser.schema);
     }
+
+    addPlugin(schema: JSONSchema7 ): void { 
+        const plugin = Plugin.createNew(this.id, schema);
+
+        this.plugins.set(
+            plugin.id,
+            plugin
+        );
+    }
 }
 
 Browser.register();

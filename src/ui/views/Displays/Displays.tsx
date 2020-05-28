@@ -79,8 +79,14 @@ const DisplayContainer = observer(({ displays }: { displays: ObservableSetupBase
 
     return <GridContainer>
         {
-            displays.map(display => display).filter(display => display != null).map((display) => display as Display).map(
-                display => <DisplayCard key={display.id} config={display} specs={electronDisplays[display.id]} />
+            displays.map(display => display)
+                .filter(display => display != null)
+                .map(display => display as Display)
+                .map(display =>
+                    <DisplayCard
+                        key={display.id}
+                        config={display}
+                        specs={electronDisplays[display.id]} />
             )
         }
     </GridContainer>;
@@ -90,12 +96,14 @@ const DisplayContainer = observer(({ displays }: { displays: ObservableSetupBase
 // export default function DisplaysPage(): JSX.Element {
 const DisplaysPage = observer((): JSX.Element => {
     const [displays, setDisplays] = useState(new ObservableSetupBaseMap<Display>());
+    console.log('Fire render');
 
     useEffect(() => {
+        console.log('Fire use effect');
         controller.getSetup('Screen', -1)
             .then(screen => setDisplays((screen as Screen).displays));
     }, []);
-
+    
     return <DisplayContainer displays={displays} />;
 });
 

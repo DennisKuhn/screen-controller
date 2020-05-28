@@ -152,7 +152,8 @@ export class Manager {
 
             setup.scaledBounds = Rectangle.createNew(setup.id, scaled);
         } else if (!isEqual(setup.scaledBounds.simple, scaled)) {
-            if ((setup.scaledBounds.x != scaled.x) && (setup.scaledBounds.y != scaled.y) && (setup.scaledBounds.height != scaled.height) && (setup.scaledBounds.width != scaled.width)) {
+            if ((setup.scaledBounds.x != scaled.x) && (setup.scaledBounds.y != scaled.y)
+                && (setup.scaledBounds.height != scaled.height) && (setup.scaledBounds.width != scaled.width)) {
                 console.log(
                     `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) new scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`, setup.scaledBounds);
 
