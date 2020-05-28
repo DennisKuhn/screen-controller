@@ -81,7 +81,7 @@ export class Browser extends SetupBase {
         SetupBase.register(Browser, Browser.schema);
     }
 
-    addPlugin(schema: JSONSchema7 ): void { 
+    addPlugin = (schema: JSONSchema7 ): void => { 
         const plugin = Plugin.createNew(this.id, schema);
 
         this.plugins.set(

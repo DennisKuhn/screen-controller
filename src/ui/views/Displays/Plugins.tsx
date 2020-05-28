@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
@@ -23,6 +23,7 @@ const useStyles = makeStyles((theme) => ({
         width: 60,
     },
 }));
+
 const getSchemas = (): JSONSchema7Definition[] => {
     if (!SetupBase.activeSchema.definitions)
         throw new Error('Plugins.tsx: Plugins: no SetupBase.activeSchema.definitions');
@@ -37,25 +38,29 @@ const getSchemas = (): JSONSchema7Definition[] => {
     return schemas;
 };
 
+const hasSchemas = (): boolean => {
+    if (!SetupBase.activeSchema.definitions)
+        throw new Error('Plugins.tsx: hasSchemas: no SetupBase.activeSchema.definitions');
 
+    const result = Object.values(SetupBase.activeSchema.definitions)
+        .some(schemaDef =>
+            (schemaDef as JSONSchema7).allOf?.some(pluginRefProspect =>
+                (pluginRefProspect as JSONSchema7).$ref == Plugin.name));
+
+    console.log(`Plugins hasSchemas ${result}`);
+
+    return result;
+};
 
 const Plugins = observer(({ browser }: { browser: Browser }): JSX.Element => {
-    const [schemas, setSchemas] = useState(getSchemas());
-
-    if (schemas.length == 0) {
-        console.log('Plugins no plugin schema -> Manager.loadAll()');
-        Manager.loadAll()
-            .then(
-                (): void => setSchemas(getSchemas())
-            );
-    } else {
+    if (hasSchemas()) {
         console.log('Plugins plugin schemas loaded');
+    } else {
+        console.log('Plugins no plugin schema -> Manager.loadAll()');
+        Manager.loadAll();
     }
 
-    const addPlugin = useCallback((schema: JSONSchema7): void => browser.addPlugin(schema), []);
-    
-    return <PluginsCompnent browser={browser} schemas={schemas} onAdd={addPlugin} />;
-
+    return <PluginsCompnent browser={browser} schemas={getSchemas()} onAdd={browser.addPlugin} />;
 });
 
 const PluginTile = ({ schema, onAdd }: { schema: JSONSchema7; onAdd: (schema: JSONSchema7) => void }): React.ReactElement => (

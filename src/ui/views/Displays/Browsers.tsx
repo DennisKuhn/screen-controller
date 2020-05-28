@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
 // @material-ui/core components
 import Tooltip from '@material-ui/core/Tooltip';
@@ -13,7 +13,6 @@ import FullscreenExit from '@material-ui/icons/FullscreenExit';
 import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
-import controller from '../../../Setup/Controller';
 import { Browser } from '../../../Setup/Application/Browser';
 import { Display } from '../../../Setup/Application/Display';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
@@ -31,16 +30,20 @@ const useStyles = makeStyles((theme) => ({
 const BrowserForm = observer(({ browser }: { browser: Browser }): JSX.Element => {
     let isFullscreen = (browser.relative.x == 0 && browser.relative.y == 0 && browser.relative.width == 1 && browser.relative.height == 1);
 
-    function toggleFullScreen(): void {
-        isFullscreen = !isFullscreen;
 
-        browser.relative = Rectangle.createNew(
-            browser.id,
-            isFullscreen ?
-                { x: 0, y: 0, width: 1, height: 1 } :
-                { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
-        );
-    }
+    const toggleFullScreen = useCallback(
+        (): void => {
+            isFullscreen = !isFullscreen;
+
+            browser.relative = Rectangle.createNew(
+                browser.id,
+                isFullscreen ?
+                    { x: 0, y: 0, width: 1, height: 1 } :
+                    { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
+            );
+        },
+        []
+    );
 
     return (
         <>
@@ -86,15 +89,18 @@ const BrowserItem = observer(({ browser }: { browser: Browser }): JSX.Element =>
 
     const [configVisible, setConfigVisible] = useState(false);
 
-    function toggleConfigVisible(): void {
-        setConfigVisible(!configVisible);
-    }
+    const deleteBrowser = useCallback(
+        (): void => {
+            if (!browser.parent)
+                throw new Error(`Browsers.tsx: BrowserItem.deleteBrowser: ${browser.id} @ ${browser.parentId} parent=${browser.parent}`);
 
-    function deleteBrowser(): void {
-        controller.getSetup(browser.parentId, 0).then(
-            display => (display as Display).browsers.delete(browser.id)
-        );
-    }
+            if (!(browser.parent instanceof Display))
+                throw new Error(`Browsers.tsx: BrowserItem.deleteBrowser: ${browser.id} @ ${browser.parentId} parent is not a Display=${browser.parent.className}`);
+
+            browser.parent.browsers.delete(browser.id);
+        },
+        []
+    );
 
 
     return (
@@ -109,7 +115,7 @@ const BrowserItem = observer(({ browser }: { browser: Browser }): JSX.Element =>
                         >
                             <IconButton
                                 aria-label="Menu"
-                                onClick={toggleConfigVisible}
+                                onClick={(): void => setConfigVisible(!configVisible)}
                             >
                                 {configVisible ? <MenuOpen /> : <Menu />}
                             </IconButton>
@@ -131,9 +137,11 @@ const BrowserItem = observer(({ browser }: { browser: Browser }): JSX.Element =>
                         </Tooltip>
                     </ListItemSecondaryAction>
                 </ListItem>
-                <ListItem style={{ visibility: configVisible? 'visible' : 'hidden'}}>
-                    <Plugins browser={browser} />
-                </ListItem>
+                {configVisible &&
+                    <ListItem>
+                        <Plugins browser={browser} />
+                    </ListItem>
+                }
             </List>
         </ListItem>
     );

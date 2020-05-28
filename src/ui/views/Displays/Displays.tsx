@@ -18,7 +18,6 @@ import CardFooter from '../../components/Card/CardFooter';
 
 import { Screen } from '../../../Setup/Application/Screen';
 import { Display } from '../../../Setup/Application/Display';
-import { Browser } from '../../../Setup/Application/Browser';
 import { remote } from 'electron';
 import Browsers from './Browsers';
 import controller from '../../../Setup/Controller';
