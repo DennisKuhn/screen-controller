@@ -10,8 +10,7 @@ import IconButton from '@material-ui/core/IconButton';
 import AddIcon from '@material-ui/icons/Add';
 
 import { Browser } from '../../../Setup/Application/Browser';
-import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
-import { SetupBase } from '../../../Setup/SetupBase';
+import { JSONSchema7 } from 'json-schema';
 import { makeStyles } from '@material-ui/core/styles';
 import { Plugin } from '../../../Setup/Application/Plugin';
 import { List, ListItem } from '@material-ui/core';
@@ -24,43 +23,16 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-const getSchemas = (): JSONSchema7Definition[] => {
-    if (!SetupBase.activeSchema.definitions)
-        throw new Error('Plugins.tsx: Plugins: no SetupBase.activeSchema.definitions');
-
-    const schemas = Object.values(SetupBase.activeSchema.definitions)
-        .filter(schemaDef => (schemaDef as JSONSchema7)
-            .allOf?.some(pluginRefProspect =>
-                (pluginRefProspect as JSONSchema7).$ref == Plugin.name));
-
-    console.log('Plugins getSchemas', { ...schemas });
-
-    return schemas;
-};
-
-const hasSchemas = (): boolean => {
-    if (!SetupBase.activeSchema.definitions)
-        throw new Error('Plugins.tsx: hasSchemas: no SetupBase.activeSchema.definitions');
-
-    const result = Object.values(SetupBase.activeSchema.definitions)
-        .some(schemaDef =>
-            (schemaDef as JSONSchema7).allOf?.some(pluginRefProspect =>
-                (pluginRefProspect as JSONSchema7).$ref == Plugin.name));
-
-    console.log(`Plugins hasSchemas ${result}`);
-
-    return result;
-};
 
 const Plugins = observer(({ browser }: { browser: Browser }): JSX.Element => {
-    if (hasSchemas()) {
+    if (Plugin.hasPluginSchemas) {
         console.log('Plugins plugin schemas loaded');
     } else {
         console.log('Plugins no plugin schema -> Manager.loadAll()');
         Manager.loadAll();
     }
 
-    return <PluginsCompnent browser={browser} schemas={getSchemas()} onAdd={browser.addPlugin} />;
+    return <PluginsCompnent browser={browser} schemas={Plugin.pluginSchemas} onAdd={browser.addPlugin} />;
 });
 
 const PluginTile = ({ schema, onAdd }: { schema: JSONSchema7; onAdd: (schema: JSONSchema7) => void }): React.ReactElement => (
@@ -77,7 +49,7 @@ const PluginTile = ({ schema, onAdd }: { schema: JSONSchema7; onAdd: (schema: JS
     </>
 );
 
-const PluginsCompnent = ({ browser, schemas, onAdd }: { browser: Browser; schemas: JSONSchema7Definition[]; onAdd: (schema: JSONSchema7) => void }): JSX.Element => {
+const PluginsCompnent = ({ browser, schemas, onAdd }: { browser: Browser; schemas: JSONSchema7[]; onAdd: (schema: JSONSchema7) => void }): JSX.Element => {
     const classes = useStyles();
 
     return (
@@ -86,11 +58,13 @@ const PluginsCompnent = ({ browser, schemas, onAdd }: { browser: Browser; schema
                 <GridList>
                     {
                         schemas.map(
-                            (schemaDef: JSONSchema7Definition) => {
-                                const schema = schemaDef as JSONSchema7;
+                            (schema: JSONSchema7) => {
+                                if (schema.definitions == undefined)
+                                    throw new Error(`Plugins.tsx.PluginsCompnent: ${schema.$ref}, ${schema.$id} has no definitions ${JSON.stringify(schema)}`);
+                                
                                 return (
-                                    <GridListTile key={schema.$id}>
-                                        <PluginTile schema={schema} onAdd={onAdd} />
+                                    <GridListTile key={schema.$ref}>
+                                        <PluginTile schema={schema.definitions[(schema.$ref as string).substr('#/definitions/'.length)] as JSONSchema7} onAdd={onAdd} />
                                     </GridListTile>
                                 );
                             }

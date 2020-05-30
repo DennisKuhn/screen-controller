@@ -452,7 +452,8 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
             switch (update.type) {
                 case 'add':
                 case 'update':
-                    // console.log(`ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = ${update.newValue} newItem=${newItem}`);
+                    // console.log(
+                    //     `ControllerImpl[${this.constructor.name}].addRemoteUpdate(${update.item}.${update.name}, ${update.type}) = ${update.newValue} newItem=${newItem}`);
                     remoteItem[update.name] = update.newValue;
                     break;
                 case 'remove':
@@ -611,7 +612,7 @@ class Renderer extends ControllerImpl {
 
     protected loadChildren(item: SetupBase, depth: number): void {
         if (depth != 0) {
-            for (const [propertyName, value] of Object.entries(item)) {
+            for (const value of Object.values(item)) {
                 if (value instanceof ObservableSetupBaseMap) {
                     // console.log(`${this.constructor.name}.loadChildren(${item.id}, ${depth}): get children in ${propertyName}`);
                     const container = value as ObservableSetupBaseMap<SetupBase>;

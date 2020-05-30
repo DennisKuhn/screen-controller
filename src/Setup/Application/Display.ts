@@ -10,9 +10,7 @@ export class Display extends SetupBase {
         title: 'Display',
         description: 'Represent a monitor containing browsers',
         allOf: [
-            {
-                $ref: SetupBase.name
-            },
+            SetupBase.SCHEMA_REF,
             {
                 properties: {
                     className: { const: Display.name },

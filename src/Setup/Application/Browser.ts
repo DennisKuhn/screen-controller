@@ -15,9 +15,7 @@ export class Browser extends SetupBase {
         title: 'Browser',
         description: 'Container for plugins',
         allOf: [
-            {
-                $ref: SetupBase.name
-            },
+            SetupBase.SCHEMA_REF,
             {
                 properties: {
                     className: { const: Browser.name },

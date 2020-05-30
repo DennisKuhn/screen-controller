@@ -1,10 +1,11 @@
 import { SetupBase } from '../SetupBase';
 import { SetupBaseInterface, SetupItemId, Dictionary } from '../SetupInterface';
 import { Rectangle } from '../Default/Rectangle';
-import { JSONSchema7 } from 'json-schema';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
 import { create } from '../SetupFactory';
 import { extendObservable, observable } from 'mobx';
+import { UiSchema } from '@rjsf/core';
 
 /**
  * Template for plugin setup. Registered under plugin-className
@@ -18,9 +19,7 @@ export class Plugin extends SetupBase implements PluginInterface {
         title: 'Plugin base',
         description: 'Base and wrapper for plugins',
         allOf: [
-            {
-                $ref: SetupBase.name
-            },
+            SetupBase.SCHEMA_REF,
             {
                 properties: {
                     relativeBounds: { $ref: Rectangle.name },
@@ -30,6 +29,12 @@ export class Plugin extends SetupBase implements PluginInterface {
             }
         ]
     }
+
+    public static readonly uiSchema: UiSchema = {
+        ...SetupBase.uiSchema,
+        scaledBounds: { 'ui:widget': 'hidden' },
+        relativeBounds: { ...SetupBase.uiSchema}
+    };
 
     constructor(setup: SetupBaseInterface) {
         super(setup);
@@ -95,6 +100,30 @@ export class Plugin extends SetupBase implements PluginInterface {
         return this;
     }
 
+    static get pluginSchemas(): JSONSchema7[] {
+        if (!SetupBase.activeSchema.definitions)
+            throw new Error('Plugin.schemas: no SetupBase.activeSchema.definitions');
+
+        const schemas = Object.entries(SetupBase.schemas)
+            .filter(([id,]) => Plugin.pluginSchemaIds.includes(id))
+            .map(([, schema]) => schema);
+
+        console.log(`Plugin.pluginSchemas [${Plugin.pluginSchemaIds.length}]`, { ...schemas });
+
+        return schemas;
+    }
+
+    static get hasPluginSchemas(): boolean {
+        if (!SetupBase.activeSchema.definitions)
+            throw new Error('Plugin.hasSchemas: no SetupBase.activeSchema.definitions');
+
+        const result = Plugin.pluginSchemaIds.length > 0;
+
+        console.log(`Plugin.hasSchemas ${result}/${Plugin.pluginSchemaIds.length}`);
+
+        return result;
+    }
+
 
     static storagePrefix = 'PluginSchema-';
     static storageListKey = Plugin.storagePrefix + 'List';
@@ -132,10 +161,7 @@ export class Plugin extends SetupBase implements PluginInterface {
                     const schemaString = localStorage.getItem(key);
 
                     if (schemaString) {
-                        SetupBase.register(
-                            Plugin,
-                            JSON.parse(schemaString)
-                        );
+                        Plugin.add(JSON.parse(schemaString));
                     } else {
                         console.error(`Plugin.loadAllSchemas() null for ${key}`, storedSchemaKeysString);
                     }
@@ -148,11 +174,21 @@ export class Plugin extends SetupBase implements PluginInterface {
         }
     }
 
+    public static readonly SCHEMA_REF_VALUE = Plugin.name;
+
+    private static pluginSchemaIds: string[] = [];
+
     static add(schema: JSONSchema7): void {
-        if (!schema.allOf?.some(pluginRefProspect => (pluginRefProspect as JSONSchema7).$ref == Plugin.name))
-            throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.name}`);
+        if (!schema.$id) throw new Error(`Plugin.add() no $id: ${JSON.stringify(schema)}`);
+
+        if (!schema.allOf?.some(pluginRefProspect =>
+            ((pluginRefProspect as JSONSchema7).$ref == Plugin.SCHEMA_REF_VALUE)))
+            throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}`);
 
         SetupBase.register(Plugin, schema);
+
+        Plugin.pluginSchemaIds.includes(schema.$id) || Plugin.pluginSchemaIds.push(schema.$id);
+            
 
         if (process.type == 'renderer') {
             Plugin.persistSchema(schema);

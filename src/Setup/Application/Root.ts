@@ -9,9 +9,7 @@ export class Root extends SetupBase {
         title: 'Root',
         description: 'Root element for setup',
         allOf: [
-            {
-                $ref: SetupBase.name
-            },
+            SetupBase.SCHEMA_REF,
             {
                 properties: {
                     id: { const: Root.name },

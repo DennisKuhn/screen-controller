@@ -3,10 +3,11 @@ import { JSONSchema7 } from 'json-schema';
 import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
-import Ajv from 'ajv';
-import { action, observable } from 'mobx';
+import Ajv, { ValidateFunction } from 'ajv';
+import { action, observable, toJS } from 'mobx';
 import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
+import { UiSchema } from '@rjsf/core';
 
 switch (process.type) {
     case 'browser': // Main
@@ -36,11 +37,16 @@ export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
 }
 
-export abstract class SetupBase {
+export abstract class SetupBase {    
     readonly id: SetupItemId;
     readonly parentId: SetupItemId;
     readonly className: string;
+    readonly schema: JSONSchema7;
+    readonly validator: ValidateFunction;
+
     _parent?: SetupBase;
+
+    private static notSerialisedProperties = ['schema', 'validator', '_parent', 'parent'];
 
     static readonly schemaUri = 'https://github.com/maoriora/screen-controller/schemas/SetupSchema.json#';
 
@@ -69,8 +75,20 @@ export abstract class SetupBase {
         }
     });
 
-    public static ajv = (new Ajv()).addSchema(SetupBase.baseSchema, SetupBase.name);
 
+    public static readonly uiSchema: UiSchema = {
+        id: { 'ui:widget': 'hidden' },
+        parentId: { 'ui:widget': 'hidden' },
+        className: { 'ui:widget': 'hidden' },
+        
+    };
+
+    public static ajv = new Ajv();
+
+    public static readonly SCHEMA_REF = { $ref: SetupBase.name};
+
+    protected static schemas: { [key: string]: JSONSchema7 } = {};
+    private static validators: { [key: string]: ValidateFunction } = {};
 
     protected static addSchema(schema: JSONSchema7): void {
         if (!SetupBase.activeSchema.definitions) throw new Error(`SetupBase.addSchema(${schema.$id}) no definitions`);
@@ -83,7 +101,10 @@ export abstract class SetupBase {
             // console.log(`SetupBase.addSchema(${schema.$id}) @${Object.keys(SetupBase.activeSchema.definitions).length}`);
             SetupBase.activeSchema.definitions[schema.$id] = schema;
 
-            SetupBase.ajv.addSchema(schema, schema.$id);
+            SetupBase.schemas[schema.$id] = {
+                definitions: SetupBase.activeSchema.definitions,
+                $ref: '#/definitions/' + schema.$id
+            };
         }
     }
 
@@ -94,16 +115,31 @@ export abstract class SetupBase {
         if (!SetupBase.activeSchema.definitions)
             throw new Error(`SetupBase[${this.constructor.name}] no definitions in activeSchema: ${JSON.stringify(SetupBase.activeSchema)}`);
 
+        if (!(source.className in SetupBase.schemas))
+            throw new Error(`SetupBase[${this.constructor.name}] schema for ${source.className} in schemas: ${JSON.stringify(SetupBase.schemas)}`);
+
         if (this.constructor.name != source.className)
             if (this.constructor.name == 'Plugin') {
                 // console.log(`SetupBase[${this.constructor.name}] for ${source.className}: ${JSON.stringify(source)}`);
             } else
                 throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
 
-        if (SetupBase.ajv.validate(source.className, source) != true) {
+        this.schema = SetupBase.schemas[source.className];
+        
+        if (!(source.className in SetupBase.validators)) {
+            console.log(`SetupBase[${this.constructor.name}] create validator for ${source.className}`, toJS( this.schema, {recurseEverything: true}));
+
+            SetupBase.validators[source.className] = SetupBase.ajv.compile(this.schema);
+        } else {
+            // console.log(`SetupBase[${this.constructor.name}] validator exists for ${source.className}`);
+        }
+        
+        this.validator = SetupBase.validators[source.className];
+
+        if (this.validator(source) != true) {
             throw new Error(
                 `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
-                `${SetupBase.ajv.errors?.map(
+                `${this.validator.errors?.map(
                     error => error.schemaPath + ' // ' + error.dataPath + ' @' + error.propertyName + ': ' + error.message + ':' + JSON.stringify(error.params)
                 ).join(';\n')}\n` +
                 `source:\n${JSON.stringify}`);
@@ -114,6 +150,7 @@ export abstract class SetupBase {
         this.parentId = source.parentId;
         this.className = source.className;
         this._parent = SetupBase.instances[this.id];
+
         SetupBase.instances[this.id] = this;
     }
 
@@ -155,6 +192,8 @@ export abstract class SetupBase {
         for (const propertyName in this) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
+            } else if (SetupBase.notSerialisedProperties.includes( propertyName ) ) {
+                console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName}`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
@@ -207,22 +246,24 @@ export abstract class SetupBase {
 
         for (const propertyName in this) {
             if (propertyName in shallow) {
-                // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
+                // console.log(`SetupBase[${this.constructor.name}].getPlain: ${propertyName} exists`);
+            } else if (SetupBase.notSerialisedProperties.includes(propertyName)) {
+                console.log(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName}`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
                     case 'boolean':
                     case 'number':
                     case 'string':
-                        // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of type ${typeof value}`);
+                        // console.log(`SetupBase[${this.constructor.name}].getPlain: copy ${propertyName} of type ${typeof value}`);
                         shallow[propertyName as string] = value;
                         break;
                     case 'object':
                         if (value instanceof SetupBase) {
-                            // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of SetupBase`);
+                            // console.log(`SetupBase[${this.constructor.name}].getPlain: copy ${propertyName} of SetupBase`);
                             shallow[propertyName as string] = value.getPlain(depth);
                         } else if (value instanceof ObservableSetupBaseMap) {
-                            // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of ObservableSetupBaseMap`);
+                            // console.log(`SetupBase[${this.constructor.name}].getPlain: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
                             for (const [id, child] of value.entries()) {
                                 if (depth == 0) {

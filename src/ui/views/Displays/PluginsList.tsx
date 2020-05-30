@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, MutableRefObject } from 'react';
 
 import { observer } from 'mobx-react-lite';
-import { ObservableSetupBaseMap } from '../../../Setup/Container';
 
 import {
     makeStyles,
@@ -21,16 +20,25 @@ import FullscreenExit from '@material-ui/icons/FullscreenExit';
 import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
+import Form from '@rjsf/material-ui';
+
 import { Plugin } from '../../../Setup/Application/Plugin';
 import controller from '../../../Setup/Controller';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
 import { PercentField } from './PercentField';
 import { Browser } from '../../../Setup/Application/Browser';
+import { ObservableSetupBaseMap } from '../../../Setup/Container';
+import { JSONSchema7 } from 'json-schema';
+import { UiSchema } from '@rjsf/core';
+import { SetupBase } from '../../../Setup/SetupBase';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((/*theme*/) => ({
     coordField: {
         width: 60,
     },
+    hiddenField: {
+        display: 'none'
+    }
 }));
 
 const PluginForm = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
@@ -87,9 +95,75 @@ const PluginForm = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
     );
 });
 
+const update = (target: SetupBase, updated: SetupBase): void => {
+    console.log(`Update ${target.id}`);
+    for (const [property, value] of Object.entries( updated )) {
+        if (target[property] instanceof SetupBase) {
+            update(target[property], value);
+        } else if (value instanceof Object) {
+            console.log(`Update  ${target.id} ignore ${property}`);
+        } else if (value != target[property]) {
+            console.log(`Update  ${target.id} ${property} == ${target[property]} = ${value}`);
+
+            target[property] = value;
+        }
+    }
+};
+
+const fixRefs = (item: JSONSchema7): JSONSchema7 => {
+
+    if (item.$ref) {
+        if (item.$ref.startsWith('#/definitions/')) {
+            console.log(`${module.id}.fixRefs: skip ${item.$id} = ${item.$ref}`);
+        } else {
+            console.log(`${module.id}.fixRefs: ${item.$id} ${item.$ref} => ${'#/definitions/' + item.$ref}`);
+            item.$ref = '#/definitions/' + item.$ref;
+        }
+    }
+    for (const child of Object.values(item)) {
+        if (child instanceof Object) {
+            fixRefs(child);
+        }
+    }
+
+    return item;
+};
+
+const HiddenFieldTemplate = ({ className }: { className: string }): JSX.Element => {
+    // const { id, classNames, label, help, required, description, errors, children } = props;
+    const ref = useRef<HTMLSpanElement>(null);
+    useEffect(() => {
+        if (ref.current && ref.current.parentElement) {
+            ref.current.parentElement.classList.add(className);
+        }
+    }, [ref]);
+    return (
+        <span ref={ref} />
+    );
+};
+
+const fixUiSchema = (item: UiSchema, classes: string): UiSchema => {
+
+    if (item['ui:widget'] == 'hidden') {
+        delete item['ui:widget'];
+        item['ui:FieldTemplate'] = (props): React.ReactElement => <HiddenFieldTemplate {...props} className={classes} />;
+        item['classNames'] = classes;
+    }
+
+    for (const value of Object.values(item)) {
+        if (value instanceof Object) {
+            fixUiSchema(value, classes);
+        }
+    }
+
+    console.log(`fixUiSchema: ${classes}`, { ...item });
+
+    return item;
+};
 
 const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
     const [configVisible, setConfigVisible] = useState(false);
+    const classes = useStyles();
 
     function toggleConfigVisible(): void {
         setConfigVisible(!configVisible);
@@ -101,38 +175,51 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
         );
     }
 
-
     return (
         <ListItem>
-            <ListItemIcon>
-                <Tooltip
-                    id={'tooltip-' + plugin.id + '-config'}
-                    title="Show config"
-                    placement="top"
-                >
-                    <IconButton
-                        aria-label="Menu"
-                        onClick={toggleConfigVisible}
-                    >
-                        {configVisible ? <MenuOpen /> : <Menu />}
-                    </IconButton>
-                </Tooltip>
-            </ListItemIcon>
-            <PluginForm plugin={plugin} />
-            <ListItemSecondaryAction>
-                <Tooltip
-                    id={'tooltip-' + plugin.id + '-delete'}
-                    title="Remove"
-                    placement="top"
-                >
-                    <IconButton
-                        aria-label="Delete"
-                        onClick={deletePlugin}
-                    >
-                        <Delete />
-                    </IconButton>
-                </Tooltip>
-            </ListItemSecondaryAction>
+            <List>
+                <ListItem>
+                    <ListItemIcon>
+                        <Tooltip
+                            id={'tooltip-' + plugin.id + '-config'}
+                            title="Show config"
+                            placement="top"
+                        >
+                            <IconButton
+                                aria-label="Menu"
+                                onClick={toggleConfigVisible}
+                            >
+                                {configVisible ? <MenuOpen /> : <Menu />}
+                            </IconButton>
+                        </Tooltip>
+                    </ListItemIcon>
+                    <PluginForm plugin={plugin} />
+                    <ListItemSecondaryAction>
+                        <Tooltip
+                            id={'tooltip-' + plugin.id + '-delete'}
+                            title="Remove"
+                            placement="top"
+                        >
+                            <IconButton
+                                aria-label="Delete"
+                                onClick={deletePlugin}
+                            >
+                                <Delete />
+                            </IconButton>
+                        </Tooltip>
+                    </ListItemSecondaryAction>
+                </ListItem>
+                {configVisible &&
+                    <ListItem>
+                    <Form
+                        onChange={(e): void => update(plugin, e.formData)}
+                        schema={fixRefs(plugin.schema)}
+                        formData={plugin}
+                        uiSchema={fixUiSchema(Plugin.uiSchema, classes.hiddenField)}
+                    />
+                    </ListItem>
+                }
+            </List>
         </ListItem>
     );
 });

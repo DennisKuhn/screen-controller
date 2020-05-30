@@ -8,9 +8,7 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
     static readonly schema: JSONSchema7 = {
         $id: Rectangle.name,
         allOf: [
-            {
-                $ref: SetupBase.name
-            },
+            SetupBase.SCHEMA_REF,
             {
                 properties: {
                     className: { const: Rectangle.name },
