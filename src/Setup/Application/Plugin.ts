@@ -6,12 +6,13 @@ import { PluginInterface } from './PluginInterface';
 import { create } from '../SetupFactory';
 import { extendObservable, observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
+import { RelativeRectangle } from '../Default/RelativeRectangle';
 
 /**
  * Template for plugin setup. Registered under plugin-className
  */
 export class Plugin extends SetupBase implements PluginInterface {
-    @observable relativeBounds: Rectangle;
+    @observable relativeBounds: RelativeRectangle;
     @observable scaledBounds?: Rectangle;
 
     private static readonly schema: JSONSchema7 = {
@@ -22,7 +23,7 @@ export class Plugin extends SetupBase implements PluginInterface {
             SetupBase.SCHEMA_REF,
             {
                 properties: {
-                    relativeBounds: { $ref: Rectangle.name },
+                    relativeBounds: { $ref: RelativeRectangle.name },
                     scaledBounds: { $ref: Rectangle.name }
                 },
                 required: ['relativeBounds']
@@ -39,7 +40,7 @@ export class Plugin extends SetupBase implements PluginInterface {
     constructor(setup: SetupBaseInterface) {
         super(setup);
 
-        this.relativeBounds = new Rectangle(setup['relativeBounds']);
+        this.relativeBounds = new RelativeRectangle(setup['relativeBounds']);
 
         if (setup['scaledBounds']) {
             this.scaledBounds = new Rectangle(setup['scaledBounds']);
@@ -200,8 +201,9 @@ export class Plugin extends SetupBase implements PluginInterface {
         if (!schema.$id) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.$id`);
         if (!schema.allOf) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.allOf`);
 
-        const newID = SetupBase.getNewId(schema.$id);
+        const className = schema.$id;
 
+        const baseSetup = SetupBase.createNewInterface(className, parentId);
         const defaultSetup = {};
 
         for (const entry of schema.allOf) {
@@ -221,18 +223,13 @@ export class Plugin extends SetupBase implements PluginInterface {
 
         const plain: SetupBaseInterface = {
             ...defaultSetup,
-            id: newID,
-            parentId: parentId,
-            className: schema.$id,
-            relativeBounds: {
-                id: SetupBase.getNewId(Rectangle.name),
-                className: Rectangle.name,
-                parentId: newID,
+            ...baseSetup,
+            relativeBounds: RelativeRectangle.newInterface(baseSetup.id, {
                 x: 0,
                 y: 0,
                 width: 1,
                 height: 1
-            } as SetupBaseInterface
+            })
         } as SetupBaseInterface;
 
         // console.log(`Plugin.createNew(${parentId}, ${schema.$id})`, { ...plain });

@@ -10,6 +10,8 @@ export interface SetupBaseInterface {
     id: SetupItemId;
     parentId: SetupItemId;
     className: string;
+    /** Displayname */
+    name: string;
 
     //@todo Ensured sub interface only use known types,
     // creates problem when used by a class as implements

@@ -709,7 +709,7 @@ class Renderer extends ControllerImpl {
                 console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
                 this.persist({ item: item, type: 'add', name: 'id', newValue: item.id });
             } else if (id == Screen.name) {
-                item = Screen.createNewBlank();
+                item = Screen.createNewBlank(Root.name);
                 console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
                 this.persist({ item: item, type: 'add', name: 'id', newValue: item.id });
             } else

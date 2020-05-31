@@ -5,6 +5,8 @@ import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
 
 export class Rectangle extends SetupBase implements SimpleRectangle, RectangleInterface {
+    public static readonly SCHEMA_REF = { $ref: SetupBase.name };
+
     static readonly schema: JSONSchema7 = {
         $id: Rectangle.name,
         allOf: [
@@ -27,8 +29,6 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
     @observable width: number;
     @observable height: number;
 
-    className: 'Rectangle' = 'Rectangle';
-
     constructor(source: SetupBaseInterface) {
         super(source);
 
@@ -49,16 +49,12 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
         };
     }
 
-    static createNew(parentId: SetupItemId, source: SimpleRectangle): Rectangle {
-        return new Rectangle(
-            {
-                id: SetupBase.getNewId(Rectangle.name),
-                parentId: parentId,
-                className: Rectangle.name,
-                ...source
-            }
-        );
-    }
+    static newInterface = (parentId: SetupItemId, source: SimpleRectangle): SetupBaseInterface => ({
+        ...SetupBase.createNewInterface(Rectangle.name, parentId),
+        ...source
+    });
+
+    static createNew = (parentId: SetupItemId, source: SimpleRectangle): Rectangle => new Rectangle(Rectangle.newInterface(parentId, source));
 
     static register(): void {
         SetupBase.register(Rectangle, Rectangle.schema);

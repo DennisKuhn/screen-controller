@@ -30,16 +30,12 @@ export class Root extends SetupBase {
         this.screen = new Screen(source['screen']);
     }
 
-    static createNewBlank(): Root {
-        return new Root(
-            {
-                id: Root.name,
-                parentId: Root.name,
-                className: Root.name,
-                screen: { id: Screen.name, parentId: Root.name, className: Screen.name, displays: {} }
-            } as SetupBaseInterface
-        );
-    }
+    static createNewBlank = (): Root => new Root(
+        {
+            ...SetupBase.createNewInterface(Root.name, Root.name, Root.name),
+            screen: Screen.newInterface(Root.name)
+        } as SetupBaseInterface
+    );
 
     static register(): void {
         SetupBase.register(Root, Root.schema);

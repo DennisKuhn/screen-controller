@@ -6,6 +6,7 @@ import { SetupBase } from '../SetupBase';
 import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
+import { RelativeRectangle } from '../Default/RelativeRectangle';
 
 
 export class Browser extends SetupBase {
@@ -19,7 +20,7 @@ export class Browser extends SetupBase {
             {
                 properties: {
                     className: { const: Browser.name },
-                    relative: { $ref: Rectangle.name },
+                    relative: { $ref: RelativeRectangle.name },
                     scaled: { $ref: Rectangle.name },
                     device: { $ref: Rectangle.name },
                     plugins: {
@@ -37,7 +38,7 @@ export class Browser extends SetupBase {
         ]
     };
 
-    @observable relative: Rectangle;
+    @observable relative: RelativeRectangle;
     @observable scaled?: Rectangle;
     @observable device?: Rectangle;
 
@@ -46,7 +47,7 @@ export class Browser extends SetupBase {
     constructor(source: SetupBaseInterface) {
         super(source);
         
-        this.relative = new Rectangle(source['relative']);
+        this.relative = new RelativeRectangle(source['relative']);
         if (source['scaled']) {
             this.scaled = new Rectangle(source['scaled']);
         }
@@ -58,19 +59,13 @@ export class Browser extends SetupBase {
 
 
     static createNew(parentId: SetupItemId, relative: SimpleRectangle): Browser {
-        const newID = SetupBase.getNewId(Browser.name);
+        const newConfig = SetupBase.createNewInterface(Browser.name, parentId);
+
         return new Browser( 
             {
-                id: newID,
-                parentId: parentId,
-                className: Browser.name,
+                ...newConfig,
                 plugins: {},
-                relative: {
-                    id: SetupBase.getNewId(Rectangle.name),
-                    className: Rectangle.name,
-                    parentId: newID,
-                    ...relative
-                } as SetupBaseInterface
+                relative: RelativeRectangle.newInterface(newConfig.id, relative)
             } as SetupBaseInterface
         );
     }

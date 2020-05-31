@@ -44,7 +44,7 @@ export abstract class SetupBase {
     readonly schema: JSONSchema7;
     readonly validator: ValidateFunction;
 
-    _parent?: SetupBase;
+    @observable name: string;
 
     private static notSerialisedProperties = ['schema', 'validator', '_parent', 'parent'];
 
@@ -54,15 +54,10 @@ export abstract class SetupBase {
         $id: SetupBase.name,
         type: 'object',
         properties: {
-            id: {
-                type: 'string'
-            },
-            parentId: {
-                type: 'string'
-            },
-            className: {
-                type: 'string'
-            }
+            id: { type: 'string' },
+            parentId: { type: 'string' },
+            className: { type: 'string' },
+            name: { type: 'string' }
         },
         required: ['id', 'parentId', 'className']
     };
@@ -79,8 +74,7 @@ export abstract class SetupBase {
     public static readonly uiSchema: UiSchema = {
         id: { 'ui:widget': 'hidden' },
         parentId: { 'ui:widget': 'hidden' },
-        className: { 'ui:widget': 'hidden' },
-        
+        className: { 'ui:widget': 'hidden' },        
     };
 
     public static ajv = new Ajv();
@@ -98,7 +92,7 @@ export abstract class SetupBase {
         if (schema.$id in SetupBase.activeSchema.definitions) {
             // console.log(`SetupBase.addSchema(${schema.$id}) already registered`, SetupBase.activeSchema.definitions[schema.$id], schema);
         } else {
-            // console.log(`SetupBase.addSchema(${schema.$id}) @${Object.keys(SetupBase.activeSchema.definitions).length}`);
+            console.log(`SetupBase.addSchema(${schema.$id}) @${Object.keys(SetupBase.activeSchema.definitions).length}`);
             SetupBase.activeSchema.definitions[schema.$id] = schema;
 
             SetupBase.schemas[schema.$id] = {
@@ -136,6 +130,9 @@ export abstract class SetupBase {
         
         this.validator = SetupBase.validators[source.className];
 
+        //TODO remove:> source.name = source.name ?? source.id;
+        source.name = source.name ?? source.id;
+
         if (this.validator(source) != true) {
             throw new Error(
                 `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
@@ -149,14 +146,13 @@ export abstract class SetupBase {
         this.id = source.id;
         this.parentId = source.parentId;
         this.className = source.className;
-        this._parent = SetupBase.instances[this.id];
-
+        this.name = source.name;
         SetupBase.instances[this.id] = this;
     }
 
 
     get parent(): (SetupBase | undefined) {
-        return SetupBase.instances[this.id];
+        return SetupBase.instances[this.parentId];
     }
 
 
@@ -187,7 +183,7 @@ export abstract class SetupBase {
      * value changes (like null to object) are ignored
      */
     getShallow(): SetupBaseInterface {
-        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, className: this.className };
+        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, className: this.className, name: this.name };
 
         for (const propertyName in this) {
             if (propertyName in shallow) {
@@ -242,7 +238,7 @@ export abstract class SetupBase {
     }
 
     getPlain(depth: number): SetupBaseInterface {
-        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, className: this.className };
+        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, className: this.className, name: this.name };
 
         for (const propertyName in this) {
             if (propertyName in shallow) {
@@ -319,7 +315,16 @@ export abstract class SetupBase {
         }
     }
 
+    protected static createNewInterface<SetupClass extends SetupBase>(className: string, parentId: SetupItemId, id?: SetupItemId): SetupBaseInterface {
+        id = id == undefined ? SetupBase.getNewId(className) : id;
 
+        return {
+            id,
+            parentId,
+            className,
+            name: id,
+        };     
+    }
 
     private static instances: { [index: string]: SetupBase } = {};
 

@@ -233,7 +233,7 @@ const RectangleObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element =
                             (content.props.uiSchema == undefined)
                             || (content.props.uiSchema['ui:FieldTemplate'] != HiddenFieldTemplate))
                         .map(element => {
-                            // console.log(`${module.id}: RectangleObjectTemplate[${title}] ${element.name}`, element, { ...element.content });
+                            console.log(`${module.id}: RectangleObjectTemplate[${title}] ${element.name}`, element, { ...element.content });
                             // return element.content;
                             return (
                                 <GridListTile key={`Tile-${element.content.key}`}>
@@ -355,6 +355,9 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
                 {configVisible &&
                     <ListItem>
                         <Form
+                            idPrefix={plugin.id}
+                            liveValidate={true}
+                            noHtml5Validate={true}
                             schema={fixRefs(plugin.schema)}
                             formData={plugin.getDeep()}
                             uiSchema={fixUiSchema(Plugin.uiSchema, plugin, classes.hiddenField)}

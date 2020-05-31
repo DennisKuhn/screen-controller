@@ -1,6 +1,6 @@
 import { Display } from './Display';
 import { SetupBase } from '../SetupBase';
-import { SetupBaseInterface } from '../SetupInterface';
+import { SetupBaseInterface, SetupItemId } from '../SetupInterface';
 import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
 
@@ -39,15 +39,16 @@ export class Screen extends SetupBase {
         this.displays = SetupBase.createMap<Display>(source['displays']);
     }
 
-    static createNewBlank(): Screen {
-        return new Screen (
-            {
-                id: Screen.name,
-                parentId: 'Root',
-                className: Screen.name,
-                displays: {}
-            } as SetupBaseInterface );
-    }
+    static newInterface = (parentId: SetupItemId): SetupBaseInterface => ({
+        ...SetupBase.createNewInterface(Screen.name, parentId, Screen.name),
+        displays: {}
+    } as SetupBaseInterface);
+
+
+    static createNewBlank = (parentId: SetupItemId): Screen =>
+        new Screen(
+            Screen.newInterface(parentId)
+        );
 
     static register(): void {
         SetupBase.register(Screen, Screen.schema);

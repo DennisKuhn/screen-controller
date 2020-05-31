@@ -52,12 +52,10 @@ export class Display extends SetupBase {
         );
     }
 
-    static createNew(displayId: SetupItemId): Display {
+    static createNew(displayId: SetupItemId, parentId: SetupItemId): Display {
         return new Display(
             {
-                id: displayId,
-                parentId: 'Screen',
-                className: Display.name,
+                ...SetupBase.createNewInterface(Display.name, parentId, displayId ),
                 browsers: {}
             } as SetupBaseInterface
         );
