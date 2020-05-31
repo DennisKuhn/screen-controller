@@ -592,6 +592,8 @@ class Renderer extends ControllerImpl {
             SetupBase.activeSchema.definitions,
             this.onSchemaDefinitionChanged
         );
+
+        
     }
 
     protected onSchemaDefinitionChanged = (change: IObjectDidChange): void => {
@@ -856,7 +858,7 @@ class Main extends ControllerImpl {
 
     private senderUpdates = new Array<{}>();
 
-    private updateChannels: UpdateChannel[] = new Array<UpdateChannel>();
+    private updateChannels = new Array<UpdateChannel | undefined>();
 
 
     async onSetupChanged(e: Event, update: IpcChangeArgsType, persist?: boolean): Promise<void> {
@@ -884,6 +886,22 @@ class Main extends ControllerImpl {
         this.register(e.sender, args);
     }
 
+    private unRegister = (channelId: number): void => {
+
+        this.changeListeners
+            .filter(listener => listener.senderId == channelId)
+            .forEach(listener => {
+                console.log(`${this.constructor.name}.unRegister(${channelId}): ${listener.itemId},${listener.depth} disposer: ${listener.disposers.length}`);
+                listener.disposers.forEach(disposer => disposer());
+                this.changeListeners.splice(
+                    this.changeListeners.indexOf(listener)
+                );
+            });
+        
+
+        this.updateChannels[channelId] = undefined;
+    }
+
     private register = (target: WebContents, { itemId, depth }: IpcRegisterArgs): void => {
         const senderId = target.id;
 
@@ -896,11 +914,12 @@ class Main extends ControllerImpl {
 
 
         if (this.updateChannels[senderId] == undefined) {
-            // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
-            //     `(senderId=${senderId}, ${itemId}, d=${depth}) create updateChannel`);
-            const sender = target;
+            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+                `(senderId=${senderId}, ${itemId}, d=${depth}) create updateChannel`);
 
-            this.updateChannels[senderId] = new UpdateChannel(sender);
+            this.updateChannels[senderId] = new UpdateChannel(target);
+            target.once('destroyed', () => this.unRegister(senderId));
+
         } else {
             // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
             //     `(senderId=${senderId}, ${itemId}, d=${depth}) updateChannel exists`);
@@ -1016,6 +1035,12 @@ class Main extends ControllerImpl {
             throw new Error(
                 `${this.constructor.name}.onChangeItemChanged(${change.name}, ${change.type} ): Invalid object: ${JSON.stringify(item)}`);
 
+        const channel = this.updateChannels[listener.senderId];
+
+        if (channel == undefined ) {
+            console.error(`${this.constructor.name}.onChangeItemChanged(${change.name}, ${change.type} ): no channel for ${listener.senderId}`);
+            return;
+        }
         const map = (change as LocalMapArgs).map;
         let persist = false;
 
@@ -1031,7 +1056,7 @@ class Main extends ControllerImpl {
             const mapChange = change as LocalMapChangeArgsType;
             switch (mapChange.type) {
                 case 'add':
-                    this.updateChannels[listener.senderId].send(
+                    channel.send(
                         'change',
                         {
                             item: item.id,
@@ -1044,7 +1069,7 @@ class Main extends ControllerImpl {
                     );
                     break;
                 case 'update':
-                    this.updateChannels[listener.senderId].send(
+                    channel.send(
                         'change',
                         {
                             item: item.id,
@@ -1057,7 +1082,7 @@ class Main extends ControllerImpl {
                     );
                     break;
                 case 'delete':
-                    this.updateChannels[listener.senderId].send(
+                    channel.send(
                         'change',
                         {
                             item: item.id,
@@ -1073,7 +1098,7 @@ class Main extends ControllerImpl {
             const itemChange = change as LocalItemChangeArgsType;
             switch (itemChange.type) {
                 case 'add':
-                    this.updateChannels[listener.senderId].send(
+                    channel.send(
                         'change',
                         {
                             item: item.id,
@@ -1085,7 +1110,7 @@ class Main extends ControllerImpl {
                     );
                     break;
                 case 'update':
-                    this.updateChannels[listener.senderId].send(
+                    channel.send(
                         'change',
                         {
                             item: item.id,
@@ -1097,7 +1122,7 @@ class Main extends ControllerImpl {
                     );
                     break;
                 case 'remove':
-                    this.updateChannels[listener.senderId].send(
+                    channel.send(
                         'change',
                         {
                             item: item.id,
@@ -1108,7 +1133,6 @@ class Main extends ControllerImpl {
                     );
                     break;
             }
-
         }
 
         // this.updateChannels[listener.senderId].send(

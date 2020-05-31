@@ -4,7 +4,7 @@ import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
 import Ajv, { ValidateFunction } from 'ajv';
-import { action, observable, toJS } from 'mobx';
+import { action, observable } from 'mobx';
 import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
@@ -127,7 +127,7 @@ export abstract class SetupBase {
         this.schema = SetupBase.schemas[source.className];
         
         if (!(source.className in SetupBase.validators)) {
-            console.log(`SetupBase[${this.constructor.name}] create validator for ${source.className}`, toJS( this.schema, {recurseEverything: true}));
+            console.log(`SetupBase[${this.constructor.name}] create validator for ${source.className}` /*, toJS( this.schema, {recurseEverything: true})*/);
 
             SetupBase.validators[source.className] = SetupBase.ajv.compile(this.schema);
         } else {
@@ -193,7 +193,7 @@ export abstract class SetupBase {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
             } else if (SetupBase.notSerialisedProperties.includes( propertyName ) ) {
-                console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName}`);
+                // console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName}`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
@@ -219,7 +219,7 @@ export abstract class SetupBase {
                         break;
                     case 'function':
                     case 'symbol':
-                        console.warn(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        // console.warn(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'undefined':
                         // console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
@@ -248,7 +248,7 @@ export abstract class SetupBase {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getPlain: ${propertyName} exists`);
             } else if (SetupBase.notSerialisedProperties.includes(propertyName)) {
-                console.log(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName}`);
+                // console.log(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName}`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
@@ -278,7 +278,7 @@ export abstract class SetupBase {
                         break;
                     case 'function':
                     case 'symbol':
-                        console.warn(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName} of type ${typeof value}`);
+                        // console.warn(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'undefined':
                         // console.log(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName} of type ${typeof value}`);

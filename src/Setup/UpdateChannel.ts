@@ -1,6 +1,5 @@
 import { IpcWindow, IpcChangeArgs, IpcMapChangeArgs, IpcChangeArgsType } from './IpcInterface';
 import { isEqual } from 'lodash';
-import { SetupBase } from './SetupBase';
 import { Observable, Subscriber } from 'rxjs';
 import { distinctUntilChanged } from 'rxjs/operators';
 
@@ -15,7 +14,7 @@ export class UpdateChannel {
     private observableSend: Observable<IpcSend>;
     private sendSubscriber: Subscriber<IpcSend> | undefined;
 
-    constructor(private ipc: IpcWindow) {
+    constructor(public ipc: IpcWindow) {
         this.observableSend = new Observable(
             (subscriber) => this.sendSubscriber = subscriber
         );
@@ -28,6 +27,7 @@ export class UpdateChannel {
             );
     }
 
+    public onError: ((source: UpdateChannel) => void) | undefined;
 
 
     static updateKey = (itemID: string, name: string, map?: string): string => `${itemID}.${map ? map + '.' : ''}${name}`;
@@ -60,10 +60,6 @@ export class UpdateChannel {
         const update = this.received[updateKey];
         let skipChange = false;
 
-        // console.log(
-        //     `${this.constructor.name}.onChangeItemChanged([${listener.senderId}, ${listener.itemId}, ${listener.depth}]` +
-        //     ` @ ${item.id}.${map}.${change.name}, ${change.type}, ${persist}) = ${change['newValue']}`);
-
         if (hasUpdate) {
             skipChange = isEqual(update, change['newValue']);
 
@@ -72,14 +68,27 @@ export class UpdateChannel {
             //     ` @ ${item}.${map}.${change.name}, ${change.type}, ${persist}) ${skipChange ? 'skip receivd' : 'send newer'} [${updateKey}]`, /* change['newValue'] */
             // );
             delete this.received[updateKey];
-        } else
-            // console.log(
-            //     `${this.constructor.name}.sendNow([${this.ipc.id}]` +
-            //     ` @ ${item}.${map}.${change.name}, ${change.type}, ${persist}) send `, /* change['newValue'] */
-            // );
+        }
+        if (!skipChange) {
+            if (this.ipc.isDestroyed()) {
+                console.error(
+                    `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map}.${change.name}, ${change.type}, persist=${persist}): isDestroyed`);
 
-        if (!skipChange)
-            this.ipc.send('change', change, persist === true);
+                this.onError && this.onError(this);
+            } else {
+                try {
+                    console.log(
+                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map}.${change.name}, ${change.type}, persist=${persist})= ${change['newValue']}`);
+                    
+                    this.ipc.send('change', change, persist === true);
+                } catch (error) {
+                    console.warn(
+                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map}.${change.name}, ${change.type}, persist=${persist}): ${error}`);
+
+                    this.onError && this.onError(this);
+                }
+            }
+        }
     }
 }
 

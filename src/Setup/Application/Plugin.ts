@@ -1,7 +1,7 @@
 import { SetupBase } from '../SetupBase';
 import { SetupBaseInterface, SetupItemId, Dictionary } from '../SetupInterface';
 import { Rectangle } from '../Default/Rectangle';
-import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { JSONSchema7 } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
 import { create } from '../SetupFactory';
 import { extendObservable, observable } from 'mobx';
