@@ -32,12 +32,12 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
     constructor(source: SetupBaseInterface) {
         super(source);
 
-        const { x, y, width, height } = (super.update(source) as Rectangle);
+        const sourceRect = source as RectangleInterface;
 
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
+        this.x = sourceRect.x;
+        this.y = sourceRect.y;
+        this.width = sourceRect.width;
+        this.height = sourceRect.height;
     }
 
     get simple(): SimpleRectangle {

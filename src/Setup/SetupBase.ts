@@ -4,7 +4,7 @@ import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
 import Ajv, { ValidateFunction } from 'ajv';
-import { action, observable } from 'mobx';
+import { observable } from 'mobx';
 import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
@@ -293,97 +293,6 @@ export abstract class SetupBase {
         return shallow;
     }
 
-    @action
-    update(update: SetupBaseInterface): SetupBase {
-        // console.log(`SetupBase[${this.constructor.name}][${this.id}].update`);
-
-        if (update.id != this.id)
-            throw new Error(`SetupBase[${this.constructor.name}][-> ${this.id} <-, ${this.parentId}, ${this.className}].update =`
-                + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
-        if (update.parentId != this.parentId)
-            throw new Error(`SetupBase[${this.constructor.name}][${this.id},-> ${this.parentId} <-, ${this.className}].update =`
-                + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
-        if (update.className != this.className)
-            throw new Error(`SetupBase[${this.constructor.name}][${this.id}, ${this.parentId}, -> ${this.className} <-].update =`
-                + ` { id: ${update.id}, parentId: ${this.parentId}, className: ${update.className} }`);
-
-        for (const propertyName in update) {
-            const currentValue = this[propertyName];
-            const newValue = update[propertyName];
-            const currentType = typeof currentValue;
-            const newType = typeof newValue;
-
-            switch (newType) {
-                case 'boolean':
-                case 'number':
-                case 'string':
-                    if (currentValue != newValue) {
-                        // console.log(`SetupBase[${this.constructor.name}].update:[${propertyName}/${typeof currentValue}]==${currentValue} = ${newValue}`);
-                        this[propertyName] = newValue;
-                    } else {
-                        // console.log(`SetupBase[${this.constructor.name}].update:[${propertyName}/${typeof currentValue}]==${currentValue} == ${newValue}`);
-                    }
-                    break;
-                case 'undefined':
-                    throw new Error(`SetupBase[${this.constructor.name}].update:[${propertyName}/${currentType}]==${currentValue} = ${newValue}/${newType}`);
-                case 'object':
-                    if (currentValue instanceof ObservableSetupBaseMap) {
-                        const map = currentValue as ObservableSetupBaseMap<SetupBase>;
-                        const newMap = newValue as Dictionary<SetupBaseInterface>;
-
-                        for (const [id, plainObject] of Object.entries(newMap)) {
-                            const object = map.get(id);
-
-                            if (plainObject) {
-                                if (object) {
-                                    // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Map][${id}].update` /* , plainObject */);
-                                    object.update(plainObject);
-                                } else {
-                                    // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Map][${id}]=create` /* , plainObject */);
-                                    currentValue.set(
-                                        id,
-                                        create(plainObject)
-                                    );
-                                }
-                            } else if (!currentValue.has(id)) {
-                                // console.log(`SetupBase[${this.constructor.name}].update:[${propertyName}/Map][${id}] add null`);
-                                currentValue.set(id, null);
-                            }
-                        }
-                        for (const deleted of map.keys()) {
-                            if (!(deleted in newMap)) {
-                                // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Map] delete ${deleted}`);
-                                map.delete(deleted);
-                            }
-                        }
-                    } else if ((newValue as SetupBaseInterface).id) {
-                        const updateSetup = newValue as SetupBaseInterface;
-                        if (currentValue?.id == updateSetup.id) {
-                            // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Setup].update[${updateSetup.id}]` /*, updateSetup */);
-                            currentValue.update(updateSetup);
-                        } else {
-                            // console.log(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/Setup]=create[${updateSetup.id}]` /*, updateSetup */);
-                            this[propertyName] = create(updateSetup);
-                        }
-                    } else {
-                        throw new Error(`SetupBase[${this.constructor.name}][${this.id}].update:[${propertyName}/${currentType}]==${currentValue} = ${newValue}/${newType}`);
-                    }
-                    break;
-                case 'function':
-                case 'symbol':
-                    console.warn(`SetupBase[${this.constructor.name}].update: ignore ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
-                    break;
-                case 'bigint':
-                    throw new Error(`SetupBase[${this.constructor.name}].update: Invalid for ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
-                default:
-                    throw new Error(`SetupBase[${this.constructor.name}].update: Unkown for ${propertyName} ${currentValue}/${currentType}=${newValue}/${newType}`);
-            }
-        }
-
-        // console.log(`SetupBase[${this.constructor.name}][${this.id}].update end`);
-
-        return this;
-    }
 
     static getPlainValue = (objectValue: PropertyType): InterfacePropertyType => {
         switch (typeof objectValue) {

@@ -28,6 +28,7 @@ import { Plugin } from '../../../Setup/Application/Plugin';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
 import { Browser } from '../../../Setup/Application/Browser';
+import { SetupBase } from '../../../Setup/SetupBase';
 
 import RelativeRectangle from './RelativeRectangle';
 
@@ -35,7 +36,6 @@ import { JSONSchema7 } from 'json-schema';
 
 import { UiSchema, ObjectFieldTemplateProps, FieldProps, ErrorSchema } from '@rjsf/core';
 import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
-import { SetupBase } from 'src/Setup/SetupBase';
 
 const useStyles = makeStyles((/*theme*/) => ({
     coordField: {
@@ -66,7 +66,7 @@ const PluginForm = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
                 id={'tooltip-' + plugin.id + '-config'}
                 title={isFullscreen ? 'Make part screen' : 'Make Full Screen'}
                 placement="top"
-            >
+                >
                 <IconButton aria-label="Fullscreen" onClick={toggleFullScreen} >
                     {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
                 </IconButton>
@@ -157,7 +157,7 @@ const CustomField = (props: FieldProps): JSX.Element => {
 
         const originalOnChange = props.onChange;
 
-        console.log(`${module.id}.CustomField[${props.idSchema.$id}] props=`, props);
+        // console.log(`${module.id}.CustomField[${props.idSchema.$id}] props=`, props);
 
         const customProps = {
             onChange: (newValue, es?: ErrorSchema): void => {
@@ -233,7 +233,7 @@ const RectangleObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element =
                             (content.props.uiSchema == undefined)
                             || (content.props.uiSchema['ui:FieldTemplate'] != HiddenFieldTemplate))
                         .map(element => {
-                            console.log(`${module.id}: RectangleObjectTemplate[${title}] ${element.name}`, element, { ...element.content });
+                            // console.log(`${module.id}: RectangleObjectTemplate[${title}] ${element.name}`, element, { ...element.content });
                             // return element.content;
                             return (
                                 <GridListTile key={`Tile-${element.content.key}`}>
@@ -260,7 +260,7 @@ const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
                             (content.props.uiSchema == undefined)
                             || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenFieldTemplate.name))
                         .map(element => {
-                            console.log(`${module.id}: ObjectTemplate[${title}] ${element.name}`, { ...element.content.props.uiSchema });
+                            // console.log(`${module.id}: ObjectTemplate[${title}] ${element.name}`, { ...element.content.props.uiSchema });
                             // return element.content;
                             return element.content;
                         })
@@ -312,13 +312,11 @@ const fixUiSchema = (item: UiSchema, plugin: Plugin, classes: string): UiSchema 
 const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
     const [configVisible, setConfigVisible] = useState(false);
     const classes = useStyles();
-
-    function toggleConfigVisible(): void {
-        setConfigVisible(!configVisible);
-    }
-
+    const formContext: FormContext = { plugin };
 
     const deletePlugin = (): boolean => (plugin.parent as Browser).plugins.delete(plugin.id);
+
+    console.log(`${module.id}.PluginItem`);
 
     return (
         <ListItem>
@@ -332,9 +330,9 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
                         >
                             <IconButton
                                 aria-label="Menu"
-                                onClick={toggleConfigVisible}
+                                onClick={ (): void => setConfigVisible(!configVisible)}
                             >
-                                {configVisible ? <MenuOpen /> : <Menu />}
+                            {configVisible ? <MenuOpen /> : <Menu />}
                             </IconButton>
                         </Tooltip>
                     </ListItemIcon>
@@ -357,12 +355,11 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
                 {configVisible &&
                     <ListItem>
                         <Form
-                            // onChange={(e): void => update(plugin, e.formData)}
                             schema={fixRefs(plugin.schema)}
-                            formData={plugin}
+                            formData={plugin.getDeep()}
                             uiSchema={fixUiSchema(Plugin.uiSchema, plugin, classes.hiddenField)}
                             fields={{ SchemaField: CustomField }}
-                            formContext={{ plugin }}
+                            formContext={formContext}
                             ObjectFieldTemplate={ObjectTemplate}
                             children={' '}
                         />

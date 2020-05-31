@@ -29,7 +29,13 @@ export default function MainWindow(): JSX.Element {
                 }} />
                 <span>Screen Manager</span>
             </label>
-            <input type='button' id='button' />
+            <input type='button' id='button' onClick={(): void => {
+                const windowArgs: IpcArgs = {
+                    window: 'ScreenManager',
+                    command: 'show'
+                };
+                windowsIpc.send(CHANNEL, windowArgs);
+            }} />
         </div>
     </>;
 }
