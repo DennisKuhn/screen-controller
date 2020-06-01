@@ -15,7 +15,7 @@ import MenuOpen from '@material-ui/icons/MenuOpen';
 
 import { Browser } from '../../../Setup/Application/Browser';
 import { Display } from '../../../Setup/Application/Display';
-import { Rectangle } from '../../../Setup/Default/Rectangle';
+import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
 import Plugins from './Plugins';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
 import { makeStyles } from '@material-ui/core/styles';
@@ -35,7 +35,7 @@ const BrowserForm = observer(({ browser }: { browser: Browser }): JSX.Element =>
         (): void => {
             isFullscreen = !isFullscreen;
 
-            browser.relative = Rectangle.createNew(
+            browser.relative = RelativeRectangle.createNew(
                 browser.id,
                 isFullscreen ?
                     { x: 0, y: 0, width: 1, height: 1 } :

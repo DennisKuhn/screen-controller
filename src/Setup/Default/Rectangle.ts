@@ -40,7 +40,7 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
         this.height = sourceRect.height;
     }
 
-    get simple(): SimpleRectangle {
+    toSimple(): SimpleRectangle {
         return {
             x: this.x,
             y: this.y,

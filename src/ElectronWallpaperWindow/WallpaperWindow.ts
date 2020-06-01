@@ -91,7 +91,7 @@ class WallpaperWindow extends EventEmitter {
         };
 
 
-        if (!isEqual(this.browser.device?.simple, newDevice)) {
+        if (!isEqual(this.browser.device?.toSimple(), newDevice)) {
             // console.log(
             //     `${this.constructor.name}[${this.browser.id}].updateBrowserBounds device` +
             //     (this.browser.device ? ` ${this.browser.device.x},${this.browser.device.y} ${this.browser.device.width}*${this.browser.device.height}` : ' noDevice') +
@@ -108,7 +108,7 @@ class WallpaperWindow extends EventEmitter {
             height: this.displayScaledBounds.height * this.browser.relative.height
         };
 
-        if (!isEqual(this.browser.scaled?.simple, newScaled)) {
+        if (!isEqual(this.browser.scaled?.toSimple(), newScaled)) {
             // console.log(
             //     `${this.constructor.name}[${this.browser.id}].updateBrowserBounds scaled` +
             //     (this.browser.scaled ? ` ${this.browser.scaled.x},${this.browser.scaled.y} ${this.browser.scaled.width}*${this.browser.scaled.height}` : ' noDevice') +

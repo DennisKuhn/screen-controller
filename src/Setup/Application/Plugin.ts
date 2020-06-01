@@ -33,7 +33,7 @@ export class Plugin extends SetupBase implements PluginInterface {
 
     public static readonly uiSchema: UiSchema = {
         ...SetupBase.uiSchema,
-        scaledBounds: { 'ui:widget': 'hidden' },
+        scaledBounds: { ...SetupBase.uiSchema, 'ui:widget': 'hidden' },
         relativeBounds: { ...SetupBase.uiSchema}
     };
 

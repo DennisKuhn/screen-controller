@@ -22,7 +22,10 @@ import FullscreenExit from '@material-ui/icons/FullscreenExit';
 import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
+import { UiSchema, ObjectFieldTemplateProps } from '@rjsf/core';
+// import Form, { UiSchema, ObjectFieldTemplateProps } from '@rjsf/core';
 import Form from '@rjsf/material-ui';
+// import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
 
 import { Plugin } from '../../../Setup/Application/Plugin';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
@@ -34,8 +37,7 @@ import RelativeRectangle from './RelativeRectangle';
 
 import { JSONSchema7 } from 'json-schema';
 
-import { UiSchema, ObjectFieldTemplateProps, FieldProps, ErrorSchema } from '@rjsf/core';
-import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
+import { toJS } from 'mobx';
 
 const useStyles = makeStyles((/*theme*/) => ({
     coordField: {
@@ -148,47 +150,47 @@ const moveToTarget = (start: SetupBase, properties: string[]): [SetupBase, strin
  * @see https://github.com/rjsf-team/react-jsonschema-form/issues/651
  * @param props 
  */
-const CustomField = (props: FieldProps): JSX.Element => {
-    //Only process if we are dealing with a field, not the parent object
-    if ('name' in props) {
-        const formContext = props.registry.formContext as FormContext;
+// const CustomField = (props: FieldProps): JSX.Element => {
+//     //Only process if we are dealing with a field, not the parent object
+//     if ('name' in props) {
+//         const formContext = props.registry.formContext as FormContext;
 
-        // debugger;
+//         // debugger;
 
-        const originalOnChange = props.onChange;
+//         const originalOnChange = props.onChange;
 
-        // console.log(`${module.id}.CustomField[${props.idSchema.$id}] props=`, props);
+//         // console.log(`${module.id}.CustomField[${props.idSchema.$id}] props=`, props);
 
-        const customProps = {
-            onChange: (newValue, es?: ErrorSchema): void => {
-                console.log(`${module.id}.CustomField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, es);
+//         const customProps = {
+//             onChange: (newValue, es?: ErrorSchema): void => {
+//                 console.log(`${module.id}.CustomField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, es);
                 
-                // do validation first
-                originalOnChange(newValue, es);
+//                 // do validation first
+//                 originalOnChange(newValue, es);
 
-                const [target, name] = moveToTarget(
-                    formContext.plugin,
-                    props.idSchema.$id.split('_') );
+//                 const [target, name] = moveToTarget(
+//                     formContext.plugin,
+//                     props.idSchema.$id.split('_') );
 
-                if (newValue.id) {
-                    if (newValue.id != target[name]?.id)
-                        console.error(`${module.id}.CustomField[${props.idSchema?.$id}][${name}]: ${newValue.id} != ${target[name]?.id}`);
-                    else
-                        console.log(`${module.id}.CustomField[${props.idSchema?.$id}][${name}]: skip ${newValue.id} == ${target[name]?.id}`);
-                } else {
-                    console.log(`${module.id}.CustomField[${props.idSchema?.$id}][${name}]== ${target[name]} = ${newValue}`, target, newValue, { ...target });
-                    target[name] = newValue;
-                }
-            }
-        };
-        return (
-            <SchemaField {...props} {...customProps} />
-        );
-    }
-    return (
-        <SchemaField {...props} />
-    );
-};
+//                 if (newValue.id) {
+//                     if (newValue.id != target[name]?.id)
+//                         console.error(`${module.id}.CustomField[${props.idSchema?.$id}][${name}]: ${newValue.id} != ${target[name]?.id}`);
+//                     else
+//                         console.log(`${module.id}.CustomField[${props.idSchema?.$id}][${name}]: skip ${newValue.id} == ${target[name]?.id}`);
+//                 } else {
+//                     console.log(`${module.id}.CustomField[${props.idSchema?.$id}][${name}]== ${target[name]} = ${newValue}`, target, newValue, { ...target });
+//                     target[name] = newValue;
+//                 }
+//             }
+//         };
+//         return (
+//             <SchemaField {...props} {...customProps} />
+//         );
+//     }
+//     return (
+//         <SchemaField {...props} />
+//     );
+// };
 
 
 const RectangleObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
@@ -281,7 +283,7 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, rootSchema: JSONSchema7)
         } else {
             console.log('addCustom() set [ui:ObjectFieldTemplate] = RectangleObjectTemplate');
             // item['ui:FieldTemplate'] = RectangleFieldTemplate;
-            item['ui:ObjectFieldTemplate'] = RectangleObjectTemplate;
+            // item['ui:ObjectFieldTemplate'] = RectangleObjectTemplate;
         }
     } else if (schema.$ref) {
         console.log(`addCustom() resolve ${schema.$ref} - ${schema.$ref.replace(/^#\/definitions\//, '')}`, rootSchema.definitions);
@@ -301,9 +303,9 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, rootSchema: JSONSchema7)
 
 const fixUiSchema = (item: UiSchema, plugin: Plugin, classes: string): UiSchema => {
 
-    replaceHidden(item, classes);
+    // replaceHidden(item, classes);
 
-    addCustom(item, plugin.schema, plugin.schema);
+    // addCustom(item, plugin.schema, plugin.schema);
 
     // console.log(`fixUiSchema: ${classes}`, { ...item });
     return item;
@@ -316,7 +318,7 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
 
     const deletePlugin = (): boolean => (plugin.parent as Browser).plugins.delete(plugin.id);
 
-    console.log(`${module.id}.PluginItem`);
+    console.log(`${module.id}.PluginItem`, fixRefs(toJS( plugin.schema, {recurseEverything: true})));
 
     return (
         <ListItem>
@@ -355,16 +357,24 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
                 {configVisible &&
                     <ListItem>
                         <Form
-                            idPrefix={plugin.id}
-                            liveValidate={true}
-                            noHtml5Validate={true}
-                            schema={fixRefs(plugin.schema)}
+                            // showErrorList={true}
+                            // transformErrors={(errors: AjvError[]): AjvError[] => {
+                            //     errors.forEach(error =>
+                            //         console.error(`${module.id}.PluginItem form.transformErrors= ${error.property}:${error.name}:${error.message}`, { ...error })
+                            //     );    
+                            //     return errors;    
+                            // }}
+                            // idPrefix={plugin.id}
+                            // liveValidate={true}
+                            // noHtml5Validate={true}
+                            schema={fixRefs(toJS(plugin.schema, { recurseEverything: true }))}
                             formData={plugin.getDeep()}
-                            uiSchema={fixUiSchema(Plugin.uiSchema, plugin, classes.hiddenField)}
-                            fields={{ SchemaField: CustomField }}
-                            formContext={formContext}
-                            ObjectFieldTemplate={ObjectTemplate}
-                            children={' '}
+//                            uiSchema={fixUiSchema(Plugin.uiSchema, plugin, classes.hiddenField)}
+//                            fields={{ SchemaField: CustomField }}
+//                            formContext={formContext}
+//                            ObjectFieldTemplate={ObjectTemplate}
+                            onError={(e): void => console.error(`${module.id}.PluginItem form.onError: ${e.length}`, e)}
+//                            children={' '}
                         />
                     </ListItem>
                 }
