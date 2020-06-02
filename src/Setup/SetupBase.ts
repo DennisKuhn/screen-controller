@@ -1,5 +1,5 @@
 import shortid from 'shortid';
-import { JSONSchema7, JSONSchema6 } from 'json-schema';
+import { JSONSchema7 } from 'json-schema';
 import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
