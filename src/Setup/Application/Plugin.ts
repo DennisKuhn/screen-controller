@@ -105,9 +105,9 @@ export class Plugin extends SetupBase implements PluginInterface {
         if (!SetupBase.activeSchema.definitions)
             throw new Error('Plugin.schemas: no SetupBase.activeSchema.definitions');
 
-        const schemas = Object.entries(SetupBase.schemas)
-            .filter(([id,]) => Plugin.pluginSchemaIds.includes(id))
-            .map(([, schema]) => schema);
+        const schemas = Object.entries(SetupBase.infos)
+            .filter(([className,]) => Plugin.pluginSchemaIds.includes(className))
+            .map(([, info]) => info.schema);
 
         console.log(`Plugin.pluginSchemas [${Plugin.pluginSchemaIds.length}]`, { ...schemas });
 

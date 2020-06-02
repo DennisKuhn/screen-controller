@@ -22,10 +22,10 @@ import FullscreenExit from '@material-ui/icons/FullscreenExit';
 import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
-import { UiSchema, ObjectFieldTemplateProps } from '@rjsf/core';
-// import Form, { UiSchema, ObjectFieldTemplateProps } from '@rjsf/core';
-import Form from '@rjsf/material-ui';
-// import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
+import Form, { UiSchema, ObjectFieldTemplateProps, AjvError } from '@rjsf/core';
+//import { UiSchema, ObjectFieldTemplateProps } from '@rjsf/core';
+//import Form from '@rjsf/material-ui';
+//import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
 
 import { Plugin } from '../../../Setup/Application/Plugin';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
@@ -271,7 +271,9 @@ const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
     );
 };
 
-const addCustom = (item: UiSchema, schema: JSONSchema7, rootSchema: JSONSchema7): void => {
+const addCustom = (item: UiSchema, schema: JSONSchema7, rootSchema?: JSONSchema7): void => {
+
+    rootSchema = rootSchema ?? schema;
 
     if (!rootSchema.definitions)
         throw new Error('addCustom: rootSchema got no definitions');
@@ -305,7 +307,7 @@ const fixUiSchema = (item: UiSchema, plugin: Plugin, classes: string): UiSchema 
 
     // replaceHidden(item, classes);
 
-    // addCustom(item, plugin.schema, plugin.schema);
+    // addCustom(item, plugin.schema);
 
     // console.log(`fixUiSchema: ${classes}`, { ...item });
     return item;
@@ -314,11 +316,20 @@ const fixUiSchema = (item: UiSchema, plugin: Plugin, classes: string): UiSchema 
 const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
     const [configVisible, setConfigVisible] = useState(false);
     const classes = useStyles();
-    const formContext: FormContext = { plugin };
 
     const deletePlugin = (): boolean => (plugin.parent as Browser).plugins.delete(plugin.id);
 
-    console.log(`${module.id}.PluginItem`, fixRefs(toJS( plugin.schema, {recurseEverything: true})));
+    const formContext: FormContext = { plugin };
+    const schema = plugin.getPlainSchema();
+    const data = plugin; // .getDeep(); // It creates a copy inside
+    const uiSchema = fixUiSchema(Plugin.uiSchema, plugin, classes.hiddenField);
+
+    // const schema = require('D:\\Dennis\\OneDrive - Dennis\'es Services\\Desktop\\schema.json');
+    // const data = require('D:\\Dennis\\OneDrive - Dennis\'es Services\\Desktop\\data.json');
+
+    console.log(`${module.id}.PluginItem`, data, schema, uiSchema);
+    // localStorage.setItem('DEBUG-TEMP', JSON.stringify(schema));
+    // localStorage.setItem('DEBUG-TEMP-DATA', JSON.stringify(plugin.getDeep()));
 
     return (
         <ListItem>
@@ -357,21 +368,21 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
                 {configVisible &&
                     <ListItem>
                         <Form
-                            // showErrorList={true}
+                            showErrorList={true}
                             // transformErrors={(errors: AjvError[]): AjvError[] => {
                             //     errors.forEach(error =>
-                            //         console.error(`${module.id}.PluginItem form.transformErrors= ${error.property}:${error.name}:${error.message}`, { ...error })
+                            //         console.error(`${module.id}.PluginItem form.transformErrors=`, { ...error })
                             //     );    
                             //     return errors;    
                             // }}
-                            // idPrefix={plugin.id}
-                            // liveValidate={true}
-                            // noHtml5Validate={true}
-                            schema={fixRefs(toJS(plugin.schema, { recurseEverything: true }))}
-                            formData={plugin.getDeep()}
-//                            uiSchema={fixUiSchema(Plugin.uiSchema, plugin, classes.hiddenField)}
+                            idPrefix={plugin.id}
+                            liveValidate={true}
+                            noHtml5Validate={true}
+                            schema={schema}
+                            formData={data}
+                            uiSchema={uiSchema}
 //                            fields={{ SchemaField: CustomField }}
-//                            formContext={formContext}
+                            formContext={formContext}
 //                            ObjectFieldTemplate={ObjectTemplate}
                             onError={(e): void => console.error(`${module.id}.PluginItem form.onError: ${e.length}`, e)}
 //                            children={' '}

@@ -1,13 +1,15 @@
 import shortid from 'shortid';
-import { JSONSchema7 } from 'json-schema';
+import { JSONSchema7, JSONSchema6 } from 'json-schema';
 import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary } from 'lodash';
 import Ajv, { ValidateFunction } from 'ajv';
-import { observable } from 'mobx';
+import { observable, toJS } from 'mobx';
 import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
+import deref from 'json-schema-deref-sync';
+import mergeAllOf from 'json-schema-merge-allof';
 
 switch (process.type) {
     case 'browser': // Main
@@ -32,21 +34,25 @@ export type PropertyType =
     number |
     boolean;
 
-
 export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
+}
+
+interface ClassInfo {
+    schema: JSONSchema7;
+    uiSchema: UiSchema;
+    plainSchema?: JSONSchema7;
+    validate?: ValidateFunction;
 }
 
 export abstract class SetupBase {    
     readonly id: SetupItemId;
     readonly parentId: SetupItemId;
     readonly className: string;
-    readonly schema: JSONSchema7;
-    readonly validator: ValidateFunction;
 
     @observable name: string;
 
-    private static notSerialisedProperties = ['schema', 'validator', '_parent', 'parent'];
+    private static notSerialisedProperties = [ '_parent', 'parent'];
 
     static readonly schemaUri = 'https://github.com/maoriora/screen-controller/schemas/SetupSchema.json#';
 
@@ -81,8 +87,8 @@ export abstract class SetupBase {
 
     public static readonly SCHEMA_REF = { $ref: SetupBase.name};
 
-    protected static schemas: { [key: string]: JSONSchema7 } = {};
-    private static validators: { [key: string]: ValidateFunction } = {};
+    protected static infos: { [key: string]: ClassInfo } = {};
+
 
     protected static addSchema(schema: JSONSchema7): void {
         if (!SetupBase.activeSchema.definitions) throw new Error(`SetupBase.addSchema(${schema.$id}) no definitions`);
@@ -95,11 +101,82 @@ export abstract class SetupBase {
             console.log(`SetupBase.addSchema(${schema.$id}) @${Object.keys(SetupBase.activeSchema.definitions).length}`);
             SetupBase.activeSchema.definitions[schema.$id] = schema;
 
-            SetupBase.schemas[schema.$id] = {
-                definitions: SetupBase.activeSchema.definitions,
-                $ref: '#/definitions/' + schema.$id
+            if (schema.$id in SetupBase.infos)
+                throw new Error(`SetupBase.addSchema(${schema.$id}) info already exists: ${JSON.stringify(SetupBase.infos)}`);
+
+            SetupBase.infos[schema.$id] = {
+                schema: {
+                    definitions: SetupBase.activeSchema.definitions,
+                    $ref: '#/definitions/' + schema.$id
+                },
+                uiSchema: SetupBase.uiSchema
             };
         }
+    }
+
+    private static fixRefs(item: JSONSchema7): JSONSchema7 {
+
+        if (item.$ref) {
+            if (item.$ref.startsWith('#/definitions/')) {
+                // console.log(`${module.id}.fixRefs: skip ${item.$id} = ${item.$ref}`);
+            } else {
+                // console.log(`${module.id}.fixRefs: ${item.$id} ${item.$ref} => ${'#/definitions/' + item.$ref}`);
+                item.$ref = '#/definitions/' + item.$ref;
+            }
+        }
+        for (const child of Object.values(item)) {
+            if (child instanceof Object) {
+                SetupBase.fixRefs(child);
+            }
+        }
+
+        return item;
+    }
+
+
+    private initClassInfo(source: SetupBaseInterface): ClassInfo {
+        if (!(source.className in SetupBase.infos))
+            throw new Error(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) no info: ${JSON.stringify(SetupBase.infos)}`);
+
+        const info = SetupBase.infos[source.className];
+
+        if (info.validate == undefined) {
+            console.log(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator` /*, toJS( this.schema, {recurseEverything: true})*/);
+
+            info.validate = SetupBase.ajv.compile(info.schema);
+        }
+
+        return info;
+    }    
+
+    public getPlainSchema(): JSONSchema7 {
+        if (!(this.className in SetupBase.infos))
+            throw new Error(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}) no info: ${JSON.stringify(SetupBase.infos)}`);
+
+        const info = SetupBase.infos[this.className];
+
+        if (info.plainSchema == undefined) {
+            const plainSchema = toJS(info.schema, { recurseEverything: true });
+            SetupBase.fixRefs(plainSchema);
+
+            const derefed = deref(plainSchema);
+
+            if (derefed instanceof Error) {
+                console.error(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved error: ${derefed}`, derefed, { ...plainSchema });   
+            } else {
+                console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved schema:`, { ...derefed }, { ...plainSchema });
+
+                info.plainSchema = mergeAllOf(derefed);
+
+                console.log(
+                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).merged schema:`,
+                    { ...info.plainSchema }, { ...derefed }, { ...plainSchema });
+            }            
+        }
+        if (info.plainSchema == undefined)
+            throw new Error(`SetupBase[${this.constructor.name}][${this.className}]: no plainSchema`);
+        
+        return info.plainSchema;
     }
 
     protected constructor(source: SetupBaseInterface) {
@@ -109,34 +186,24 @@ export abstract class SetupBase {
         if (!SetupBase.activeSchema.definitions)
             throw new Error(`SetupBase[${this.constructor.name}] no definitions in activeSchema: ${JSON.stringify(SetupBase.activeSchema)}`);
 
-        if (!(source.className in SetupBase.schemas))
-            throw new Error(`SetupBase[${this.constructor.name}] schema for ${source.className} in schemas: ${JSON.stringify(SetupBase.schemas)}`);
-
         if (this.constructor.name != source.className)
             if (this.constructor.name == 'Plugin') {
                 // console.log(`SetupBase[${this.constructor.name}] for ${source.className}: ${JSON.stringify(source)}`);
             } else
                 throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
 
-        this.schema = SetupBase.schemas[source.className];
-        
-        if (!(source.className in SetupBase.validators)) {
-            console.log(`SetupBase[${this.constructor.name}] create validator for ${source.className}` /*, toJS( this.schema, {recurseEverything: true})*/);
-
-            SetupBase.validators[source.className] = SetupBase.ajv.compile(this.schema);
-        } else {
-            // console.log(`SetupBase[${this.constructor.name}] validator exists for ${source.className}`);
-        }
-        
-        this.validator = SetupBase.validators[source.className];
+        const info = this.initClassInfo(source);
 
         //TODO remove:> source.name = source.name ?? source.id;
         source.name = source.name ?? source.id;
 
-        if (this.validator(source) != true) {
+        if (info.validate == undefined)
+            throw new Error(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: no validate`);
+
+        if (info.validate(source) != true) {
             throw new Error(
                 `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
-                `${this.validator.errors?.map(
+                `${info.validate.errors?.map(
                     error => error.schemaPath + ' // ' + error.dataPath + ' @' + error.propertyName + ': ' + error.message + ':' + JSON.stringify(error.params)
                 ).join(';\n')}\n` +
                 `source:\n${JSON.stringify}`);
@@ -150,11 +217,9 @@ export abstract class SetupBase {
         SetupBase.instances[this.id] = this;
     }
 
-
     get parent(): (SetupBase | undefined) {
         return SetupBase.instances[this.parentId];
     }
-
 
     protected static createMap<Setup extends SetupBase>(source: Dictionary<SetupBaseInterface>): ObservableSetupBaseMap<Setup> {
         const map = new ObservableSetupBaseMap<Setup>();
@@ -315,7 +380,7 @@ export abstract class SetupBase {
         }
     }
 
-    protected static createNewInterface<SetupClass extends SetupBase>(className: string, parentId: SetupItemId, id?: SetupItemId): SetupBaseInterface {
+    protected static createNewInterface(className: string, parentId: SetupItemId, id?: SetupItemId): SetupBaseInterface {
         id = id == undefined ? SetupBase.getNewId(className) : id;
 
         return {
