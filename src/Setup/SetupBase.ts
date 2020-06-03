@@ -2,7 +2,7 @@ import shortid from 'shortid';
 import { JSONSchema7 } from 'json-schema';
 import { ObservableSetupBaseMap } from './Container';
 import { create, register } from './SetupFactory';
-import { Dictionary } from 'lodash';
+import { Dictionary, cloneDeep } from 'lodash';
 import Ajv, { ValidateFunction } from 'ajv';
 import { observable, toJS } from 'mobx';
 import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
@@ -45,14 +45,14 @@ interface ClassInfo {
     validate?: ValidateFunction;
 }
 
-export abstract class SetupBase {    
+export abstract class SetupBase {
     readonly id: SetupItemId;
     readonly parentId: SetupItemId;
     readonly className: string;
 
     @observable name: string;
 
-    private static notSerialisedProperties = [ '_parent', 'parent'];
+    private static notSerialisedProperties = ['_parent', 'parent'];
 
     static readonly schemaUri = 'https://github.com/maoriora/screen-controller/schemas/SetupSchema.json#';
 
@@ -72,7 +72,14 @@ export abstract class SetupBase {
         // $schema: 'http://json-schema.org/draft/2019-09/schema#',
         $id: SetupBase.schemaUri,
         definitions: {
-            SetupBase: SetupBase.baseSchema
+            SetupBase: SetupBase.baseSchema,
+            Percent: {
+                $id: 'Percent',
+                type: 'number',
+                minimum: 0,
+                maximum: 1,
+                multipleOf: 0.005
+            }
         }
     });
 
@@ -80,12 +87,13 @@ export abstract class SetupBase {
     public static readonly uiSchema: UiSchema = {
         id: { 'ui:widget': 'hidden' },
         parentId: { 'ui:widget': 'hidden' },
-        className: { 'ui:widget': 'hidden' },        
+        className: { 'ui:widget': 'hidden' },
     };
 
     public static ajv = new Ajv();
 
-    public static readonly SCHEMA_REF = { $ref: SetupBase.name};
+    public static readonly SCHEMA_REF = { $ref: SetupBase.name };
+    public static readonly PERCENT_REF = { $ref: 'Percent' };
 
     protected static infos: { [key: string]: ClassInfo } = {};
 
@@ -114,14 +122,16 @@ export abstract class SetupBase {
         }
     }
 
+    private static readonly DEF_REF_PREFIX = '#/definitions/';
+
     private static fixRefs(item: JSONSchema7): JSONSchema7 {
 
         if (item.$ref) {
-            if (item.$ref.startsWith('#/definitions/')) {
+            if (item.$ref.startsWith(SetupBase.DEF_REF_PREFIX)) {
                 // console.log(`${module.id}.fixRefs: skip ${item.$id} = ${item.$ref}`);
             } else {
                 // console.log(`${module.id}.fixRefs: ${item.$id} ${item.$ref} => ${'#/definitions/' + item.$ref}`);
-                item.$ref = '#/definitions/' + item.$ref;
+                item.$ref = SetupBase.DEF_REF_PREFIX + item.$ref;
             }
         }
         for (const child of Object.values(item)) {
@@ -147,7 +157,124 @@ export abstract class SetupBase {
         }
 
         return info;
-    }    
+    }
+
+    private static buildIdDictionary(schema: JSONSchema7, dictionary: Dictionary<JSONSchema7[]>): void {
+        if (schema.$id) {
+            dictionary[schema.$id] = dictionary[schema.$id] ?? [];
+
+            dictionary[schema.$id].push(schema);
+        }
+        if (schema.properties) {
+            for (const property of Object.values(schema.properties)) {
+                if (typeof property == 'object')
+                    this.buildIdDictionary(property, dictionary);
+            }
+        }
+        if (typeof schema.additionalProperties == 'object')
+            this.buildIdDictionary(schema.additionalProperties, dictionary);
+
+        if (schema.allOf) {
+            for (const subSchema of schema.allOf) {
+                if (typeof subSchema == 'object')
+                    this.buildIdDictionary(subSchema, dictionary);
+            }
+        }
+        if (schema.anyOf) {
+            for (const subSchema of schema.anyOf) {
+                if (typeof subSchema == 'object')
+                    this.buildIdDictionary(subSchema, dictionary);
+            }
+        }
+    }
+
+    private static moveDuplicateIdsToDefinitions(schema: JSONSchema7, idsDictionary: Dictionary<JSONSchema7[]>): void {
+        for (const [id, occurances] of Object.entries(idsDictionary)) {
+            /// First occurance becomes definition
+            const definition = cloneDeep( occurances[0] );
+
+            schema.definitions = schema.definitions ?? {};
+
+            /// Set first occurance as definition
+            schema.definitions[id] = definition;
+
+            // Replace existing (duplicate) declarations
+            // by reference to definition
+            for (const occurance of occurances) {
+                // Delete existing declarations
+                Object.keys(occurance)
+                    .map(key => delete occurance[key]);
+                
+                occurance.$ref = SetupBase.DEF_REF_PREFIX + id;
+            }
+        }
+    }
+
+    private static fixDuplicateIds(schema: JSONSchema7): void {
+        const idsDictionary: Dictionary<JSONSchema7[]> = {};
+
+        SetupBase.buildIdDictionary(schema, idsDictionary);
+
+        for (const [id, schemas] of Object.entries( idsDictionary)) {
+            if (schemas.length == 1) {
+                console.log(`SetupBase.fixDuplicateIds(${schema.$id}) remove not duplicate ${id}`);
+                delete idsDictionary[id];
+            } else {
+                console.log(`SetupBase.fixDuplicateIds(${schema.$id}) keep duplicate ${id} * ${schemas.length}`);
+            }
+        }
+
+        SetupBase.moveDuplicateIdsToDefinitions(schema, idsDictionary);
+
+        console.log(`SetupBase.fixDuplicateIds(${schema.$id})`, idsDictionary, schema);
+    }
+
+    private static hasRefs = (schema: JSONSchema7): boolean => {
+        if (schema.properties) {
+            for (const property of Object.values(schema.properties)) {
+                if ((typeof property == 'object') && ('$ref' in property))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private static moveRefsToDefsToDefs = (schema: JSONSchema7, root?: JSONSchema7): void => {
+
+        root = root ?? schema;
+
+        // Allow refs on root level (root == undefined)
+        if (schema.properties) {
+            for (const [name, value] of Object.entries(schema.properties)) {
+                if ((typeof value == 'object') && SetupBase.hasRefs(value)) {
+                    if (!value.$id)
+                        throw new Error(`SetupBase.moveRefsToDefsToDefs: $id is not defined in schema for property ${name} in ${schema.$id}: ${JSON.stringify(value)}`);
+                    
+                    console.log(`SetupBase.moveRefsToDefsToDefs: move ${value.$id} from ${schema.$id}.${name} to defs`);
+                    root.definitions = root.definitions ?? {};
+                    root.definitions[value.$id] = value;
+                    schema.properties[name] = { $ref: SetupBase.DEF_REF_PREFIX + value.$id };
+                }
+            }
+        }
+
+
+        if (typeof schema.additionalProperties == 'object')
+            SetupBase.moveRefsToDefsToDefs(schema.additionalProperties, root);
+
+        if (schema.allOf) {
+            for (const subSchema of schema.allOf) {
+                if (typeof subSchema == 'object')
+                    SetupBase.moveRefsToDefsToDefs(subSchema, root);
+            }
+        }
+        if (schema.anyOf) {
+            for (const subSchema of schema.anyOf) {
+                if (typeof subSchema == 'object')
+                    SetupBase.moveRefsToDefsToDefs(subSchema, root);
+            }
+        }
+    }
 
     public getPlainSchema(): JSONSchema7 {
         if (!(this.className in SetupBase.infos))
@@ -162,20 +289,34 @@ export abstract class SetupBase {
             const derefed = deref(plainSchema);
 
             if (derefed instanceof Error) {
-                console.error(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved error: ${derefed}`, derefed, { ...plainSchema });   
+                console.error(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved error: ${derefed}`, derefed, { ...plainSchema });
             } else {
                 console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved schema:`, { ...derefed }, { ...plainSchema });
 
-                info.plainSchema = mergeAllOf(derefed);
+                const merged = mergeAllOf(derefed) as JSONSchema7;
 
                 console.log(
                     `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).merged schema:`,
-                    { ...info.plainSchema }, { ...derefed }, { ...plainSchema });
-            }            
+                    { ...merged }, { ...derefed }, { ...plainSchema });
+
+                SetupBase.fixDuplicateIds(merged);
+                console.log(
+                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).fixedDuplicateIds:`,
+                    { ...merged });
+
+
+                SetupBase.moveRefsToDefsToDefs(merged);
+
+                console.log(
+                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).moveRefsToDefsToDefs:`,
+                    { ...merged }, { ...derefed }, { ...plainSchema });
+
+                info.plainSchema = merged;
+            }
         }
         if (info.plainSchema == undefined)
             throw new Error(`SetupBase[${this.constructor.name}][${this.className}]: no plainSchema`);
-        
+
         return info.plainSchema;
     }
 
@@ -204,9 +345,9 @@ export abstract class SetupBase {
             throw new Error(
                 `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
                 `${info.validate.errors?.map(
-                    error => error.schemaPath + ' // ' + error.dataPath + ' @' + error.propertyName + ': ' + error.message + ':' + JSON.stringify(error.params)
+                    error => `${error.schemaPath} // ${error.dataPath} ${error.propertyName ? '@' + error.propertyName : ''} : ${error.message} ${JSON.stringify(error.params)}`
                 ).join(';\n')}\n` +
-                `source:\n${JSON.stringify}`);
+                `source:\n${JSON.stringify(source)}`);
         }
         // console.log(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: validated`);
 
@@ -253,7 +394,7 @@ export abstract class SetupBase {
         for (const propertyName in this) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
-            } else if (SetupBase.notSerialisedProperties.includes( propertyName ) ) {
+            } else if (SetupBase.notSerialisedProperties.includes(propertyName)) {
                 // console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName}`);
             } else {
                 const value = this[propertyName];
@@ -388,7 +529,7 @@ export abstract class SetupBase {
             parentId,
             className,
             name: id,
-        };     
+        };
     }
 
     private static instances: { [index: string]: SetupBase } = {};

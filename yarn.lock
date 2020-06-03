@@ -1857,7 +1857,14 @@
     "@types/istanbul-lib-coverage" "*"
     "@types/istanbul-lib-report" "*"
 
-"@types/json-schema@^7.0.3", "@types/json-schema@^7.0.4":
+"@types/json-schema-merge-allof@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/@types/json-schema-merge-allof/-/json-schema-merge-allof-0.6.0.tgz#0f587d8a3bcb41a55ef2e91d3ba96430c9bc1813"
+  integrity sha512-v6iCEk4Sxy1twlCTtrRxMqSHX0vuLJ7Ql4hiIUZRMOswxtlUeybIfYaZIj7pX747RBczG2YtBm4Fn6sqKzeY2Q==
+  dependencies:
+    "@types/json-schema" "*"
+
+"@types/json-schema@*", "@types/json-schema@^7.0.3", "@types/json-schema@^7.0.4":
   version "7.0.4"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.4.tgz#38fd73ddfd9b55abb1e1b2ed578cb55bd7b7d339"
   integrity sha512-8+KAKzEvSUdeo+kmqnKrqgeE+LcA0tjYWFY7RPProVYwnqDjukzO+3b6dLD56rYX5TdWejnEOLJYOIeh4CXKuA==

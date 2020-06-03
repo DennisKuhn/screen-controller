@@ -5,7 +5,7 @@ import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
 
 export class Rectangle extends SetupBase implements SimpleRectangle, RectangleInterface {
-    public static readonly SCHEMA_REF = { $ref: SetupBase.name };
+    public static readonly SCHEMA_REF = { $ref: Rectangle.name };
 
     static readonly schema: JSONSchema7 = {
         $id: Rectangle.name,
@@ -13,7 +13,7 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
             SetupBase.SCHEMA_REF,
             {
                 properties: {
-                    className: { const: Rectangle.name },
+                    className: { default: Rectangle.name },
                     x: { type: 'number' },
                     y: { type: 'number' },
                     width: { type: 'number' },

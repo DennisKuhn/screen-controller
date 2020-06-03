@@ -5,6 +5,8 @@ import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { SimpleRectangle } from './RectangleInterface';
 
 export class RelativeRectangle extends Rectangle {
+    public static readonly SCHEMA_REF = { $ref: RelativeRectangle.name };
+
     static readonly schema: JSONSchema7 = {
         $id: RelativeRectangle.name,
         allOf: [
@@ -12,10 +14,10 @@ export class RelativeRectangle extends Rectangle {
             {
                 properties: {
                     className: { const: RelativeRectangle.name },
-                    x: { type: 'number', minimum: 0, maximum: 1, multipleOf: 0.005 },
-                    y: { type: 'number', minimum: 0, maximum: 1, multipleOf: 0.005 },
-                    width: { type: 'number', minimum: 0, maximum: 1, multipleOf: 0.005 },
-                    height: { type: 'number', minimum: 0, maximum: 1, multipleOf: 0.005 }
+                    x: SetupBase.PERCENT_REF,
+                    y: SetupBase.PERCENT_REF,
+                    width: SetupBase.PERCENT_REF,
+                    height: SetupBase.PERCENT_REF
                 },
                 required: ['x', 'y', 'width', 'height']
             }

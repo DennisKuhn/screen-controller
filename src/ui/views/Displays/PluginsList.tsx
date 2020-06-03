@@ -30,11 +30,12 @@ import NumberField from '@rjsf/core/lib/components/fields/NumberField';
 
 import { Plugin } from '../../../Setup/Application/Plugin';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
+import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
 import { Browser } from '../../../Setup/Application/Browser';
 import { SetupBase } from '../../../Setup/SetupBase';
 
-import RelativeRectangle from './RelativeRectangle';
+// import RelativeRectangle from './RelativeRectangle';
 
 import { JSONSchema7 } from 'json-schema';
 import Ajv from 'ajv';
@@ -50,31 +51,17 @@ const useStyles = makeStyles((/*theme*/) => ({
 }));
 
 const PluginForm = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
-    let isFullscreen = (plugin.relativeBounds.x == 0 && plugin.relativeBounds.y == 0 && plugin.relativeBounds.width == 1 && plugin.relativeBounds.height == 1);
-
-    function toggleFullScreen(): void {
-        isFullscreen = !isFullscreen;
-
-        plugin.relativeBounds = Rectangle.createNew(
-            plugin.id,
-            isFullscreen ?
-                { x: 0, y: 0, width: 1, height: 1 } :
-                { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
-        );
-    }
-
     return (
         <>
             <Tooltip
                 id={'tooltip-' + plugin.id + '-config'}
-                title={isFullscreen ? 'Make part screen' : 'Make Full Screen'}
+                title={plugin.getPlainSchema().description ?? ''}
                 placement="top"
-            >
-                <IconButton aria-label="Fullscreen" onClick={toggleFullScreen} >
-                    {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-                </IconButton>
+                >
+                <div>
+                    {plugin.name}
+                </div>
             </Tooltip>
-            <RelativeRectangle rect={plugin.relativeBounds} />
         </>
     );
 });
@@ -140,7 +127,7 @@ const moveToTarget = (start: SetupBase, properties: string[]): [SetupBase, strin
     return [target, properties[0]];
 };
 
-const ajv = new Ajv();
+const ajv = (new Ajv()).addSchema(Plugin.activeSchema);
 
 /**
  * 
@@ -155,47 +142,70 @@ const ObservedField = (props: FieldProps): JSX.Element => {
         const originalOnChange = props.onChange;
 
         // console.log(`${module.id}.ObservedField[${props.idSchema.$id}] props=`, props);
+        // const ajv = ajvs[formContext.plugin.className];
+        if (!ajv) {
+            console.error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] no ajv for : ${formContext.plugin.className}`, props);
+        } else {
+            let fValidate;
 
-        const validate = ajv.getSchema(props.idSchema.$id) ?? ajv.addSchema(props.schema, props.idSchema.$id).getSchema(props.idSchema.$id);
+            const schema = props.schema.$ref ?
+                { $ref: Plugin.activeSchema.$id + props.schema.$ref.substr('#'.length) } :
+                props.schema;
+            // const schema = props.schema;
 
-        if (!validate)
-            throw new Error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] can't create validate function from: ${JSON.stringify(props.schema)}`);
-
-        // Split idSchema $id <RootPrefix>_<RootProperty>_<Childproperty>
-        const [target, name] = moveToTarget(
-            formContext.plugin,
-            props.idSchema.$id.split('_'));
-
-        const customProps = {
-            ...props,
-            onChange: (newValue, es?: ErrorSchema): void => {
-                // console.log(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
-
-                originalOnChange(newValue, es);
-
-                // console.log(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
-
-                if (newValue.id) {
-                    if (newValue.id != target[name]?.id)
-                        console.error(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: ${newValue.id} != ${target[name]?.id}`);
-                    else
-                        console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: skip ${newValue.id} == ${target[name]?.id}`);
-                } else {
-                    if (validate(newValue)) {
-                        console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = ${newValue}`);
-                        target[name] = newValue;
-                    } else {
-                        console.warn(
-                            `${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = -> ${newValue} <- :` +
-                            ` ${validate.errors ? validate.errors.map(error => `${error.dataPath}:${error.message}`) : ''}`,
-                            { ...validate.errors }, newValue);
-                    }
-                }
+            try {
+                fValidate = ajv.getSchema(props.idSchema.$id) ?? ajv.addSchema(schema, props.idSchema.$id).getSchema(props.idSchema.$id);
+            } catch (error) {
+                console.error(
+                    `${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] creating validate function caught: ${error} from: ${JSON.stringify(schema)}`,
+                    error, schema);
             }
-        };
-        return (
-            <SchemaField {...customProps} />
-        );
+
+            if (!fValidate) {
+                console.error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] can't create validate function from: ${JSON.stringify(schema)}`, props);
+                //throw new Error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] can't create validate function from: ${JSON.stringify(props.schema)}`);
+            } else {
+                console.log(`${module.id}.ObservedField[${props.idSchema.$id}] ${JSON.stringify(schema)}`, props);
+
+                const validate = fValidate;
+
+
+                const customProps = {
+                    ...props,
+                    onChange: (newValue, es?: ErrorSchema): void => {
+                        // console.log(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
+
+                        originalOnChange(newValue, es);
+
+                        // console.log(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
+                        // Split idSchema $id <RootPrefix>_<RootProperty>_<Childproperty>
+                        const [target, name] = moveToTarget(
+                            formContext.plugin,
+                            props.idSchema.$id.split('_'));
+
+                        if (newValue.id) {
+                            if (newValue.id != target[name]?.id)
+                                console.error(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: ${newValue.id} != ${target[name]?.id}`);
+                            else
+                                console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: skip ${newValue.id} == ${target[name]?.id}`);
+                        } else {
+                            if (validate(newValue)) {
+                                console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = ${newValue}`);
+                                target[name] = newValue;
+                            } else {
+                                console.warn(
+                                    `${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = -> ${newValue} <- :` +
+                                    ` ${validate.errors ? validate.errors.map(error => `${error.dataPath}:${error.message}`) : ''}`,
+                                    { ...validate.errors }, newValue);
+                            }
+                        }
+                    }
+                };
+                return (
+                    <SchemaField {...customProps} />
+                );
+            }
+        }
     }
     return (
         <SchemaField {...props} />
@@ -249,7 +259,7 @@ const PercentField = (props: FieldProps): JSX.Element => {
 
             originalOnChange(Number(((newValue as number) / 100).toPrecision(10)), es);
         },
-        formData: Number( ((props.formData as number) * 100).toPrecision(10)),
+        formData: Number(((props.formData as number) * 100).toPrecision(10)),
         schema: {
             ...props.schema,
             ...(typeof props.schema.default == 'number' ? { default: props.schema.default * 100 } : {}),
@@ -281,7 +291,7 @@ const RectangleObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element =
 
         console.log(`${module.id}: RectangleObjectTemplate[${title}].toggleFullScreen ${target.id}.${property}=${isFullscreen}`, target, props);
 
-        target[property] = Rectangle.createNew(
+        target[property] = RelativeRectangle.createNew(
             target['id'],
             isFullscreen ?
                 { x: 0, y: 0, width: 1, height: 1 } :
@@ -323,12 +333,10 @@ const RectangleObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element =
 };
 
 const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
-    const { title, description, properties } = props;
+    const { properties } = props;
     console.log(`${module.id}: ObjectTemplate[${props.title}]`);
     return (
         <div>
-            {title}
-            {description}
             {
                 properties
                     .filter(({ content }: { content: { props } }) =>
@@ -344,39 +352,49 @@ const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
     );
 };
 
-const addCustom = (item: UiSchema, schema: JSONSchema7): void => {
+const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): void => {
 
-    console.log(`addCustom(${schema.$id}, ${schema.type})`);
+    root = root ?? schema;
 
-    // if (!rootSchema.definitions)
-    //     throw new Error('addCustom: rootSchema got no definitions');
+    console.log(`addCustom(${schema.$id}, ${schema.$ref}, ${schema.type})`);
 
-    if (schema.$id && [Rectangle.name, RelativeRectangle.name].includes(schema.$id)) {
+    if (!root.definitions)
+        throw new Error('addCustom: root got no definitions');
 
-        if (item['ui:FieldTemplate']) {
-            // console.log(`addCustom(${schema.$id}, ${schema.type}) [ui:FieldTemplate] already set`);
-        } else {
-            // console.log(`addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = RectangleObjectTemplate`);
-            // item['ui:FieldTemplate'] = RectangleFieldTemplate;
-            item['ui:ObjectFieldTemplate'] = RectangleObjectTemplate;
+    if (schema.$ref) {
+        addCustom(
+            item,
+            root.definitions[schema.$ref.substr('#/definitions/'.length)] as JSONSchema7,
+            root
+        );
+    } else {
+        if (schema.$id && [ Rectangle.name, RelativeRectangle.name].includes(schema.$id)) {
+
+            if (item['ui:FieldTemplate']) {
+                // console.log(`addCustom(${schema.$id}, ${schema.type}) [ui:FieldTemplate] already set`);
+            } else {
+                console.log(`addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = RectangleObjectTemplate`);
+                // item['ui:FieldTemplate'] = RectangleFieldTemplate;
+                item['ui:ObjectFieldTemplate'] = RectangleObjectTemplate;
+            }
+        } else if (schema.$id == 'Percent') {
+            console.log(`addCustom(${schema.$id}) ${schema.type} set: item['ui:field'] = PercentField`);
+            item['ui:field'] = PercentField;
         }
-    } else if (schema.type == 'number') {
-        // console.log(`addCustom(${schema.$id}) ${schema.type} set: item['ui:field'] = PercentField`);
-        item['ui:field'] = PercentField;
-    }
-    if (schema.anyOf) {
-        for (const subSchema of schema.anyOf)
-            addCustom(item, subSchema as JSONSchema7);
-    }
-    if (schema.oneOf) {
-        for (const subSchema of schema.oneOf)
-            addCustom(item, subSchema as JSONSchema7);
-    }
-    if (schema.properties) {
-        for (const [property, value] of Object.entries(schema.properties)) {
-            if (value instanceof Object) {
-                item[property] = item[property] ?? {};
-                addCustom(item[property], value);
+        if (schema.anyOf) {
+            for (const subSchema of schema.anyOf)
+                addCustom(item, subSchema as JSONSchema7, root);
+        }
+        if (schema.oneOf) {
+            for (const subSchema of schema.oneOf)
+                addCustom(item, subSchema as JSONSchema7, root);
+        }
+        if (schema.properties) {
+            for (const [property, value] of Object.entries(schema.properties)) {
+                if (value instanceof Object) {
+                    item[property] = item[property] ?? {};
+                    addCustom(item[property], value, root);
+                }
             }
         }
     }
@@ -398,17 +416,13 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
 
     const deletePlugin = (): boolean => (plugin.parent as Browser).plugins.delete(plugin.id);
 
+
     const formContext: FormContext = { plugin };
     const schema = plugin.getPlainSchema();
-    const data = plugin; // .getDeep(); // It creates a copy inside
+    const data = plugin.getDeep(); // It creates a copy inside
     const uiSchema = fixUiSchema(Plugin.uiSchema, schema, classes.hiddenField);
 
-    // const schema = require('D:\\Dennis\\OneDrive - Dennis\'es Services\\Desktop\\schema.json');
-    // const data = require('D:\\Dennis\\OneDrive - Dennis\'es Services\\Desktop\\data.json');
-
     console.log(`${module.id}.PluginItem`, data, schema, uiSchema);
-    // localStorage.setItem('DEBUG-TEMP', JSON.stringify(schema));
-    // localStorage.setItem('DEBUG-TEMP-DATA', JSON.stringify(plugin.getDeep()));
 
     return (
         <ListItem>
@@ -461,6 +475,7 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
                             formData={data}
                             uiSchema={uiSchema}
                             fields={{ SchemaField: ObservedField }}
+                            ObjectFieldTemplate={ObjectTemplate}
                             formContext={formContext}
                             //                            ObjectFieldTemplate={ObjectTemplate}
                             onError={(e): void => console.error(`${module.id}.PluginItem form.onError: ${e.length}`, e)}

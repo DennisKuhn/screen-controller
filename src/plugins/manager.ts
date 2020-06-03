@@ -140,10 +140,10 @@ export class Manager {
             throw new Error(`${this.constructor.name}[${this.browser.id}].addPlugin(${setup.id}) browser has no scaled bounds`);
         
         const scaled: SimpleRectangle = {
-            x: this.browser.scaled.width * setup.relativeBounds.x,
-            y: this.browser.scaled.height * setup.relativeBounds.y,
-            width: this.browser.scaled.width * setup.relativeBounds.width,
-            height: this.browser.scaled.height * setup.relativeBounds.height,
+            x: Number((this.browser.scaled.width * setup.relativeBounds.x).toPrecision(18)),
+            y: Number((this.browser.scaled.height * setup.relativeBounds.y).toPrecision(18)),
+            width: Number((this.browser.scaled.width * setup.relativeBounds.width).toPrecision(18)),
+            height: Number((this.browser.scaled.height * setup.relativeBounds.height).toPrecision(18))
         };
 
         if (!setup.scaledBounds) {
