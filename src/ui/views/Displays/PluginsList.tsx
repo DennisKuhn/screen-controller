@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 import { observer } from 'mobx-react-lite';
@@ -11,36 +10,32 @@ import {
     Tooltip,
     ListItemSecondaryAction,
     IconButton,
-    GridList,
-    GridListTile,
     TextField
 } from '@material-ui/core';
 
 // @material-ui/icons
 import Delete from '@material-ui/icons/Delete';
-import Fullscreen from '@material-ui/icons/Fullscreen';
-import FullscreenExit from '@material-ui/icons/FullscreenExit';
 import Menu from '@material-ui/icons/Menu';
 import MenuOpen from '@material-ui/icons/MenuOpen';
 
-import Form, { UiSchema, ObjectFieldTemplateProps, ErrorSchema, FieldProps } from '@rjsf/core';
-//import { UiSchema, ObjectFieldTemplateProps } from '@rjsf/core';
-//import Form from '@rjsf/material-ui';
-import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
-import NumberField from '@rjsf/core/lib/components/fields/NumberField';
+// import Form, { UiSchema, ObjectFieldTemplateProps, ErrorSchema, FieldProps } from '@rjsf/core';
+import { UiSchema } from '@rjsf/core';
+import Form from '@rjsf/material-ui';
 
 import { Plugin } from '../../../Setup/Application/Plugin';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
 import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
 import { Browser } from '../../../Setup/Application/Browser';
-import { SetupBase } from '../../../Setup/SetupBase';
 
-// import RelativeRectangle from './RelativeRectangle';
+import HiddenField from '../../RjsfComponents/Fields/Hidden';
+import ObservedField from '../../RjsfComponents/Fields/Observed';
+import PercentField from '../../RjsfComponents/Fields/Percent';
+import RectangleObject from '../../RjsfComponents/Objects/Rectangle';
 
 import { JSONSchema7 } from 'json-schema';
-import Ajv from 'ajv';
-
+import { FormContext } from '../../RjsfComponents/FormContext';
+import ObjectTemplate from '../../RjsfComponents/Objects/SetupBase';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -68,13 +63,12 @@ const PluginForm = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
     );
 });
 
-const HiddenFieldTemplate = (): JSX.Element => (<></>);
 
 const replaceHidden = (item: UiSchema, classes: string): UiSchema => {
 
     if (item['ui:widget'] == 'hidden') {
         delete item['ui:widget'];
-        item['ui:FieldTemplate'] = HiddenFieldTemplate;
+        item['ui:FieldTemplate'] = HiddenField;
     }
     // recurse
     for (const value of Object.values(item)) {
@@ -86,119 +80,7 @@ const replaceHidden = (item: UiSchema, classes: string): UiSchema => {
     return item;
 };
 
-interface FormContext {
-    plugin: Plugin;
-}
 
-/** Descends into object according to properties stack.
- * @example 
- * moveToTarget(
- *     {root: {child: { grandchild: {money: 5} }}},
- *     ['AnyName','root', 'child', 'grandchild', 'money' ] )
- * => [{money:5}, 'money']
- * moveToTarget(
- *     {root: {child: { grandchild: {money: 5} }}},
- *     ['AnyName','root' ] )
- * => [{root: {child: { grandchild: {money: 5} }}}, 'root']
- * @param start object
- * @param properties names stack
- * @returns target object with target property name, use like target[name]
- */
-const moveToTarget = (start: SetupBase, properties: string[]): [SetupBase, string] => {
-    let target = start;
-    properties.shift();
-
-    while (properties.length > 1) {
-        target = target[properties.shift() as string];
-    }
-    return [target, properties[0]];
-};
-
-const ajv = (new Ajv()).addSchema(Plugin.activeSchema);
-
-/**
- * 
- * @see https://github.com/rjsf-team/react-jsonschema-form/issues/651
- * @param props 
- */
-const ObservedField = (props: FieldProps): JSX.Element => {
-    //Only process if we are dealing with a field, not the parent object
-    if ('name' in props) {
-        const formContext = props.registry.formContext as FormContext;
-
-        const originalOnChange = props.onChange;
-
-        // console.log(`${module.id}.ObservedField[${props.idSchema.$id}] props=`, props);
-        // const ajv = ajvs[formContext.plugin.className];
-        if (!ajv) {
-            console.error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] no ajv for : ${formContext.plugin.className}`, props);
-        } else {
-            let fValidate;
-
-            const schema = props.schema.$ref ?
-                { $ref: Plugin.activeSchema.$id + props.schema.$ref.substr('#'.length) } :
-                props.schema;
-            // const schema = props.schema;
-
-            try {
-                fValidate = ajv.getSchema(props.idSchema.$id) ?? ajv.addSchema(schema, props.idSchema.$id).getSchema(props.idSchema.$id);
-            } catch (error) {
-                console.error(
-                    `${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] creating validate function caught: ${error} from: ${JSON.stringify(schema)}`,
-                    error, schema);
-            }
-
-            if (!fValidate) {
-                console.error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] can't create validate function from: ${JSON.stringify(schema)}`, props);
-                //throw new Error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] can't create validate function from: ${JSON.stringify(props.schema)}`);
-            } else {
-                // console.log(`${module.id}.ObservedField[${props.idSchema.$id}] ${JSON.stringify(schema)}`);
-
-                const validate = fValidate;
-
-
-                const customProps = {
-                    ...props,
-                    onChange: (newValue, es?: ErrorSchema): void => {
-                        // console.log(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
-
-                        originalOnChange(newValue, es);
-
-                        // console.log(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
-                        // Split idSchema $id <RootPrefix>_<RootProperty>_<Childproperty>
-                        const [target, name] = moveToTarget(
-                            formContext.plugin,
-                            props.idSchema.$id.split('_'));
-
-                        if (newValue.id) {
-                            if (newValue.id != target[name]?.id) {
-                                console.error(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: ${newValue.id} != ${target[name]?.id}`);
-                            } else {
-                                // console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: skip ${newValue.id} == ${target[name]?.id}`);
-                            }
-                        } else {
-                            if (validate(newValue)) {
-                                // console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = ${newValue}`);
-                                target[name] = newValue;
-                            } else {
-                                console.warn(
-                                    `${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = -> ${newValue} <- :` +
-                                    ` ${validate.errors ? validate.errors.map(error => `${error.dataPath}:${error.message}`) : ''}`,
-                                    { ...validate.errors }, newValue);
-                            }
-                        }
-                    }
-                };
-                return (
-                    <SchemaField {...customProps} />
-                );
-            }
-        }
-    }
-    return (
-        <SchemaField {...props} />
-    );
-};
 
 /**
  * 
@@ -230,115 +112,7 @@ const ObservedField = (props: FieldProps): JSX.Element => {
 //     );
 // };
 
-/**
- * 
- * @param props 
- */
-const PercentField = (props: FieldProps): JSX.Element => {
 
-    const originalOnChange = props.onChange;
-
-    // console.log(`${module.id}.PercentField[${props.idSchema.$id}] props=`, props);
-
-    const customProps = {
-        ...props,
-        onChange: (newValue, es?: ErrorSchema): void => {
-            // console.log(`${module.id}.PercentField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
-
-            originalOnChange(Number(((newValue as number) / 100).toPrecision(10)), es);
-        },
-        formData: Number(((props.formData as number) * 100).toPrecision(10)),
-        schema: {
-            ...props.schema,
-            ...(typeof props.schema.default == 'number' ? { default: props.schema.default * 100 } : {}),
-            ...(typeof props.schema.maximum == 'number' ? { maximum: props.schema.maximum * 100 } : {}),
-            ...(typeof props.schema.minimum == 'number' ? { minimum: props.schema.minimum * 100 } : {}),
-            ...(typeof props.schema.exclusiveMaximum == 'number' ? { exclusiveMaximum: props.schema.exclusiveMaximum * 100 } : {}),
-            ...(typeof props.schema.exclusiveMinimum == 'number' ? { exclusiveMinimum: props.schema.exclusiveMinimum * 100 } : {}),
-            ...(typeof props.schema.multipleOf == 'number' ? { multipleOf: props.schema.multipleOf * 100 } : {})
-        }
-    };
-    return (
-        <NumberField {...customProps} />
-    );
-};
-
-
-const RectangleObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
-    const { idSchema, title, description, properties, formData: rect, formContext } = props;
-    const { plugin } = formContext as FormContext;
-
-    // console.log(`${module.id}: RectangleObjectTemplate[${props.title}]`, { ...props });
-
-    let isFullscreen = (rect.x == 0 && rect.y == 0 && rect.width == 1 && rect.height == 1);
-
-    function toggleFullScreen(): void {
-        isFullscreen = !isFullscreen;
-
-        const [target, property] = moveToTarget(plugin, idSchema.$id.split('_'));
-
-        // console.log(`${module.id}: RectangleObjectTemplate[${title}].toggleFullScreen ${target.id}.${property}=${isFullscreen}`, target, props);
-
-        target[property] = RelativeRectangle.createNew(
-            target['id'],
-            isFullscreen ?
-                { x: 0, y: 0, width: 1, height: 1 } :
-                { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
-        );
-    }
-
-    return (
-        <div>
-            {title}
-            <GridList cellHeight={'auto'} cols={9} >
-                <GridListTile cols={1}>
-                    <Tooltip
-                        title={isFullscreen ? 'Make part screen' : 'Make Full Screen'}
-                    >
-                        <IconButton aria-label="Fullscreen" onClick={toggleFullScreen} >
-                            {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-                        </IconButton>
-                    </Tooltip>
-                </GridListTile>
-                {
-                    properties
-                        .filter(({ content }: { content: { props } }) =>
-                            (content.props.uiSchema == undefined)
-                            || (content.props.uiSchema['ui:FieldTemplate'] != HiddenFieldTemplate))
-                        .map(element => {
-                            // console.log(`${module.id}: RectangleObjectTemplate[${title}] ${element.name}`, element, { ...element.content });
-
-                            return (
-                                <GridListTile cols={2} key={`Tile-${element.content.key}`}>
-                                    {element.content}
-                                </GridListTile>
-                            );
-                        })
-                }
-            </GridList>
-        </div>
-    );
-};
-
-const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
-    const { properties } = props;
-    // console.log(`${module.id}: ObjectTemplate[${props.title}]`);
-    return (
-        <div>
-            {
-                properties
-                    .filter(({ content }: { content: { props } }) =>
-                        (content.props.uiSchema == undefined)
-                        || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenFieldTemplate.name))
-                    .map(element => {
-                        // console.log(`${module.id}: ObjectTemplate[${title}] ${element.name}`, { ...element.content.props.uiSchema });
-                        // return element.content;
-                        return element.content;
-                    })
-            }
-        </div>
-    );
-};
 
 const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): void => {
 
@@ -363,7 +137,7 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
             } else {
                 // console.log(`addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = RectangleObjectTemplate`);
                 // item['ui:FieldTemplate'] = RectangleFieldTemplate;
-                item['ui:ObjectFieldTemplate'] = RectangleObjectTemplate;
+                item['ui:ObjectFieldTemplate'] = RectangleObject;
             }
         } else if (schema.$id == 'Percent') {
             const classes = useStyles();
@@ -392,9 +166,6 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
 };
 
 const fixUiSchema = (item: UiSchema, schema: JSONSchema7, classes: string): UiSchema => {
-
-    item['name'] = item['name'] ?? {};
-    item['name']['ui:widget'] = 'hidden';
 
     replaceHidden(item, classes);
 
@@ -471,7 +242,6 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
                             fields={{ SchemaField: ObservedField }}
                             ObjectFieldTemplate={ObjectTemplate}
                             formContext={formContext}
-                            //                            ObjectFieldTemplate={ObjectTemplate}
                             onError={(e): void => console.error(`${module.id}.PluginItem form.onError: ${e.length}`, e)}
                             children={' '}
                         />

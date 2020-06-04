@@ -320,6 +320,13 @@ export abstract class SetupBase {
         return info.plainSchema;
     }
 
+    public getSchema(): JSONSchema7 {
+        if (!(this.className in SetupBase.infos))
+            throw new Error(`SetupBase[${this.constructor.name}].getSchema(${this.className}) no info: ${JSON.stringify(SetupBase.infos)}`);
+
+        return SetupBase.infos[this.className].schema;
+    }
+
     protected constructor(source: SetupBaseInterface) {
         if (source.id in SetupBase.instances)
             throw new Error(`SetupBase[${this.constructor.name}] id=${source.id} already in use`);
