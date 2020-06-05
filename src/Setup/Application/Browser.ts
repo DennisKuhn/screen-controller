@@ -7,6 +7,7 @@ import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
+import { UiSchema } from '@rjsf/core';
 
 
 export class Browser extends SetupBase {
@@ -37,6 +38,12 @@ export class Browser extends SetupBase {
             }
         ]
     };
+
+    public static readonly uiSchema: UiSchema = {
+        scaled: { 'ui:widget': 'hidden' },
+        device: { 'ui:widget': 'hidden' }
+    };
+
 
     @observable relative: RelativeRectangle;
     @observable scaled?: Rectangle;
@@ -71,7 +78,7 @@ export class Browser extends SetupBase {
     }
 
     static register(): void {
-        SetupBase.register(Browser, Browser.schema);
+        SetupBase.register(Browser, Browser.schema, Browser.uiSchema);
     }
 
     addPlugin = (schema: JSONSchema7 ): void => { 

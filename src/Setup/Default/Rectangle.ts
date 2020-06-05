@@ -3,6 +3,7 @@ import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { SimpleRectangle, RectangleInterface } from './RectangleInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
+import { UiSchema } from '@rjsf/core';
 
 export class Rectangle extends SetupBase implements SimpleRectangle, RectangleInterface {
     public static readonly SCHEMA_REF = { $ref: Rectangle.name };
@@ -23,6 +24,11 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
             }
         ]
     }
+
+    public static readonly uiSchema: UiSchema = {
+        ...SetupBase.uiSchema,
+        name: { 'ui:widget': 'hidden' }
+    };
 
     @observable x: number;
     @observable y: number;
@@ -57,7 +63,7 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
     static createNew = (parentId: SetupItemId, source: SimpleRectangle): Rectangle => new Rectangle(Rectangle.newInterface(parentId, source));
 
     static register(): void {
-        SetupBase.register(Rectangle, Rectangle.schema);
+        SetupBase.register(Rectangle, Rectangle.schema, Rectangle.uiSchema);
     }
 }
 

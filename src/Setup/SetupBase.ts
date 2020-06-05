@@ -98,7 +98,7 @@ export abstract class SetupBase {
     protected static infos: { [key: string]: ClassInfo } = {};
 
 
-    protected static addSchema(schema: JSONSchema7): void {
+    protected static addSchema(schema: JSONSchema7, uiSchema: UiSchema): void {
         if (!SetupBase.activeSchema.definitions) throw new Error(`SetupBase.addSchema(${schema.$id}) no definitions`);
 
         if (!schema.$id) throw new Error(`SetupBase.addSchema() no $id: ${JSON.stringify(schema)}`);
@@ -117,7 +117,7 @@ export abstract class SetupBase {
                     definitions: SetupBase.activeSchema.definitions,
                     $ref: '#/definitions/' + schema.$id
                 },
-                uiSchema: SetupBase.uiSchema
+                uiSchema: { ...SetupBase.uiSchema, ...uiSchema }
             };
         }
     }
@@ -151,7 +151,7 @@ export abstract class SetupBase {
         const info = SetupBase.infos[source.className];
 
         if (info.validate == undefined) {
-            console.log(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator` /*, toJS( this.schema, {recurseEverything: true})*/);
+            console.log(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator`, toJS( info.schema, {recurseEverything: true}) );
 
             info.validate = SetupBase.ajv.compile(info.schema);
         }
@@ -291,8 +291,6 @@ export abstract class SetupBase {
             }
         }
     }
-
-
 
     private static getOtherOneOfNull(schema: JSONSchema7): JSONSchema7 | undefined {
         if (schema.oneOf?.length == 2) {
@@ -436,6 +434,13 @@ export abstract class SetupBase {
             throw new Error(`SetupBase[${this.constructor.name}].getSchema(${this.className}) no info: ${JSON.stringify(SetupBase.infos)}`);
 
         return SetupBase.infos[this.className].schema;
+    }
+
+    public static getUiSchema(className: string): UiSchema {
+        if (!(className in SetupBase.infos))
+            throw new Error(`SetupBase.getUiSchema(${className}) no info: ${JSON.stringify(SetupBase.infos)}`);
+
+        return SetupBase.infos[className].uiSchema;
     }
 
     protected constructor(source: SetupBaseInterface) {
@@ -656,12 +661,12 @@ export abstract class SetupBase {
         return prefix + '-' + shortid.generate();
     }
 
-    protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7): void {
+    protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7, uiSchema: UiSchema): void {
         if (!schema.$id) throw new Error(`SetupBase.register() no $id: ${JSON.stringify(schema)}`);
 
         // if (schema.$id != ('#' + factory.name))
         //     throw new Error(`SetupBase.register(): (Class name) #factory.name != schema.$id: #${factory.name} != ${schema.$id} schema=${JSON.stringify(schema)}`);
-        SetupBase.addSchema(schema);
+        SetupBase.addSchema(schema, uiSchema);
 
         if (schema.$id != factory.name) {
             console.warn(`SetupBase.register: register ${factory.name} as ${schema.$id}`);

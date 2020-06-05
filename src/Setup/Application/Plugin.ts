@@ -32,9 +32,7 @@ export class Plugin extends SetupBase implements PluginInterface {
     }
 
     public static readonly uiSchema: UiSchema = {
-        ...SetupBase.uiSchema,
-        scaledBounds: { ...SetupBase.uiSchema, 'ui:widget': 'hidden' },
-        relativeBounds: { ...SetupBase.uiSchema, name: { 'ui:widget': 'hidden'}}
+        scaledBounds: { 'ui:widget': 'hidden' }
     };
 
     constructor(setup: SetupBaseInterface) {
@@ -186,7 +184,7 @@ export class Plugin extends SetupBase implements PluginInterface {
             ((pluginRefProspect as JSONSchema7).$ref == Plugin.SCHEMA_REF_VALUE)))
             throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}`);
 
-        SetupBase.register(Plugin, schema);
+        SetupBase.register(Plugin, schema, Plugin.uiSchema);
 
         Plugin.pluginSchemaIds.includes(schema.$id) || Plugin.pluginSchemaIds.push(schema.$id);
             
@@ -238,7 +236,7 @@ export class Plugin extends SetupBase implements PluginInterface {
     }
 
     static register(): void {
-        SetupBase.addSchema(Plugin.schema);
+        SetupBase.addSchema(Plugin.schema, Plugin.uiSchema);
 
         if (process.type == 'renderer') {
             Plugin.loadAllSchemas();

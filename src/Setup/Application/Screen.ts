@@ -51,7 +51,7 @@ export class Screen extends SetupBase {
         );
 
     static register(): void {
-        SetupBase.register(Screen, Screen.schema);
+        SetupBase.register(Screen, Screen.schema, {});
     }
 }
 

@@ -38,7 +38,7 @@ export class Root extends SetupBase {
     );
 
     static register(): void {
-        SetupBase.register(Root, Root.schema);
+        SetupBase.register(Root, Root.schema, {});
     }
 }
 

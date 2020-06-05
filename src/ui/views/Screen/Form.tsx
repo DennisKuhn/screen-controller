@@ -66,22 +66,25 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
             root
         );
     } else {
+        // If SetupBase or child class
         if (schema.required && schema.required.includes('id') && schema.required.includes('className')) {
-            console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase set [ui:ObjectFieldTemplate] = SetupObject`);
+            console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase merge uiSchema`, SetupBase.uiSchema);
 
-            merge(item, SetupBase.uiSchema);
-
-            console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase set [ui:ObjectFieldTemplate] = SetupObject`);
+            if (!schema.$id)
+                throw new Error(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase no $id: ${JSON.stringify(schema)}`);
+            
+            merge(item, SetupBase.getUiSchema(schema.$id));
+            
             if (schema.$id && [Rectangle.name, RelativeRectangle.name].includes(schema.$id)) {
-
                 if (item['ui:FieldTemplate'] || (item['ui:widget'] == 'hidden')) {
-                    console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set Rectangle already set`);
+                    console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set Rectangle already hidden`);
                 } else {
                     console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = RectangleObject`);
                     // item['ui:FieldTemplate'] = RectangleFieldTemplate;
                     item['ui:ObjectFieldTemplate'] = RectangleObject;
                 }
             } else {
+                console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase set [ui:ObjectFieldTemplate] = SetupObject`);
                 item['ui:ObjectFieldTemplate'] = SetupObject;
             }
         } else if (schema.$id == 'Percent') {
@@ -124,9 +127,10 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
 
 const fixUiSchema = (item: UiSchema, schema: JSONSchema7): UiSchema => {
 
-    replaceHidden(item);
 
     addCustom(item, schema);
+
+    replaceHidden(item);
 
     // console.log(`fixUiSchema: ${classes}`, { ...item });
     return item;

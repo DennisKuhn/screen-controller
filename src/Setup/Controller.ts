@@ -335,7 +335,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         if (isEqual(itemPlainValue, remotePlainValue)) {
             // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=${remotePlainValue}`);
         } else {
-            // console.log( `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}` );
+            console.log( `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}` );
             if (newSetup) {
                 this.connectPersistPropagate({
                     item: newSetup,
@@ -868,9 +868,9 @@ class Main extends ControllerImpl {
         if (!updateChannel)
             throw new Error(`${this.constructor.name}.onSetupChanged(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
 
-        // console.log(
-        //     `${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ` +
-        //     ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
+        console.log(
+            `${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ` +
+            ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
 
         updateChannel.addReceived(update);
 
@@ -994,9 +994,9 @@ class Main extends ControllerImpl {
                                     ` (${item.id}.${propertyName}.${changes.name}) ignore overwriting null`);
                                 return;
                             }
-                            // console.log(
-                            //     `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
-                            //     ` ${item.id}.${propertyName}.${changes.name}, ${changes.type})`);
+                            console.log(
+                                `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
+                                ` ${item.id}.${propertyName}.${changes.name}, ${changes.type})`);
                             this.onChangeItemChanged(
                                 listener,
                                 {

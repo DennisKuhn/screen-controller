@@ -62,7 +62,7 @@ export class Display extends SetupBase {
     }
 
     static register(): void {
-        SetupBase.register(Display, Display.schema);
+        SetupBase.register(Display, Display.schema, {});
     }
 }
 
