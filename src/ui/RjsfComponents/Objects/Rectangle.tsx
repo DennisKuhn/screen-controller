@@ -20,7 +20,7 @@ import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
  */
 const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
     const { idSchema, title, properties, formData: rect, formContext } = props;
-    const { plugin } = formContext as FormContext;
+    const { root } = formContext as FormContext;
 
     // console.log(`${module.id}: RectangleObjectTemplate[${props.title}]`, { ...props });
 
@@ -29,7 +29,7 @@ const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
     function toggleFullScreen(): void {
         isFullscreen = !isFullscreen;
 
-        const [target, property] = moveToTarget(plugin, idSchema.$id.split('_'));
+        const [target, property] = moveToTarget(root, idSchema.$id.split('_'));
 
         // console.log(`${module.id}: RectangleObjectTemplate[${title}].toggleFullScreen ${target.id}.${property}=${isFullscreen}`, target, props);
 

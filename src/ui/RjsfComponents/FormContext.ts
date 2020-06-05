@@ -1,5 +1,5 @@
-import { Plugin } from '../../Setup/Application/Plugin';
+import { SetupBase } from '../../Setup/SetupBase';
 
 export interface FormContext {
-    plugin: Plugin;
+    root: SetupBase;
 }

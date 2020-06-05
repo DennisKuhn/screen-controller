@@ -174,6 +174,12 @@ export abstract class SetupBase {
         if (typeof schema.additionalProperties == 'object')
             this.buildIdDictionary(schema.additionalProperties, dictionary);
 
+        if (schema.oneOf) {
+            for (const subSchema of schema.oneOf) {
+                if (typeof subSchema == 'object')
+                    this.buildIdDictionary(subSchema, dictionary);
+            }
+        }
         if (schema.allOf) {
             for (const subSchema of schema.allOf) {
                 if (typeof subSchema == 'object')
@@ -191,7 +197,7 @@ export abstract class SetupBase {
     private static moveDuplicateIdsToDefinitions(schema: JSONSchema7, idsDictionary: Dictionary<JSONSchema7[]>): void {
         for (const [id, occurances] of Object.entries(idsDictionary)) {
             /// First occurance becomes definition
-            const definition = cloneDeep( occurances[0] );
+            const definition = cloneDeep(occurances[0]);
 
             schema.definitions = schema.definitions ?? {};
 
@@ -204,10 +210,106 @@ export abstract class SetupBase {
                 // Delete existing declarations
                 Object.keys(occurance)
                     .map(key => delete occurance[key]);
-                
+
                 occurance.$ref = SetupBase.DEF_REF_PREFIX + id;
             }
         }
+    }
+
+    private static forEach(schema: JSONSchema7, action: (s: JSONSchema7) => void): void {
+        action(schema);
+
+        if (schema.properties) {
+            for (const property of Object.values(schema.properties)) {
+                if (typeof property == 'object')
+                    action(property);
+            }
+        }
+        if (typeof schema.additionalProperties == 'object')
+            action(schema.additionalProperties);
+
+        if (schema.oneOf) {
+            for (const subSchema of schema.oneOf) {
+                if (typeof subSchema == 'object')
+                    action(subSchema);
+            }
+        }
+        if (schema.allOf) {
+            for (const subSchema of schema.allOf) {
+                if (typeof subSchema == 'object')
+                    action(subSchema);
+            }
+        }
+        if (schema.anyOf) {
+            for (const subSchema of schema.anyOf) {
+                if (typeof subSchema == 'object')
+                    action(subSchema);
+            }
+        }
+    }
+
+    private static replaceEach(schema: JSONSchema7, replacer: (s: JSONSchema7) => JSONSchema7 | undefined): void {
+        if (schema.properties) {
+            for (const [property, prospect] of Object.entries(schema.properties)) {
+                if (typeof prospect == 'object') {
+                    const replacement = replacer(prospect);
+
+                    if (replacement) {
+                        console.log(`SetupBase.replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
+                        schema.properties[property] = replacement;
+                    }
+                    SetupBase.replaceEach(schema.properties[property] as JSONSchema7, replacer);
+                }
+            }
+        }
+        if (typeof schema.additionalProperties == 'object') {
+            const replacement = replacer(schema.additionalProperties);
+
+            if (replacement) {
+                console.log(`SetupBase.replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
+                schema.additionalProperties = replacement;
+            }
+            SetupBase.replaceEach(schema.additionalProperties, replacer);
+        }
+        if (schema.oneOf) {
+            for (const subSchema of schema.oneOf) {
+                if (typeof subSchema == 'object') {
+                    SetupBase.replaceEach(subSchema, replacer);
+                }
+            }
+        }
+        if (schema.allOf) {
+            for (const subSchema of schema.allOf) {
+                if (typeof subSchema == 'object')
+                    SetupBase.replaceEach(subSchema, replacer);
+            }
+        }
+        if (schema.anyOf) {
+            for (const subSchema of schema.anyOf) {
+                if (typeof subSchema == 'object')
+                    SetupBase.replaceEach(subSchema, replacer);
+            }
+        }
+    }
+
+
+
+    private static getOtherOneOfNull(schema: JSONSchema7): JSONSchema7 | undefined {
+        if (schema.oneOf?.length == 2) {
+            if ((schema.oneOf[0] as JSONSchema7).type == 'null') {
+                return schema.oneOf[1] as JSONSchema7;
+            } else if ((schema.oneOf[1] as JSONSchema7).type == 'null') {
+                return schema.oneOf[0] as JSONSchema7;
+            }
+        }
+        return undefined;
+    }
+
+    private static mergeOneOfNulls(schema: JSONSchema7): void {
+        SetupBase.replaceEach(
+            schema,
+            SetupBase.getOtherOneOfNull
+        );
     }
 
     private static fixDuplicateIds(schema: JSONSchema7): void {
@@ -215,7 +317,7 @@ export abstract class SetupBase {
 
         SetupBase.buildIdDictionary(schema, idsDictionary);
 
-        for (const [id, schemas] of Object.entries( idsDictionary)) {
+        for (const [id, schemas] of Object.entries(idsDictionary)) {
             if (schemas.length == 1) {
                 console.log(`SetupBase.fixDuplicateIds(${schema.$id}) remove not duplicate ${id}`);
                 delete idsDictionary[id];
@@ -243,13 +345,12 @@ export abstract class SetupBase {
 
         root = root ?? schema;
 
-        // Allow refs on root level (root == undefined)
         if (schema.properties) {
             for (const [name, value] of Object.entries(schema.properties)) {
                 if ((typeof value == 'object') && SetupBase.hasRefs(value)) {
                     if (!value.$id)
                         throw new Error(`SetupBase.moveRefsToDefsToDefs: $id is not defined in schema for property ${name} in ${schema.$id}: ${JSON.stringify(value)}`);
-                    
+
                     console.log(`SetupBase.moveRefsToDefsToDefs: move ${value.$id} from ${schema.$id}.${name} to defs`);
                     root.definitions = root.definitions ?? {};
                     root.definitions[value.$id] = value;
@@ -262,6 +363,12 @@ export abstract class SetupBase {
         if (typeof schema.additionalProperties == 'object')
             SetupBase.moveRefsToDefsToDefs(schema.additionalProperties, root);
 
+        if (schema.oneOf) {
+            for (const subSchema of schema.oneOf) {
+                if (typeof subSchema == 'object')
+                    SetupBase.moveRefsToDefsToDefs(subSchema, root);
+            }
+        }
         if (schema.allOf) {
             for (const subSchema of schema.allOf) {
                 if (typeof subSchema == 'object')
@@ -304,11 +411,15 @@ export abstract class SetupBase {
                     `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).fixedDuplicateIds:`,
                     { ...merged });
 
+                SetupBase.mergeOneOfNulls(merged);
+                console.log(
+                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).mergedOneOfNulls:`,
+                    { ...merged });
 
                 SetupBase.moveRefsToDefsToDefs(merged);
 
                 console.log(
-                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).moveRefsToDefsToDefs:`,
+                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).movedRefsToDefsToDefs:`,
                     { ...merged }, { ...derefed }, { ...plainSchema });
 
                 info.plainSchema = merged;
@@ -475,7 +586,7 @@ export abstract class SetupBase {
                             // console.log(`SetupBase[${this.constructor.name}].getPlain: copy ${propertyName} of ObservableSetupBaseMap`);
                             shallow[propertyName as string] = {};
                             for (const [id, child] of value.entries()) {
-                                if (depth == 0) {
+                                if ((depth == 0) || (child == null)) {
                                     shallow[propertyName as string][id] = null;
                                 } else {
                                     shallow[propertyName as string][id] = (child as SetupBase).getPlain(depth - 1);

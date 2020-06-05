@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Tooltip, IconButton, Grid } from '@material-ui/core';
+import { Grid, Tooltip, IconButton } from '@material-ui/core';
 
 // @material-ui/icons
 import Menu from '@material-ui/icons/Menu';
@@ -8,22 +8,14 @@ import MenuOpen from '@material-ui/icons/MenuOpen';
 
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 
-import HiddenField from '../Fields/Hidden';
-
-import { SetupBaseInterface } from '../../../Setup/SetupInterface';
+import { SetupBaseInterface, Dictionary } from '../../../Setup/SetupInterface';
 
 const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
     const [configVisible, setConfigVisible] = useState(false);
     const { properties, formData, idSchema } = props;
-    const setup = formData as SetupBaseInterface;
+    const setup = formData as Dictionary<SetupBaseInterface>;
 
-    console.log(`SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}`, props);
-
-    const nameContent = properties
-        .find(({ name, content }) =>
-            (name === 'name') &&
-            ((content.props.uiSchema == undefined)
-                || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenField.name)))?.content;
+    console.log(`DictionaryTemplate[${idSchema?.$id}]: setup.id=${setup?.id}`, props);
 
 
     // console.log(`${module.id}: ObjectTemplate[${props.title}]`);
@@ -45,21 +37,12 @@ const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
                             </IconButton>
                         </Tooltip>
                     </Grid>
-                    {
-                        nameContent ?
-                            (<Grid item>{nameContent}</Grid>) :
-                            (<></>)
-                    }
+                    <Grid item>{props.title}</Grid>
                 </Grid>
             </Grid>
             {
                 configVisible &&
                 properties
-                    .filter(({ content, name }) =>
-                        (name !== 'name')
-                        && ((content.props.uiSchema == undefined)
-                            || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenField.name))
-                    )
                     .map(element => {
                         // console.log(`${module.id}: ObjectTemplate[${title}] ${element.name}`, { ...element.content.props.uiSchema });
                         // return element.content;

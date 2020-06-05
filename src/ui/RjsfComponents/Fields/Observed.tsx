@@ -26,7 +26,7 @@ const Observed = (props: FieldProps): JSX.Element => {
         // console.log(`${module.id}.ObservedField[${props.idSchema.$id}] props=`, props);
         // const ajv = ajvs[formContext.plugin.className];
         if (!ajv) {
-            console.error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] no ajv for : ${formContext.plugin.className}`, props);
+            console.error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] no ajv for : ${formContext.root.className}`, props);
         } else {
             let fValidate;
 
@@ -62,7 +62,7 @@ const Observed = (props: FieldProps): JSX.Element => {
                         // console.log(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
                         // Split idSchema $id <RootPrefix>_<RootProperty>_<Childproperty>
                         const [target, name] = moveToTarget(
-                            formContext.plugin,
+                            formContext.root,
                             props.idSchema.$id.split('_'));
 
                         if (newValue.id) {

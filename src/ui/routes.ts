@@ -10,6 +10,7 @@ import Language from '@material-ui/icons/Language';
 // core components/views for Admin layout
 import DashboardPage from './views/Dashboard/Dashboard';
 import DisplaysPage from './views/Displays/Displays';
+import ScreenPage from './views/Screen/Screen';
 import UserProfile from './views/UserProfile/UserProfile';
 import TableList from './views/TableList/TableList';
 import Typography from './views/Typography/Typography';
@@ -35,6 +36,14 @@ const dashboardRoutes = [
         rtlName: 'لوحة القيادة',
         icon: Dashboard,
         component: DisplaysPage,
+        layout: '/admin'
+    },
+    {
+        path: '/screen',
+        name: 'Screen',
+        rtlName: 'لوحة القيادة',
+        icon: Dashboard,
+        component: ScreenPage,
         layout: '/admin'
     },
     {
