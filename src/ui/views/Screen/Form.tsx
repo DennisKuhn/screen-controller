@@ -4,13 +4,14 @@ import React, { } from 'react';
 
 import { makeStyles } from '@material-ui/core';
 
-import Form, { UiSchema } from '@rjsf/core';
-// import { UiSchema } from '@rjsf/core';
-// import Form from '@rjsf/material-ui';
+// import Form, { UiSchema } from '@rjsf/core';
+import { UiSchema } from '@rjsf/core';
+import Form from '@rjsf/material-ui';
 
-import { Screen } from '../../../Setup/Application/Screen';
-import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
+import { SetupBase } from '../../../Setup/SetupBase';
 import { Rectangle } from '../../../Setup/Default/Rectangle';
+import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
+import { Screen } from '../../../Setup/Application/Screen';
 
 import { FormContext } from '../../RjsfComponents/FormContext';
 
@@ -21,6 +22,8 @@ import PercentField from '../../RjsfComponents/Fields/Percent';
 import RectangleObject from '../../RjsfComponents/Objects/Rectangle';
 import SetupObject from '../../RjsfComponents/Objects/SetupBase';
 import DictionaryObject from '../../RjsfComponents/Objects/Dictionary';
+
+import { merge } from 'lodash';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -63,14 +66,23 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
             root
         );
     } else {
-        if (schema.$id && [Rectangle.name, RelativeRectangle.name].includes(schema.$id)) {
+        if (schema.required && schema.required.includes('id') && schema.required.includes('className')) {
+            console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase set [ui:ObjectFieldTemplate] = SetupObject`);
 
-            if (item['ui:FieldTemplate']) {
-                console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set Rectangle [ui:FieldTemplate] already set`);
+            merge(item, SetupBase.uiSchema);
+
+            console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase set [ui:ObjectFieldTemplate] = SetupObject`);
+            if (schema.$id && [Rectangle.name, RelativeRectangle.name].includes(schema.$id)) {
+
+                if (item['ui:FieldTemplate'] || (item['ui:widget'] == 'hidden')) {
+                    console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set Rectangle already set`);
+                } else {
+                    console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = RectangleObject`);
+                    // item['ui:FieldTemplate'] = RectangleFieldTemplate;
+                    item['ui:ObjectFieldTemplate'] = RectangleObject;
+                }
             } else {
-                console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = RectangleObject`);
-                // item['ui:FieldTemplate'] = RectangleFieldTemplate;
-                item['ui:ObjectFieldTemplate'] = RectangleObject;
+                item['ui:ObjectFieldTemplate'] = SetupObject;
             }
         } else if (schema.$id == 'Percent') {
             const classes = useStyles();
@@ -78,16 +90,11 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
             console.log(`Form.addCustom(${schema.$id}, ${schema.type})  set: item['ui:field'] = PercentField`);
             item['ui:field'] = PercentField;
             item.classNames = classes.percentField;
-        } else if (schema.required && schema.required.includes('id') && schema.required.includes('className')) {
-            console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = SetupObject`);
-            item['ui:ObjectFieldTemplate'] = SetupObject;
         } else if (schema.type == 'object' && schema.additionalProperties) {
             console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = DictionaryObject`);
             item['ui:ObjectFieldTemplate'] = DictionaryObject;
-            item['additionalProperties'] = {
-                'ui:ObjectFieldTemplate': SetupObject
-            };
         }
+
         if (schema.properties) {
             for (const [property, value] of Object.entries(schema.properties)) {
                 if (value instanceof Object) {
@@ -95,8 +102,14 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
                     addCustom(item[property], value, root);
                 }
             }
-        }
+        }        
         if (schema.additionalProperties) {
+            item['additionalProperties'] = {};
+            addCustom(
+                item['additionalProperties'],
+                schema.additionalProperties as JSONSchema7,
+                root
+            );
         }
         if (schema.anyOf) {
             for (const subSchema of schema.anyOf)
