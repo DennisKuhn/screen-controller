@@ -97,7 +97,7 @@ class WallpaperWindow extends EventEmitter {
             //     (this.browser.device ? ` ${this.browser.device.x},${this.browser.device.y} ${this.browser.device.width}*${this.browser.device.height}` : ' noDevice') +
             //     ` ${newDevice.x}, ${newDevice.y} ${newDevice.width} * ${newDevice.height}`
             // );
-            this.browser.device = Rectangle.createNew(this.browser.id, newDevice);
+            this.browser.device = Rectangle.create(this.browser.id, newDevice);
             changed = true;
         }
 
@@ -114,7 +114,7 @@ class WallpaperWindow extends EventEmitter {
             //     (this.browser.scaled ? ` ${this.browser.scaled.x},${this.browser.scaled.y} ${this.browser.scaled.width}*${this.browser.scaled.height}` : ' noDevice') +
             //     ` ${newScaled.x}, ${newScaled.y} ${newScaled.width} * ${newScaled.height}`
             // );
-            this.browser.scaled = Rectangle.createNew(this.browser.id, newScaled);
+            this.browser.scaled = Rectangle.create(this.browser.id, newScaled);
             changed = true;
         }
 

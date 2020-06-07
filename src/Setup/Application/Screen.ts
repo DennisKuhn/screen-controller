@@ -12,6 +12,7 @@ export class Screen extends SetupBase {
         allOf: [
             SetupBase.SCHEMA_REF,
             {
+                type: 'object',
                 properties: {
                     id: { const: Screen.name },
                     className: { const: Screen.name },

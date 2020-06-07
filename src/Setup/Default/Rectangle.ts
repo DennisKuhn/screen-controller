@@ -13,6 +13,7 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
         allOf: [
             SetupBase.SCHEMA_REF,
             {
+                type: 'object',
                 properties: {
                     className: { default: Rectangle.name },
                     x: { type: 'number' },
@@ -60,7 +61,7 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
         ...source
     });
 
-    static createNew = (parentId: SetupItemId, source: SimpleRectangle): Rectangle => new Rectangle(Rectangle.newInterface(parentId, source));
+    static create = (parentId: SetupItemId, source: SimpleRectangle): Rectangle => new Rectangle(Rectangle.newInterface(parentId, source));
 
     static register(): void {
         SetupBase.register(Rectangle, Rectangle.schema, Rectangle.uiSchema);

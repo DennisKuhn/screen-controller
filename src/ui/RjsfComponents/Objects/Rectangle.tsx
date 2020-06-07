@@ -34,14 +34,14 @@ const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
         // console.log(`${module.id}: RectangleObjectTemplate[${title}].toggleFullScreen ${target.id}.${property}=${isFullscreen}`, target, props);
 
         if (rect.className == RelativeRectangle.name) {
-            target[property] = RelativeRectangle.createNew(
+            target[property] = RelativeRectangle.create(
                 target['id'],
                 isFullscreen ?
                     { x: 0, y: 0, width: 1, height: 1 } :
                     { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
             );
         } else {
-            target[property] = PlainRectangle.createNew(
+            target[property] = PlainRectangle.create(
                 target['id'],
                 isFullscreen ?
                     { x: 0, y: 0, width: 1, height: 1 } :

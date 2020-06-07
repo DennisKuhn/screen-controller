@@ -150,14 +150,14 @@ export class Manager {
             // console.log(
             //     `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) set scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`);
 
-            setup.scaledBounds = Rectangle.createNew(setup.id, scaled);
+            setup.scaledBounds = Rectangle.create(setup.id, scaled);
         } else if (!isEqual(setup.scaledBounds.toSimple(), scaled)) {
             if ((setup.scaledBounds.x != scaled.x) && (setup.scaledBounds.y != scaled.y)
                 && (setup.scaledBounds.height != scaled.height) && (setup.scaledBounds.width != scaled.width)) {
                 // console.log(
                 //     `${this.constructor.name}[${this.browser.id}].updateBounds(${setup.id}) new scaled=${[scaled.x, scaled.y, scaled.width, scaled.height]}`);
 
-                setup.scaledBounds = Rectangle.createNew(setup.id, scaled);
+                setup.scaledBounds = Rectangle.create(setup.id, scaled);
             } else {
                 for (const [key, value] of Object.entries(scaled)) {
                     if (setup.scaledBounds[key] != value) {

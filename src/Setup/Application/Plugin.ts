@@ -22,6 +22,7 @@ export class Plugin extends SetupBase implements PluginInterface {
         allOf: [
             SetupBase.SCHEMA_REF,
             {
+                type: 'object',
                 properties: {
                     relativeBounds: { $ref: RelativeRectangle.name },
                     scaledBounds: { $ref: Rectangle.name }
@@ -194,7 +195,7 @@ export class Plugin extends SetupBase implements PluginInterface {
         }
     }
 
-    static createNew(parentId: SetupItemId, schema: JSONSchema7): Plugin {
+    static create(parentId: SetupItemId, schema: JSONSchema7): Plugin {
 
         if (!schema.$id) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.$id`);
         if (!schema.allOf) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.allOf`);

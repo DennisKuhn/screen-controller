@@ -10,6 +10,7 @@ import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
 import deref from 'json-schema-deref-sync';
 import mergeAllOf from 'json-schema-merge-allof';
+import { setDefaults } from './JsonSchemaTools';
 
 switch (process.type) {
     case 'browser': // Main
@@ -151,7 +152,7 @@ export abstract class SetupBase {
         const info = SetupBase.infos[source.className];
 
         if (info.validate == undefined) {
-            console.log(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator`, toJS( info.schema, {recurseEverything: true}) );
+            console.log(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator`, toJS(info.schema, { recurseEverything: true }));
 
             info.validate = SetupBase.ajv.compile(info.schema);
         }
@@ -644,15 +645,28 @@ export abstract class SetupBase {
         }
     }
 
-    protected static createNewInterface(className: string, parentId: SetupItemId, id?: SetupItemId): SetupBaseInterface {
+    public static createNewInterface(className: string, parentId: SetupItemId, id?: SetupItemId): SetupBaseInterface {
         id = id == undefined ? SetupBase.getNewId(className) : id;
 
-        return {
+        const info = SetupBase.infos[className];
+        const plain: SetupBaseInterface = {
             id,
             parentId,
             className,
             name: id,
         };
+
+        setDefaults(plain, info.schema, info.schema);
+
+        return plain;
+    }
+
+    public static createNew(className: string, parentId: SetupItemId): SetupBase {
+        const plain = SetupBase.createNewInterface(className, parentId);
+
+        const newItem = create(plain);
+
+        return newItem;
     }
 
     private static instances: { [index: string]: SetupBase } = {};

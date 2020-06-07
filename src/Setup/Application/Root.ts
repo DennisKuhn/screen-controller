@@ -11,6 +11,7 @@ export class Root extends SetupBase {
         allOf: [
             SetupBase.SCHEMA_REF,
             {
+                type: 'object',
                 properties: {
                     id: { const: Root.name },
                     className: { const: Root.name },

@@ -19,6 +19,7 @@ export class Browser extends SetupBase {
         allOf: [
             SetupBase.SCHEMA_REF,
             {
+                type: 'object',
                 properties: {
                     className: { const: Browser.name },
                     relative: { $ref: RelativeRectangle.name },
@@ -65,7 +66,7 @@ export class Browser extends SetupBase {
     }
 
 
-    static createNew(parentId: SetupItemId, relative: SimpleRectangle): Browser {
+    static create(parentId: SetupItemId, relative: SimpleRectangle): Browser {
         const newConfig = SetupBase.createNewInterface(Browser.name, parentId);
 
         return new Browser( 
@@ -82,7 +83,7 @@ export class Browser extends SetupBase {
     }
 
     addPlugin = (schema: JSONSchema7 ): void => { 
-        const plugin = Plugin.createNew(this.id, schema);
+        const plugin = Plugin.create(this.id, schema);
 
         this.plugins.set(
             plugin.id,

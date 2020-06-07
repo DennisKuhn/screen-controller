@@ -35,7 +35,7 @@ const BrowserForm = observer(({ browser }: { browser: Browser }): JSX.Element =>
         (): void => {
             isFullscreen = !isFullscreen;
 
-            browser.relative = RelativeRectangle.createNew(
+            browser.relative = RelativeRectangle.create(
                 browser.id,
                 isFullscreen ?
                     { x: 0, y: 0, width: 1, height: 1 } :

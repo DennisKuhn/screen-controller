@@ -12,12 +12,13 @@ export class RelativeRectangle extends Rectangle {
         allOf: [
             Rectangle.SCHEMA_REF,
             {
+                type: 'object',
                 properties: {
                     className: { const: RelativeRectangle.name },
-                    x: SetupBase.PERCENT_REF,
-                    y: SetupBase.PERCENT_REF,
-                    width: SetupBase.PERCENT_REF,
-                    height: SetupBase.PERCENT_REF
+                    x: { allOf: [SetupBase.PERCENT_REF, { default: 0 }] },
+                    y: { allOf: [SetupBase.PERCENT_REF, { default: 0 }] },
+                    width: { allOf: [SetupBase.PERCENT_REF, { default: 1 }] },
+                    height: { allOf: [SetupBase.PERCENT_REF, { default: 1 }] }
                 },
                 required: ['x', 'y', 'width', 'height']
             }
@@ -30,7 +31,7 @@ export class RelativeRectangle extends Rectangle {
             ...source
         });
 
-    static createNew = (parentId: SetupItemId, source: SimpleRectangle): RelativeRectangle =>
+    static create = (parentId: SetupItemId, source: SimpleRectangle): RelativeRectangle =>
         new RelativeRectangle(
             RelativeRectangle.newInterface(parentId, source));
 

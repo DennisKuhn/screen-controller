@@ -3,6 +3,8 @@ import { JSONSchema7 } from 'json-schema';
 import React, { } from 'react';
 
 import { makeStyles } from '@material-ui/core';
+import { ExpandMore, ChevronRight } from '@material-ui/icons';
+import { TreeView } from '@material-ui/lab';
 
 // import Form, { UiSchema } from '@rjsf/core';
 import { UiSchema } from '@rjsf/core';
@@ -72,9 +74,9 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
 
             if (!schema.$id)
                 throw new Error(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase no $id: ${JSON.stringify(schema)}`);
-            
+
             merge(item, SetupBase.getUiSchema(schema.$id));
-            
+
             if (schema.$id && [Rectangle.name, RelativeRectangle.name].includes(schema.$id)) {
                 if (item['ui:FieldTemplate'] || (item['ui:widget'] == 'hidden')) {
                     console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set Rectangle already hidden`);
@@ -105,7 +107,7 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
                     addCustom(item[property], value, root);
                 }
             }
-        }        
+        }
         if (schema.additionalProperties) {
             item['additionalProperties'] = {};
             addCustom(
@@ -145,28 +147,35 @@ const ScreenForm = ({ screen }: { screen: Screen }): JSX.Element => {
     const data = screen.getDeep(); // It creates a copy inside
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
 
-    console.log('ScreenForm', uiSchema );
+    console.log('ScreenForm', uiSchema);
 
-    return (<Form
-        showErrorList={true}
-        // transformErrors={(errors: AjvError[]): AjvError[] => {
-        //     errors.forEach(error =>
-        //         console.error(`${module.id}.PluginItem form.transformErrors=`, { ...error })
-        //     );    
-        //     return errors;    
-        // }}
-        idPrefix={screen.id}
-        liveValidate={true}
-        noHtml5Validate={true}
-        schema={schema}
-        formData={data}
-        uiSchema={uiSchema}
-        //        fields={{ SchemaField: ObservedField }}
+    return (
+        <TreeView
+            defaultCollapseIcon={<ExpandMore />}
+            defaultExpandIcon={<ChevronRight />}
+            >
+            <Form
+                showErrorList={true}
+                // transformErrors={(errors: AjvError[]): AjvError[] => {
+                //     errors.forEach(error =>
+                //         console.error(`${module.id}.PluginItem form.transformErrors=`, { ...error })
+                //     );    
+                //     return errors;    
+                // }}
+                idPrefix={screen.id}
+                liveValidate={true}
+                noHtml5Validate={true}
+                schema={schema}
+                formData={data}
+                uiSchema={uiSchema}
+                //        fields={{ SchemaField: ObservedField }}
 
-        formContext={formContext}
-        onError={(e): void => console.error(`ScreenForm: form.onError: ${e.length}`, e)}
-        children={' '}
-    />);
+                formContext={formContext}
+                onError={(e): void => console.error(`ScreenForm: form.onError: ${e.length}`, e)}
+                children={' '}
+            />
+        </TreeView>
+    );
 };
 
 export default ScreenForm;

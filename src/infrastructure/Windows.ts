@@ -59,8 +59,10 @@ class Windows {
                     '--mainwindow'
                 ]
             },
-            width: 400,
-            height: 300,
+            x: 780,
+            y: 860,
+            width: 300,
+            height: 200,
         });
         main.on('closed', app.quit);
         main.webContents.openDevTools();

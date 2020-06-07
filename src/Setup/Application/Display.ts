@@ -12,6 +12,7 @@ export class Display extends SetupBase {
         allOf: [
             SetupBase.SCHEMA_REF,
             {
+                type: 'object',
                 properties: {
                     className: { const: Display.name },
                     parentId: { const: 'Screen' },
@@ -39,7 +40,7 @@ export class Display extends SetupBase {
     }
 
     addBrowser = (): void => {
-        const newBrowser = Browser.createNew(
+        const newBrowser = Browser.create(
             this.id, {
                 x: 0,
                 y: 0,
