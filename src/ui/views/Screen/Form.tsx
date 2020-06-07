@@ -26,6 +26,7 @@ import SetupObject from '../../RjsfComponents/Objects/SetupBase';
 import DictionaryObject from '../../RjsfComponents/Objects/Dictionary';
 
 import { merge } from 'lodash';
+import { observer } from 'mobx-react-lite';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -139,7 +140,7 @@ const fixUiSchema = (item: UiSchema, schema: JSONSchema7): UiSchema => {
 };
 
 
-const ScreenForm = ({ screen }: { screen: Screen }): JSX.Element => {
+const ScreenForm = observer( ({ screen }: { screen: Screen }): JSX.Element => {
     console.log('ScreenForm');
 
     const formContext: FormContext = { root: screen };
@@ -176,6 +177,6 @@ const ScreenForm = ({ screen }: { screen: Screen }): JSX.Element => {
             />
         </TreeView>
     );
-};
+});
 
 export default ScreenForm;

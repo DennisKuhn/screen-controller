@@ -689,4 +689,8 @@ export abstract class SetupBase {
             register(factory);
         }
     }
+
+    deleteChild(id: SetupItemId): void {
+        throw new Error(`SetupBase[${this.constructor.name}, ${this.id}] has no deleteChild(${id}) method`);
+    }
 }

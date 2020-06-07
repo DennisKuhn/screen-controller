@@ -53,6 +53,16 @@ export class Display extends SetupBase {
         );
     }
 
+    deleteChild(id: SetupItemId): void {
+        console.log(`${this.constructor.name}[${this.id}].deleteChild(${id})`);
+
+        if (!this.browsers.has(id))
+            throw new Error(`${this.constructor.name}[${this.id}].deleteChild(${id}) not found in [${Array.from(this.browsers.keys()).join(', ')}]`);
+        
+        this.browsers.delete(id);
+    }
+
+
     static createNew(displayId: SetupItemId, parentId: SetupItemId): Display {
         return new Display(
             {

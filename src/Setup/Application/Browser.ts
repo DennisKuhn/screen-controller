@@ -90,6 +90,16 @@ export class Browser extends SetupBase {
             plugin
         );
     }
+
+    deleteChild(id: SetupItemId): void {
+        console.log(`${this.constructor.name}[${this.id}].deleteChild(${id})`);
+
+        if (!this.plugins.has(id))
+            throw new Error(`${this.constructor.name}.deleteChild(${id}) not found in [${Array.from(this.plugins.keys()).join(', ')}]`);
+
+        this.plugins.delete(id);
+    }
+
 }
 
 Browser.register();
