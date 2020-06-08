@@ -4,7 +4,7 @@ import { SetupBase } from './SetupBase';
 import { cloneDeep, merge } from 'lodash';
 import mergeAllOf from 'json-schema-merge-allof';
 
-const resolve = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => {
+export const resolve = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => {
     if (typeof schema.$ref != 'string')
         return schema;
 

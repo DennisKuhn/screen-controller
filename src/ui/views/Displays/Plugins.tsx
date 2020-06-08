@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 import GridList from '@material-ui/core/GridList';
 import GridListTile from '@material-ui/core/GridListTile';
@@ -25,14 +25,26 @@ const useStyles = makeStyles((theme) => ({
 
 
 const Plugins = observer(({ browser }: { browser: Browser }): JSX.Element => {
-    if (Plugin.hasPluginSchemas) {
-        console.log('Plugins plugin schemas loaded');
-    } else {
-        console.log('Plugins no plugin schema -> Manager.loadAll()');
-        Manager.loadAll();
-    }
+    const [schemas, setSchemas] = useState(Plugin.pluginSchemas);
 
-    return <PluginsCompnent browser={browser} schemas={Plugin.pluginSchemas} onAdd={browser.addPlugin} />;
+    // if (Plugin.hasPluginSchemas) {
+    //     console.log('Plugins plugin schemas loaded');
+    // } else {
+    //     console.log('Plugins.tsx -> Manager.loadAll()');
+    //     Manager.loadAll();
+    // }
+
+    useEffect(
+        () => {
+            console.log('Plugins.tsx -> Manager.loadAll()');
+            Manager.loadAll().then(
+                () => setSchemas(Plugin.pluginSchemas)
+            );
+        },
+        []
+    );
+
+    return <PluginsCompnent browser={browser} schemas={schemas} onAdd={browser.addPlugin} />;
 });
 
 const PluginTile = ({ schema, onAdd }: { schema: JSONSchema7; onAdd: (schema: JSONSchema7) => void }): React.ReactElement => (

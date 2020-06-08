@@ -18,6 +18,7 @@ import { Browser } from './Application/Browser';
 import { Plugin } from './Application/Plugin';
 import { JSONSchema7 } from 'json-schema';
 import { UpdateChannel } from './UpdateChannel';
+import { resolve } from './JsonSchemaTools';
 
 
 export declare interface Controller {
@@ -335,7 +336,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         if (isEqual(itemPlainValue, remotePlainValue)) {
             // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=${remotePlainValue}`);
         } else {
-            console.log( `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}` );
+            console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}`);
             if (newSetup) {
                 this.connectPersistPropagate({
                     item: newSetup,
@@ -389,7 +390,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                             remotePlainValue
                         );
                     } else {
-                        console.log( `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip null` );
+                        console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip null`);
                     }
                     break;
                 case 'update':
@@ -593,16 +594,20 @@ class Renderer extends ControllerImpl {
             this.onSchemaDefinitionChanged
         );
 
-        
+        this.ipc.on('addSchema', this.onAddSchema);
+    }
+
+    private onAddSchema = (e: IpcRendererEvent, args: IpcAddSchemaArgs): void => {
+        Plugin.add(args.schema);
     }
 
     protected onSchemaDefinitionChanged = (change: IObjectDidChange): void => {
-        
+
 
         switch (change.type) {
             case 'add':
                 // console.log(`${this.constructor.name}.onSchemaDefinitionChanged(${change.type} ${String(change.name)})`);
-                this.ipc.send('addSchema', {schema: toJS(change.newValue) } );
+                this.ipc.send('addSchema', { schema: toJS(change.newValue) });
                 break;
             case 'update':
             case 'remove':
@@ -742,7 +747,7 @@ class Renderer extends ControllerImpl {
 
         if (newSetup) {
             let persistedChild = false;
-            
+
             for (const [propertyName, child] of Object.entries(newSetup)) {
                 if (child instanceof SetupBase) {
                     this.persist({ item: newSetup, type: 'add', name: propertyName, newValue: child });
@@ -750,7 +755,7 @@ class Renderer extends ControllerImpl {
                 }
             }
             if (!persistedChild) {
-                this.persist({ item: newSetup, name: 'id', type: 'add', newValue: item.id });    
+                this.persist({ item: newSetup, name: 'id', type: 'add', newValue: item.id });
             }
         } else if (type == 'delete') {
             // console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}) delete ${name}`);
@@ -810,11 +815,11 @@ class MainWindow extends Renderer {
 
         this.getSetup(Root.name, -1)
             .then(root => {
-                // console.log(`${this.constructor.name}() gotSetup(${Root.name}) send ...`);
+                console.log(`${this.constructor.name}() gotSetup(${Root.name}) send ...`, SetupBase.activeSchema);
                 this.ipc.send(
                     'init',
                     {
-                        schema: toJS( SetupBase.activeSchema ),
+                        schema: toJS(SetupBase.activeSchema),
                         root: root.getDeep()
                     }
                 );
@@ -878,7 +883,16 @@ class Main extends ControllerImpl {
     }
 
     private onAddSchema = (e: IpcMainEvent, args: IpcAddSchemaArgs): void => {
+        console.log(`${this.constructor.name}.onAddSchema(${e.sender.id}, ${args.schema.$id})`);
+
         Plugin.add(args.schema);
+
+        for (const listener of this.updateChannels) {
+            if ((listener != undefined) && (listener.ipc.id != e.sender.id)) {
+                console.log(`${this.constructor.name}.onAddSchema(${e.sender.id}, ${args.schema.$id}) send to ${listener.ipc.id}`);
+                listener.ipc.send('addSchema', { schema: args.schema });
+            }
+        }
     }
 
 
@@ -897,7 +911,7 @@ class Main extends ControllerImpl {
                     this.changeListeners.indexOf(listener)
                 );
             });
-        
+
 
         this.updateChannels[channelId] = undefined;
     }
@@ -1037,7 +1051,7 @@ class Main extends ControllerImpl {
 
         const channel = this.updateChannels[listener.senderId];
 
-        if (channel == undefined ) {
+        if (channel == undefined) {
             console.error(`${this.constructor.name}.onChangeItemChanged(${change.name}, ${change.type} ): no channel for ${listener.senderId}`);
             return;
         }
@@ -1049,7 +1063,7 @@ class Main extends ControllerImpl {
             const itemPlainValue = newValue != undefined ? SetupBase.getPlainValue(newValue) : undefined;
             const remoteUpdate = this.remoteUpdates.get(item.id)?.[name];
 
-            persist = ! isEqual(itemPlainValue, remoteUpdate);
+            persist = !isEqual(itemPlainValue, remoteUpdate);
         }
 
         if ((change as LocalMapChangeArgsType).map != undefined) {
@@ -1171,11 +1185,19 @@ class Main extends ControllerImpl {
         this.connectChangeListeners(item, fireImmediately);
     }
 
+    static isPluginSchema = (schema: JSONSchema7, root: JSONSchema7): boolean =>
+        schema.allOf != undefined
+        && schema.allOf.some(pluginRefProspect =>
+            (typeof pluginRefProspect == 'object')
+            && ((pluginRefProspect.$ref == Plugin.name)
+                || Main.isPluginSchema(resolve(pluginRefProspect, root), root))
+        );
+
 
     private onInit = (e: IpcMainEvent, init: IpcInitArgs): void => {
         const { schema, root: rootPlain } = init;
 
-        // console.log(`${this.constructor.name}.onInit: sender=${e.sender}`);
+        console.log(`${this.constructor.name}.onInit: sender=${e.sender}`, schema);
 
 
         if (!schema.definitions)
@@ -1183,8 +1205,8 @@ class Main extends ControllerImpl {
 
         Object.values(schema.definitions)
             .filter(schemaDef =>
-                (schemaDef as JSONSchema7).allOf?.some(pluginRefProspect =>
-                    (pluginRefProspect as JSONSchema7).$ref == Plugin.name))
+                Main.isPluginSchema(schemaDef as JSONSchema7, schema)
+            )
             .forEach(definition =>
                 Plugin.add(definition as JSONSchema7));
 
@@ -1235,10 +1257,10 @@ class Main extends ControllerImpl {
                 } else {
                     if (!this.ipcStorage)
                         throw new Error(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): no IPC storage to register`);
-                    
+
                     // console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve ${responseItem.id}` /*, responseItem.getPlainDeep() */);                    
 
-                    this.register(this.ipcStorage, {itemId: responseItem.id, depth});
+                    this.register(this.ipcStorage, { itemId: responseItem.id, depth });
                     resolve(responseItem);
                 }
             });

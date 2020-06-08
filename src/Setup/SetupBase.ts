@@ -152,7 +152,7 @@ export abstract class SetupBase {
         const info = SetupBase.infos[source.className];
 
         if (info.validate == undefined) {
-            console.log(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator`, toJS(info.schema, { recurseEverything: true }));
+            console.log(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator` /*, toJS(info.schema, { recurseEverything: true }) */);
 
             info.validate = SetupBase.ajv.compile(info.schema);
         }

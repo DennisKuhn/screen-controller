@@ -71,6 +71,7 @@ export interface IpcRenderer extends electron.IpcRenderer {
 
     /// From IpcWindow.send
     on(channel: ChangeChannel, listener: (event: IpcRendererEvent, update: IpcChangeArgsType, persist?: boolean) => void): this;
+    on(channel: AddSchemaChannel, listener: (event: IpcRendererEvent, update: IpcAddSchemaArgs) => void): this;
 
 }
 
@@ -86,6 +87,7 @@ export interface IpcMain extends electron.IpcMain {
 
 export interface IpcWindow extends electron.WebContents {
     send(channel: ChangeChannel, update: IpcChangeArgsType, persist: boolean): void;
+    send(channel: AddSchemaChannel, schema: IpcAddSchemaArgs): void;
 }
 
 export interface IpcRegisterArgs {
