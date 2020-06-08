@@ -1,32 +1,25 @@
-import { JSONSchema7 } from 'json-schema';
-
-import React, { } from 'react';
-
 import { makeStyles } from '@material-ui/core';
-import { ExpandMore, ChevronRight } from '@material-ui/icons';
+import { ChevronRight, ExpandMore } from '@material-ui/icons';
 import { TreeView } from '@material-ui/lab';
-
 // import Form, { UiSchema } from '@rjsf/core';
 import { UiSchema } from '@rjsf/core';
 import Form from '@rjsf/material-ui';
-
-import { SetupBase } from '../../../Setup/SetupBase';
-import { Rectangle } from '../../../Setup/Default/Rectangle';
-import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
-import { Screen } from '../../../Setup/Application/Screen';
-
-import { FormContext } from '../../RjsfComponents/FormContext';
-
-import HiddenField from '../../RjsfComponents/Fields/Hidden';
-import ObservedField from '../../RjsfComponents/Fields/Observed';
-import PercentField from '../../RjsfComponents/Fields/Percent';
-
-import RectangleObject from '../../RjsfComponents/Objects/Rectangle';
-import SetupObject from '../../RjsfComponents/Objects/SetupBase';
-import DictionaryObject from '../../RjsfComponents/Objects/Dictionary';
-
+import { JSONSchema7 } from 'json-schema';
 import { merge } from 'lodash';
 import { observer } from 'mobx-react-lite';
+import React from 'react';
+import { Screen } from '../../../Setup/Application/Screen';
+import { Rectangle } from '../../../Setup/Default/Rectangle';
+import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
+import { SetupBase } from '../../../Setup/SetupBase';
+import { SetupBaseInterface } from '../../../Setup/SetupInterface';
+import HiddenField from '../../RjsfComponents/Fields/Hidden';
+import PercentField from '../../RjsfComponents/Fields/Percent';
+import { FormContext } from '../../RjsfComponents/FormContext';
+import DictionaryObject from '../../RjsfComponents/Objects/Dictionary';
+import RectangleObject from '../../RjsfComponents/Objects/Rectangle';
+import SetupObject from '../../RjsfComponents/Objects/SetupBase';
+
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -140,12 +133,10 @@ const fixUiSchema = (item: UiSchema, schema: JSONSchema7): UiSchema => {
 };
 
 
-const ScreenForm = observer( ({ screen }: { screen: Screen }): JSX.Element => {
-    console.log('ScreenForm');
+const SetupBaseForm = observer(({ root, schema }: { root: SetupBaseInterface; schema: JSONSchema7 }): JSX.Element => {
+    console.log('SetupBaseForm');
 
-    const formContext: FormContext = { root: screen };
-    const schema = screen.getPlainSchema();
-    const data = screen.getDeep(); // It creates a copy inside
+    const formContext: FormContext = { schema };
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
 
     console.log('ScreenForm', uiSchema);
@@ -163,11 +154,12 @@ const ScreenForm = observer( ({ screen }: { screen: Screen }): JSX.Element => {
                 //     );    
                 //     return errors;    
                 // }}
-                idPrefix={screen.id}
+                tagName={'div'}
+                idPrefix={root.id}
                 liveValidate={true}
                 noHtml5Validate={true}
                 schema={schema}
-                formData={data}
+                formData={root}
                 uiSchema={uiSchema}
                 //        fields={{ SchemaField: ObservedField }}
 
@@ -179,4 +171,4 @@ const ScreenForm = observer( ({ screen }: { screen: Screen }): JSX.Element => {
     );
 });
 
-export default ScreenForm;
+export default SetupBaseForm;

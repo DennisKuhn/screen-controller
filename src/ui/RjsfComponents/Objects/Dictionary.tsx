@@ -1,18 +1,16 @@
-import React, { useCallback } from 'react';
-
-import { TreeItem } from '@material-ui/lab';
-
-import { ObjectFieldTemplateProps } from '@rjsf/core';
-
-import { SetupBaseInterface, Dictionary } from '../../../Setup/SetupInterface';
-import { IconButton, Typography, GridListTile, GridListTileBar, GridList } from '@material-ui/core';
+import { GridList, GridListTile, GridListTileBar, IconButton, Typography } from '@material-ui/core';
+import { createStyles, makeStyles } from '@material-ui/core/styles';
 import { Add } from '@material-ui/icons';
-import { SetupBase } from '../../../Setup/SetupBase';
-import { JSONSchema7 } from 'json-schema';
-import controller from '../../../Setup/Controller';
+import { TreeItem } from '@material-ui/lab';
+import { ObjectFieldTemplateProps } from '@rjsf/core';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { cloneDeep } from 'lodash';
+import React, { useCallback } from 'react';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
-import { makeStyles, createStyles } from '@material-ui/core/styles';
-
+import controller from '../../../Setup/Controller';
+import { SetupBase } from '../../../Setup/SetupBase';
+import { Dictionary, SetupBaseInterface } from '../../../Setup/SetupInterface';
+import Form from '../../views/Screen/Form';
 
 const useItemLabelStyles = makeStyles(() =>
     createStyles({
@@ -55,10 +53,33 @@ const NewItemTile = ({ schema, addItem, key }: { schema: JSONSchema7; key: strin
                 </IconButton>
             }
         />
-    </GridListTile>);
+    </GridListTile>
+);
+
+
+const ItemForm = ({ plainItem, schemaChoices, rootSchema }: { plainItem: SetupBaseInterface; schemaChoices: JSONSchema7Definition[]; rootSchema: JSONSchema7 }): JSX.Element => {
+    const schema = cloneDeep(schemaChoices.find(prospect =>
+        (typeof prospect == 'object') && (prospect.$id == plainItem.className)));
+    
+    if (!schema)
+        throw new Error(`Dictionary.tsx/ItemForm: can't find ${plainItem.className} in schemaChoices[].$id ${JSON.stringify(schemaChoices)}`);
+    if (typeof schema != 'object')
+        throw new Error(`Dictionary.tsx/ItemForm: schema for ${plainItem.className} is not an object (${typeof schema}) ${JSON.stringify(schemaChoices)}`);
+
+    schema.definitions = rootSchema.definitions;
+
+    console.log(`Dictionary.tsx/ItemForm: [${plainItem.id}]`, { ...{ plainItem, schema, schemaChoices, rootSchema}});
+    
+    return (
+        <Form
+            root={plainItem}
+            schema={schema}
+        />
+    );
+};
 
 const DictionaryTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
-    const { properties, formData, idSchema, schema } = props;
+    const { properties, formData, idSchema, schema, formContext } = props;
     const setup = formData as Dictionary<SetupBaseInterface>;
 
     console.log(`DictionaryTemplate[${idSchema?.$id}]: setup.id=${setup?.id}`, props);
@@ -125,15 +146,19 @@ const DictionaryTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
                 label={<ItemLabel title={props.title} {...(choices ? {} : { factory: addItem })}  />}
             >
                 {(choices &&
-                    <GridList cellHeight={'auto'} cols={4}>
+                    <GridList cellHeight={100} cols={3}>
                     {choices.map( (schema, index) =>
                         NewItemTile( {key: (schema as JSONSchema7).$id ?? index.toString(), schema: schema as JSONSchema7, addItem: addSchemaItem})
                     )}
                     </GridList>
                 )}
-                {properties.map(property =>
-                    property.content
-                )}
+                {choices ? 
+                    Object.values(setup).map( plainChild => 
+                        <ItemForm key={plainChild.id} plainItem={plainChild} schemaChoices={choices} rootSchema={formContext.schema} />    
+                        )
+                :
+                    properties.map(property => property.content)
+                }
             </TreeItem>
         </div >
     );

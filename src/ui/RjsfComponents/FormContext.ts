@@ -1,5 +1,5 @@
-import { SetupBase } from '../../Setup/SetupBase';
+import { JSONSchema7 } from 'json-schema';
 
 export interface FormContext {
-    root: SetupBase;
+    schema: JSONSchema7;
 }

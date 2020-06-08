@@ -183,8 +183,8 @@ const PluginItem = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
     const deletePlugin = (): boolean => (plugin.parent as Browser).plugins.delete(plugin.id);
 
 
-    const formContext: FormContext = { root: plugin };
     const schema = plugin.getPlainSchema();
+    const formContext: FormContext = { schema };
     const data = plugin.getDeep(); // It creates a copy inside
     const uiSchema = fixUiSchema(Plugin.uiSchema, schema, classes.hiddenField);
 

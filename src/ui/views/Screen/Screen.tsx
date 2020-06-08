@@ -17,7 +17,7 @@ const ScreenPage = (): JSX.Element => {
 
     return (screen == undefined?
         (<></>):
-        <Form screen={screen} />);
+        <Form root={screen.getDeep()} schema={screen.getPlainSchema()} />);
 };
 
 export default ScreenPage;

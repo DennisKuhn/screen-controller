@@ -26,7 +26,7 @@ const Observed = (props: FieldProps): JSX.Element => {
         // console.log(`${module.id}.ObservedField[${props.idSchema.$id}] props=`, props);
         // const ajv = ajvs[formContext.plugin.className];
         if (!ajv) {
-            console.error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] no ajv for : ${formContext.root.className}`, props);
+            // console.error(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] no ajv for : ${formContext.root.className}`, props);
         } else {
             let fValidate;
 
@@ -61,27 +61,27 @@ const Observed = (props: FieldProps): JSX.Element => {
 
                         // console.log(`${module.id}.ObservedField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
                         // Split idSchema $id <RootPrefix>_<RootProperty>_<Childproperty>
-                        const [target, name] = moveToTarget(
-                            formContext.root,
-                            props.idSchema.$id.split('_'));
+                        // const [target, name] = moveToTarget(
+                        //     formContext.root,
+                        //     props.idSchema.$id.split('_'));
 
-                        if (newValue.id) {
-                            if (newValue.id != target[name]?.id) {
-                                console.error(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: ${newValue.id} != ${target[name]?.id}`);
-                            } else {
-                                // console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: skip ${newValue.id} == ${target[name]?.id}`);
-                            }
-                        } else {
-                            if (validate(newValue)) {
-                                // console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = ${newValue}`);
-                                target[name] = newValue;
-                            } else {
-                                console.warn(
-                                    `${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = -> ${newValue} <- :` +
-                                    ` ${validate.errors ? validate.errors.map(error => `${error.dataPath}:${error.message}`) : ''}`,
-                                    { ...validate.errors }, newValue);
-                            }
-                        }
+                        // if (newValue.id) {
+                        //     if (newValue.id != target[name]?.id) {
+                        //         console.error(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: ${newValue.id} != ${target[name]?.id}`);
+                        //     } else {
+                        //         // console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}].onChange: skip ${newValue.id} == ${target[name]?.id}`);
+                        //     }
+                        // } else {
+                        //     if (validate(newValue)) {
+                        //         // console.log(`${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = ${newValue}`);
+                        //         target[name] = newValue;
+                        //     } else {
+                        //         console.warn(
+                        //             `${module.id}.ObservedField[${props.idSchema?.$id}][${name}]== ${target[name]} = -> ${newValue} <- :` +
+                        //             ` ${validate.errors ? validate.errors.map(error => `${error.dataPath}:${error.message}`) : ''}`,
+                        //             { ...validate.errors }, newValue);
+                        //     }
+                        // }
                     }
                 };
                 return (
