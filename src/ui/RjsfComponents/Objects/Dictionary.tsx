@@ -69,7 +69,7 @@ const DictionaryTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
         && schema.additionalProperties.oneOf.length) ? 
         schema.additionalProperties.oneOf : undefined;
 
-    const add = async (className: string): void => {
+    const add = async (className: string): Promise<void> => {
         const parent = await controller.getSetup(parentId, 1);
         const newItem = SetupBase.createNew(className, parentId);
 
@@ -81,7 +81,7 @@ const DictionaryTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
 
         map.set(newItem.id, newItem);
         console.log(`DictionaryTemplate[${idSchema?.$id}].add ${newItem.className}@${newItem.id} in ${newItem.parentId}.${mapName}`);
-    }
+    };
     
     const addItem = useCallback(
         async () => {
