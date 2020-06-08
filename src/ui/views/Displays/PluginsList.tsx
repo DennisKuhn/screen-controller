@@ -36,6 +36,7 @@ import RectangleObject from '../../RjsfComponents/Objects/Rectangle';
 import { JSONSchema7 } from 'json-schema';
 import { FormContext } from '../../RjsfComponents/FormContext';
 import ObjectTemplate from '../../RjsfComponents/Objects/SetupBase';
+import { resolve } from '../../../Setup/JsonSchemaTools';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -51,7 +52,7 @@ const PluginForm = observer(({ plugin }: { plugin: Plugin }): JSX.Element => {
         <>
             <Tooltip
                 id={'tooltip-' + plugin.id + '-config'}
-                title={plugin.getPlainSchema().description ?? ''}
+                title={resolve(plugin.getSchema(), plugin.getSchema()).description ?? ''}
                 placement="top"
                 >
                 <TextField

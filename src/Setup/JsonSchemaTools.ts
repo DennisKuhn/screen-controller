@@ -157,3 +157,169 @@ export const setDefaults = (target: SetupBaseInterface, schema: JSONSchema7, roo
     return target;
 };
 
+export const forEach = (schema: JSONSchema7, action: (s: JSONSchema7) => void): void => {
+    action(schema);
+
+    if (schema.properties) {
+        for (const property of Object.values(schema.properties)) {
+            if (typeof property == 'object')
+                forEach(property, action);
+        }
+    }
+    if (typeof schema.additionalProperties == 'object')
+        forEach(schema.additionalProperties, action);
+
+    if (schema.oneOf) {
+        for (const subSchema of schema.oneOf) {
+            if (typeof subSchema == 'object')
+                forEach(subSchema, action);
+        }
+    }
+    if (schema.allOf) {
+        for (const subSchema of schema.allOf) {
+            if (typeof subSchema == 'object')
+                forEach(subSchema, action);
+        }
+    }
+    if (schema.anyOf) {
+        for (const subSchema of schema.anyOf) {
+            if (typeof subSchema == 'object')
+                forEach(subSchema, action);
+        }
+    }
+    if (schema.definitions) {
+        for (const subSchema of Object.values(schema.definitions)) {
+            if (typeof subSchema == 'object')
+                forEach(subSchema, action);
+        }
+    }
+};
+
+
+
+export const replaceEach = (schema: JSONSchema7, root: JSONSchema7, replacer: (s: JSONSchema7, root: JSONSchema7) => JSONSchema7 | undefined): void => {
+    if (schema.properties) {
+        for (const [property, prospect] of Object.entries(schema.properties)) {
+            if (typeof prospect == 'object') {
+                const replacement = replacer(prospect, root);
+
+                if (replacement) {
+                    console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
+                    schema.properties[property] = replacement;
+                }
+                replaceEach(schema.properties[property] as JSONSchema7, root, replacer);
+            }
+        }
+    }
+    if (typeof schema.additionalProperties == 'object') {
+        const replacement = replacer(schema.additionalProperties, root);
+
+        if (replacement) {
+            console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
+            schema.additionalProperties = replacement;
+        }
+        replaceEach(schema.additionalProperties, root, replacer);
+    }
+    if (schema.oneOf) {
+        for (const subSchema of schema.oneOf) {
+            if (typeof subSchema == 'object') {
+                replaceEach(subSchema, root, replacer);
+            }
+        }
+    }
+    if (schema.allOf) {
+        for (const subSchema of schema.allOf) {
+            if (typeof subSchema == 'object')
+                replaceEach(subSchema, root, replacer);
+        }
+    }
+    if (schema.anyOf) {
+        for (const subSchema of schema.anyOf) {
+            if (typeof subSchema == 'object')
+                replaceEach(subSchema, root, replacer);
+        }
+    }
+    if (schema.definitions) {
+        for (const subSchema of Object.values(schema.definitions)) {
+            if (typeof subSchema == 'object')
+                replaceEach(subSchema, root, replacer);
+        }
+    }
+};
+
+const concretesBuffer = new Map<string, JSONSchema7[]>();
+
+export const getConcretes = (abstractId: string, root: JSONSchema7): JSONSchema7[] => {
+    if (!root.definitions)
+        throw new Error(`getConcretes(${abstractId}) no definitions in root=${JSON.stringify(root)}`);
+
+    const cached = concretesBuffer.get(abstractId);
+    if (cached != undefined) {
+        console.log(`getConcretes(${abstractId}) return cached ${cached.length}`);
+        return cached;
+    }
+    
+    console.log(`getConcretes(${abstractId})`);
+
+    const concretes: JSONSchema7[] = [];
+
+    const defsWithRefs = Object.entries(root.definitions)
+        .filter(([, schema]) => (typeof schema == 'object') &&
+            schema.allOf?.some(part => (typeof part == 'object') &&
+                part.$ref == abstractId));
+
+    for (const [id, definition] of defsWithRefs) {
+        if (typeof definition != 'object')
+            throw new Error(`getConcretes(${abstractId}) definitions is not an object root=${JSON.stringify(root)}`);
+
+        let childConcretes: JSONSchema7[] = [];
+
+        if (definition.$id) {
+            childConcretes = getConcretes(definition.$id, root);
+        }
+        if (childConcretes.length) {
+            console.log(`getConcretes(${abstractId}) [${id}/${definition.$id}] add ${childConcretes.length}`);
+            concretes.push(...childConcretes);
+        } else {
+            console.log(`getConcretes(${abstractId}) add ${id}/${definition.$id}`);
+            concretes.push(definition);
+        }
+    }
+    console.log(`getConcretes(${abstractId}) return ${concretes.length}`);
+    concretesBuffer.set(abstractId, concretes);
+    return concretes;
+};
+
+const expandAbstractRef = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 | undefined => {
+    if (schema.$ref) {
+        const replacement = {
+            oneOf: getConcretes(schema.$ref, root)
+        };
+
+        if (replacement.oneOf.length)
+            return replacement;
+    } if (schema.oneOf) {
+        const oneOf = schema.oneOf;
+        oneOf.forEach((option, index) => {
+            if ((typeof option == 'object') && option.$ref) {
+                const concretes = getConcretes(option.$ref, root);
+
+                if (concretes.length) {
+                    console.log(`expandAbstractRef: ${option.$ref} replace .oneOf[${index}] = ${concretes.length}`);
+                    
+                    oneOf.splice(index, 1);
+                    oneOf.push(...concretes);
+                }
+            }
+        }
+        );
+    }
+};
+
+export const replaceAbstractRefsWithOneOfConcrets = (root: JSONSchema7): void => {
+
+    replaceEach(
+        root, root,
+        expandAbstractRef
+    );
+};

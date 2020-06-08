@@ -10,7 +10,7 @@ import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
 import deref from 'json-schema-deref-sync';
 import mergeAllOf from 'json-schema-merge-allof';
-import { setDefaults } from './JsonSchemaTools';
+import { setDefaults, replaceEach, replaceAbstractRefsWithOneOfConcrets, forEach } from './JsonSchemaTools';
 
 switch (process.type) {
     case 'browser': // Main
@@ -217,83 +217,7 @@ export abstract class SetupBase {
         }
     }
 
-    private static forEach(schema: JSONSchema7, action: (s: JSONSchema7) => void): void {
-        action(schema);
-
-        if (schema.properties) {
-            for (const property of Object.values(schema.properties)) {
-                if (typeof property == 'object')
-                    action(property);
-            }
-        }
-        if (typeof schema.additionalProperties == 'object')
-            action(schema.additionalProperties);
-
-        if (schema.oneOf) {
-            for (const subSchema of schema.oneOf) {
-                if (typeof subSchema == 'object')
-                    action(subSchema);
-            }
-        }
-        if (schema.allOf) {
-            for (const subSchema of schema.allOf) {
-                if (typeof subSchema == 'object')
-                    action(subSchema);
-            }
-        }
-        if (schema.anyOf) {
-            for (const subSchema of schema.anyOf) {
-                if (typeof subSchema == 'object')
-                    action(subSchema);
-            }
-        }
-    }
-
-    private static replaceEach(schema: JSONSchema7, replacer: (s: JSONSchema7) => JSONSchema7 | undefined): void {
-        if (schema.properties) {
-            for (const [property, prospect] of Object.entries(schema.properties)) {
-                if (typeof prospect == 'object') {
-                    const replacement = replacer(prospect);
-
-                    if (replacement) {
-                        console.log(`SetupBase.replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
-                        schema.properties[property] = replacement;
-                    }
-                    SetupBase.replaceEach(schema.properties[property] as JSONSchema7, replacer);
-                }
-            }
-        }
-        if (typeof schema.additionalProperties == 'object') {
-            const replacement = replacer(schema.additionalProperties);
-
-            if (replacement) {
-                console.log(`SetupBase.replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
-                schema.additionalProperties = replacement;
-            }
-            SetupBase.replaceEach(schema.additionalProperties, replacer);
-        }
-        if (schema.oneOf) {
-            for (const subSchema of schema.oneOf) {
-                if (typeof subSchema == 'object') {
-                    SetupBase.replaceEach(subSchema, replacer);
-                }
-            }
-        }
-        if (schema.allOf) {
-            for (const subSchema of schema.allOf) {
-                if (typeof subSchema == 'object')
-                    SetupBase.replaceEach(subSchema, replacer);
-            }
-        }
-        if (schema.anyOf) {
-            for (const subSchema of schema.anyOf) {
-                if (typeof subSchema == 'object')
-                    SetupBase.replaceEach(subSchema, replacer);
-            }
-        }
-    }
-
-    private static getOtherOneOfNull(schema: JSONSchema7): JSONSchema7 | undefined {
+    private static getOtherOneOfNull(schema: JSONSchema7, root: JSONSchema7): JSONSchema7 | undefined {
         if (schema.oneOf?.length == 2) {
             if ((schema.oneOf[0] as JSONSchema7).type == 'null') {
                 return schema.oneOf[1] as JSONSchema7;
@@ -305,9 +229,22 @@ export abstract class SetupBase {
     }
 
     private static mergeOneOfNulls(schema: JSONSchema7): void {
-        SetupBase.replaceEach(
+        replaceEach(
+            schema,
             schema,
             SetupBase.getOtherOneOfNull
+        );
+        forEach(
+            schema,
+            subSchema =>
+                subSchema.oneOf
+                && subSchema.oneOf.length > 2
+                && subSchema.oneOf.forEach((prospect, index) =>
+                    typeof prospect == 'object'
+                    && prospect.type == 'null'
+                    && subSchema.oneOf?.splice(index, 1).length
+                    && console.log('mergeOneOfNull: removed null from', {...subSchema.oneOf})
+                )
         );
     }
 
@@ -382,6 +319,7 @@ export abstract class SetupBase {
         }
     }
 
+
     public getPlainSchema(): JSONSchema7 {
         if (!(this.className in SetupBase.infos))
             throw new Error(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}) no info: ${JSON.stringify(SetupBase.infos)}`);
@@ -390,6 +328,10 @@ export abstract class SetupBase {
 
         if (info.plainSchema == undefined) {
             const plainSchema = toJS(info.schema, { recurseEverything: true });
+
+            replaceAbstractRefsWithOneOfConcrets(plainSchema);
+            console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).replaced AbstractRefsWithOneOfConcrets:`, { ...plainSchema });
+
             SetupBase.fixRefs(plainSchema);
 
             const derefed = deref(plainSchema);

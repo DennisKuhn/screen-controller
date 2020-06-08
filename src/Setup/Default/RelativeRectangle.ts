@@ -10,7 +10,7 @@ export class RelativeRectangle extends Rectangle {
     static readonly schema: JSONSchema7 = {
         $id: RelativeRectangle.name,
         allOf: [
-            Rectangle.SCHEMA_REF,
+            SetupBase.SCHEMA_REF,
             {
                 type: 'object',
                 properties: {
