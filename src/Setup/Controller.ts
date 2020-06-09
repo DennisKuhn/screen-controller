@@ -885,7 +885,8 @@ class Main extends ControllerImpl {
             throw new Error(`${this.constructor.name}.onSetupChanged(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
 
         console.log(
-            `${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] = ` +
+            `${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] ${update.type}` +
+            ` ${update.item}.${update.name} =` +
             ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
 
         updateChannel.addReceived(update);
@@ -1208,7 +1209,7 @@ class Main extends ControllerImpl {
     private onInit = (e: IpcMainEvent, init: IpcInitArgs): void => {
         const { schema, root: rootPlain } = init;
 
-        console.log(`${this.constructor.name}.onInit: sender=${e.sender}`, schema);
+        console.log(`${this.constructor.name}.onInit: sender=${e.sender}`/*, schema*/);
 
 
         if (!schema.definitions)

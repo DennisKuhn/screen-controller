@@ -77,8 +77,9 @@ export class UpdateChannel {
                 this.onError && this.onError(this);
             } else {
                 try {
-                    console.log(
-                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map}.${change.name}, ${change.type}, persist=${persist})= ${change['newValue']}`);
+                    // console.log(
+                    //    `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map}.${change.name}, ${change.type}, persist=${persist})= ${change['newValue']}`
+                    // );
                     
                     this.ipc.send('change', change, persist === true);
                 } catch (error) {

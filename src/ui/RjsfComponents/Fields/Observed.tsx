@@ -1,6 +1,6 @@
 import { ErrorSchema, FieldProps } from '@rjsf/core';
 import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
-import Ajv from 'ajv';
+import Ajv, { ValidateFunction } from 'ajv';
 import { cloneDeep } from 'lodash';
 import React from 'react';
 import controller from '../../../Setup/Controller';
@@ -29,12 +29,7 @@ const Observed = (props: FieldProps): JSX.Element => {
             throw new Error(`ObservedField[${setupItemId}].[${name}] [${idSchema.$id}] failed controller.tryGetSetupSync()`);
 
 
-        let fValidate;
-
-        // const schema = props.schema.$ref ?
-        //     { $ref: SetupBase.activeSchema.$id + props.schema.$ref.substr('#'.length) } :
-        //     props.schema;
-        
+        let fValidate: ValidateFunction | undefined;
         const schema = cloneDeep(props.schema);
 
         forEach(

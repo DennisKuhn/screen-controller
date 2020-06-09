@@ -183,7 +183,7 @@ export class Plugin extends SetupBase implements PluginInterface {
 
         if (!schema.allOf?.some(pluginRefProspect =>
             ((pluginRefProspect as JSONSchema7).$ref == Plugin.SCHEMA_REF_VALUE)))
-            console.warn(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}`, schema);
+            console.warn(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}` /* , schema */);
         //throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}`);
 
         SetupBase.register(Plugin, schema, Plugin.uiSchema);

@@ -83,37 +83,6 @@ const replaceHidden = (item: UiSchema, classes: string): UiSchema => {
 
 
 
-/**
- * 
- * @param props 
- */
-// const CustomField = (props: FieldProps): JSX.Element => {
-//     //Only process if we are dealing with a field, not the parent object
-//     if ('name' in props) {
-//         const formContext = props.registry.formContext as FormContext;
-
-//         const originalOnChange = props.onChange;
-
-//         // console.log(`${module.id}.CustomField[${props.idSchema.$id}] props=`, props);
-
-//         const customProps = {
-//             onChange: (newValue, es?: ErrorSchema): void => {
-//                 console.log(`${module.id}.CustomField[${props.idSchema.$id}][${props.name}] onChange=`, newValue, props, es);
-
-//                 originalOnChange(newValue, es);
-
-//             }
-//         };
-//         return (
-//             <SchemaField {...props} {...customProps} />
-//         );
-//     }
-//     return (
-//         <SchemaField {...props} />
-//     );
-// };
-
-
 
 const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): void => {
 

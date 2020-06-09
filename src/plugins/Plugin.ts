@@ -1,6 +1,6 @@
 import { Plugin as PluginSetup } from '../Setup/Application/Plugin';
 import { Plugin as PluginInterface, Registration, CanvasRegistration, HtmlRegistration, PlainRegistration, RenderPlugin, IntervalPlugin } from './PluginInterface';
-import { autorun } from 'mobx';
+import { autorun, IReactionDisposer } from 'mobx';
 
 
 /**
@@ -63,13 +63,19 @@ export class Plugin {
             if ((this.plugin as IntervalPlugin).renderInterval) {
                 console.log(
                     `${this.constructor.name}[${this.setup.className}][${this.setup.id}].createPlugin set render Interval=${(this.plugin as IntervalPlugin).renderInterval}`);
+                
                 this.interval = setInterval(
                     () => render('green'),
                     (this.plugin as IntervalPlugin).renderInterval
                 );
             }
+            this.renderAutorunDisposer = autorun(
+                (/*r: IReactionPublic*/) => render('lightgreen')
+            );
         }
     }
+
+    private renderAutorunDisposer: IReactionDisposer | undefined;
 
     constructor(protected setup: PluginSetup, protected registration: Registration) {
         this.createElement();
@@ -100,10 +106,13 @@ export class Plugin {
     }
 
     close = (): void => {
+        this.renderAutorunDisposer &&
+            this.renderAutorunDisposer();
+
         this.interval &&
             clearInterval(this.interval);
 
         this.element &&
-            window.document.body.removeChild(this.element);
+            window.document.body.removeChild(this.element);        
     }
 }
