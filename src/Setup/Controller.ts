@@ -29,6 +29,8 @@ export declare interface Controller {
     */
     getSetup(id: string, depth: number): Promise<SetupBase>;
 
+    tryGetSetupSync: (id: string, depth: number) => SetupBase | undefined;
+
     log(): void;
 }
 
@@ -129,7 +131,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         return true;
     }
 
-    tryGetItem(id: string, depth: number): SetupBase | undefined {
+    protected tryGetItem(id: string, depth: number): SetupBase | undefined {
         const responseItem: SetupBase | undefined = this.configs.get(id);
 
         if (responseItem && this.test(responseItem, depth)) {
@@ -140,18 +142,27 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
     protected onCached: ((item: SetupBase, depth: number) => void) | undefined;
 
+    public tryGetSetupSync = (id: string, depth: number): SetupBase | undefined => {
+        const responseItem = this.tryGetItem(id, depth);
+
+        if (responseItem) {
+            // console.log(`ControllerImpl[${this.constructor.name}].trySetupSync(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
+            if (this.onCached)
+                this.onCached(responseItem, depth);
+        }
+        return responseItem;
+    }
+
     getSetup(id: string, depth: number): Promise<SetupBase> {
         // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth})`);
 
         return new Promise(
             (resolve: (setup: SetupBase) => void, reject: (reason: string) => void) => {
 
-                const responseItem: SetupBase | undefined = this.tryGetItem(id, depth);
+                const responseItem = this.tryGetSetupSync(id, depth);
 
                 if (responseItem) {
                     // console.log(`ControllerImpl[${this.constructor.name}].getSetup(${id}, ${depth}) resolve now - promises=${this.setupPromises.length}`, responseItem);
-                    if (this.onCached)
-                        this.onCached(responseItem, depth);
                     resolve(responseItem);
                 } else {
                     if (this.setupPromises.push({ resolve: resolve, reject: reject, id: id, depth: depth }) == 1) {

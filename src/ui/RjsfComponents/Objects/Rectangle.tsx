@@ -8,11 +8,11 @@ import FullscreenExit from '@material-ui/icons/FullscreenExit';
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 
 import { FormContext } from '../FormContext';
-import { moveToTarget } from '../Utils';
 import HiddenField from '../Fields/Hidden';
 
 import { Rectangle as PlainRectangle } from '../../../Setup/Default/Rectangle';
 import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
+import controller from '../../../Setup/Controller';
 
 /**
  * Object template for Setup/Defaults/Rectangle or RelativeRectangle
@@ -20,35 +20,43 @@ import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
  */
 const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
     const { title, properties, formData: rect, formContext } = props;
-    // const { root } = formContext as FormContext;
+    const item = controller.tryGetSetupSync(rect.id, 0) as RelativeRectangle | undefined;
+    const parent = item?.parent;
+    
+    const property = props.idSchema.$id.split('_').pop();
 
-    // console.log(`${module.id}: RectangleObjectTemplate[${props.title}]`, { ...props });
+    if (!item)
+        throw new Error(`${module.id}.Rectangle[${rect.id}] failed controller.tryGetSetupSync()`);
+    if (!parent)
+        throw new Error(`${module.id}.Rectangle[${rect.id}] failed .parent`);
+    if (!property)
+        throw new Error(`${module.id}.Rectangle[${rect.id}] failed get parent property from ${props.idSchema.$id}`);
+
+    console.log(`RectangleObjectTemplate[${parent.id}].${property}[${item.id}]`, { ...props });
 
     let isFullscreen = (rect.x == 0 && rect.y == 0 && rect.width == 1 && rect.height == 1);
 
-    function toggleFullScreen(): void {
+    const toggleFullScreen = (): void => {
         isFullscreen = !isFullscreen;
 
-        //const [target, property] = moveToTarget(root, idSchema.$id.split('_'));
+        console.log(`${module.id}: RectangleObjectTemplate[${title}].toggleFullScreen ${item.id}=${isFullscreen}`, item, props);
 
-        // console.log(`${module.id}: RectangleObjectTemplate[${title}].toggleFullScreen ${target.id}.${property}=${isFullscreen}`, target, props);
-
-        // if (rect.className == RelativeRectangle.name) {
-        //     target[property] = RelativeRectangle.create(
-        //         target['id'],
-        //         isFullscreen ?
-        //             { x: 0, y: 0, width: 1, height: 1 } :
-        //             { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
-        //     );
-        // } else {
-        //     target[property] = PlainRectangle.create(
-        //         target['id'],
-        //         isFullscreen ?
-        //             { x: 0, y: 0, width: 1, height: 1 } :
-        //             { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
-        //     );
-        // }
-    }
+        if (rect.className == RelativeRectangle.name) {
+            parent[property] = RelativeRectangle.create(
+                parent.id,
+                isFullscreen ?
+                    { x: 0, y: 0, width: 1, height: 1 } :
+                    { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
+            );
+        } else {
+            parent[property] = PlainRectangle.create(
+                parent.id,
+                isFullscreen ?
+                    { x: 0, y: 0, width: 1, height: 1 } :
+                    { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
+            );
+        }
+    };
 
     return (
         <div>
@@ -65,15 +73,15 @@ const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
                 </GridListTile>
                 {
                     properties
-                        .filter(({ content }: { content: { props } }) =>
+                        .filter(({ content }) =>
                             (content.props.uiSchema == undefined)
                             || (content.props.uiSchema['ui:FieldTemplate'] != HiddenField))
-                        .map(element => {
+                        .map(({ content }) => {
                             // console.log(`${module.id}: RectangleObjectTemplate[${title}] ${element.name}`, element, { ...element.content });
 
                             return (
-                                <GridListTile cols={2} key={`Tile-${element.content.key}`}>
-                                    {element.content}
+                                <GridListTile cols={2} key={`Tile-${content.key}`}>
+                                    <content.type key={content.key} setupItemId={rect.id} {...content.props} />
                                 </GridListTile>
                             );
                         })

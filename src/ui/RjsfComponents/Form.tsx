@@ -8,17 +8,18 @@ import { JSONSchema7 } from 'json-schema';
 import { merge } from 'lodash';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
-import { Screen } from '../../../Setup/Application/Screen';
-import { Rectangle } from '../../../Setup/Default/Rectangle';
-import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
-import { SetupBase } from '../../../Setup/SetupBase';
-import { SetupBaseInterface } from '../../../Setup/SetupInterface';
-import HiddenField from '../../RjsfComponents/Fields/Hidden';
-import PercentField from '../../RjsfComponents/Fields/Percent';
-import { FormContext } from '../../RjsfComponents/FormContext';
-import DictionaryObject from '../../RjsfComponents/Objects/Dictionary';
-import RectangleObject from '../../RjsfComponents/Objects/Rectangle';
-import SetupObject from '../../RjsfComponents/Objects/SetupBase';
+import { Screen } from '../../Setup/Application/Screen';
+import { Rectangle } from '../../Setup/Default/Rectangle';
+import { RelativeRectangle } from '../../Setup/Default/RelativeRectangle';
+import { SetupBase } from '../../Setup/SetupBase';
+import { SetupBaseInterface } from '../../Setup/SetupInterface';
+import HiddenField from './Fields/Hidden';
+import PercentField from './Fields/Percent';
+import ObservedField from './Fields/Observed';
+import { FormContext } from './FormContext';
+import DictionaryObject from './Objects/Dictionary';
+import RectangleObject from './Objects/Rectangle';
+import SetupObject from './Objects/SetupBase';
 
 
 const useStyles = makeStyles((/*theme*/) => ({
@@ -161,7 +162,7 @@ const SetupBaseForm = observer(({ root, schema }: { root: SetupBaseInterface; sc
                 schema={schema}
                 formData={root}
                 uiSchema={uiSchema}
-                //        fields={{ SchemaField: ObservedField }}
+                fields={{ SchemaField: ObservedField }}
 
                 formContext={formContext}
                 onError={(e): void => console.error(`ScreenForm: form.onError: ${e.length}`, e)}

@@ -10,6 +10,7 @@ import { TreeItem } from '@material-ui/lab';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { makeStyles, IconButton, createStyles } from '@material-ui/core';
 import controller from '../../../Setup/Controller';
+import Observed from '../Fields/Observed';
 
 const useItemLabelStyles = makeStyles(() =>
     createStyles({
@@ -61,13 +62,13 @@ const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
         .find(({ name, content }) =>
             (name === 'name') &&
             ((content.props.uiSchema == undefined)
-                || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenField.name)))?.content;
+                || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenField.name)))?.content ?? <></>;
 
     // console.log(`${module.id}: ObjectTemplate[${props.title}]`);
     return (
         <TreeItem
             nodeId={idSchema.$id}
-            label={<ItemLabel title={nameContent} destructor={deleteItem} />}
+            label={<ItemLabel title={<nameContent.type setupItemId={setup.id} {...nameContent.props} />} destructor={deleteItem} />}
             >
             {
                 properties
@@ -76,10 +77,9 @@ const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
                         && ((content.props.uiSchema == undefined)
                             || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenField.name))
                     )
-                    .map(element => {
-                        // console.log(`${module.id}: ObjectTemplate[${title}] ${element.name}`, { ...element.content.props.uiSchema });
-                        // return element.content;
-                        return element.content;
+                    .map(({content, name}) => {
+                        console.log(`${module.id}: ObjectTemplate[${setup.id}] create ${name}`, { ...content.props });
+                        return <content.type key={content.key} parentProperty={name} setupItemId={setup.id} {...content.props} />;
                     })
             }
         </TreeItem>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import controller from '../../../Setup/Controller';
 import {Screen} from '../../../Setup/Application/Screen';
-import Form from './Form';
+import Form from '../../RjsfComponents/Form';
 import { observer } from 'mobx-react-lite';
 
 // export default function DisplaysPage(): JSX.Element {

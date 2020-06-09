@@ -10,7 +10,7 @@ import { ObservableSetupBaseMap } from '../../../Setup/Container';
 import controller from '../../../Setup/Controller';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { Dictionary, SetupBaseInterface } from '../../../Setup/SetupInterface';
-import Form from '../../views/Screen/Form';
+import Form from '../Form';
 
 const useItemLabelStyles = makeStyles(() =>
     createStyles({
@@ -82,7 +82,7 @@ const DictionaryTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
     const { properties, formData, idSchema, schema, formContext } = props;
     const setup = formData as Dictionary<SetupBaseInterface>;
 
-    console.log(`DictionaryTemplate[${idSchema?.$id}]: setup.id=${setup?.id}`, props);
+    console.log(`DictionaryTemplate[${idSchema?.$id}]: setup.id=${setup?.id} setupItemId=${props['setupItemId']}`, props);
     const [parentId, mapName] = idSchema.$id.split('_').slice(-2);
 
     const choices = (typeof schema.additionalProperties == 'object'
