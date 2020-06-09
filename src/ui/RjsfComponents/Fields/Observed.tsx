@@ -18,11 +18,11 @@ const ajv = (new Ajv()).addSchema(SetupBase.activeSchema);
  */
 const Observed = (props: FieldProps): JSX.Element => {
     const { onChange, ...remainingProps } = props;
-    const { setupItemId, idSchema, name } = props;
+    const { setupItemId, idSchema, name, formData } = props;
 
 
     //Only process if we are dealing with a field, not the parent object
-    if ('name' in props && setupItemId) {
+    if (typeof formData != 'object') {
         const item = controller.tryGetSetupSync(setupItemId, 0);
 
         if (!item)
@@ -92,6 +92,8 @@ const Observed = (props: FieldProps): JSX.Element => {
                 <SchemaField {...customProps} />
             );
         }
+    } else {
+        // console.log(`ObservedField[${setupItemId}].[${name}] [${idSchema.$id}] ignore`);
     }
     return (
         <SchemaField {...props} />

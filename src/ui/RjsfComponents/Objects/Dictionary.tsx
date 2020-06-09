@@ -101,7 +101,7 @@ const DictionaryTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
             throw new Error(`DictionaryTemplate[${idSchema?.$id}].add created ${newItem.className}@${newItem.id} can't get map ${newItem.parentId}.${mapName}`);
 
         map.set(newItem.id, newItem);
-        console.log(`DictionaryTemplate[${idSchema?.$id}].add ${newItem.className}@${newItem.id} in ${newItem.parentId}.${mapName}`);
+        console.log(`DictionaryTemplate[${idSchema?.$id}].added ${newItem.className}@${newItem.id} in ${newItem.parentId}.${mapName}`);
     };
     
     const addItem = useCallback(

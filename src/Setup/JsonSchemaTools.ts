@@ -134,7 +134,7 @@ const setRequired = (target: SetupBaseInterface, schema: JSONSchema7, root: JSON
 
 export const setDefaults = (target: SetupBaseInterface, schema: JSONSchema7, root: JSONSchema7): SetupBaseInterface => {
 
-    console.log(`setDefaults( target=${target.id}, ${schema.$id}.${schema.$ref}.${schema.type} )`, target, schema);
+    // console.log(`setDefaults( target=${target.id}, ${schema.$id}.${schema.$ref}.${schema.type} )`, target, schema);
 
     if (schema.$ref != undefined) {
         setDefaults(
