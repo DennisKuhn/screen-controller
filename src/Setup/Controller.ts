@@ -894,7 +894,7 @@ class Main extends ControllerImpl {
     }
 
     private onAddSchema = (e: IpcMainEvent, args: IpcAddSchemaArgs): void => {
-        console.log(`${this.constructor.name}.onAddSchema(${e.sender.id}, ${args.schema.$id})`);
+        // console.log(`${this.constructor.name}.onAddSchema(${e.sender.id}, ${args.schema.$id})`);
 
         Plugin.add(args.schema);
 

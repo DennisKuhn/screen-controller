@@ -26,7 +26,7 @@ const Observed = (props: FieldProps): JSX.Element => {
         const item = controller.tryGetSetupSync(setupItemId, 0);
 
         if (!item)
-            throw new Error(`${module.id}.ObservedField[${setupItemId}].[${name}] [${idSchema.$id}] failed controller.tryGetSetupSync()`);
+            throw new Error(`ObservedField[${setupItemId}].[${name}] [${idSchema.$id}] failed controller.tryGetSetupSync()`);
 
 
         let fValidate;
@@ -43,7 +43,7 @@ const Observed = (props: FieldProps): JSX.Element => {
                 (s.$ref = SetupBase.activeSchema.$id + s.$ref.substr('#'.length))
         );
 
-        console.log(`${module.id}.ObservedField[${setupItemId}].[${name}] [${idSchema.$id}]`, schema, props);
+        // console.log(`ObservedField[${setupItemId}].[${name}] [${idSchema.$id}]`, schema, props);
         
         const schemaId = schema.$id ?? idSchema.$id;
         
@@ -53,38 +53,40 @@ const Observed = (props: FieldProps): JSX.Element => {
                 ajv.addSchema(schema, schemaId).getSchema(schemaId);
         } catch (error) {
             console.error(
-                `${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] creating validate function caught: ${error} from: ${JSON.stringify(schema)}`,
+                `ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] creating validate function caught: ${error} from: ${JSON.stringify(schema)}`,
                 error, schema);
         }
 
         if (!fValidate) {
-            console.error(`${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] can't create validate function from: ${JSON.stringify(schema)}`, props);
-            //throw new Error(`${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] can't create validate function from: ${JSON.stringify(props.schema)}`);
+            console.error(
+                `ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] can't create validate function from: ${JSON.stringify(schema)}`, props);
+            //throw new Error(
+            // `ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] can't create validate function from: ${JSON.stringify(props.schema)}`);
         } else {
-            // console.log(`${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] ${JSON.stringify(schema)}`);
+            // console.log(`ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] ${JSON.stringify(schema)}`);
 
             const validate = fValidate;
 
             const customProps = {
                 ...remainingProps,
                 onChange: (newValue, es?: ErrorSchema): void => {
-                    console.log(`${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] onChange=`, newValue, props, es);
+                    // console.log(`ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] onChange=`, newValue, props, es);
 
                     onChange(newValue, es);
 
                     if (newValue.id) {
                         if (newValue.id != item[name]?.id) {
-                            console.error(`${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}].onChange: ${newValue.id} != ${item[name]?.id}`);
+                            console.error(`ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}].onChange: ${newValue.id} != ${item[name]?.id}`);
                         } else {
-                            console.log(`${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}].onChange: skip ${newValue.id} == ${item[name]?.id}`);
+                            console.log(`ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}].onChange: skip ${newValue.id} == ${item[name]?.id}`);
                         }
                     } else {
                         if (validate(newValue)) {
-                            console.log(`${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}]== ${item[name]} = ${newValue}`);
+                            console.log(`ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}]== ${item[name]} = ${newValue}`);
                             item[name] = newValue;
                         } else {
                             console.warn(
-                                `${module.id}.ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}]== ${item[name]} = -> ${newValue} <- :` +
+                                `ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}]== ${item[name]} = -> ${newValue} <- :` +
                                 ` ${validate.errors ? validate.errors.map(error => `${error.dataPath}:${error.message}`) : ''}`,
                                 { ...validate.errors }, newValue);
                         }

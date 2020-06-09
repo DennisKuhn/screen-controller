@@ -51,7 +51,7 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
 
     root = root ?? schema;
 
-    console.log(`Form.addCustom(id=${schema.$id}, ref=${schema.$ref}, type=${schema.type})`);
+    // console.log(`Form.addCustom(id=${schema.$id}, ref=${schema.$ref}, type=${schema.type})`);
 
     if (!root.definitions)
         throw new Error('Form.addCustom: root got no definitions');
@@ -65,7 +65,7 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
     } else {
         // If SetupBase or child class
         if (schema.required && schema.required.includes('id') && schema.required.includes('className')) {
-            console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase merge uiSchema`, SetupBase.uiSchema);
+            // console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase merge uiSchema`, SetupBase.uiSchema);
 
             if (!schema.$id)
                 throw new Error(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase no $id: ${JSON.stringify(schema)}`);
@@ -74,24 +74,24 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
 
             if (schema.$id && [Rectangle.name, RelativeRectangle.name].includes(schema.$id)) {
                 if (item['ui:FieldTemplate'] || (item['ui:widget'] == 'hidden')) {
-                    console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set Rectangle already hidden`);
+                    // console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set Rectangle already hidden`);
                 } else {
-                    console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = RectangleObject`);
+                    // console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = RectangleObject`);
                     // item['ui:FieldTemplate'] = RectangleFieldTemplate;
                     item['ui:ObjectFieldTemplate'] = RectangleObject;
                 }
             } else {
-                console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase set [ui:ObjectFieldTemplate] = SetupObject`);
+                // console.log(`Form.addCustom(${schema.$id}, ${schema.type}) SetupBase set [ui:ObjectFieldTemplate] = SetupObject`);
                 item['ui:ObjectFieldTemplate'] = SetupObject;
             }
         } else if (schema.$id == 'Percent') {
             const classes = useStyles();
 
-            console.log(`Form.addCustom(${schema.$id}, ${schema.type})  set: item['ui:field'] = PercentField`);
+            // console.log(`Form.addCustom(${schema.$id}, ${schema.type})  set: item['ui:field'] = PercentField`);
             item['ui:field'] = PercentField;
             item.classNames = classes.percentField;
         } else if (schema.type == 'object' && schema.additionalProperties) {
-            console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = DictionaryObject`);
+            // console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = DictionaryObject`);
             item['ui:ObjectFieldTemplate'] = DictionaryObject;
         }
 
@@ -135,12 +135,11 @@ const fixUiSchema = (item: UiSchema, schema: JSONSchema7): UiSchema => {
 
 
 const SetupBaseForm = observer(({ root, schema }: { root: SetupBaseInterface; schema: JSONSchema7 }): JSX.Element => {
-    console.log('SetupBaseForm');
 
     const formContext: FormContext = { schema };
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
 
-    console.log('ScreenForm', uiSchema);
+    console.log(`SetupBaseForm(${root.id}/${root.className})`, uiSchema);
 
     return (
         <TreeView

@@ -22,14 +22,14 @@ export class Manager {
     static readonly registrations = new Map<string, PluginReg>();
 
     static async loadAll(): Promise<void> {
-        console.log(`${this.constructor.name}.loadAll() current=${Manager.registrations.size}`);
+        // console.log(`${this.constructor.name}.loadAll() current=${Manager.registrations.size}`);
 
         await Manager.loadPlugins('**/*');
     }
 
 
     private static processImports = (imports: PluginImports, path: string): void => {
-        console.log(`Manager.processImports(${path}) current=${Manager.registrations.size} got=${Object.keys(imports).length}`);
+        // console.log(`Manager.processImports(${path}) current=${Manager.registrations.size} got=${Object.keys(imports).length}`);
 
         for (const [id, mix] of Object.entries(imports)) {
             const fullId = path + id;
@@ -64,7 +64,7 @@ export class Manager {
      * @param prefix use '*' to load all, otherwise the className 
      */
     static async loadPlugins(prefix: string): Promise<void> {
-        console.log(`${this.constructor.name}.loadPlugins(${prefix}) current=${Manager.registrations.size}`);
+        // console.log(`${this.constructor.name}.loadPlugins(${prefix}) current=${Manager.registrations.size}`);
 
         let mixed: PluginImports | undefined;
 

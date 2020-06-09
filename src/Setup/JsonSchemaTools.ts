@@ -24,7 +24,7 @@ export const resolve = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => 
     if (typeof resolved != 'object')
         throw new Error(`setDefaults: Can't resolve ${schema.$ref}=>${itemName} resolved is not an object ${JSON.stringify(resolved)} from ${JSON.stringify(root)}`);
 
-    console.log(`resolve(${schema.$ref}): Resolved ${itemName}: `, resolved);
+    // console.log(`resolve(${schema.$ref}): Resolved ${itemName}: `, resolved);
 
     return resolve(resolved, root);
 };
@@ -60,7 +60,7 @@ const mergeSchema = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => {
 };
 
 const setDefault = (target: SetupBaseInterface, property: string, schema: JSONSchema7, root: JSONSchema7): void => {
-    console.log(`setDefault: [${target.id}@${target.parentId}].${property}==${target[property]} const=${schema.const} default=${schema.default}`, target, schema);
+    // console.log(`setDefault: [${target.id}@${target.parentId}].${property}==${target[property]} const=${schema.const} default=${schema.default}`, target, schema);
 
 
     if (!(property in target)) {
@@ -74,11 +74,11 @@ const setDefault = (target: SetupBaseInterface, property: string, schema: JSONSc
             root
         );
 
-        console.log(
-            `setDefault: [${target.id}@${target.parentId}].${property}==${target[property]} simplified const=${simpleSchema.const} default=${simpleSchema.default}`,
-            target,
-            simpleSchema
-        );
+        // console.log(
+        //     `setDefault: [${target.id}@${target.parentId}].${property}==${target[property]} simplified const=${simpleSchema.const} default=${simpleSchema.default}`,
+        //     target,
+        //     simpleSchema
+        // );
         if (simpleSchema.const != undefined) {
             target[property] = simpleSchema.const;
         } else if (simpleSchema.default != undefined) {
@@ -101,25 +101,25 @@ const setRequired = (target: SetupBaseInterface, schema: JSONSchema7, root: JSON
                     root
                 );
 
-                console.log(
-                    `setRequired(${target.className}@${target.id}.[${property}/${propertySchema.$id}] try create ` +
-                    `type=${propertySchema.type} className.const=${typeof (propertySchema.properties?.className as JSONSchema7)?.const}`,
-                    propertySchema);
+                // console.log(
+                //     `setRequired(${target.className}@${target.id}.[${property}/${propertySchema.$id}] try create ` +
+                //     `type=${propertySchema.type} className.const=${typeof (propertySchema.properties?.className as JSONSchema7)?.const}`,
+                //     propertySchema);
 
                 if (propertySchema.type == 'object') {
                     if (typeof (propertySchema.properties?.className as JSONSchema7)?.const == 'string') {
                         const className = (propertySchema.properties?.className as JSONSchema7)?.const as string;
 
-                        console.log(
-                            `setRequired(${target.className}@${target.id}.[${property}/${propertySchema?.$id}] = create new ${className}`);
+                        // console.log(
+                        //     `setRequired(${target.className}@${target.id}.[${property}/${propertySchema?.$id}] = create new ${className}`);
 
                         target[property] = SetupBase.createNewInterface(
                             className,
                             target.id
                         );
                     } else {
-                        console.log(
-                            `setRequired(${target.className}@${target.id}.[${property}/${propertySchema?.$id}] = new {}`);
+                        // console.log(
+                        //     `setRequired(${target.className}@${target.id}.[${property}/${propertySchema?.$id}] = new {}`);
                         target[property] = {};
                     }
                 } else {
@@ -204,7 +204,7 @@ export const replaceEach = (schema: JSONSchema7, root: JSONSchema7, replacer: (s
                 const replacement = replacer(prospect, root);
 
                 if (replacement) {
-                    console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
+                    // console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
                     schema.properties[property] = replacement;
                 }
                 replaceEach(schema.properties[property] as JSONSchema7, root, replacer);
@@ -215,7 +215,7 @@ export const replaceEach = (schema: JSONSchema7, root: JSONSchema7, replacer: (s
         const replacement = replacer(schema.additionalProperties, root);
 
         if (replacement) {
-            console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
+            // console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
             schema.additionalProperties = replacement;
         }
         replaceEach(schema.additionalProperties, root, replacer);
@@ -255,11 +255,11 @@ export const getConcretes = (abstractId: string, root: JSONSchema7): JSONSchema7
 
     const cached = concretesBuffer.get(abstractId);
     if (cached != undefined) {
-        console.log(`getConcretes(${abstractId}) return cached ${cached.length}`);
+        // console.log(`getConcretes(${abstractId}) return cached ${cached.length}`);
         return cached;
     }
     
-    console.log(`getConcretes(${abstractId})`);
+    // console.log(`getConcretes(${abstractId})`);
 
     const concretes: JSONSchema7[] = [];
 
@@ -270,7 +270,7 @@ export const getConcretes = (abstractId: string, root: JSONSchema7): JSONSchema7
 
     for (const [id, definition] of defsWithRefs) {
         if (typeof definition != 'object')
-            throw new Error(`getConcretes(${abstractId}) definitions is not an object root=${JSON.stringify(root)}`);
+            throw new Error(`getConcretes(${abstractId}) definitions/${id} is not an object root=${JSON.stringify(root)}`);
 
         let childConcretes: JSONSchema7[] = [];
 
@@ -278,10 +278,10 @@ export const getConcretes = (abstractId: string, root: JSONSchema7): JSONSchema7
             childConcretes = getConcretes(definition.$id, root);
         }
         if (childConcretes.length) {
-            console.log(`getConcretes(${abstractId}) [${id}/${definition.$id}] add ${childConcretes.length}`);
+            // console.log(`getConcretes(${abstractId}) [${id}/${definition.$id}] add ${childConcretes.length}`);
             concretes.push(...childConcretes);
         } else {
-            console.log(`getConcretes(${abstractId}) add ${id}/${definition.$id}`);
+            // console.log(`getConcretes(${abstractId}) add ${id}/${definition.$id}`);
             concretes.push(definition);
         }
     }
@@ -305,7 +305,7 @@ const expandAbstractRef = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 
                 const concretes = getConcretes(option.$ref, root);
 
                 if (concretes.length) {
-                    console.log(`expandAbstractRef: ${option.$ref} replace .oneOf[${index}] = ${concretes.length}`);
+                    // console.log(`expandAbstractRef: ${option.$ref} replace .oneOf[${index}] = ${concretes.length}`);
                     
                     oneOf.splice(index, 1);
                     oneOf.push(...concretes);

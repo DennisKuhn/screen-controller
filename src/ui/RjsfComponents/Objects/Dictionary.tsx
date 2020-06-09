@@ -68,7 +68,7 @@ const ItemForm = ({ plainItem, schemaChoices, rootSchema }: { plainItem: SetupBa
 
     schema.definitions = rootSchema.definitions;
 
-    console.log(`Dictionary.tsx/ItemForm: [${plainItem.id}]`, { ...{ plainItem, schema, schemaChoices, rootSchema}});
+    // console.log(`Dictionary.tsx/ItemForm: [${plainItem.id}]`, { ...{ plainItem, schema, schemaChoices, rootSchema}});
     
     return (
         <Form

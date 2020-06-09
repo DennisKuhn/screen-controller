@@ -7,7 +7,6 @@ import FullscreenExit from '@material-ui/icons/FullscreenExit';
 
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 
-import { FormContext } from '../FormContext';
 import HiddenField from '../Fields/Hidden';
 
 import { Rectangle as PlainRectangle } from '../../../Setup/Default/Rectangle';
@@ -19,18 +18,18 @@ import controller from '../../../Setup/Controller';
  * @param props 
  */
 const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
-    const { title, properties, formData: rect, formContext } = props;
+    const { title, properties, formData: rect } = props;
     const item = controller.tryGetSetupSync(rect.id, 0) as RelativeRectangle | undefined;
     const parent = item?.parent;
     
     const property = props.idSchema.$id.split('_').pop();
 
     if (!item)
-        throw new Error(`${module.id}.Rectangle[${rect.id}] failed controller.tryGetSetupSync()`);
+        throw new Error(`Rectangle[${rect.id}] failed controller.tryGetSetupSync()`);
     if (!parent)
-        throw new Error(`${module.id}.Rectangle[${rect.id}] failed .parent`);
+        throw new Error(`Rectangle[${rect.id}] failed .parent`);
     if (!property)
-        throw new Error(`${module.id}.Rectangle[${rect.id}] failed get parent property from ${props.idSchema.$id}`);
+        throw new Error(`Rectangle[${rect.id}] failed get parent property from ${props.idSchema.$id}`);
 
     console.log(`RectangleObjectTemplate[${parent.id}].${property}[${item.id}]`, { ...props });
 
@@ -39,7 +38,7 @@ const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
     const toggleFullScreen = (): void => {
         isFullscreen = !isFullscreen;
 
-        console.log(`${module.id}: RectangleObjectTemplate[${title}].toggleFullScreen ${item.id}=${isFullscreen}`, item, props);
+        console.log(`RectangleObjectTemplate[${title}].toggleFullScreen ${item.id}=${isFullscreen}`, item, props);
 
         if (rect.className == RelativeRectangle.name) {
             parent[property] = RelativeRectangle.create(

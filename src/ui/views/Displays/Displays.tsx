@@ -85,7 +85,6 @@ const DisplaysPage = (): JSX.Element => {
     const [displays, setDisplays] = useState(new ObservableSetupBaseMap<Display>());
 
     useEffect(() => {
-        console.log('Fire use effect');
         controller.getSetup('Screen', -1)
             .then(screen => setDisplays((screen as Screen).displays));
     }, []);

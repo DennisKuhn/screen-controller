@@ -217,7 +217,7 @@ export abstract class SetupBase {
         }
     }
 
-    private static getOtherOneOfNull(schema: JSONSchema7, root: JSONSchema7): JSONSchema7 | undefined {
+    private static getOtherOneOfNull(schema: JSONSchema7): JSONSchema7 | undefined {
         if (schema.oneOf?.length == 2) {
             if ((schema.oneOf[0] as JSONSchema7).type == 'null') {
                 return schema.oneOf[1] as JSONSchema7;
@@ -255,16 +255,16 @@ export abstract class SetupBase {
 
         for (const [id, schemas] of Object.entries(idsDictionary)) {
             if (schemas.length == 1) {
-                console.log(`SetupBase.fixDuplicateIds(${schema.$id}) remove not duplicate ${id}`);
+                // console.log(`SetupBase.fixDuplicateIds(${schema.$id}) remove not duplicate ${id}`);
                 delete idsDictionary[id];
             } else {
-                console.log(`SetupBase.fixDuplicateIds(${schema.$id}) keep duplicate ${id} * ${schemas.length}`);
+                // console.log(`SetupBase.fixDuplicateIds(${schema.$id}) keep duplicate ${id} * ${schemas.length}`);
             }
         }
 
         SetupBase.moveDuplicateIdsToDefinitions(schema, idsDictionary);
 
-        console.log(`SetupBase.fixDuplicateIds(${schema.$id})`, idsDictionary, schema);
+        // console.log(`SetupBase.fixDuplicateIds(${schema.$id})`, idsDictionary, schema);
     }
 
     private static hasRefs = (schema: JSONSchema7): boolean => {
@@ -287,7 +287,7 @@ export abstract class SetupBase {
                     if (!value.$id)
                         throw new Error(`SetupBase.moveRefsToDefsToDefs: $id is not defined in schema for property ${name} in ${schema.$id}: ${JSON.stringify(value)}`);
 
-                    console.log(`SetupBase.moveRefsToDefsToDefs: move ${value.$id} from ${schema.$id}.${name} to defs`);
+                    // console.log(`SetupBase.moveRefsToDefsToDefs: move ${value.$id} from ${schema.$id}.${name} to defs`);
                     root.definitions = root.definitions ?? {};
                     root.definitions[value.$id] = value;
                     schema.properties[name] = { $ref: SetupBase.DEF_REF_PREFIX + value.$id };
@@ -330,7 +330,7 @@ export abstract class SetupBase {
             const plainSchema = toJS(info.schema, { recurseEverything: true });
 
             replaceAbstractRefsWithOneOfConcrets(plainSchema);
-            console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).replaced AbstractRefsWithOneOfConcrets:`, { ...plainSchema });
+            // console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).replaced AbstractRefsWithOneOfConcrets:`, { ...plainSchema });
 
             SetupBase.fixRefs(plainSchema);
 
@@ -339,29 +339,29 @@ export abstract class SetupBase {
             if (derefed instanceof Error) {
                 console.error(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved error: ${derefed}`, derefed, { ...plainSchema });
             } else {
-                console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved schema:`, { ...derefed }, { ...plainSchema });
+                // console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved schema:`, { ...derefed }, { ...plainSchema });
 
                 const merged = mergeAllOf(derefed) as JSONSchema7;
 
-                console.log(
-                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).merged schema:`,
-                    { ...merged }, { ...derefed }, { ...plainSchema });
+                // console.log(
+                //     `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).merged schema:`,
+                //     { ...merged }, { ...derefed }, { ...plainSchema });
 
                 SetupBase.fixDuplicateIds(merged);
-                console.log(
-                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).fixedDuplicateIds:`,
-                    { ...merged });
+                // console.log(
+                //     `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).fixedDuplicateIds:`,
+                //     { ...merged });
 
                 SetupBase.mergeOneOfNulls(merged);
-                console.log(
-                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).mergedOneOfNulls:`,
-                    { ...merged });
+                // console.log(
+                //     `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).mergedOneOfNulls:`,
+                //     { ...merged });
 
                 SetupBase.moveRefsToDefsToDefs(merged);
 
                 console.log(
-                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).movedRefsToDefsToDefs:`,
-                    { ...merged }, { ...derefed }, { ...plainSchema });
+                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}):`,
+                    { ...merged }, toJS(info.schema, { recurseEverything: true }));
 
                 info.plainSchema = merged;
             }
