@@ -10,6 +10,7 @@ import { TreeItem } from '@material-ui/lab';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { makeStyles, IconButton, createStyles } from '@material-ui/core';
 import controller from '../../../Setup/Controller';
+import { cloneDeep } from 'lodash';
 
 const useItemLabelStyles = makeStyles(() =>
     createStyles({
@@ -37,11 +38,14 @@ const ItemLabel = ({ title, destructor }: { title: ReactNode; destructor: () => 
     );
 };
 
-const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
+const SetupBaseObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
     const { properties, formData, idSchema } = props;
     const setup = formData as SetupBaseInterface;
 
-    console.log(`SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}/${setup?.className}`, props);
+    console.log(
+        `SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}/${setup?.className}`,
+        cloneDeep(props)
+    );
 
     const deleteItem = useCallback(
         async () => {
@@ -63,26 +67,23 @@ const ObjectTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
             ((content.props.uiSchema == undefined)
                 || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenField.name)))?.content ?? <></>;
 
+    const otherProperties = properties
+        .filter(({ content, name }) =>
+            (name !== 'name')
+            && ((content.props.uiSchema == undefined)
+                || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenField.name))
+        )
+        .map(({ content }) => content);
+    
     // console.log(`SetupBaseTemplate[${props.title}]`);
     return (
         <TreeItem
             nodeId={idSchema.$id}
-            label={<ItemLabel title={<nameContent.type setupItemId={setup.id} {...nameContent.props} />} destructor={deleteItem} />}
+            label={<ItemLabel title={nameContent} destructor={deleteItem} />}
             >
-            {
-                properties
-                    .filter(({ content, name }) =>
-                        (name !== 'name')
-                        && ((content.props.uiSchema == undefined)
-                            || (content.props.uiSchema['ui:FieldTemplate']?.name != HiddenField.name))
-                    )
-                    .map(({content, name}) => {
-                        // console.log(`SetupBaseTemplate[${setup.id}] create ${name}`, { ...content.props });
-                        return <content.type key={content.key} parentProperty={name} setupItemId={setup.id} {...content.props} />;
-                    })
-            }
+            {otherProperties}
         </TreeItem>
     );
 };
 
-export default ObjectTemplate;
+export default SetupBaseObjectFieldTemplate;

@@ -105,7 +105,7 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
 
     setupPromises: SetupPromise[] = new Array<SetupPromise>();
 
-    test(item: SetupBase, depth: number): boolean {
+    private test(item: SetupBase, depth: number): boolean {
         if (depth != 0) {
             for (const [/*propertyName*/, value] of Object.entries(item)) {
                 if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
@@ -345,9 +345,10 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) = ${change['newValue']}`);
 
         if (isEqual(itemPlainValue, remotePlainValue)) {
-            // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=${remotePlainValue}`);
+            console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) skip remoteUpdate=${remotePlainValue}`);
         } else {
-            console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${itemPlainValue} != ${remotePlainValue}`);
+            console.log(
+                `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${JSON.stringify(itemPlainValue)} != ${JSON.stringify(remotePlainValue)}`);
             if (newSetup) {
                 this.connectPersistPropagate({
                     item: newSetup,
@@ -377,13 +378,13 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         const remotePlainValue = hasRemote ? this.remoteUpdates.get(item.id)?.[map][name] : undefined;
 
         if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
-            // console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip remoteUpdate ${remotePlainValue}`);
+            console.log(`ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type} ) skip remoteUpdate ${remotePlainValue}`);
         } else {
             switch (type) {
                 case 'add':
                     if (newSetup != undefined) {
-                        // console.log(
-                        //     `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type}) connect, propagate and persist ${newSetup.id}`);
+                        console.log(
+                            `ControllerImpl[${this.constructor.name}].onMapChange(${item}.${map}[${name}], ${type}) connect, propagate and persist ${newSetup.id}`);
                         this.connectPersistPropagate({ item: newSetup, propagate: true });
                         this.propagate && this.propagate({
                             item: item.id,
@@ -913,11 +914,12 @@ class Main extends ControllerImpl {
     }
 
     private unRegister = (channelId: number): void => {
+        console.log(`${this.constructor.name}.unRegister(${channelId})`);
 
         this.changeListeners
             .filter(listener => listener.senderId == channelId)
             .forEach(listener => {
-                console.log(`${this.constructor.name}.unRegister(${channelId}): ${listener.itemId},${listener.depth} disposer: ${listener.disposers.length}`);
+                // console.log(`${this.constructor.name}.unRegister(${channelId}): ${listener.itemId},${listener.depth} disposer: ${listener.disposers.length}`);
                 listener.disposers.forEach(disposer => disposer());
                 this.changeListeners.splice(
                     this.changeListeners.indexOf(listener)

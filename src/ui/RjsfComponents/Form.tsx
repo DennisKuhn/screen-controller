@@ -5,7 +5,7 @@ import { TreeView } from '@material-ui/lab';
 import { UiSchema } from '@rjsf/core';
 import Form from '@rjsf/material-ui';
 import { JSONSchema7 } from 'json-schema';
-import { merge } from 'lodash';
+import { cloneDeep, merge } from 'lodash';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { Screen } from '../../Setup/Application/Screen';
@@ -14,13 +14,12 @@ import { RelativeRectangle } from '../../Setup/Default/RelativeRectangle';
 import { SetupBase } from '../../Setup/SetupBase';
 import { SetupBaseInterface } from '../../Setup/SetupInterface';
 import HiddenField from './Fields/Hidden';
-import PercentField from './Fields/Percent';
 import ObservedField from './Fields/Observed';
+import PercentField from './Fields/Percent';
 import { FormContext } from './FormContext';
 import DictionaryObject from './Objects/Dictionary';
 import RectangleObject from './Objects/Rectangle';
 import SetupObject from './Objects/SetupBase';
-
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -46,6 +45,7 @@ const replaceHidden = (item: UiSchema): UiSchema => {
 
     return item;
 };
+
 
 const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): void => {
 
@@ -134,12 +134,12 @@ const fixUiSchema = (item: UiSchema, schema: JSONSchema7): UiSchema => {
 };
 
 
-const SetupBaseForm = observer(({ root, schema }: { root: SetupBaseInterface; schema: JSONSchema7 }): JSX.Element => {
+const SetupBaseForm = observer(({ rootPlain, schema }: { rootPlain: SetupBaseInterface; schema: JSONSchema7 }): JSX.Element => {
 
     const formContext: FormContext = { schema };
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
 
-    console.log(`SetupBaseForm(${root.id}/${root.className})`, uiSchema);
+    console.log(`SetupBaseForm(${rootPlain.id}/${rootPlain.className}) uiSchema=`, cloneDeep(uiSchema));
 
     return (
         <TreeView
@@ -155,14 +155,13 @@ const SetupBaseForm = observer(({ root, schema }: { root: SetupBaseInterface; sc
                 //     return errors;    
                 // }}
                 tagName={'div'}
-                idPrefix={root.id}
+                idPrefix={rootPlain.id}
                 liveValidate={true}
                 noHtml5Validate={true}
                 schema={schema}
-                formData={root}
+                formData={rootPlain}
                 uiSchema={uiSchema}
                 fields={{ SchemaField: ObservedField }}
-
                 formContext={formContext}
                 onError={(e): void => console.error(`ScreenForm: form.onError: ${e.length}`, e)}
                 children={' '}

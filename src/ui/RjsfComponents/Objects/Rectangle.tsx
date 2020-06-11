@@ -17,7 +17,7 @@ import controller from '../../../Setup/Controller';
  * Object template for Setup/Defaults/Rectangle or RelativeRectangle
  * @param props 
  */
-const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
+const RectangleObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
     const { title, properties, formData: rect } = props;
     const item = controller.tryGetSetupSync(rect.id, 0) as RelativeRectangle | undefined;
     const parent = item?.parent;
@@ -57,6 +57,11 @@ const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
         }
     };
 
+    const withoutHidden = properties
+        .filter(({ content }) =>
+            (content.props.uiSchema == undefined)
+            || (content.props.uiSchema['ui:FieldTemplate'] != HiddenField));
+
     return (
         <div>
             {title}
@@ -71,23 +76,15 @@ const Rectangle = (props: ObjectFieldTemplateProps): JSX.Element => {
                     </Tooltip>
                 </GridListTile>
                 {
-                    properties
-                        .filter(({ content }) =>
-                            (content.props.uiSchema == undefined)
-                            || (content.props.uiSchema['ui:FieldTemplate'] != HiddenField))
-                        .map(({ content }) => {
-                            // console.log(`${module.id}: RectangleObjectTemplate[${title}] ${element.name}`, element, { ...element.content });
-
-                            return (
-                                <GridListTile cols={2} key={`Tile-${content.key}`}>
-                                    <content.type key={content.key} setupItemId={rect.id} {...content.props} />
-                                </GridListTile>
-                            );
-                        })
+                    withoutHidden.map(({ content }) => (
+                        <GridListTile cols={2} key={`Tile-${content.key}`}>
+                            {content}
+                        </GridListTile>)
+                    )
                 }
             </GridList>
         </div>
     );
 };
 
-export default Rectangle;
+export default RectangleObjectFieldTemplate;

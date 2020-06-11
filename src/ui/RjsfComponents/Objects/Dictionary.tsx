@@ -72,17 +72,19 @@ const ItemForm = ({ plainItem, schemaChoices, rootSchema }: { plainItem: SetupBa
     
     return (
         <Form
-            root={plainItem}
+            rootPlain={plainItem}
             schema={schema}
         />
     );
 };
 
-const DictionaryTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
+const DictionaryObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
     const { properties, formData, idSchema, schema, formContext } = props;
     const setup = formData as Dictionary<SetupBaseInterface>;
 
-    console.log(`DictionaryTemplate[${idSchema?.$id}]: setup.id=${setup?.id} setupItemId=${props['setupItemId']}`, props);
+    console.log(
+        `DictionaryTemplate[${idSchema?.$id}]: setup.id=${setup?.id} setupItemId=${props['setupItemId']}`,
+        cloneDeep(props));
     const [parentId, mapName] = idSchema.$id.split('_').slice(-2);
 
     const choices = (typeof schema.additionalProperties == 'object'
@@ -155,13 +157,16 @@ const DictionaryTemplate = (props: ObjectFieldTemplateProps): JSX.Element => {
                 {choices ? 
                     Object.values(setup).map( plainChild => 
                         <ItemForm key={plainChild.id} plainItem={plainChild} schemaChoices={choices} rootSchema={formContext.schema} />    
-                        )
+                    )
                 :
-                    properties.map(property => property.content)
+                    properties.map(({ content, name }) => {
+                        console.log(`DictionaryTemplate[${setup.id}] create ${name}`, { ...content.props });
+                        return content;
+                    })
                 }
             </TreeItem>
         </div >
     );
 };
 
-export default DictionaryTemplate;
+export default DictionaryObjectFieldTemplate;
