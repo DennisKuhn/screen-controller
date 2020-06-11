@@ -6,7 +6,7 @@ import NumberField from '@rjsf/core/lib/components/fields/NumberField';
  * 
  * @param props 
  */
-const Percent = ({ onChange, schema, formData, ...props}: FieldProps): JSX.Element => {
+const PercentField = ({ onChange, schema, formData, ...props}: FieldProps): JSX.Element => {
 
     // console.log(`${module.id}.PercentField[${props.idSchema.$id}] props=`, props);
 
@@ -33,4 +33,4 @@ const Percent = ({ onChange, schema, formData, ...props}: FieldProps): JSX.Eleme
     );
 };
 
-export default Percent;
+export default PercentField;

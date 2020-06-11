@@ -16,7 +16,7 @@ const ajv = (new Ajv()).addSchema(SetupBase.activeSchema);
  * @see https://github.com/rjsf-team/react-jsonschema-form/issues/651
  * @param props 
  */
-const Observed = (props: FieldProps): JSX.Element => {
+const ObservedField = (props: FieldProps): JSX.Element => {
     const { onChange, ...remainingProps } = props;
     const { setupItemId, idSchema, name, formData } = props;
 
@@ -58,7 +58,7 @@ const Observed = (props: FieldProps): JSX.Element => {
             //throw new Error(
             // `ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] can't create validate function from: ${JSON.stringify(props.schema)}`);
         } else {
-            // console.log(`ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] ${JSON.stringify(schema)}`);
+            console.log(`ObservedField[${setupItemId}].[${name}] [${schemaId}/${idSchema.$id}] ${JSON.stringify(schema)}`, props);
 
             const validate = fValidate;
 
@@ -100,4 +100,4 @@ const Observed = (props: FieldProps): JSX.Element => {
     );
 };
 
-export default Observed;
+export default ObservedField;
