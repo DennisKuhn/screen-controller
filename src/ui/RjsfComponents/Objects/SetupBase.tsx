@@ -43,8 +43,7 @@ const SetupBaseObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
     const setup = formData as SetupBaseInterface;
 
     console.log(
-        `SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}/${setup?.className}`,
-        cloneDeep(props)
+        `SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}/${setup?.className}` /*, props */
     );
 
     const deleteItem = useCallback(

@@ -15,6 +15,16 @@ class ObservableArrayMap<K, V> extends ObservableMap<K, V> {
         }
         return result;
     }
+    mapKeys<O>(mapper: (value: K) => O): O[] {
+        const result: O[] = new Array<O>(this.size);
+        let i = 0;
+
+        for (const key of this.keys()) {
+            result[i] = mapper(key);
+            i += 1;
+        }
+        return result;
+    }
 }
 
 export class ObservableSetupBaseMap<V extends SetupBase> extends ObservableArrayMap<SetupItemId, V | null> {

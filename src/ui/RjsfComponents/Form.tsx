@@ -5,14 +5,13 @@ import { TreeView } from '@material-ui/lab';
 import { UiSchema } from '@rjsf/core';
 import Form from '@rjsf/material-ui';
 import { JSONSchema7 } from 'json-schema';
-import { cloneDeep, merge } from 'lodash';
+import { merge } from 'lodash';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { Screen } from '../../Setup/Application/Screen';
 import { Rectangle } from '../../Setup/Default/Rectangle';
 import { RelativeRectangle } from '../../Setup/Default/RelativeRectangle';
 import { SetupBase } from '../../Setup/SetupBase';
-import { SetupBaseInterface } from '../../Setup/SetupInterface';
 import HiddenField from './Fields/Hidden';
 import ObservedField from './Fields/Observed';
 import PercentField from './Fields/Percent';
@@ -20,6 +19,7 @@ import { FormContext } from './FormContext';
 import DictionaryObject from './Objects/Dictionary';
 import RectangleObject from './Objects/Rectangle';
 import SetupObject from './Objects/SetupBase';
+import { toJS } from 'mobx';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -134,12 +134,12 @@ const fixUiSchema = (item: UiSchema, schema: JSONSchema7): UiSchema => {
 };
 
 
-const SetupBaseForm = observer(({ rootPlain, schema }: { rootPlain: SetupBaseInterface; schema: JSONSchema7 }): JSX.Element => {
+const SetupBaseForm = observer(({ root, schema }: { root: SetupBase; schema: JSONSchema7 }): JSX.Element => {
 
     const formContext: FormContext = { schema };
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
 
-    console.log(`SetupBaseForm(${rootPlain.id}/${rootPlain.className}) uiSchema=`, cloneDeep(uiSchema));
+    console.log(`SetupBaseForm(${root.id}/${root.className}) uiSchema=`/*, uiSchema*/);
 
     return (
         <TreeView
@@ -155,11 +155,11 @@ const SetupBaseForm = observer(({ rootPlain, schema }: { rootPlain: SetupBaseInt
                 //     return errors;    
                 // }}
                 tagName={'div'}
-                idPrefix={rootPlain.id}
+                idPrefix={root.id}
                 liveValidate={true}
                 noHtml5Validate={true}
                 schema={schema}
-                formData={rootPlain}
+                formData={toJS( root, {recurseEverything: true, exportMapsAsObjects: true})}
                 uiSchema={uiSchema}
                 fields={{ SchemaField: ObservedField }}
                 formContext={formContext}

@@ -1,4 +1,4 @@
-import { IMapDidChange, reaction, isObservableProp, toJS, observe, IObjectDidChange } from 'mobx';
+import { IMapDidChange, reaction, isObservableProp, toJS, observe, IObjectDidChange, IValueDidChange } from 'mobx';
 import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote, WebContents } from 'electron';
 import { isEqual } from 'lodash';
@@ -256,13 +256,11 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
                     });
                 } else if (isObservableProp(item, propertyName)) {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName}` );
-
-                    reaction(
-                        () => item[propertyName],
-                        newValue => this.onItemChanged({ item, name: propertyName, type: 'update', newValue }),
-                        {
-                            name: `${this.constructor.name}.PersistPropagate[${item.className}][${item.id}].${propertyName}`
-                        }
+                    observe(
+                        item,
+                        propertyName as any,
+                        (change: IValueDidChange<ObjectPropertyType>) =>
+                            this.onItemChanged({ item, name: propertyName, type: 'update', newValue: change.newValue })
                     );
                 } else {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): ignore ${propertyName}`);
