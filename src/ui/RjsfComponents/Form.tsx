@@ -139,7 +139,7 @@ const SetupBaseForm = observer(({ root, schema }: { root: SetupBase; schema: JSO
     const formContext: FormContext = { schema };
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
 
-    console.log(`SetupBaseForm(${root.id}/${root.className}) uiSchema=`/*, uiSchema*/);
+    console.log(`SetupBaseForm(${root.id}/${root.className})`/*, uiSchema*/);
 
     return (
         <TreeView
@@ -159,7 +159,8 @@ const SetupBaseForm = observer(({ root, schema }: { root: SetupBase; schema: JSO
                 liveValidate={true}
                 noHtml5Validate={true}
                 schema={schema}
-                formData={toJS( root, {recurseEverything: true, exportMapsAsObjects: true})}
+                formData={root.getShallow()}
+                // formData={toJS(root, { recurseEverything: true, exportMapsAsObjects: true })}
                 uiSchema={uiSchema}
                 fields={{ SchemaField: ObservedField }}
                 formContext={formContext}

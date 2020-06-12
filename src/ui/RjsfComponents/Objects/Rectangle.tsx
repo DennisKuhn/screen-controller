@@ -13,6 +13,8 @@ import { Rectangle as PlainRectangle } from '../../../Setup/Default/Rectangle';
 import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
 import controller from '../../../Setup/Controller';
 
+
+
 /**
  * Object template for Setup/Defaults/Rectangle or RelativeRectangle
  * @param props 

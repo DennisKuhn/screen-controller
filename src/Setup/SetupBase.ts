@@ -27,6 +27,7 @@ switch (process.type) {
         );
         break;
 }
+shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-~');
 
 export type PropertyType =
     SetupBase |

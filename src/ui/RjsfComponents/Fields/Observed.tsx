@@ -13,10 +13,10 @@ const ajv = (new Ajv()).addSchema(SetupBase.activeSchema);
 const targetCache = new Map<string, [SetupBase, string]>();
 
 const getTarget = (idSchemaId: string): [SetupBase, string] => {
-    const cache = targetCache.get(idSchemaId);
+    // const cache = targetCache.get(idSchemaId);
 
-    if (cache)
-        return cache;
+    // if (cache)
+    //     return cache;
 
     const stack = idSchemaId.split('_');
     const propertyName = stack[stack.length - 1];

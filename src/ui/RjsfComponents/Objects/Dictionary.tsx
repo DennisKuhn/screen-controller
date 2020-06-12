@@ -60,7 +60,7 @@ const NewItemTile = ({ schema, addItem, key }: { schema: JSONSchema7; key: strin
 const ItemForm = ({ itemId, schemaChoices, rootSchema }: { itemId: string; schemaChoices: JSONSchema7Definition[]; rootSchema: JSONSchema7 }): JSX.Element => {
     const item = controller.tryGetSetupSync(itemId, 0);
     if (!item)
-        throw new Error(`Dictionary.tsx/ItemForm: can't get ${item} from controller`);
+        throw new Error(`Dictionary.tsx/ItemForm: can't get ${itemId} from controller`);
 
     const schema = cloneDeep(schemaChoices.find(prospect =>
         (typeof prospect == 'object') && (prospect.$id == item.className)));

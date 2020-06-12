@@ -1,4 +1,4 @@
-import { IMapDidChange, reaction, isObservableProp, toJS, observe, IObjectDidChange, IValueDidChange } from 'mobx';
+import { IMapDidChange, reaction, isObservableProp, toJS, observe, IObjectDidChange, IValueDidChange, intercept, ObservableMap, IMapWillChange } from 'mobx';
 import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent, BrowserWindow, ipcMain as electronIpcMain, ipcRenderer as electronIpcRenderer, remote, WebContents } from 'electron';
 import { isEqual } from 'lodash';
@@ -242,18 +242,25 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         const { item, propagate } = args;
 
         if (!this.configs.has(item.id)) {
-            // console.log(
-            //     `ControllerImpl[${this.constructor.name}].connectPersistPropagate( ${item.className}[${item.id}],` +
-            //     `persist=${persist}, propagate=${propagate} )`);
+            console.log(
+                `ControllerImpl[${this.constructor.name}].connectPersistPropagate( ${item.className}[${item.id}],` +
+                ` propagate=${propagate} )`);
 
             this.configs.set(item.id, item);
 
             for (const [propertyName, value] of Object.entries(item)) {
                 if (value instanceof ObservableSetupBaseMap) {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
-                    (value as ObservableSetupBaseMap<SetupBase>).observe((changes: IMapDidChange<string, SetupBase | null>) => {
-                        this.onMapChange({ ...changes, item, map: propertyName });
-                    });
+                    intercept(
+                        value as ObservableMap,
+                        (changes: IMapWillChange<string, SetupBase | null>) => {
+                            this.onMapChange({ ...changes, item, map: propertyName } as LocalMapChangeArgsType);
+                            return changes;
+                        }
+                    );
+                    // (value as ObservableSetupBaseMap<SetupBase>).observe((changes: IMapDidChange<string, SetupBase | null>) => {
+                    //     this.onMapChange({ ...changes, item, map: propertyName });
+                    // });
                 } else if (isObservableProp(item, propertyName)) {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName}` );
                     observe(
@@ -347,18 +354,24 @@ abstract class ControllerImpl extends EventEmitter implements Controller {
         } else {
             console.log(
                 `ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} )=${JSON.stringify(itemPlainValue)} != ${JSON.stringify(remotePlainValue)}`);
+            
+            const ipcChange = {
+                item: item.id,
+                name: change.name,
+                type: change.type,
+                ...(itemPlainValue != undefined ? { newValue: itemPlainValue } : undefined)
+            } as IpcChangeArgsType;
+
             if (newSetup) {
                 this.connectPersistPropagate({
                     item: newSetup,
                     propagate: false
                 });
             }
-            this.propagate && this.propagate({
-                item: item.id,
-                name: change.name,
-                type: change.type,
-                ...(itemPlainValue != undefined ? { newValue: itemPlainValue } : undefined)
-            } as IpcChangeArgsType);
+            if (this.remoteUpdates.has(change.item.id)) {
+                this.addRemoteUpdate( ipcChange );
+            }
+            this.propagate && this.propagate(ipcChange);
             this.persist && this.persist(change);
 
         }
