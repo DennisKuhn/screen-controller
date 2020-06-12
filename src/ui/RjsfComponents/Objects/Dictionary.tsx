@@ -141,30 +141,31 @@ const DictionaryObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Ele
     // console.log(`${module.id}: DictionaryTemplate[${props.title}]`);
     return (
         <div>
-            <TreeItem
+            {/* <TreeItem
                 nodeId={idSchema.$id}
-                label={<ItemLabel title={props.title} {...(choices ? {} : { factory: (): Promise<void> => addItem(parentId, mapName, schema) })} />}
-            >
-                {(choices &&
-                    <GridList cellHeight={100} cols={3}>
-                        {choices.map((schema, index) =>
-                            NewItemTile({
-                                key: (schema as JSONSchema7).$id ?? index.toString(),
-                                schema: schema as JSONSchema7,
-                                addItem: () => addSchemaItem(parentId, mapName, schema as JSONSchema7)
-                            })
-                        )}
-                    </GridList>
-                )}
-                {Object.keys( itemMap ).map( childId =>
-                        <ItemForm
-                            key={childId}
-                            itemId={childId}
-                            schemaChoices={choices ?? [schema.additionalProperties as JSONSchema7]}
-                            rootSchema={formContext.schema} />
-                    )
-                }
-            </TreeItem>
+                label={}
+            > */}
+            <ItemLabel title={props.title} {...(choices ? {} : { factory: (): Promise<void> => addItem(parentId, mapName, schema) })} />
+            {(choices &&
+                <GridList cellHeight={100} cols={3}>
+                    {choices.map((schema, index) =>
+                        NewItemTile({
+                            key: (schema as JSONSchema7).$id ?? index.toString(),
+                            schema: schema as JSONSchema7,
+                            addItem: () => addSchemaItem(parentId, mapName, schema as JSONSchema7)
+                        })
+                    )}
+                </GridList>
+            )}
+            {Object.keys(itemMap).map(childId =>
+                <ItemForm
+                    key={childId}
+                    itemId={childId}
+                    schemaChoices={choices ?? [schema.additionalProperties as JSONSchema7]}
+                    rootSchema={formContext.schema} />
+            )
+            }
+            {/* </TreeItem> */}
         </div >
     );
 };
