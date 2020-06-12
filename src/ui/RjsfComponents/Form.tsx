@@ -19,7 +19,6 @@ import { FormContext } from './FormContext';
 import DictionaryObject from './Objects/Dictionary';
 import RectangleObject from './Objects/Rectangle';
 import SetupObject from './Objects/SetupBase';
-import { toJS } from 'mobx';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {

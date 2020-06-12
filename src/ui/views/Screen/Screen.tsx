@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import controller from '../../../Setup/Controller';
 import {Screen} from '../../../Setup/Application/Screen';
 import Form from '../../RjsfComponents/Form';
 import { observer } from 'mobx-react-lite';
+import { Manager } from '../../../plugins/Manager';
+
 
 // export default function DisplaysPage(): JSX.Element {
 const ScreenPage = observer( (): JSX.Element => {
@@ -10,10 +12,18 @@ const ScreenPage = observer( (): JSX.Element => {
 
     console.log(`ScreenPage(${screen})`);
 
+    const load = async (): Promise<void> => {
+        await Manager.loadAll();
+        setScreen(
+            (await controller.getSetup(Screen.name, -1)) as Screen
+        )
+    }
+
+
     useEffect(() => {
-        console.log('ScreenPage.useEffect getSetup');
-        controller.getSetup('Screen', -1)
-            .then(screen => setScreen(screen as Screen));
+        console.log('ScreenPage.useEffect');
+        
+        load();
     }, []);
 
     return (screen == undefined?
