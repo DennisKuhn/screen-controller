@@ -57,7 +57,7 @@ const NewItemTile = ({ schema, addItem, key }: { schema: JSONSchema7; key: strin
 );
 
 
-const ItemForm = ({ itemId, schemaChoices, rootSchema }: { itemId: string; schemaChoices: JSONSchema7Definition[]; rootSchema: JSONSchema7 }): JSX.Element => {
+const ItemForm = ({ itemId, expand, schemaChoices, rootSchema }: { itemId: string; expand: boolean; schemaChoices: JSONSchema7Definition[]; rootSchema: JSONSchema7 }): JSX.Element => {
     const item = controller.tryGetSetupSync(itemId, 0);
     if (!item)
         throw new Error(`Dictionary.tsx/ItemForm: can't get ${itemId} from controller`);
@@ -78,6 +78,7 @@ const ItemForm = ({ itemId, schemaChoices, rootSchema }: { itemId: string; schem
         <Form
             root={item}
             schema={schema}
+            expand={expand}
         />
     );
 };
@@ -161,6 +162,7 @@ const DictionaryObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Ele
                 <ItemForm
                     key={childId}
                     itemId={childId}
+                    expand={Object.keys(itemMap).length == 1}
                     schemaChoices={choices ?? [schema.additionalProperties as JSONSchema7]}
                     rootSchema={formContext.schema} />
             )

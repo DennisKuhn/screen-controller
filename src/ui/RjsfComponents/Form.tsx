@@ -133,7 +133,7 @@ const fixUiSchema = (item: UiSchema, schema: JSONSchema7): UiSchema => {
 };
 
 
-const SetupBaseForm = observer(({ root, schema }: { root: SetupBase; schema: JSONSchema7 }): JSX.Element => {
+const SetupBaseForm = observer(({ root, expand, schema }: { root: SetupBase; expand: boolean; schema: JSONSchema7 }): JSX.Element => {
 
     const formContext: FormContext = { schema };
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
@@ -144,6 +144,7 @@ const SetupBaseForm = observer(({ root, schema }: { root: SetupBase; schema: JSO
         <TreeView
             defaultCollapseIcon={<ExpandMore />}
             defaultExpandIcon={<ChevronRight />}
+            defaultExpanded={expand ? [root.id]: []}
             >
             <Form
                 showErrorList={true}
