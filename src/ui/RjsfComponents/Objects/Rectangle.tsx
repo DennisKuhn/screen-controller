@@ -11,7 +11,7 @@ import HiddenField from '../Fields/Hidden';
 
 import { Rectangle as PlainRectangle } from '../../../Setup/Default/Rectangle';
 import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
-import controller from '../../../Setup/Controller';
+import controller from '../../../Setup/Controller/Factory';
 
 
 

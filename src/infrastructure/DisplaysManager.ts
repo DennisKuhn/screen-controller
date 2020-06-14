@@ -1,5 +1,5 @@
 import { screen as electronScreen, Display as ElectronDisplay } from 'electron';
-import controller from '../Setup/Controller';
+import controller from '../Setup/Controller/Factory';
 import { Screen } from '../Setup/Application/Screen';
 import { Display } from '../Setup/Application/Display';
 

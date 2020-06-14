@@ -1,6 +1,6 @@
 import * as React from 'react';
 import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
-import controller from '../Setup/Controller';
+import controller from '../Setup/Controller/Factory';
 import { Screen } from '../Setup/Application/Screen';
 
 export default function MainWindow(): JSX.Element {

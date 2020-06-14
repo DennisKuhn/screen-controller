@@ -3,7 +3,7 @@ import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
 import Ajv, { ValidateFunction } from 'ajv';
 import { cloneDeep } from 'lodash';
 import React from 'react';
-import controller from '../../../Setup/Controller';
+import controller from '../../../Setup/Controller/Factory';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { forEach } from '../../../Setup/JsonSchemaTools';
 import { JSONSchema7 } from 'json-schema';

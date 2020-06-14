@@ -1,13 +1,12 @@
 import { GridList, GridListTile, GridListTileBar, IconButton, Typography } from '@material-ui/core';
 import { createStyles, makeStyles } from '@material-ui/core/styles';
 import { Add } from '@material-ui/icons';
-import { TreeItem } from '@material-ui/lab';
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import { cloneDeep } from 'lodash';
 import React, { } from 'react';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
-import controller from '../../../Setup/Controller';
+import controller from '../../../Setup/Controller/Factory';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { Dictionary, SetupBaseInterface } from '../../../Setup/SetupInterface';
 import Form from '../Form';
@@ -57,7 +56,8 @@ const NewItemTile = ({ schema, addItem, key }: { schema: JSONSchema7; key: strin
 );
 
 
-const ItemForm = ({ itemId, expand, schemaChoices, rootSchema }: { itemId: string; expand: boolean; schemaChoices: JSONSchema7Definition[]; rootSchema: JSONSchema7 }): JSX.Element => {
+const ItemForm = ({ itemId, expand, schemaChoices, rootSchema }: { itemId: string; expand: boolean; schemaChoices: JSONSchema7Definition[]; rootSchema: JSONSchema7 }):
+    JSX.Element => {
     const item = controller.tryGetSetupSync(itemId, 0);
     if (!item)
         throw new Error(`Dictionary.tsx/ItemForm: can't get ${itemId} from controller`);

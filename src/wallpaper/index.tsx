@@ -2,7 +2,8 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import Wallpaper from './Wallpaper';
 
-import controller, { Paper } from '../Setup/Controller';
+import controller from '../Setup/Controller/Factory';
+import { Paper } from '../Setup/Controller/Paper';
 import { Manager } from '../plugins/Manager';
 
 console.log('Wallpaper/index.tsx');

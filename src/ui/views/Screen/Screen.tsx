@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import controller from '../../../Setup/Controller';
+import React, { useState, useEffect } from 'react';
+import controller from '../../../Setup/Controller/Factory';
 import {Screen} from '../../../Setup/Application/Screen';
 import Form from '../../RjsfComponents/Form';
 import { observer } from 'mobx-react-lite';
@@ -16,8 +16,8 @@ const ScreenPage = observer( (): JSX.Element => {
         await Manager.loadAll();
         setScreen(
             (await controller.getSetup(Screen.name, -1)) as Screen
-        )
-    }
+        );
+    };
 
 
     useEffect(() => {

@@ -1,5 +1,5 @@
 import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
-import controller from '../Setup/Controller';
+import controller from '../Setup/Controller/Factory';
 import { Screen } from '../Setup/Application/Screen';
 import { Browser } from '../Setup/Application/Browser';
 import { Display } from '../Setup/Application/Display';

@@ -9,8 +9,7 @@ import { SetupBaseInterface } from '../../../Setup/SetupInterface';
 import { TreeItem } from '@material-ui/lab';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { makeStyles, IconButton, createStyles } from '@material-ui/core';
-import controller from '../../../Setup/Controller';
-import { cloneDeep } from 'lodash';
+import controller from '../../../Setup/Controller/Factory';
 
 const useItemLabelStyles = makeStyles(() =>
     createStyles({

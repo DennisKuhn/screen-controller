@@ -1,4 +1,5 @@
-import controller, {Paper} from  '../Setup/Controller';
+import controller from '../Setup/Controller/Factory';
+import { Paper } from '../Setup/Controller/Paper';
 import { Manager } from '../plugins/Manager';
 
 process.once('loaded', async () => {
