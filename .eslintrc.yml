@@ -4,23 +4,18 @@ env:
   node: true
 root: true
 parser: "@typescript-eslint/parser"
+parserOptions:
+    ecmaVersion: 2020
+    sourceType: module
+    ecmaFeatures:
+      jsx: true
 plugins:
-  - "@typescript-eslint"
+   - "@typescript-eslint"
 extends:
-  - "eslint:recommended"
-  - "plugin:@typescript-eslint/eslint-recommended"
-  - "plugin:@typescript-eslint/recommended"
-  - "plugin:import/errors"
-  - "plugin:import/warnings"
-  - "plugin:react/recommended"
-settings:
-  import/resolver:
-    node:
-      extensions:
-        - ".js"
-        - ".jsx"
-        - ".ts"
-        - ".tsx"
+   - "plugin:react/recommended"
+   - "eslint:recommended"
+   - "plugin:@typescript-eslint/eslint-recommended"
+   - "plugin:@typescript-eslint/recommended"
 rules:
   indent:
     - error
@@ -45,9 +40,6 @@ rules:
     - asyncArrow: always
       anonymous: never
       named: never
-  no-unused-vars:
-    - error
-    - argsIgnorePattern: "re[q|s]"
   brace-style: error
   node/shebang: 0
   quotes:
@@ -61,4 +53,6 @@ rules:
   react/display-name: 0
   prefer-arrow-callback:
     - error
-
+  no-unused-vars: 0
+  "@typescript-eslint/no-unused-vars": 
+    - error
