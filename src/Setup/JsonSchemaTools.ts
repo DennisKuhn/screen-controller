@@ -74,11 +74,11 @@ const setDefault = (target: SetupBaseInterface, property: string, schema: JSONSc
             root
         );
 
-        // console.log(
-        //     `setDefault: [${target.id}@${target.parentId}].${property}==${target[property]} simplified const=${simpleSchema.const} default=${simpleSchema.default}`,
-        //     target,
-        //     simpleSchema
-        // );
+        console.log(
+            `setDefault: [${target.id}@${target.parentId}].${property}==${target[property]} simplified const=${simpleSchema.const} default=${simpleSchema.default}`,
+            target,
+            simpleSchema
+        );
         if (simpleSchema.const != undefined) {
             target[property] = simpleSchema.const;
         } else if (simpleSchema.default != undefined) {

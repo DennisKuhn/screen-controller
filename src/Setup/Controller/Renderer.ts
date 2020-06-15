@@ -11,6 +11,7 @@ import { Root } from '../Application/Root';
 import { Screen } from '../Application/Screen';
 import { Plugin } from '../Application/Plugin';
 import { cloneDeep } from 'lodash';
+import { isArray } from 'util';
 
 export class Renderer extends ControllerImpl {
     protected ipc: IpcRenderer = electronIpcRenderer;
@@ -152,11 +153,11 @@ export class Renderer extends ControllerImpl {
             if (id == Root.name) {
                 item = Root.createNewBlank();
                 console.warn(`${this.constructor.name}: load(${id}): new Blank`, cloneDeep( item ));
-                this.persist({ item: item, type: 'add', name: 'id', newValue: item.id });
+                this.persist({ item: item, type: 'add', name: '', newValue: '' });
             } else if (id == Screen.name) {
                 item = Screen.createNewBlank(Root.name);
                 console.warn(`${this.constructor.name}: load(${id}): new Blank`, cloneDeep(item));
-                this.persist({ item: item, type: 'add', name: 'id', newValue: item.id });
+                this.persist({ item: item, type: 'add', name: '', newValue: '' });
             } else
                 throw error;
         }
@@ -174,9 +175,11 @@ export class Renderer extends ControllerImpl {
 
             if (setup.id) {
                 item[propertyName] = { id: setup.id };
-            } if (typeof setup == 'object') {
-                for (const id of Object.keys(setup)) {
-                    setup[id] = null;
+            } else if (Array.isArray(value)) {
+                
+            } else if (typeof value == 'object') {
+                for (const id of Object.keys(value)) {
+                    value[id] = null;
                 }
             }
         }
@@ -200,7 +203,7 @@ export class Renderer extends ControllerImpl {
         // Update shallow as newValue not applied yet (called by intercept)
         const newValue = 'newValue' in change ? change.newValue : undefined;
 
-        if (newValue != undefined) {
+        if ((newValue != undefined) && (name !== '')) {
             if ((change as LocalMapChangeArgsType).map) {
                 shallow[(change as LocalMapChangeArgsType).map][name] = newValue == null ? newValue : SetupBase.getPlainValue( newValue );
             } else {
@@ -238,6 +241,13 @@ export class Renderer extends ControllerImpl {
         } else if (type == 'delete') {
             console.log(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}) delete ${name}`);
             localStorage.removeItem(change.name);
+        } else if (name == '') {
+            /// Persists properties children
+            for (const child of Object.values(item)) {
+                if (child instanceof SetupBase) {
+                    this.persist({ item: child, type: 'add', name: '', newValue: '' });
+                }
+            }
         }
-    }
+    } 
 }

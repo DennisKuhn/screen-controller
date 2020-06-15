@@ -1,4 +1,4 @@
-import { ObservableMap } from 'mobx';
+import { ObservableMap, IObservableArray } from 'mobx';
 import { Dictionary } from 'lodash';
 import { SetupBase } from './SetupBase';
 import { SetupBaseInterface, SetupItemId } from './SetupInterface';
@@ -32,3 +32,4 @@ export class ObservableSetupBaseMap<V extends SetupBase> extends ObservableArray
 
 export type SetupBaseInterfaceDictionary<V extends SetupBaseInterface> = Dictionary<V | null>;
 
+export type ObservableArray<T> = IObservableArray<T>;

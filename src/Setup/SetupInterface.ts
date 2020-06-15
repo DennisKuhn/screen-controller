@@ -30,4 +30,5 @@ export type PropertyType =
     Dictionary<SetupBaseInterface> |
     string |
     number |
-    boolean;
+    boolean |
+    PropertyType[];

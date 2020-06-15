@@ -1,16 +1,17 @@
 import shortid from 'shortid';
 import { JSONSchema7 } from 'json-schema';
-import { ObservableSetupBaseMap } from './Container';
+import { ObservableSetupBaseMap, ObservableArray } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary, cloneDeep } from 'lodash';
 import Ajv, { ValidateFunction } from 'ajv';
-import { observable, toJS } from 'mobx';
+import { observable, toJS, isObservableArray } from 'mobx';
 import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
 import deref from 'json-schema-deref-sync';
 import mergeAllOf from 'json-schema-merge-allof';
 import { setDefaults, replaceEach, replaceAbstractRefsWithOneOfConcrets, forEach } from './JsonSchemaTools';
+import { callerAndfName } from '../utils/debugging';
 
 switch (process.type) {
     case 'browser': // Main
@@ -29,12 +30,15 @@ switch (process.type) {
 }
 shortid.characters('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-~');
 
-export type PropertyType =
-    SetupBase |
+type PropertyBaseType = SetupBase |
     ObservableSetupBaseMap<SetupBase> |
     string |
     number |
     boolean;
+
+export type PropertyType =
+    PropertyBaseType | 
+    ObservableArray<PropertyBaseType>;
 
 export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
@@ -448,6 +452,39 @@ export abstract class SetupBase {
         return map;
     }
 
+    protected createArray<T extends PropertyType>(source: Array<T>, name?: string): ObservableArray<T> {
+        let array: ObservableArray<T>;
+
+        if (source.length) {
+            switch (typeof source[0]) {
+                case 'object':
+                    array = observable.array<T>([], { name: this.id + '-' + name });
+                    for (const plain of source) {
+                        const plainSetup = plain as SetupBaseInterface;
+                        if (plainSetup.id) {
+                            array.push(
+                                create(plainSetup) as T
+                            );
+                        } else
+                            throw new Error(`${callerAndfName}: unsupported object: ${JSON.stringify(plain)}`);
+                    }
+                    break;
+                case 'boolean':
+                case 'number':
+                case 'string':
+                    array = observable.array<T>(source, { name: this.id + '-' + name });
+                    break;
+                default:
+                    throw new Error(`${callerAndfName}: unsupported type == ${typeof source[0]} = ${JSON.stringify(source[0])}`);
+            }
+        } else {
+            array = observable.array<T>(source, { name: this.id + '-' + name });
+        }
+
+        return array;
+    }
+
+
     /**
      * Returns a shallow plain javascript object.
      * Child objects like screen, rectangle are included as plain.
@@ -482,6 +519,8 @@ export abstract class SetupBase {
                             for (const id of value.keys()) {
                                 shallow[propertyName as string][id] = null;
                             }
+                        } else if (isObservableArray(value)) {
+                            shallow[propertyName as string] = value.map(item => SetupBase.getPlainValue(item));
                         } else {
                             throw new Error(`SetupBase[${this.constructor.name}].getShallow: Invalid class type ${typeof value} for ${propertyName}`);
                         }
@@ -541,6 +580,8 @@ export abstract class SetupBase {
                                     shallow[propertyName as string][id] = (child as SetupBase).getPlain(depth - 1);
                                 }
                             }
+                        } else if (isObservableArray(value)) {
+                            shallow[propertyName as string] = value.map(item => SetupBase.getPlainValue(item));
                         } else {
                             throw new Error(`SetupBase[${this.constructor.name}].getPlain: Invalid class type ${typeof value} for ${propertyName}`);
                         }
@@ -581,6 +622,8 @@ export abstract class SetupBase {
                         shallow[id] = null;
                     }
                     return shallow;
+                } else if (isObservableArray(objectValue)) {
+                    return objectValue.map( item => SetupBase.getPlainValue(item) );
                 }
                 throw new Error(`SetupBase.getPlainValue(${objectValue}) not supported so far: ${typeof objectValue}`);
             default:

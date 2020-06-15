@@ -3,6 +3,8 @@ import { SetupBase } from '../SetupBase';
 import { SetupBaseInterface, SetupItemId } from '../SetupInterface';
 import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
+import { Gradient } from '../Default/Gradient';
+import { observable } from 'mobx';
 
 export class Screen extends SetupBase {
     static schema: JSONSchema7 = {
@@ -17,6 +19,9 @@ export class Screen extends SetupBase {
                     id: { const: Screen.name },
                     className: { const: Screen.name },
                     parentId: { const: 'Root' },
+                    rotateColors: { type: 'boolean', default: true },
+                    startGradient: { $ref: Gradient.name },
+                    activeGradient: { $ref: Gradient.name },
                     displays: {
                         type: 'object',
                         additionalProperties: {
@@ -27,17 +32,24 @@ export class Screen extends SetupBase {
                         }
                     }
                 },
-                required: ['displays']
+                required: ['displays', 'rotateColors', 'startGradient' ]
             }
         ]
     };
 
     displays: ObservableSetupBaseMap<Display>;
+    @observable rotateColors = true;
+    startGradient: Gradient;
+    activeGradient?: Gradient;
 
     constructor(source: SetupBaseInterface) {
         super(source);
 
         this.displays = this.createMap<Display>(source['displays'], 'displays');
+        this.startGradient = new Gradient(source['startGradient']);
+        if (source['activeGradient']) {
+            this.activeGradient = new Gradient(source['activeGradient']);
+        }
     }
 
     static newInterface = (parentId: SetupItemId): SetupBaseInterface => ({
