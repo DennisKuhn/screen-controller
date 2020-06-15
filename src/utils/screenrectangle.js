@@ -33,7 +33,7 @@ class ScreenRectangle {
         if (this.bottom < (bounds.y + bounds.height)) {
             this.bottom = (bounds.y + bounds.height);
         }
-        console.log(`${display.id}: ${display.scaleFactor}* ${bounds.width} x ${bounds.height} @ ${bounds.x}, ${bounds.y} => ${this.width} x ${this.height} ${JSON.stringify(this)}`);
+        console.log(`${display.id}: ${display.scaleFactor}* ${bounds.width}x${bounds.height} @ ${bounds.x},${bounds.y} => ${this.width}x${this.height}: ${JSON.stringify(this)}`);
     }
 }
 
