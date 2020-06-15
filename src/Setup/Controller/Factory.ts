@@ -3,6 +3,18 @@ import { Main } from './Main';
 import { Paper } from './Paper';
 import { MainWindow } from './MainWindow';
 import { Renderer } from './Renderer';
+import { checkOrphans } from '../../utils/debugging';
+
+interface Win extends Window {
+    checkOrphans: () => void;
+}
+
+declare global {
+    interface Window {
+        checkOrphans: () => void;
+    }
+}
+
 
 /**
  * Instance for this context
@@ -28,6 +40,7 @@ switch (process.type) {
             // console.log(`Config.Controller[${process.type}]: create Renderer`);
             controller = new Renderer();
         }
+        window.checkOrphans = checkOrphans;
         break;
     case 'worker':
     default:
