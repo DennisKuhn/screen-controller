@@ -8,8 +8,6 @@ import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap } from '../Container';
 import { IpcChangeArgsType, IpcMapChangeArgs } from '../IpcInterface';
 
-
-
 export declare interface Controller {
     /**
     *
@@ -29,8 +27,6 @@ export interface SetupPromise {
     resolve: (setup: SetupBase) => void;
     reject: (reason: string) => void;
 }
-
-
 
 interface ConnectItemArgs {
     item: SetupBase;
