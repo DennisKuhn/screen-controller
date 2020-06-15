@@ -79,7 +79,7 @@ export class Plugin extends SetupBase implements PluginInterface {
                             observables[propertyName] = create(value as SetupBaseInterface);
                         } else {
                             console.warn(`${this.constructor.name}[${setup.className}][${this.id}].init:[${propertyName}/Dictionary]=create` /*, updateSetup */);
-                            this[propertyName] = SetupBase.createMap<SetupBase>(value as Dictionary<SetupBaseInterface>);
+                            this[propertyName] = this.createMap<SetupBase>(value as Dictionary<SetupBaseInterface>, propertyName);
                         }
                         break;
                     case 'function':

@@ -2,7 +2,7 @@ import { toJS, observe, IObjectDidChange } from 'mobx';
 import { IpcRendererEvent, ipcRenderer as electronIpcRenderer, remote } from 'electron';
 import { SetupBase } from '../SetupBase';
 import { SetupItemId, SetupBaseInterface, SetupLinkInterface } from '../SetupInterface';
-import { ControllerImpl, LocalChangeArgsType } from './Controller';
+import { ControllerImpl, LocalChangeArgsType, LocalMapChangeArgsType } from './Controller';
 import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap } from '../Container';
 import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs } from '../IpcInterface';
@@ -10,6 +10,7 @@ import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs } from '../IpcInterfac
 import { Root } from '../Application/Root';
 import { Screen } from '../Application/Screen';
 import { Plugin } from '../Application/Plugin';
+import { cloneDeep } from 'lodash';
 
 export class Renderer extends ControllerImpl {
     protected ipc: IpcRenderer = electronIpcRenderer;
@@ -150,11 +151,11 @@ export class Renderer extends ControllerImpl {
 
             if (id == Root.name) {
                 item = Root.createNewBlank();
-                console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
+                console.warn(`${this.constructor.name}: load(${id}): new Blank`, cloneDeep( item ));
                 this.persist({ item: item, type: 'add', name: 'id', newValue: item.id });
             } else if (id == Screen.name) {
                 item = Screen.createNewBlank(Root.name);
-                console.warn(`${this.constructor.name}: load(${id}): new Blank`, item);
+                console.warn(`${this.constructor.name}: load(${id}): new Blank`, cloneDeep(item));
                 this.persist({ item: item, type: 'add', name: 'id', newValue: item.id });
             } else
                 throw error;
@@ -167,6 +168,20 @@ export class Renderer extends ControllerImpl {
         this.ipc.send('change', update);
     }
 
+    static createLinks(item: SetupBaseInterface): void {
+        for (const [propertyName, value] of Object.entries(item)) {
+            const setup = (value as SetupBaseInterface);
+
+            if (setup.id) {
+                item[propertyName] = { id: setup.id };
+            } if (typeof setup == 'object') {
+                for (const id of Object.keys(setup)) {
+                    setup[id] = null;
+                }
+            }
+        }
+    }
+
 
     protected persist = (change: LocalChangeArgsType): void => {
         const { item, name, type } = change;
@@ -174,26 +189,43 @@ export class Renderer extends ControllerImpl {
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(`${this.constructor.name}.persist(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
 
-        // console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}, ${change['newValue']})`/*, item*/);
+        console.log(
+            `${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}) = ${change['newValue']})`,
+            cloneDeep(change),
+            cloneDeep( item ),
+            change['newValue']);
+
         const shallow = item.getShallow();
 
-        ControllerImpl.createLinks(shallow);
+        // Update shallow as newValue not applied yet (called by intercept)
+        const newValue = 'newValue' in change ? change.newValue : undefined;
 
+        if (newValue != undefined) {
+            if ((change as LocalMapChangeArgsType).map) {
+                shallow[(change as LocalMapChangeArgsType).map][name] = newValue == null ? newValue : SetupBase.getPlainValue( newValue );
+            } else {
+                shallow[name] = SetupBase.getPlainValue( newValue );
+            }
+        }
+
+        Renderer.createLinks(shallow);
         localStorage.setItem(item.id, JSON.stringify(shallow));
 
-        const newValue = 'newValue' in change ? change.newValue : undefined;
         const newSetup = newValue instanceof SetupBase ? newValue as SetupBase : undefined;
         const oldValue = 'oldValue' in change ? change.oldValue : undefined;
         const oldSetup = oldValue instanceof SetupBase ? oldValue as SetupBase : undefined;
 
         if (newSetup) {
             if (oldSetup && (oldSetup.id != newSetup.id)) {
-                console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type})=${newSetup.id}, remove from storage ${oldSetup.id}`);
+                console.log(
+                    `${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type})=${newSetup.id},` +
+                    `remove from storage ${oldSetup.id}`);
                 localStorage.removeItem(oldSetup.id);
             }
 
             let persistedChild = false;
 
+            /// Persists properties children
             for (const [propertyName, child] of Object.entries(newSetup)) {
                 if (child instanceof SetupBase) {
                     this.persist({ item: newSetup, type: 'add', name: propertyName, newValue: child });
@@ -201,12 +233,11 @@ export class Renderer extends ControllerImpl {
                 }
             }
             if (!persistedChild) {
-                this.persist({ item: newSetup, name: 'id', type: 'add', newValue: item.id });
+                this.persist({ item: newSetup, name: 'id', type: 'add', newValue: newSetup.id });
             }
         } else if (type == 'delete') {
-            console.log(`${this.constructor.name}.persist(${item.id}, ${name}, ${type}) delete ${name}`);
+            console.log(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}) delete ${name}`);
             localStorage.removeItem(change.name);
         }
     }
 }
-

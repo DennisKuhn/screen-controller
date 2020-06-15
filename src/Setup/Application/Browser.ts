@@ -62,7 +62,7 @@ export class Browser extends SetupBase {
         if (source['device']) {
             this.device = new Rectangle(source['device']);
         }
-        this.plugins = SetupBase.createMap<Plugin>(source['plugins']);
+        this.plugins = this.createMap<Plugin>(source['plugins'], 'plugins');
     }
 
 

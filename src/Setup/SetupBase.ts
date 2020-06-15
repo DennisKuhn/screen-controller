@@ -429,8 +429,8 @@ export abstract class SetupBase {
         return SetupBase.instances[this.parentId];
     }
 
-    protected static createMap<Setup extends SetupBase>(source: Dictionary<SetupBaseInterface>): ObservableSetupBaseMap<Setup> {
-        const map = new ObservableSetupBaseMap<Setup>();
+    protected createMap<Setup extends SetupBase>(source: Dictionary<SetupBaseInterface>, name?: string): ObservableSetupBaseMap<Setup> {
+        const map = new ObservableSetupBaseMap<Setup>({}, undefined, this.id + '-' + name);
 
         for (const [id, plain] of Object.entries(source)) {
             if (plain) {

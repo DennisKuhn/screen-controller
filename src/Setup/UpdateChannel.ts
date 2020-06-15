@@ -65,26 +65,30 @@ export class UpdateChannel {
 
             console.log(
                 `${this.constructor.name}.sendNow([${this.ipc.id}]` +
-                ` @ ${item}.${map}.${change.name}, ${change.type}, ${persist}) ${skipChange ? 'skip receivd' : 'send newer'} [${updateKey}]`, /* change['newValue'] */
+                ` @ ${item}.${map ? map + '.' : ''}${change.name}, ${change.type}, ${persist}) ${skipChange ? 'skip receivd' : 'send newer'} [${updateKey}]`,
+                /* change['newValue'] */
             );
             delete this.received[updateKey];
         }
         if (!skipChange) {
             if (this.ipc.isDestroyed()) {
                 console.error(
-                    `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map}.${change.name}, ${change.type}, persist=${persist}): isDestroyed`);
+                    `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map ? map + '.' : ''}.${change.name}, ${change.type}, persist=${persist}): isDestroyed`
+                );
 
                 this.onError && this.onError(this);
             } else {
                 try {
                     console.log(
-                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map}.${change.name}, ${change.type}, persist=${persist})= ${change['newValue']}`
+                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map ? map + '.' : ''}.${change.name}, ${change.type}, persist=${persist})` +
+                        `= ${change['newValue']}`
                     );
                     
                     this.ipc.send('change', change, persist === true);
                 } catch (error) {
                     console.warn(
-                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map}.${change.name}, ${change.type}, persist=${persist}): ${error}`);
+                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map ? map + '.' : ''}.${change.name}, ${change.type}, persist=` +
+                        `${persist}): ${error}`);
 
                     this.onError && this.onError(this);
                 }

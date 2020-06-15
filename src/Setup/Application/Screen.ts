@@ -37,7 +37,7 @@ export class Screen extends SetupBase {
     constructor(source: SetupBaseInterface) {
         super(source);
 
-        this.displays = SetupBase.createMap<Display>(source['displays']);
+        this.displays = this.createMap<Display>(source['displays'], 'displays');
     }
 
     static newInterface = (parentId: SetupItemId): SetupBaseInterface => ({

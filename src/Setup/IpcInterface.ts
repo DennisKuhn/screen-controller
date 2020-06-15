@@ -23,6 +23,7 @@ export interface IpcAddArgs extends IpcChangeArgs {
 export interface IpcUpdateArgs extends IpcChangeArgs {
     type: 'update';
     newValue: InterfacePropertyType;
+    oldValue: InterfacePropertyType;
 }
 
 export interface IpcRemoveArgs extends IpcChangeArgs {

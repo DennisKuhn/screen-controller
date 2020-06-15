@@ -1,6 +1,5 @@
 import { BrowserWindow, ipcMain as electronIpcMain, IpcMainEvent, WebContents } from 'electron';
 import { JSONSchema7 } from 'json-schema';
-import { isEqual } from 'lodash';
 import { IMapDidChange, isObservableProp, reaction } from 'mobx';
 import { Plugin } from '../Application/Plugin';
 import { ObservableSetupBaseMap } from '../Container';
@@ -149,7 +148,7 @@ export class Main extends ControllerImpl {
         if (!item)
             throw new Error(`${this.constructor.name}.connectChangeListenerToExisting([${listener.senderId},${listener.itemId},${listener.depth}] @ ${depth}`);
 
-        this.connectChangeListener(item, listener, false, depth);
+        this.connectChangeListener(item, listener, depth);
 
         for (const value of Object.values(item)) {
             if (((listener.depth == -1) || (depth < listener.depth)) && (value instanceof ObservableSetupBaseMap)) {
@@ -173,7 +172,7 @@ export class Main extends ControllerImpl {
         }
     }
 
-    private connectChangeListener(item: SetupBase, listener: ChangeListener, fireImmediately: boolean, offset = 0): void {
+    private connectChangeListener(item: SetupBase, listener: ChangeListener, offset = 0): void {
         // console.log(`${this.constructor.name}.connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
 
         for (const [propertyName, value] of Object.entries(item)) {
@@ -211,9 +210,8 @@ export class Main extends ControllerImpl {
                 listener.disposers.push(
                     reaction(
                         () => item[propertyName],
-                        newValue => this.onChangeItemChanged(listener, { item, name: propertyName, type: 'update', newValue }),
+                        newValue => this.onChangeItemChanged(listener, { item, name: propertyName, type: 'update', newValue, oldValue: item[propertyName] }),
                         {
-                            fireImmediately: fireImmediately,
                             name: `ChangeListener[${listener.senderId}, ${listener.itemId}, ${listener.depth}] @ ${item.id}.${propertyName} @${offset}`
                         }
                     )
@@ -225,11 +223,11 @@ export class Main extends ControllerImpl {
     }
 
     private onChangeItemChanged = (listener: ChangeListener, change: LocalChangeArgsType): void => {
-        const { item, name } = change;
+        const { item, name, type } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
-                `${this.constructor.name}.onChangeItemChanged(${change.name}, ${change.type} ): Invalid object: ${JSON.stringify(item)}`);
+                `${this.constructor.name}.onChangeItemChanged(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
 
         const channel = this.updateChannels[listener.senderId];
 
@@ -238,15 +236,6 @@ export class Main extends ControllerImpl {
             return;
         }
         const map = (change as LocalMapArgs).map;
-        let persist = false;
-
-        if (listener.senderId == this.ipcStorage?.id) {
-            const newValue = 'newValue' in change ? change.newValue : undefined;
-            const itemPlainValue = newValue != undefined ? SetupBase.getPlainValue(newValue) : undefined;
-            const remoteUpdate = this.remoteUpdates.get(item.id)?.[name];
-
-            persist = !isEqual(itemPlainValue, remoteUpdate);
-        }
 
         if ((change as LocalMapChangeArgsType).map != undefined) {
             const mapChange = change as LocalMapChangeArgsType;
@@ -261,7 +250,7 @@ export class Main extends ControllerImpl {
                             map: map,
                             newValue: mapChange.newValue == null ? null : mapChange.newValue.getShallow()
                         },
-                        persist
+                        false
                     );
                     break;
                 case 'update':
@@ -274,7 +263,7 @@ export class Main extends ControllerImpl {
                             map: map,
                             newValue: mapChange.newValue == null ? null : mapChange.newValue.getShallow()
                         },
-                        persist
+                        false
                     );
                     break;
                 case 'delete':
@@ -286,7 +275,7 @@ export class Main extends ControllerImpl {
                             name: mapChange.name,
                             map: map
                         },
-                        persist
+                        false
                     );
                     break;
             }
@@ -300,9 +289,9 @@ export class Main extends ControllerImpl {
                             item: item.id,
                             type: itemChange.type,
                             name: itemChange.name,
-                            newValue: SetupBase.getPlainValue(itemChange.newValue),
+                            newValue: SetupBase.getPlainValue(itemChange.newValue)
                         },
-                        persist
+                        false
                     );
                     break;
                 case 'update':
@@ -313,8 +302,9 @@ export class Main extends ControllerImpl {
                             type: itemChange.type,
                             name: itemChange.name,
                             newValue: SetupBase.getPlainValue(itemChange.newValue),
+                            oldValue: SetupBase.getPlainValue(itemChange.oldValue)
                         },
-                        persist
+                        false
                     );
                     break;
                 case 'remove':
@@ -325,7 +315,7 @@ export class Main extends ControllerImpl {
                             type: itemChange.type,
                             name: change.name
                         },
-                        persist
+                        false
                     );
                     break;
             }
@@ -345,7 +335,7 @@ export class Main extends ControllerImpl {
     }
 
 
-    private connectChangeListeners(item: SetupBase, fireImmediately: boolean): void {
+    private connectChangeListeners(item: SetupBase): void {
         // console.log(`${this.constructor.name}.connectChangeListeners[${this.changeListeners.length}](${item.id},${fireImmediately})`);
         for (const listener of this.changeListeners) {
             /// Check if ancestor in within depth is listening
@@ -355,16 +345,16 @@ export class Main extends ControllerImpl {
                 offset += 1, ancestor = ancestor.parentId == ancestor.id ? undefined : this.configs.get(ancestor.parentId)
             ) {
                 if (listener.itemId == ancestor.id) {
-                    this.connectChangeListener(item, listener, fireImmediately, offset);
+                    this.connectChangeListener(item, listener, offset);
                     break;
                 }
             }
         }
     }
 
-    protected onItemConnected = (item: SetupBase, fireImmediately: boolean): void => {
+    protected onItemConnected = (item: SetupBase): void => {
         // console.log(`${this.constructor.name}.onItemConnected(${item.id}) fireImmediately=${fireImmediately}`);
-        this.connectChangeListeners(item, fireImmediately);
+        this.connectChangeListeners(item);
     }
 
     static isPluginSchema = (schema: JSONSchema7, root: JSONSchema7): boolean =>
@@ -394,7 +384,7 @@ export class Main extends ControllerImpl {
 
         const root = create(rootPlain);
 
-        this.connectPersistPropagate({ item: root, propagate: false });
+        this.connectPersistPropagate({ item: root });
 
         this.ipcStorage = e.sender;
 
@@ -447,6 +437,40 @@ export class Main extends ControllerImpl {
                 }
             });
     }
+
+
+    protected persist = (change: LocalChangeArgsType): void => {
+        const { item, name, type } = change;
+        const map = (change as LocalMapArgs).map;
+
+        if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
+            throw new Error(
+                `${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): Invalid object: ${JSON.stringify(item)}`);
+
+        if (this.ipcStorage == undefined)
+            throw new Error(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): no ipcStorage`);
+        
+        const channel = this.updateChannels[this.ipcStorage.id];
+
+        if (channel == undefined)
+            throw new Error(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): no channel for ${this.ipcStorage.id}`);
+        
+        console.log(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ': ''}${name}, ${type}) -> [${this.ipcStorage.id}]`);
+
+        channel.send(
+            'change',
+            {
+                item: item.id,
+                type: type,
+                name: name,
+                ...(map ? { map } : undefined),
+                ...(('newValue' in change) ? { newValue: (change.newValue == null ? null : SetupBase.getPlainValue(change.newValue)) } : undefined),
+                ...(('oldValue' in change) ? { oldValue: (change.oldValue == null ? null : SetupBase.getPlainValue(change.oldValue)) } : undefined)
+            } as IpcChangeArgsType,
+            true
+        );
+    }
+
 }
 
 

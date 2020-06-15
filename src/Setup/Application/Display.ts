@@ -36,7 +36,7 @@ export class Display extends SetupBase {
     constructor(source: SetupBaseInterface) {
         super(source);
 
-        this.browsers = SetupBase.createMap<Browser>(source['browsers']);
+        this.browsers = this.createMap<Browser>(source['browsers'], 'browsers');
     }
 
     addBrowser = (): void => {
