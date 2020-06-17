@@ -542,9 +542,10 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             const remoteTarget: SetupBaseInterface | SetupBaseInterfaceDictionary<SetupBaseInterface> | Array<InterfacePropertyType> = mapUpdate ? remoteItem[mapUpdate.map] :
                 arrayUpdate ? remoteItem[arrayUpdate.array] : remoteItem;
 
-
-            if ((!newItem) && isEqual(remoteTarget[key], update['newValue'])) {
-                console.warn(`${callerAndfName()}${getIpcArgsLog(update)}: already equal (old,new):`,
+            if (arrayUpdate?.type == 'splice') {
+                //Todo: How to check splice update
+            } else if ((!newItem) && isEqual(remoteTarget[key], update['newValue'])) {
+                console.warn(`${callerAndfName()}${getIpcArgsLog(update)}: skip already equal (old,new):`,
                     cloneDeep(remoteTarget[key]),
                     cloneDeep(update['newValue']));
                 return false;
