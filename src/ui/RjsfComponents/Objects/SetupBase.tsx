@@ -41,9 +41,7 @@ const SetupBaseObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
     const { properties, formData, idSchema } = props;
     const setup = formData as SetupBaseInterface;
 
-    console.log(
-        `SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}/${setup?.className}` /*, props */
-    );
+    // console.debug( `SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}/${setup?.className}` /*, props */ );
 
     const deleteItem = useCallback(
         async () => {
@@ -52,7 +50,7 @@ const SetupBaseObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
             if (!parent)
                 throw new Error(`SetupBaseTemplate[${idSchema?.$id},${setup.id}].deleteItem can't get parent ${setup.parentId}`);
 
-            console.log(`SetupBaseTemplate[${idSchema?.$id},${setup.id}].deleteItem from ${parent.id}`);
+            console.debug(`SetupBaseTemplate[${idSchema?.$id},${setup.id}].deleteItem from ${parent.id}`);
 
             parent.deleteChild(setup.id);
         },

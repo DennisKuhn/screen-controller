@@ -53,8 +53,7 @@ export class Main extends ControllerImpl {
         if (!updateChannel)
             throw new Error(`${callerAndfName()}(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
 
-        console.log(
-            `${callerAndfName()}[${mainEvent.sender.id}]${getIpcArgsLog(update)}`);
+        console.log(`${callerAndfName()}[${mainEvent.sender.id}]${getIpcArgsLog(update)}`);
 
         updateChannel.addReceived(update);
 
@@ -188,9 +187,9 @@ export class Main extends ControllerImpl {
                                     ` (${item.id}.${propertyName}.${changes.name}) ignore overwriting null`);
                                 return;
                             }
-                            console.log(
-                                `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
-                                ` ${item.id}.${propertyName}.${changes.name}, ${changes.type})`);
+                            // console.debug(
+                            //     `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
+                            //     ` ${item.id}.${propertyName}.${changes.name}, ${changes.type})`);
                             this.onChangeItemChanged(
                                 listener,
                                 {
@@ -479,17 +478,17 @@ export class Main extends ControllerImpl {
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
-                `${callerAndfName()}(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): Invalid object: ${JSON.stringify(item)}`);
+                `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: Invalid object: ${JSON.stringify(item)}`);
 
         if (this.ipcStorage == undefined)
-            throw new Error(`${callerAndfName()}(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): no ipcStorage`);
+            throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: no ipcStorage`);
         
         const channel = this.updateChannels[this.ipcStorage.id];
 
         if (channel == undefined)
-            throw new Error(`${callerAndfName()}(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): no channel for ${this.ipcStorage.id}`);
+            throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: no channel for ${this.ipcStorage.id}`);
         
-        console.log(`${callerAndfName()}(${item.id}, ${'map' in change ? change['map'] + ', ': ''}${name}, ${type}) -> [${this.ipcStorage.id}]`);
+        console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} -> [${this.ipcStorage.id}]`);
 
         channel.send(
             'change',

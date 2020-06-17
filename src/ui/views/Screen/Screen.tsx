@@ -21,7 +21,7 @@ const ScreenPage = observer( (): JSX.Element => {
 
 
     useEffect(() => {
-        console.log('ScreenPage.useEffect');
+        console.log('ScreenPage.useEffect. plugins/Manager.loadAll');
         
         load();
     }, []);

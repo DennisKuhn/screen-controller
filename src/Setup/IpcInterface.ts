@@ -126,7 +126,8 @@ export const getIpcArgsLog = (update: IpcChangeArgsType): string => {
     const itemUpdate = (update as IpcItemChangeArgsType).name ? (update as IpcItemChangeArgsType) : undefined;
     const mapUpdate = (update as IpcMapChangeArgsType).map ? (update as IpcMapChangeArgsType) : undefined;
     const arrayUpdate = (update as IpcArrayChangeArgsType).array ? (update as IpcArrayChangeArgsType) : undefined;
-    const spliceUpdate = (update as IpcArraySpliceArgs).added !== undefined && (update as IpcArraySpliceArgs).removedCount !== undefined ? (update as IpcArraySpliceArgs) : undefined;
+    const spliceUpdate = (update as IpcArraySpliceArgs).added !== undefined && (update as IpcArraySpliceArgs).removedCount !== undefined ?
+        (update as IpcArraySpliceArgs) : undefined;
     const name = itemUpdate?.name;
     const map = mapUpdate?.map;
     const array = arrayUpdate?.array;

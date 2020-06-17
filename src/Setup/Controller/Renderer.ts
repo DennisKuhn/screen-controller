@@ -203,10 +203,7 @@ export class Renderer extends ControllerImpl {
         const name = (change as LocalItemChangeArgsType).name;
 
 
-        console.log(
-            `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}`,
-            cloneDeep(change),
-            cloneDeep(item));
+        console.log( `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}`/*, cloneDeep(change), cloneDeep(item)*/);
 
         const shallow = item.getShallow();
 
@@ -236,8 +233,7 @@ export class Renderer extends ControllerImpl {
 
         if (newSetup) {
             if (oldSetup && (oldSetup.id != newSetup.id)) {
-                console.log(
-                    `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}=${newSetup.id}, remove from storage ${oldSetup.id}`);
+                console.debug(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}=${newSetup.id}, remove from storage ${oldSetup.id}`);
                 localStorage.removeItem(oldSetup.id);
             }
 
@@ -254,7 +250,7 @@ export class Renderer extends ControllerImpl {
                 this.persist({ item: newSetup, name: 'id', type: 'add', newValue: newSetup.id });
             }
         } else if (change.type == 'delete') {
-            console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} delete ${change.name}`);
+            console.debug(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} delete ${change.name}`);
             localStorage.removeItem(change.name);
         } else if (name === '') {
             /// Persists properties children

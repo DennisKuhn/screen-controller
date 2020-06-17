@@ -87,14 +87,14 @@ const add = async (parentId: string, mapName: string, className: string): Promis
     const parent = await controller.getSetup(parentId, 1);
     const newItem = SetupBase.createNew(className, parentId);
 
-    console.log(`DictionaryTemplate[${parentId}.${mapName}].add created ${newItem.className}@${newItem.id} add to ${newItem.parentId}.${mapName}`);
+    console.debug(`DictionaryTemplate[${parentId}.${mapName}].add created ${newItem.className}@${newItem.id} add to ${newItem.parentId}.${mapName}`);
     const map = parent[mapName] as ObservableSetupBaseMap<SetupBase>;
 
     if (!map)
         throw new Error(`DictionaryTemplate[${parentId}.${mapName}].add created ${newItem.className}@${newItem.id} can't get map ${newItem.parentId}.${mapName}`);
 
     map.set(newItem.id, newItem);
-    console.log(`DictionaryTemplate[${parentId}.${mapName}].added ${newItem.className}@${newItem.id} in ${newItem.parentId}.${mapName}`);
+    // console.log(`DictionaryTemplate[${parentId}.${mapName}].added ${newItem.className}@${newItem.id} in ${newItem.parentId}.${mapName}`);
 };
 
 const addItem = async (parentId: string, mapName: string, schema: JSONSchema7): Promise<void> => {
@@ -108,7 +108,7 @@ const addItem = async (parentId: string, mapName: string, schema: JSONSchema7): 
 
     const className = (itemSchema.properties?.className as JSONSchema7)?.const as string;
 
-    console.log(`DictionaryTemplate[${parentId}.${mapName}].addItem create (${className}, ${parentId})`);
+    // console.debug(`DictionaryTemplate[${parentId}.${mapName}].addItem create (${className}, ${parentId})`);
 
     await add(parentId, mapName, className);
 };
@@ -119,7 +119,7 @@ const addSchemaItem = async (parentId: string, mapName: string, newSchema: JSONS
 
     const className = (newSchema.properties?.className as JSONSchema7)?.const as string;
 
-    console.log(`DictionaryTemplate[${parentId}.${mapName}].addSchemaItem create (${className}, ${parentId})`);
+    // console.log(`DictionaryTemplate[${parentId}.${mapName}].addSchemaItem create (${className}, ${parentId})`);
 
     await add(parentId, mapName, className);
 };
@@ -129,8 +129,7 @@ const DictionaryObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Ele
     const { formData, idSchema, schema, formContext } = props;
     const itemMap = formData as Dictionary<SetupBaseInterface>;
 
-    console.log(
-        `DictionaryTemplate[${idSchema?.$id}]`, itemMap);
+    console.debug( `DictionaryTemplate[${idSchema?.$id}]`/*, itemMap*/);
     // Screen_displays, Screen_2528732444_browsers, Screen_Browser-bVal4azqO_plugins
     const [parentId, mapName] = idSchema.$id.split('_').slice(-2);
 

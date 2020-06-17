@@ -20,15 +20,15 @@ export class Plugin {
 
     createElement = (): void => {
         if ((this.registration as CanvasRegistration).canvasFactory) {
-            console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].createElement canvasFactory`);
+            // console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].createElement canvasFactory`);
             this.element = this.canvas = window.document.createElement('canvas');
         }
         if ((this.registration as HtmlRegistration).htmlFactory) {
-            console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].createElement htmlFactory`);
+            // console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].createElement htmlFactory`);
             this.element = this.div = window.document.createElement('div');
         }
         if (this.element) {
-            console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].createElement init ${this.element}`);
+            // console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].createElement init ${this.element}`);
             this.element.id = this.setup.id;
             this.element.style.position = 'fixed';
             this.element.style.border = '1px solid orange';

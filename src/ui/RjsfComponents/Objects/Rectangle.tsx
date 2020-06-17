@@ -33,14 +33,14 @@ const RectangleObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
     if (!property)
         throw new Error(`Rectangle[${rect.id}] failed get parent property from ${props.idSchema.$id}`);
 
-    console.log(`RectangleObjectTemplate[${parent.id}].${property}[${item.id}]`, { ...props });
+    // console.debug(`RectangleObjectTemplate[${parent.id}].${property}[${item.id}]`, { ...props });
 
     let isFullscreen = (rect.x == 0 && rect.y == 0 && rect.width == 1 && rect.height == 1);
 
     const toggleFullScreen = (): void => {
         isFullscreen = !isFullscreen;
 
-        console.log(`RectangleObjectTemplate[${title}].toggleFullScreen ${item.id}=${isFullscreen}`, item, props);
+        console.debug(`RectangleObjectTemplate[${title}].toggleFullScreen ${item.id}=${isFullscreen}`, item, props);
 
         if (rect.className == RelativeRectangle.name) {
             parent[property] = RelativeRectangle.create(

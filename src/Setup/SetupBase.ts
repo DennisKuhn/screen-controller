@@ -364,9 +364,9 @@ export abstract class SetupBase {
 
                 SetupBase.moveRefsToDefsToDefs(merged);
 
-                console.log(
-                    `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}):`,
-                    { ...merged }, toJS(info.schema, { recurseEverything: true }));
+                console.log( `SetupBase[${this.constructor.name}].getPlainSchema(${this.className})`
+                    // , { ...merged }, toJS(info.schema, { recurseEverything: true })
+                );
 
                 info.plainSchema = merged;
             }

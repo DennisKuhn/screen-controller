@@ -23,9 +23,7 @@ export class UpdateChannel {
             .pipe(
                 distinctUntilChanged(isEqual)
             )
-            .subscribe(
-                (args: IpcSend) => this.sendNow(args.channel, args.change, args.persist)
-            );
+            .subscribe( this.sendNow );
     }
 
     public onError: ((source: UpdateChannel) => void) | undefined;
@@ -53,7 +51,7 @@ export class UpdateChannel {
         this.sendSubscriber.next({ channel, change, persist });
     }
 
-    private sendNow = (channel: string, change: IpcChangeArgsType, persist?: boolean): void => {
+    private sendNow = ({/*channel,*/ change, persist}: IpcSend): void => {
         const updateKey = UpdateChannel.updateKey(change.item, change['name'] ?? change['index'], change['map'] ?? change['array']);
         const hasUpdate = updateKey in this.received;
         const update = this.received[updateKey];
@@ -79,7 +77,7 @@ export class UpdateChannel {
                 try {
                     console.log(`${callerAndfName()}[${this.ipc.id}]${getIpcArgsLog(change)}, ${persist})`);
                     
-                    this.ipc.send('change', change, persist === true);
+                    this.ipc.send(/*channel*/ 'change', change, persist === true);
                 } catch (error) {
                     console.warn(
                         `${ callerAndfName() }[${ this.ipc.id }]${ getIpcArgsLog(change) }, ${ persist }): ${error}`, error);

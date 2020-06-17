@@ -138,7 +138,7 @@ const SetupBaseForm = observer(({ root, expand, schema }: { root: SetupBase; exp
     const formContext: FormContext = { schema };
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
 
-    console.log(`SetupBaseForm(${root.id}/${root.className})`/*, uiSchema*/);
+    // console.debug(`SetupBaseForm(${root.id}/${root.className})`/*, uiSchema*/);
 
     return (
         <TreeView

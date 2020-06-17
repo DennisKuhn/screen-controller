@@ -87,7 +87,7 @@ const ObservedField = (props: FieldProps): JSX.Element => {
         const [item, propertyName] = getTarget(idSchema.$id);
         const validate = getValidator(idSchema.$id, props.schema);
 
-        console.log(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id} ${JSON.stringify(props.schema)}`, props);
+        // console.debug(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id} ${JSON.stringify(props.schema)}`, props);
 
         const customProps = {
             ...remainingProps,
@@ -104,7 +104,7 @@ const ObservedField = (props: FieldProps): JSX.Element => {
                     }
                 } else {
                     if (validate(newValue)) {
-                        console.log(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id}== ${item[propertyName]} = ${newValue}`);
+                        console.debug(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id}== ${item[propertyName]} = ${newValue}`);
                         item[propertyName] = newValue;
                     } else {
                         console.warn(
@@ -124,12 +124,12 @@ const ObservedField = (props: FieldProps): JSX.Element => {
         const targetArray = item[propertyName] as IObservableArray;
         const validate = getValidator(idSchema.$id, props.schema);
 
-        console.log(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id} ${JSON.stringify(props.schema)}`, props);
+        // console.log(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id} ${JSON.stringify(props.schema)}`, props);
 
         const customProps = {
             ...remainingProps,
             onChange: (newValue, es?: ErrorSchema): void => {
-                console.log(`ObservedField[${item.id}/${item.className}.${propertyName}].[${name}] [${idSchema.$id}] Array.onChange=`, newValue, props, es);
+                // console.log(`ObservedField[${item.id}/${item.className}.${propertyName}].[${name}] [${idSchema.$id}] Array.onChange=`, newValue, props, es);
 
                 onChange(newValue, es);
 
@@ -137,7 +137,7 @@ const ObservedField = (props: FieldProps): JSX.Element => {
                 const diff = newArray.length - targetArray.length;
 
                 if (diff != 0) {
-                    console.debug(`${callerAndfName()}[${item.id}/${item.className}.${propertyName}].[${name}] [${idSchema.$id}] diff=${diff}`);
+                    // console.debug(`${callerAndfName()}[${item.id}/${item.className}.${propertyName}].[${name}] [${idSchema.$id}] diff=${diff}`);
 
                     for (let index = 0; index <= targetArray.length; index += 1) {
                         if ((index == targetArray.length) || (targetArray[index] != newArray[index])) {
@@ -158,7 +158,7 @@ const ObservedField = (props: FieldProps): JSX.Element => {
             <SchemaField {...customProps} />
         );
     } else {
-        console.log(`ObservedField[${name}] [${idSchema.$id}] ignore`);
+        // console.debug(`ObservedField[${name}] [${idSchema.$id}] ignore`);
     }
     return (
         <SchemaField {...props} />

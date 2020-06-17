@@ -13,7 +13,7 @@ export class MainWindow extends Renderer {
 
         this.getSetup(Root.name, -1)
             .then(root => {
-                console.log(`${this.constructor.name}() gotSetup(${Root.name}) send ...`, SetupBase.activeSchema);
+                console.debug(`${this.constructor.name}() gotSetup(${Root.name}) send ...`, SetupBase.activeSchema);
                 this.ipc.send(
                     'init',
                     {
