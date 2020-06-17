@@ -32,7 +32,7 @@ export class Gradient extends SetupBase {
     public static readonly uiSchema: UiSchema = {
         ...SetupBase.uiSchema,
         name: { 'ui:widget': 'hidden' },
-        activeColors: { 'ui:widget': 'hidden' },
+        colors: { items: { 'ui:widget': 'color' }}
     };
 
     @observable type: 'Solid' | 'Circular' | 'Horizontal' | 'Vertical';

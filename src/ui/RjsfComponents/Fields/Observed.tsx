@@ -10,7 +10,7 @@ import { JSONSchema7 } from 'json-schema';
 
 const ajv = (new Ajv()).addSchema(SetupBase.activeSchema);
 
-const targetCache = new Map<string, [SetupBase, string]>();
+// const targetCache = new Map<string, [SetupBase, string]>();
 
 const getTarget = (idSchemaId: string): [SetupBase, string] => {
     // const cache = targetCache.get(idSchemaId);
@@ -38,7 +38,7 @@ const getTarget = (idSchemaId: string): [SetupBase, string] => {
             throw new Error(`ObservedField[${idSchemaId}].[${name}] failed to get parent child ${stack[iStack]} stack=${stack}`);
     }
     
-    targetCache.set(idSchemaId, [parent, propertyName]);
+    // targetCache.set(idSchemaId, [parent, propertyName]);
     return [parent, propertyName];
 };
 
@@ -84,7 +84,7 @@ const ObservedField = (props: FieldProps): JSX.Element => {
         const [item, propertyName] = getTarget(idSchema.$id);
         const validate = getValidator(idSchema.$id, props.schema);
 
-        console.log(`ObservedField[${parent}.${propertyName}].[${name}] ${idSchema.$id} ${JSON.stringify(props.schema)}`);
+        console.log(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id} ${JSON.stringify(props.schema)}`, props);
 
         const customProps = {
             ...remainingProps,
@@ -94,18 +94,18 @@ const ObservedField = (props: FieldProps): JSX.Element => {
                 onChange(newValue, es);
 
                 if (newValue.id) {
-                    if (newValue.id != item[name]?.id) {
-                        console.error(`ObservedField[${parent}.${propertyName}].[${name}] ${idSchema.$id}.onChange: ${newValue.id} != ${item[name]?.id}`);
+                    if (newValue.id != item[propertyName]?.id) {
+                        console.error(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id}.onChange: ${newValue.id} != ${item[propertyName]?.id}`);
                     } else {
-                        console.log(`ObservedField[${parent}.${propertyName}].[${name}] ${idSchema.$id}.onChange: skip ${newValue.id} == ${item[name]?.id}`);
+                        console.log(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id}.onChange: skip ${newValue.id} == ${item[propertyName]?.id}`);
                     }
                 } else {
                     if (validate(newValue)) {
-                        console.log(`ObservedField[${parent}.${propertyName}].[${name}] ${idSchema.$id}== ${item[name]} = ${newValue}`);
-                        item[name] = newValue;
+                        console.log(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id}== ${item[propertyName]} = ${newValue}`);
+                        item[propertyName] = newValue;
                     } else {
                         console.warn(
-                            `ObservedField[${parent}.${propertyName}].[${name}] ${idSchema.$id}== ${item[name]} = -> ${newValue} <- :` +
+                            `ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id}== ${item[propertyName]} = -> ${newValue} <- :` +
                             ` ${validate.errors ? validate.errors.map(error => `${error.dataPath}:${error.message}`) : ''}`,
                             { ...validate.errors }, newValue);
                     }

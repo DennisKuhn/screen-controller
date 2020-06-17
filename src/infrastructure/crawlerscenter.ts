@@ -1,5 +1,6 @@
 import DirectoryCrawler from './directorycrawler';
 import Url, { fs2Url } from '../utils/Url';
+import { callerAndfName } from '../utils/debugging';
 
 type RejectCallback = (reason: string) => void;
 
@@ -50,11 +51,11 @@ class CrawlersCenter {
     async start(rootDirectory: string): Promise<void> {
         this.root = fs2Url(rootDirectory);
 
-        // console.log(`${this.constructor.name}.start: ${rootDirectory} => ${this.root}`, this.root);
+        // console.log(`${callerAndfName()}: ${rootDirectory} => ${this.root}`, this.root);
 
         await this.spawnFolder(this.root)
             .catch(reason => {
-                console.error(`${this.constructor.name}.spawnFolder: crawler.run.catch at root: ${reason}`, reason);
+                console.error(`${callerAndfName()}: crawler.run.catch at root: ${reason}`, reason);
                 throw reason;
             });
     }
@@ -70,13 +71,13 @@ class CrawlersCenter {
      * @returns {boolean} true if started a crawler for the folder. Returns false if all crawler slots are active at the moment
      */
     async spawnFolder(folder: Url): Promise<void> {
-        // console.log(`${this.constructor.name}.spawnFolder ${this.canSpan} ${this.crawling.length} =? ${this.maxCrawlers} ${folder}`);
+        // console.log(`${callerAndfName()} ${this.canSpan} ${this.crawling.length} =? ${this.maxCrawlers} ${folder}`);
         if (this.onTerminate) {
             throw new Error(`${this.constructor.name}: spawnFolder stopping`);
         } else if (this.canSpan) {
             const crawler = new DirectoryCrawler(this, this.crawlerBatchSize);
             this.crawling.push(crawler);
-            // console.log(`${this.constructor.name}.spawnFolder => ${this.crawling.length} ${folder}`);
+            // console.log(`${callerAndfName()} => ${this.crawling.length} ${folder}`);
             await crawler.run(folder)
                 .finally(() => {
                     this.removeCrawler(crawler);
@@ -91,20 +92,20 @@ class CrawlersCenter {
      * @param {DirectoryCrawler} crawler
      */
     removeCrawler(crawler: DirectoryCrawler): void {
-        // console.log(`${this.constructor.name}.removeCrawler @${this.waitingNew.length} ${crawler.relativePath}`);
+        // console.log(`${callerAndfName()} @${this.waitingNew.length} ${crawler.relativePath}`);
         const i = this.crawling.indexOf(crawler);
-        // console.log(`${this.constructor.name}.removeCrawler found @${i}/${this.crawling.length} ${crawler.relativePath}`);
+        // console.log(`${callerAndfName()} found @${i}/${this.crawling.length} ${crawler.relativePath}`);
         this.crawling.splice(i, 1);
 
         if (this.crawling.length == 0) {
             if (this.onTerminate) {
-                // console.log(`${this.constructor.name}.removeCrawler: call onTerminate`);
+                // console.log(`${callerAndfName()}: call onTerminate`);
                 this.onTerminate();
                 this.onTerminate = undefined;
             } else {
-                // console.log(`${this.constructor.name}.removeCrawler: crawler.run.then: restarting at root`);
+                // console.log(`${callerAndfName()}: crawler.run.then: restarting at root`);
                 if (!this.root) {
-                    throw new Error(`${this.constructor.name}.removeCrawler(): No crawlers, respawn at NO ROOT`);
+                    throw new Error(`${callerAndfName()}(): No crawlers, respawn at NO ROOT`);
                 }
                 this.spawnFolder(this.root);
             }
@@ -117,22 +118,22 @@ class CrawlersCenter {
      * @returns {Promise}
      */
     addFile(file: string): Promise<void> {
-        // console.log(`${this.constructor.name}.addFile @${this.filesBuffer.length},${this.waitingConsumers.length} = ${file}`);
+        // console.log(`${callerAndfName()} @${this.filesBuffer.length},${this.waitingConsumers.length} = ${file}`);
         return new Promise((resolve, reject) => {
             const waitingConsumer = this.waitingConsumers.shift();
             if (waitingConsumer) {
-                // console.log(`${this.constructor.name}.addFile resolve waitingConsumer ${this.waitingConsumers.length} = ${file}`);
+                // console.log(`${callerAndfName()} resolve waitingConsumer ${this.waitingConsumers.length} = ${file}`);
                 waitingConsumer.resolve(file);
                 resolve();
             } else {
                 if (this.filesBuffer.length == this.maxFiles) {
-                    //console.log(`${this.constructor.name}.addFile add to waitingCrawlers @${this.waitingCrawlers.length} == ${this.maxFiles} = ${file}`);
+                    //console.log(`${callerAndfName()} add to waitingCrawlers @${this.waitingCrawlers.length} == ${this.maxFiles} = ${file}`);
                     this.waitingCrawlers.push({ resolve: resolve, reject: reject, file: file });
                 } else if (this.filesBuffer.length >= this.maxFiles) {
-                    console.error(`${this.constructor.name}.addFile add to waitingCrawlers @${this.waitingCrawlers.length} > ${this.maxFiles} = ${file}`);
+                    console.error(`${callerAndfName()} add to waitingCrawlers @${this.waitingCrawlers.length} > ${this.maxFiles} = ${file}`);
                     this.waitingCrawlers.push({ resolve: resolve, reject: reject, file: file });
                 } else {
-                    //console.log(`${this.constructor.name}.addFile push filesBuffer, resolve @${this.filesBuffer.length} = ${file}`);
+                    //console.log(`${callerAndfName()} push filesBuffer, resolve @${this.filesBuffer.length} = ${file}`);
                     this.filesBuffer.push(file);
                     resolve();
                 }
@@ -146,17 +147,17 @@ class CrawlersCenter {
      */
     getFile(): Promise<string> {
         return new Promise((resolve, reject) => {
-            // console.log(`${this.constructor.name}.getFile consumerQ=${this.waitingConsumers.length} buffer=${this.filesBuffer.length} crawlerQ=${this.waitingCrawlers.length}`);
+            // console.log(`${callerAndfName()} consumerQ=${this.waitingConsumers.length} buffer=${this.filesBuffer.length} crawlerQ=${this.waitingCrawlers.length}`);
             if (this.onTerminate) {
                 reject('stopping');
             } else if (this.crawling.length == 0) {
                 reject('no crawlers');
             } else if (this.filesBuffer.length == 0) {
-                // console.log(`${this.constructor.name}.getFile add to waitingConsumers @${this.waitingConsumers.length} @${this.filesBuffer.length} == 0`);
+                // console.log(`${callerAndfName()} add to waitingConsumers @${this.waitingConsumers.length} @${this.filesBuffer.length} == 0`);
                 this.waitingConsumers.push({ resolve: resolve, reject: reject });
             } else {
                 const file = this.filesBuffer.shift();
-                // console.log(`${this.constructor.name}.getFile sclice filesBuffer, resolve @${this.filesBuffer.length}, waitingCrawlers=${this.waitingCrawlers.length}`, ${file});
+                // console.log(`${callerAndfName()} sclice filesBuffer, resolve @${this.filesBuffer.length}, waitingCrawlers=${this.waitingCrawlers.length}`, ${file});
                 const crawler = this.waitingCrawlers.pop();
                 if (crawler) {
                     this.filesBuffer.push(crawler.file);

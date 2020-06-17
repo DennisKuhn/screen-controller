@@ -2,7 +2,7 @@ import { toJS, observe, IObjectDidChange } from 'mobx';
 import { IpcRendererEvent, ipcRenderer as electronIpcRenderer, remote } from 'electron';
 import { SetupBase } from '../SetupBase';
 import { SetupItemId, SetupBaseInterface, SetupLinkInterface } from '../SetupInterface';
-import { ControllerImpl, LocalChangeArgsType, LocalMapChangeArgsType } from './Controller';
+import { ControllerImpl, LocalChangeArgsType, LocalMapChangeArgsType, LocalItemChangeArgsType, LocalArrayChangeArgsType } from './Controller';
 import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap } from '../Container';
 import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs } from '../IpcInterface';
@@ -11,7 +11,7 @@ import { Root } from '../Application/Root';
 import { Screen } from '../Application/Screen';
 import { Plugin } from '../Application/Plugin';
 import { cloneDeep } from 'lodash';
-import { isArray } from 'util';
+import { caller, fName, callerAndfName } from '../../utils/debugging';
 
 export class Renderer extends ControllerImpl {
     protected ipc: IpcRenderer = electronIpcRenderer;
@@ -47,12 +47,12 @@ export class Renderer extends ControllerImpl {
 
         switch (change.type) {
             case 'add':
-                // console.log(`${this.constructor.name}.onSchemaDefinitionChanged(${change.type} ${String(change.name)})`);
+                // console.log(`${callerAndfName()}(${change.type} ${String(change.name)})`);
                 this.ipc.send('addSchema', { schema: toJS(change.newValue) });
                 break;
             case 'update':
             case 'remove':
-                console.error(`${this.constructor.name}.onSchemaDefinitionChanged(${change.type} ${String(change.name)}) only add is supported`);
+                console.error(`${callerAndfName()}(${change.type} ${String(change.name)}) only add is supported`);
                 break;
 
         }
@@ -62,7 +62,7 @@ export class Renderer extends ControllerImpl {
         if (depth != 0) {
             for (const value of Object.values(item)) {
                 if (value instanceof ObservableSetupBaseMap) {
-                    // console.log(`${this.constructor.name}.loadChildren(${item.id}, ${depth}): get children in ${propertyName}`);
+                    // console.log(`${callerAndfName()}(${item.id}, ${depth}): get children in ${propertyName}`);
                     const container = value as ObservableSetupBaseMap<SetupBase>;
                     for (const itemId of container.keys()) {
                         container.set(
@@ -71,10 +71,10 @@ export class Renderer extends ControllerImpl {
                         );
                     }
                 } else if (value instanceof SetupBase) {
-                    // console.log(`${this.constructor.name}.loadChildren(${item.id}, ${depth}): load children in ${propertyName}`);
+                    // console.log(`${callerAndfName()}(${item.id}, ${depth}): load children in ${propertyName}`);
                     this.loadChildren(value as SetupBase, depth);
                 } else {
-                    // console.log(`${this.constructor.name}.getSetupSync(${id}): don't add children in ${propertyName} as not ObservableSetupBaseMap`);
+                    // console.log(`${callerAndfName()}(${id}): don't add children in ${propertyName} as not ObservableSetupBaseMap`);
                 }
             }
         }
@@ -112,11 +112,11 @@ export class Renderer extends ControllerImpl {
     }
 
     private resolveLinks = (item: SetupBaseInterface): void => {
-        // console.log(`${this.constructor.name}.resolveLinks(${item.id})`);
+        // console.log(`${callerAndfName()}(${item.id})`);
 
         for (const [propertyName, value] of Object.entries(item)) {
             if (typeof value == 'object' && ((value as SetupLinkInterface).id)) {
-                // console.log(`${this.constructor.name}.resolveLinks(${item.id}): resolve ${propertyName} - ${(value as SetupLinkInterface).id}`);
+                // console.log(`${callerAndfName()}(${item.id}): resolve ${propertyName} - ${(value as SetupLinkInterface).id}`);
                 item[propertyName] = this.loadPlain((value as SetupLinkInterface).id);
                 this.resolveLinks(item[propertyName]);
             }
@@ -127,7 +127,7 @@ export class Renderer extends ControllerImpl {
         const itemString = localStorage.getItem(id);
 
         if (!itemString)
-            throw new Error(`${this.constructor.name}.loadPlain(-> ${id} <-): can't load/find`);
+            throw new Error(`${callerAndfName()}(-> ${id} <-): can't load/find`);
 
         try {
             return JSON.parse(itemString);
@@ -165,7 +165,7 @@ export class Renderer extends ControllerImpl {
     }
 
     protected readonly propagate = (update: IpcChangeArgsType): void => {
-        // console.log(`${this.constructor.name}.propapgate(${update.item}, ${update.name}, ${update.type}) send to main`/*, item*/);
+        // console.log(`${callerAndfName()}(${update.item}, ${update.name}, ${update.type}) send to main`/*, item*/);
         this.ipc.send('change', update);
     }
 
@@ -176,7 +176,12 @@ export class Renderer extends ControllerImpl {
             if (setup.id) {
                 item[propertyName] = { id: setup.id };
             } else if (Array.isArray(value)) {
-                
+                // Keep elements as they are
+                if ((value.length > 0) && ['object', 'symbol', 'function', 'bigint'].includes(typeof value[0])) {
+                    throw new Error(
+                        `${caller()}->SetupBase.${fName()}(${item.id}/${item.className}).${propertyName}: Array content type ${typeof value[0]} is not supported: ` +
+                        `${JSON.stringify(value)}`);
+                }
             } else if (typeof value == 'object') {
                 for (const id of Object.keys(value)) {
                     value[id] = null;
@@ -187,13 +192,19 @@ export class Renderer extends ControllerImpl {
 
 
     protected persist = (change: LocalChangeArgsType): void => {
-        const { item, name, type } = change;
+        const { item } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
-            throw new Error(`${this.constructor.name}.persist(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
+            throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: Invalid object: ${JSON.stringify(item)}`);
 
+        const array = (change as LocalArrayChangeArgsType).array;
+        const index = (change as LocalArrayChangeArgsType).index;
+        const map = (change as LocalMapChangeArgsType).map;
+        const name = (change as LocalItemChangeArgsType).name;
+        
+        
         console.log(
-            `${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}) = ${change['newValue']})`,
+            `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}`,
             cloneDeep(change),
             cloneDeep( item ),
             change['newValue']);
@@ -204,8 +215,10 @@ export class Renderer extends ControllerImpl {
         const newValue = 'newValue' in change ? change.newValue : undefined;
 
         if ((newValue != undefined) && (name !== '')) {
-            if ((change as LocalMapChangeArgsType).map) {
-                shallow[(change as LocalMapChangeArgsType).map][name] = newValue == null ? newValue : SetupBase.getPlainValue( newValue );
+            if (array) {
+                shallow[array][index] = SetupBase.getPlainValue(newValue);
+            } else if (map) {
+                shallow[map][name] = newValue == null ? newValue : SetupBase.getPlainValue(newValue);
             } else {
                 shallow[name] = SetupBase.getPlainValue( newValue );
             }
@@ -221,8 +234,7 @@ export class Renderer extends ControllerImpl {
         if (newSetup) {
             if (oldSetup && (oldSetup.id != newSetup.id)) {
                 console.log(
-                    `${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type})=${newSetup.id},` +
-                    `remove from storage ${oldSetup.id}`);
+                    `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}=${newSetup.id}, remove from storage ${oldSetup.id}`);
                 localStorage.removeItem(oldSetup.id);
             }
 
@@ -238,10 +250,10 @@ export class Renderer extends ControllerImpl {
             if (!persistedChild) {
                 this.persist({ item: newSetup, name: 'id', type: 'add', newValue: newSetup.id });
             }
-        } else if (type == 'delete') {
-            console.log(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}) delete ${name}`);
+        } else if (change.type == 'delete') {
+            console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} delete ${change.name}`);
             localStorage.removeItem(change.name);
-        } else if (name == '') {
+        } else if (name === '') {
             /// Persists properties children
             for (const child of Object.values(item)) {
                 if (child instanceof SetupBase) {

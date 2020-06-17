@@ -1,5 +1,6 @@
-import { BrowserWindow, app, ipcMain } from 'electron';
-import { CHANNEL, Windows as WindowsKeys, IpcArgs  } from './Windows.ipc';
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { callerAndfName } from '../utils/debugging';
+import { CHANNEL, IpcArgs, Windows as WindowsKeys } from './Windows.ipc';
 
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const SCREEN_MANAGER_WEBPACK_ENTRY: string;
@@ -37,7 +38,7 @@ class Windows {
         const window = Windows.browserWindows[args.window];
 
         if (!window) {
-            throw new Error(`${this.constructor.name}.onWindowMessage: window=${args.window} doesn't exist`);
+            throw new Error(`${callerAndfName()}: window=${args.window} doesn't exist`);
         }
         switch (args.command) {
             case 'show':

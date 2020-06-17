@@ -9,29 +9,33 @@ export type AddSchemaChannel = 'addSchema';
 
 
 
-export interface IpcChangeArgs {
+interface IpcChangeArgs {
     item: SetupItemId;
-    name: PropertyKey;
     type: string;
 }
 
-export interface IpcAddArgs extends IpcChangeArgs {
+interface IpcItemChangeArgs extends IpcChangeArgs {
+    name: PropertyKey;
+}
+
+export interface IpcAddArgs extends IpcItemChangeArgs {
     type: 'add';
     newValue: InterfacePropertyType;
 }
 
-export interface IpcUpdateArgs extends IpcChangeArgs {
+export interface IpcUpdateArgs extends IpcItemChangeArgs {
     type: 'update';
     newValue: InterfacePropertyType;
     oldValue: InterfacePropertyType;
 }
 
-export interface IpcRemoveArgs extends IpcChangeArgs {
+export interface IpcRemoveArgs extends IpcItemChangeArgs {
     type: 'remove';
 }
 
-export interface IpcMapChangeArgs extends IpcChangeArgs {
+interface IpcMapChangeArgs extends IpcChangeArgs {
     map: PropertyKey;
+    name: PropertyKey;
 }
 
 export interface IpcMapAddArgs extends IpcMapChangeArgs {
@@ -48,6 +52,23 @@ export interface IpcMapDeleteArgs extends IpcMapChangeArgs {
     type: 'delete';
 }
 
+interface IpcArrayChangeArgs extends IpcChangeArgs {
+    array: PropertyKey;
+    index: number;
+}
+
+export interface IpcArrayUpdateArgs extends IpcArrayChangeArgs {
+    type: 'update';
+    newValue: InterfacePropertyType;
+}
+
+export interface IpcArraySpliceArgs extends IpcArrayChangeArgs {
+    type: 'splice';
+    added: InterfacePropertyType[];
+    removedCount: number;
+}
+
+
 export interface IpcInitArgs {
     schema: JSONSchema7;
     root: SetupBaseInterface;
@@ -58,8 +79,12 @@ export interface IpcAddSchemaArgs {
 }
 
 
-export type IpcChangeArgsType = IpcAddArgs | IpcUpdateArgs | IpcRemoveArgs | IpcMapAddArgs | IpcMapUpdateArgs | IpcMapDeleteArgs;
 export type IpcItemChangeArgsType = IpcAddArgs | IpcUpdateArgs | IpcRemoveArgs;
+export type IpcMapChangeArgsType = IpcMapAddArgs | IpcMapUpdateArgs | IpcMapDeleteArgs;
+export type IpcArrayChangeArgsType = IpcArrayUpdateArgs | IpcArraySpliceArgs;
+export type IpcChangeArgsType = IpcItemChangeArgsType | IpcMapChangeArgsType | IpcArrayChangeArgsType;
+
+// export type IpcChangeArgsType = IpcAddArgs | IpcUpdateArgs | IpcRemoveArgs | IpcMapAddArgs | IpcMapUpdateArgs | IpcMapDeleteArgs;
 
 
 export interface IpcRenderer extends electron.IpcRenderer {
@@ -96,3 +121,15 @@ export interface IpcRegisterArgs {
     depth: number;
 }
 
+export const getIpcArgsLog = (update: IpcChangeArgsType): string => {
+    const { item, type } = update;
+    const itemUpdate = (update as IpcItemChangeArgsType).name ? (update as IpcItemChangeArgsType) : undefined;
+    const mapUpdate = (update as IpcMapChangeArgsType).map ? (update as IpcMapChangeArgsType) : undefined;
+    const arrayUpdate = (update as IpcArrayChangeArgsType).array ? (update as IpcArrayChangeArgsType) : undefined;
+    const name = itemUpdate?.name;
+    const map = mapUpdate?.map;
+    const array = arrayUpdate?.array;
+    const newValue = update['newValue'];
+
+    return `(${item}.${map ?? array ?? ''}${mapUpdate ? '.' + mapUpdate.name : arrayUpdate ? '[' + arrayUpdate.index + ']' : name} ,${type})${newValue ? '=' + newValue : ''}`;
+};

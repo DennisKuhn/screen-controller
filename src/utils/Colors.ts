@@ -19,7 +19,7 @@ export const rgbToHsl = (r: number, g: number, b: number, factor: number): [numb
             case r: h = (g - b) / d + (g < b ? 6 : 0); break;
             case g: h = (b - r) / d + 2; break;
             case b: h = (r - g) / d + 4; break;
-            default: throw new Error(`${callerAndfName}(r=${r} g=${g} b=${b} factor=${factor}): Can't find max in r,g,b: min=${min} max=${max}`);
+            default: throw new Error(`$${callerAndfName()}(r=${r} g=${g} b=${b} factor=${factor}): Can't find max in r,g,b: min=${min} max=${max}`);
         }
         h /= 6;
     }

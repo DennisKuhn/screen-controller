@@ -1,15 +1,16 @@
 import { BrowserWindow, ipcMain as electronIpcMain, IpcMainEvent, WebContents } from 'electron';
 import { JSONSchema7 } from 'json-schema';
 import { IMapDidChange, isObservableProp, reaction } from 'mobx';
+import { callerAndfName } from '../../utils/debugging';
 import { Plugin } from '../Application/Plugin';
 import { ObservableSetupBaseMap } from '../Container';
-import { IpcAddSchemaArgs, IpcChangeArgsType, IpcInitArgs, IpcMain, IpcRegisterArgs, IpcWindow } from '../IpcInterface';
+import { IpcAddSchemaArgs, IpcChangeArgsType, IpcInitArgs, IpcMain, IpcRegisterArgs, IpcWindow, getIpcArgsLog } from '../IpcInterface';
 import { resolve } from '../JsonSchemaTools';
 import { SetupBase } from '../SetupBase';
 import { create } from '../SetupFactory';
 import { SetupItemId } from '../SetupInterface';
 import { UpdateChannel } from '../UpdateChannel';
-import { ControllerImpl, LocalChangeArgsType, LocalItemChangeArgsType, LocalMapArgs, LocalMapChangeArgsType, SetupPromise } from './Controller';
+import { ControllerImpl, LocalChangeArgsType, LocalItemChangeArgsType, LocalMapArgs, LocalMapChangeArgsType, SetupPromise, LocalArrayChangeArgsType } from './Controller';
 
 interface ChangeListener {
     senderId: number;
@@ -50,12 +51,10 @@ export class Main extends ControllerImpl {
         const updateChannel = this.updateChannels[mainEvent.sender.id];
 
         if (!updateChannel)
-            throw new Error(`${this.constructor.name}.onSetupChanged(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
+            throw new Error(`${callerAndfName()}(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
 
         console.log(
-            `${this.constructor.name}.onSetupChanged() [${mainEvent.sender.id}] ${update.type}` +
-            ` ${update.item}.${update.name} =` +
-            ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
+            `${callerAndfName()}[${mainEvent.sender.id}]${getIpcArgsLog(update)}`);
 
         updateChannel.addReceived(update);
 
@@ -63,13 +62,13 @@ export class Main extends ControllerImpl {
     }
 
     private onAddSchema = (e: IpcMainEvent, args: IpcAddSchemaArgs): void => {
-        // console.log(`${this.constructor.name}.onAddSchema(${e.sender.id}, ${args.schema.$id})`);
+        // console.log(`${callerAndfName()}(${e.sender.id}, ${args.schema.$id})`);
 
         Plugin.add(args.schema);
 
         for (const listener of this.updateChannels) {
             if ((listener != undefined) && (listener.ipc.id != e.sender.id)) {
-                console.log(`${this.constructor.name}.onAddSchema(${e.sender.id}, ${args.schema.$id}) send to ${listener.ipc.id}`);
+                console.log(`${callerAndfName()}(${e.sender.id}, ${args.schema.$id}) send to ${listener.ipc.id}`);
                 listener.ipc.send('addSchema', { schema: args.schema });
             }
         }
@@ -81,12 +80,12 @@ export class Main extends ControllerImpl {
     }
 
     private unRegister = (channelId: number): void => {
-        console.log(`${this.constructor.name}.unRegister(${channelId})`);
+        console.log(`${callerAndfName()}(${channelId})`);
 
         this.changeListeners
             .filter(listener => listener.senderId == channelId)
             .forEach(listener => {
-                // console.log(`${this.constructor.name}.unRegister(${channelId}): ${listener.itemId},${listener.depth} disposer: ${listener.disposers.length}`);
+                // console.log(`${callerAndfName()}(${channelId}): ${listener.itemId},${listener.depth} disposer: ${listener.disposers.length}`);
                 listener.disposers.forEach(disposer => disposer());
                 this.changeListeners.splice(
                     this.changeListeners.indexOf(listener)
@@ -102,21 +101,21 @@ export class Main extends ControllerImpl {
 
 
         if (this.configs.size == 0) {
-            // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+            // console.log(`${callerAndfName()}[${this.changeListeners.length}]` +
             //     `(senderId=${senderId}, ${itemId}, d=${depth}) ignore - Hopefully own init for full config`);
             return;
         }
 
 
         if (this.updateChannels[senderId] == undefined) {
-            console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+            console.log(`${callerAndfName()}[${this.changeListeners.length}]` +
                 `(senderId=${senderId}, ${itemId}, d=${depth}) create updateChannel`);
 
             this.updateChannels[senderId] = new UpdateChannel(target);
             target.once('destroyed', () => this.unRegister(senderId));
 
         } else {
-            // console.log(`${this.constructor.name}.onRegister[${this.changeListeners.length}]` +
+            // console.log(`${callerAndfName()}[${this.changeListeners.length}]` +
             //     `(senderId=${senderId}, ${itemId}, d=${depth}) updateChannel exists`);
         }
         const listener: ChangeListener = {
@@ -138,7 +137,7 @@ export class Main extends ControllerImpl {
     connectChangeListenerToExisting(listener: ChangeListener, item?: SetupBase, depth?: number): void {
 
         if (this.configs.size == 0) {
-            console.log(`${this.constructor.name}.connectChangeListenerToExisting[${listener.senderId},${listener.itemId},${listener.depth}]: no config yet`);
+            console.log(`${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]: no config yet`);
             return;
         }
 
@@ -146,14 +145,14 @@ export class Main extends ControllerImpl {
         depth = depth ?? 0;
 
         if (!item)
-            throw new Error(`${this.constructor.name}.connectChangeListenerToExisting([${listener.senderId},${listener.itemId},${listener.depth}] @ ${depth}`);
+            throw new Error(`${callerAndfName()}([${listener.senderId},${listener.itemId},${listener.depth}] @ ${depth}`);
 
         this.connectChangeListener(item, listener, depth);
 
         for (const value of Object.values(item)) {
             if (((listener.depth == -1) || (depth < listener.depth)) && (value instanceof ObservableSetupBaseMap)) {
                 // console.log(
-                //     `${this.constructor.name}.connectChangeListenerToExisting[${listener.senderId},${listener.itemId},${listener.depth}]:` +
+                //     `${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]:` +
                 //     ` observe ${item.id}.${propertyName} as ObservableSetupBaseMap`);
 
                 for (const child of value.values()) {
@@ -167,18 +166,18 @@ export class Main extends ControllerImpl {
                 this.connectChangeListenerToExisting(listener, value, depth);
             } else {
                 // console.log(
-                //     `${this.constructor.name}.connectChangeListenerToExisting[${listener.senderId},${listener.itemId},${listener.depth}]: ignore ${propertyName}.${item.id}`);
+                //     `${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]: ignore ${propertyName}.${item.id}`);
             }
         }
     }
 
     private connectChangeListener(item: SetupBase, listener: ChangeListener, offset = 0): void {
-        // console.log(`${this.constructor.name}.connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
+        // console.log(`${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
 
         for (const [propertyName, value] of Object.entries(item)) {
             if (value instanceof ObservableSetupBaseMap) {
                 // console.log(
-                //     `${this.constructor.name}.connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]:` +
+                //     `${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]:` +
                 //     ` observe ${item.id}.${propertyName} as ObservableSetupBaseMap`);
                 listener.disposers.push(
                     (value as ObservableSetupBaseMap<SetupBase>)
@@ -217,25 +216,26 @@ export class Main extends ControllerImpl {
                     )
                 );
             } else {
-                // console.log(`${this.constructor.name}.connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: ignore ${propertyName}.${item.id}`);
+                // console.log(`${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]: ignore ${propertyName}.${item.id}`);
             }
         }
     }
 
     private onChangeItemChanged = (listener: ChangeListener, change: LocalChangeArgsType): void => {
-        const { item, name, type } = change;
+        const { item, type } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
-                `${this.constructor.name}.onChangeItemChanged(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
+                `${callerAndfName()}(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
 
         const channel = this.updateChannels[listener.senderId];
 
         if (channel == undefined) {
-            console.error(`${this.constructor.name}.onChangeItemChanged(${change.name}, ${change.type} ): no channel for ${listener.senderId}`);
+            console.error(`${callerAndfName()}[${listener.senderId}](${ControllerImpl.getLocalArgsLog(change)} ): no channel`);
             return;
         }
-        const map = (change as LocalMapArgs).map;
+        const map = (change as LocalMapChangeArgsType).map;
+        const array = (change as LocalArrayChangeArgsType).array;
 
         if ((change as LocalMapChangeArgsType).map != undefined) {
             const mapChange = change as LocalMapChangeArgsType;
@@ -279,6 +279,37 @@ export class Main extends ControllerImpl {
                     );
                     break;
             }
+        } else if ((change as LocalArrayChangeArgsType).array != undefined) {
+            const arrayChange = change as LocalArrayChangeArgsType;
+            switch (arrayChange.type) {
+                case 'update':
+                    channel.send(
+                        'change',
+                        {
+                            item: item.id,
+                            type: arrayChange.type,
+                            index: arrayChange.index,
+                            array: map,
+                            newValue: SetupBase.getPlainValue( arrayChange.newValue )
+                        },
+                        false
+                    );
+                    break;
+                case 'splice':
+                    channel.send(
+                        'change',
+                        {
+                            item: item.id,
+                            type: arrayChange.type,
+                            index: arrayChange.index,
+                            added: arrayChange.added,
+                            removedCount: arrayChange.removedCount,
+                            array: array
+                        },
+                        false
+                    );
+                    break;
+            }
         } else {
             const itemChange = change as LocalItemChangeArgsType;
             switch (itemChange.type) {
@@ -313,7 +344,7 @@ export class Main extends ControllerImpl {
                         {
                             item: item.id,
                             type: itemChange.type,
-                            name: change.name
+                            name: itemChange.name
                         },
                         false
                     );
@@ -336,7 +367,7 @@ export class Main extends ControllerImpl {
 
 
     private connectChangeListeners(item: SetupBase): void {
-        // console.log(`${this.constructor.name}.connectChangeListeners[${this.changeListeners.length}](${item.id},${fireImmediately})`);
+        // console.log(`${callerAndfName()}[${this.changeListeners.length}](${item.id},${fireImmediately})`);
         for (const listener of this.changeListeners) {
             /// Check if ancestor in within depth is listening
             for (
@@ -353,7 +384,7 @@ export class Main extends ControllerImpl {
     }
 
     protected onItemConnected = (item: SetupBase): void => {
-        // console.log(`${this.constructor.name}.onItemConnected(${item.id}) fireImmediately=${fireImmediately}`);
+        // console.log(`${callerAndfName()}(${item.id}) fireImmediately=${fireImmediately}`);
         this.connectChangeListeners(item);
     }
 
@@ -369,11 +400,11 @@ export class Main extends ControllerImpl {
     private onInit = (e: IpcMainEvent, init: IpcInitArgs): void => {
         const { schema, root: rootPlain } = init;
 
-        console.log(`${this.constructor.name}.onInit: sender=${e.sender}`/*, schema*/);
+        console.log(`${callerAndfName()}: sender=${e.sender}`/*, schema*/);
 
 
         if (!schema.definitions)
-            throw new Error(`${this.constructor.name}.onInit: no schema.definitions sender=${e.sender}`);
+            throw new Error(`${callerAndfName()}: no schema.definitions sender=${e.sender}`);
 
         Object.values(schema.definitions)
             .filter(schemaDef =>
@@ -392,19 +423,19 @@ export class Main extends ControllerImpl {
     }
 
     private resolvePromises = (): void => {
-        // console.log(`${this.constructor.name}.resolvePromises[${this.promises.length}]`);
+        // console.log(`${callerAndfName()}[${this.promises.length}]`);
 
         for (const promise of this.promises) {
             const item = this.configs.get(promise.id);
 
             if (!item) {
-                console.error(`${this.constructor.name}.resolvePromises() can't resolve ${promise.id}`);
-                promise.reject(`${this.constructor.name}.resolvePromises() can't resolve ${promise.id}`);
+                console.error(`${callerAndfName()}() can't resolve ${promise.id}`);
+                promise.reject(`${callerAndfName()}() can't resolve ${promise.id}`);
             } else {
                 if (!this.ipcStorage)
-                    throw new Error(`${this.constructor.name}.getSetupImpl(${promise.id}, ${promise.depth}): no IPC storage to register`);
+                    throw new Error(`${callerAndfName()}(${promise.id}, ${promise.depth}): no IPC storage to register`);
 
-                // console.log(`${this.constructor.name}.resolvePromises( ${promise.id}, ${promise.depth} )`);
+                // console.log(`${callerAndfName()}( ${promise.id}, ${promise.depth} )`);
 
                 this.register(this.ipcStorage, { itemId: promise.id, depth: promise.depth });
                 promise.resolve(item);
@@ -422,15 +453,15 @@ export class Main extends ControllerImpl {
                     this.promises.push({ id: id, depth: depth, resolve: resolve, reject: reject });
 
                     if (this.ipcStorage) {
-                        console.error(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): doesn't exist promises=${this.promises.length}`);
+                        console.error(`${callerAndfName()}(${id}, ${depth}): doesn't exist promises=${this.promises.length}`);
                     } else {
-                        // console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): wait for init promises=${this.promises.length}`);
+                        // console.log(`${callerAndfName()}(${id}, ${depth}): wait for init promises=${this.promises.length}`);
                     }
                 } else {
                     if (!this.ipcStorage)
-                        throw new Error(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): no IPC storage to register`);
+                        throw new Error(`${callerAndfName()}(${id}, ${depth}): no IPC storage to register`);
 
-                    // console.log(`${this.constructor.name}.getSetupImpl(${id}, ${depth}): resolve ${responseItem.id}` /*, responseItem.getPlainDeep() */);                    
+                    // console.log(`${callerAndfName()}(${id}, ${depth}): resolve ${responseItem.id}` /*, responseItem.getPlainDeep() */);                    
 
                     this.register(this.ipcStorage, { itemId: responseItem.id, depth });
                     resolve(responseItem);
@@ -440,22 +471,25 @@ export class Main extends ControllerImpl {
 
 
     protected persist = (change: LocalChangeArgsType): void => {
-        const { item, name, type } = change;
+        const { item, type } = change;
+        const array = (change as LocalArrayChangeArgsType).array;
+        const index = (change as LocalArrayChangeArgsType).index;
         const map = (change as LocalMapArgs).map;
+        const name = (change as LocalItemChangeArgsType).name;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
-                `${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): Invalid object: ${JSON.stringify(item)}`);
+                `${callerAndfName()}(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): Invalid object: ${JSON.stringify(item)}`);
 
         if (this.ipcStorage == undefined)
-            throw new Error(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): no ipcStorage`);
+            throw new Error(`${callerAndfName()}(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): no ipcStorage`);
         
         const channel = this.updateChannels[this.ipcStorage.id];
 
         if (channel == undefined)
-            throw new Error(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): no channel for ${this.ipcStorage.id}`);
+            throw new Error(`${callerAndfName()}(${item.id}, ${'map' in change ? change['map'] + ', ' : ''}${name}, ${type}): no channel for ${this.ipcStorage.id}`);
         
-        console.log(`${this.constructor.name}.persist(${item.id}, ${'map' in change ? change['map'] + ', ': ''}${name}, ${type}) -> [${this.ipcStorage.id}]`);
+        console.log(`${callerAndfName()}(${item.id}, ${'map' in change ? change['map'] + ', ': ''}${name}, ${type}) -> [${this.ipcStorage.id}]`);
 
         channel.send(
             'change',
@@ -463,6 +497,9 @@ export class Main extends ControllerImpl {
                 item: item.id,
                 type: type,
                 name: name,
+                ...(name ? { name } : undefined),
+                ...(array ? { array } : undefined),
+                ...(index !== undefined ? { index } : undefined),
                 ...(map ? { map } : undefined),
                 ...(('newValue' in change) ? { newValue: (change.newValue == null ? null : SetupBase.getPlainValue(change.newValue)) } : undefined),
                 ...(('oldValue' in change) ? { oldValue: (change.oldValue == null ? null : SetupBase.getPlainValue(change.oldValue)) } : undefined)

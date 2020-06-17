@@ -1,12 +1,13 @@
-import { Plugin as Setup } from '../Setup/Application/Plugin';
-import { Registration } from './PluginInterface';
+import { isEqual } from 'lodash';
+import { autorun, IMapDidChange } from 'mobx';
 import requireGlob from 'require-glob';
 import { Browser } from '../Setup/Application/Browser';
-import { IMapDidChange, autorun } from 'mobx';
-import { Plugin } from './Plugin';
-import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
-import { isEqual } from 'lodash';
+import { Plugin as Setup } from '../Setup/Application/Plugin';
 import { Rectangle } from '../Setup/Default/Rectangle';
+import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
+import { callerAndfName } from '../utils/debugging';
+import { Plugin } from './Plugin';
+import { Registration } from './PluginInterface';
 
 const pluginDir = 'D:\\Dennis\\Projects\\wallpaper-plugins\\dist\\';
 
@@ -22,7 +23,7 @@ export class Manager {
     static readonly registrations = new Map<string, PluginReg>();
 
     static async loadAll(): Promise<void> {
-        // console.log(`${this.constructor.name}.loadAll() current=${Manager.registrations.size}`);
+        // console.log(`${callerAndfName()}() current=${Manager.registrations.size}`);
 
         await Manager.loadPlugins('**/*');
     }
@@ -64,7 +65,7 @@ export class Manager {
      * @param prefix use '*' to load all, otherwise the className 
      */
     static async loadPlugins(prefix: string): Promise<void> {
-        // console.log(`${this.constructor.name}.loadPlugins(${prefix}) current=${Manager.registrations.size}`);
+        // console.log(`${callerAndfName()}(${prefix}) current=${Manager.registrations.size}`);
 
         let mixed: PluginImports | undefined;
 
@@ -77,7 +78,7 @@ export class Manager {
         if (!mixed)
             return;
 
-        console.log(`${this.constructor.name}.loadPlugins(${prefix}) current=${Manager.registrations.size} got=${Object.keys(mixed).length}`);
+        console.log(`${callerAndfName()}(${prefix}) current=${Manager.registrations.size} got=${Object.keys(mixed).length}`);
 
         Manager.processImports(mixed, '');
     }
@@ -102,7 +103,7 @@ export class Manager {
         registration = Manager.getRegistration(className);
 
         if (!registration)
-            throw new Error(`${this.constructor.name}.load(${className}) failed`);
+            throw new Error(`${callerAndfName()}(${className}) failed`);
 
         return registration;
     }

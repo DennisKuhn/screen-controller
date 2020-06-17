@@ -466,7 +466,7 @@ export abstract class SetupBase {
                                 create(plainSetup) as T
                             );
                         } else
-                            throw new Error(`${callerAndfName}: unsupported object: ${JSON.stringify(plain)}`);
+                            throw new Error(`$${callerAndfName()}: unsupported object: ${JSON.stringify(plain)}`);
                     }
                     break;
                 case 'boolean':
@@ -475,7 +475,7 @@ export abstract class SetupBase {
                     array = observable.array<T>(source, { name: this.id + '-' + name });
                     break;
                 default:
-                    throw new Error(`${callerAndfName}: unsupported type == ${typeof source[0]} = ${JSON.stringify(source[0])}`);
+                    throw new Error(`$${callerAndfName()}: unsupported type == ${typeof source[0]} = ${JSON.stringify(source[0])}`);
             }
         } else {
             array = observable.array<T>(source, { name: this.id + '-' + name });

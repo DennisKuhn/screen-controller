@@ -7,6 +7,7 @@ import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
 import { Rectangle } from '../Setup/Default/Rectangle';
 import { autorun } from 'mobx';
 import { isEqual } from 'lodash';
+import { callerAndfName } from '../utils/debugging';
 
 interface WallpaperWindowConstructorOptions extends BrowserWindowConstructorOptions {
     displayId: number;
@@ -147,8 +148,8 @@ class WallpaperWindow extends EventEmitter {
     }
 
     private fitToDisplay(): void {
-        if (!this.nativeHandle) throw new Error(`${this.constructor.name}.fitToDisplay: No handle for browser ${this.browser.id} @ ${this.displayId}`);
-        if (!this.browser.device) throw new Error(`${this.constructor.name}.fitToDisplay: No device rectangle for browser ${this.browser.id} @ ${this.displayId}`);
+        if (!this.nativeHandle) throw new Error(`${callerAndfName()}: No handle for browser ${this.browser.id} @ ${this.displayId}`);
+        if (!this.browser.device) throw new Error(`${callerAndfName()}: No device rectangle for browser ${this.browser.id} @ ${this.displayId}`);
 
         const handle = this.nativeHandle;
         const deviceRect = this.browser.device;

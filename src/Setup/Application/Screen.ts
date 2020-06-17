@@ -5,6 +5,7 @@ import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
 import { Gradient } from '../Default/Gradient';
 import { observable } from 'mobx';
+import { UiSchema } from '@rjsf/core';
 
 export class Screen extends SetupBase {
     static schema: JSONSchema7 = {
@@ -20,6 +21,7 @@ export class Screen extends SetupBase {
                     className: { const: Screen.name },
                     parentId: { const: 'Root' },
                     rotateColors: { type: 'boolean', default: true },
+                    fps: { type: 'number', default: 25 },
                     startGradient: { $ref: Gradient.name },
                     activeGradient: { $ref: Gradient.name },
                     displays: {
@@ -32,20 +34,31 @@ export class Screen extends SetupBase {
                         }
                     }
                 },
-                required: ['displays', 'rotateColors', 'startGradient' ]
+                required: ['displays', 'fps', 'rotateColors', 'startGradient' ]
             }
         ]
     };
 
+    public static readonly uiSchema: UiSchema = {
+        ...SetupBase.uiSchema,
+        activeGradient: { 'ui:widget': 'hidden' }
+    };
+
+
     displays: ObservableSetupBaseMap<Display>;
     @observable rotateColors = true;
+    @observable fps: number;
     startGradient: Gradient;
     activeGradient?: Gradient;
 
     constructor(source: SetupBaseInterface) {
         super(source);
-
+        
         this.displays = this.createMap<Display>(source['displays'], 'displays');
+
+        this.rotateColors = source['rotateColors'];
+        this.fps = source['fps'];
+
         this.startGradient = new Gradient(source['startGradient']);
         if (source['activeGradient']) {
             this.activeGradient = new Gradient(source['activeGradient']);
@@ -64,7 +77,7 @@ export class Screen extends SetupBase {
         );
 
     static register(): void {
-        SetupBase.register(Screen, Screen.schema, {});
+        SetupBase.register(Screen, Screen.schema, Screen.uiSchema);
     }
 }
 

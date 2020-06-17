@@ -1,7 +1,8 @@
 import fs from 'fs';
+import { callerAndfName } from '../utils/debugging';
 import Url, { fs2Url } from '../utils/Url';
-
 import CrawlersCenter from './crawlerscenter';
+
 
 class DirectoryCrawler {
 
@@ -26,10 +27,10 @@ class DirectoryCrawler {
 
         if (!(this.root.pathname && this.center.root && this.center.root.pathname)) {
             console.error(
-                `${this.constructor.name}.run() pathnames unset: this=${this.root.pathname} center=${this.center.root && this.center.root.pathname ? this.center.root.pathname : 'null'}`
+                `${callerAndfName()}() pathnames unset: this=${this.root.pathname} center=${this.center.root && this.center.root.pathname ? this.center.root.pathname : 'null'}`
             );
             throw new Error(
-                `${this.constructor.name}.run() pathnames unset: this=${this.root.pathname} center=${this.center.root && this.center.root.pathname ? this.center.root.pathname : 'null'}`
+                `${callerAndfName()}() pathnames unset: this=${this.root.pathname} center=${this.center.root && this.center.root.pathname ? this.center.root.pathname : 'null'}`
             );
         }
 
@@ -119,8 +120,8 @@ class DirectoryCrawler {
         // console.log(`${this.constructor.name}[${this.relativePath}].processBatch`);
 
         if (!this.directory) {
-            console.error(`${this.constructor.name}.processBatch() without a directory`);
-            throw new Error(`${this.constructor.name}.processBatch() without a directory`);
+            console.error(`${callerAndfName()}() without a directory`);
+            throw new Error(`${callerAndfName()}() without a directory`);
         }
 
         for (const entry of this.entries) {

@@ -1,7 +1,8 @@
-import { IpcWindow, IpcChangeArgs, IpcMapChangeArgs, IpcChangeArgsType } from './IpcInterface';
 import { isEqual } from 'lodash';
 import { Observable, Subscriber } from 'rxjs';
 import { distinctUntilChanged } from 'rxjs/operators';
+import { callerAndfName } from '../utils/debugging';
+import { IpcChangeArgsType, IpcWindow, getIpcArgsLog } from './IpcInterface';
 
 interface IpcSend {
     channel: string;
@@ -30,22 +31,22 @@ export class UpdateChannel {
     public onError: ((source: UpdateChannel) => void) | undefined;
 
 
-    static updateKey = (itemID: string, name: string, map?: string): string => `${itemID}.${map ? map + '.' : ''}${name}`;
+    static updateKey = (itemID: string, nameOrIndex: string | number, container?: string): string => `${itemID}.${container ? container + '.' : ''}${nameOrIndex}`;
 
-    addReceived = (update: IpcChangeArgs): void => {
-        const updateKey = UpdateChannel.updateKey(update.item, update.name, (update as IpcMapChangeArgs).map);
+    addReceived = (update: IpcChangeArgsType): void => {
+        const updateKey = UpdateChannel.updateKey(update.item, update['name'] ?? update['index'], update['map'] ?? update['array'] );
         // console.log(
-        //     `${this.constructor.name}.addReceived() [${this.ipc.id}][${updateKey}] =` +
+        //     `${callerAndfName()}() [${this.ipc.id}][${updateKey}] =` +
         //     ` ${update['newValue'] ? (update['newValue']['id'] ?? update['newValue']) : update['newValue']}`);
         this.received[updateKey] = update['newValue'];
     }
 
     send = (channel: string, change: IpcChangeArgsType, persist?: boolean): void => {
         if (!this.sendSubscriber)
-            throw new Error(`${this.constructor.name}.send(${channel},${change.item},${change.name},${change.type}): no sendSubscriber`);
+            throw new Error(`${callerAndfName()}${getIpcArgsLog(change)}: no sendSubscriber`);
 
         // console.log(
-        //     `${this.constructor.name}.send(${this.ipc.id}, ` +
+        //     `${callerAndfName()}(${this.ipc.id}, ` +
         //     ` @ ${change.item}.${change['map'] ? change['map'] + '.' : ''}.${change.name}, ${change.type}, ${persist}) = ` +
         //     `${change['newValue'] ? (change['newValue']['id'] ?? change['newValue']) : change['newValue']}`);
 
@@ -53,9 +54,7 @@ export class UpdateChannel {
     }
 
     private sendNow = (channel: string, change: IpcChangeArgsType, persist?: boolean): void => {
-        const { item } = change;
-        const map = (change as IpcMapChangeArgs).map;
-        const updateKey = UpdateChannel.updateKey(item, change.name, map);
+        const updateKey = UpdateChannel.updateKey(change.item, change['name'] ?? change['index'], change['map'] ?? change['array']);
         const hasUpdate = updateKey in this.received;
         const update = this.received[updateKey];
         let skipChange = false;
@@ -64,8 +63,7 @@ export class UpdateChannel {
             skipChange = isEqual(update, change['newValue']);
 
             console.log(
-                `${this.constructor.name}.sendNow([${this.ipc.id}]` +
-                ` @ ${item}.${map ? map + '.' : ''}${change.name}, ${change.type}, ${persist}) ${skipChange ? 'skip receivd' : 'send newer'} [${updateKey}]`,
+                `${callerAndfName()}[${this.ipc.id}]${getIpcArgsLog(change)}, ${persist}) ${skipChange ? 'skip receivd' : 'send newer'} [${updateKey}]`,
                 /* change['newValue'] */
             );
             delete this.received[updateKey];
@@ -73,22 +71,18 @@ export class UpdateChannel {
         if (!skipChange) {
             if (this.ipc.isDestroyed()) {
                 console.error(
-                    `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map ? map + '.' : ''}.${change.name}, ${change.type}, persist=${persist}): isDestroyed`
+                    `${ callerAndfName() }[${ this.ipc.id }]${ getIpcArgsLog(change) }, ${ persist }): isDestroyed`
                 );
 
                 this.onError && this.onError(this);
             } else {
                 try {
-                    console.log(
-                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map ? map + '.' : ''}.${change.name}, ${change.type}, persist=${persist})` +
-                        `= ${change['newValue']}`
-                    );
+                    console.log(`${callerAndfName()}[${this.ipc.id}]${getIpcArgsLog(change)}, ${persist})`);
                     
                     this.ipc.send('change', change, persist === true);
                 } catch (error) {
                     console.warn(
-                        `${this.constructor.name}[${this.ipc.id}].sendNow( ${channel}, ${item}.${map ? map + '.' : ''}.${change.name}, ${change.type}, persist=` +
-                        `${persist}): ${error}`);
+                        `${ callerAndfName() }[${ this.ipc.id }]${ getIpcArgsLog(change) }, ${ persist }): ${error}`, error);
 
                     this.onError && this.onError(this);
                 }

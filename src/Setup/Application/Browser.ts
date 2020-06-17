@@ -1,14 +1,14 @@
-import { Rectangle } from '../Default/Rectangle';
-import { SimpleRectangle } from '../Default/RectangleInterface';
-import { ObservableSetupBaseMap } from '../Container';
-import { Plugin } from './Plugin';
-import { SetupBase } from '../SetupBase';
-import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
+import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
+import { ObservableSetupBaseMap } from '../Container';
+import { Rectangle } from '../Default/Rectangle';
+import { SimpleRectangle } from '../Default/RectangleInterface';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
-import { UiSchema } from '@rjsf/core';
-
+import { SetupBase } from '../SetupBase';
+import { SetupBaseInterface, SetupItemId } from '../SetupInterface';
+import { callerAndfName } from '../../utils/debugging';
+import { Plugin } from './Plugin';
 
 export class Browser extends SetupBase {
 
@@ -95,7 +95,7 @@ export class Browser extends SetupBase {
         console.log(`${this.constructor.name}[${this.id}].deleteChild(${id})`);
 
         if (!this.plugins.has(id))
-            throw new Error(`${this.constructor.name}.deleteChild(${id}) not found in [${Array.from(this.plugins.keys()).join(', ')}]`);
+            throw new Error(`${callerAndfName()}(${id}) not found in [${Array.from(this.plugins.keys()).join(', ')}]`);
 
         this.plugins.delete(id);
     }
