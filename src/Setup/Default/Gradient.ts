@@ -18,7 +18,8 @@ export class Gradient extends SetupBase {
                     colors: {
                         type: 'array',
                         items: {
-                            type: 'string'
+                            type: 'string',
+                            default: '#ff0000'
                         },
                         minItems: 2,
                         default: ['#00ff00', '#0000ff']

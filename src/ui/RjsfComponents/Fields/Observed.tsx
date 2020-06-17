@@ -1,12 +1,15 @@
 import { ErrorSchema, FieldProps } from '@rjsf/core';
 import SchemaField from '@rjsf/core/lib/components/fields/SchemaField';
 import Ajv, { ValidateFunction } from 'ajv';
+import { JSONSchema7 } from 'json-schema';
 import { cloneDeep } from 'lodash';
+import { IObservableArray } from 'mobx';
 import React from 'react';
 import controller from '../../../Setup/Controller/Factory';
-import { SetupBase } from '../../../Setup/SetupBase';
 import { forEach } from '../../../Setup/JsonSchemaTools';
-import { JSONSchema7 } from 'json-schema';
+import { SetupBase } from '../../../Setup/SetupBase';
+import { PropertyType } from '../../../Setup/SetupInterface';
+import { callerAndfName } from '../../../utils/debugging';
 
 const ajv = (new Ajv()).addSchema(SetupBase.activeSchema);
 
@@ -37,7 +40,7 @@ const getTarget = (idSchemaId: string): [SetupBase, string] => {
         if (parent == undefined)
             throw new Error(`ObservedField[${idSchemaId}].[${name}] failed to get parent child ${stack[iStack]} stack=${stack}`);
     }
-    
+
     // targetCache.set(idSchemaId, [parent, propertyName]);
     return [parent, propertyName];
 };
@@ -109,6 +112,45 @@ const ObservedField = (props: FieldProps): JSX.Element => {
                             ` ${validate.errors ? validate.errors.map(error => `${error.dataPath}:${error.message}`) : ''}`,
                             { ...validate.errors }, newValue);
                     }
+                }
+            }
+        };
+        return (
+            <SchemaField {...customProps} />
+        );
+    } else if (Array.isArray(formData)) {
+        // Root_Object-ID_propertyName_property or Root_Object-ID_property
+        const [item, propertyName] = getTarget(idSchema.$id);
+        const targetArray = item[propertyName] as IObservableArray;
+        const validate = getValidator(idSchema.$id, props.schema);
+
+        console.log(`ObservedField[${item.id}.${propertyName}].[${name}] ${idSchema.$id} ${JSON.stringify(props.schema)}`, props);
+
+        const customProps = {
+            ...remainingProps,
+            onChange: (newValue, es?: ErrorSchema): void => {
+                console.log(`ObservedField[${item.id}/${item.className}.${propertyName}].[${name}] [${idSchema.$id}] Array.onChange=`, newValue, props, es);
+
+                onChange(newValue, es);
+
+                const newArray = newValue as Array<PropertyType>;
+                const diff = newArray.length - targetArray.length;
+
+                if (diff != 0) {
+                    console.debug(`${callerAndfName()}[${item.id}/${item.className}.${propertyName}].[${name}] [${idSchema.$id}] diff=${diff}`);
+
+                    for (let index = 0; index <= targetArray.length; index += 1) {
+                        if ((index == targetArray.length) || (targetArray[index] != newArray[index])) {
+                            console.debug(`${callerAndfName()}[${item.id}/${item.className}.${propertyName}].[${name}] [${idSchema.$id}] ${diff} @ ${index}`);
+                            if (diff > 0)
+                                targetArray.spliceWithArray(index, 0, newArray.slice(index, index + diff));
+                            else
+                                targetArray.spliceWithArray(Math.min(index, targetArray.length - 1), -diff);
+                            break;
+                        }
+                    }
+                } else {
+                    console.debug(`${callerAndfName()}[${item.id}/${item.className}.${propertyName}].[${name}] [${idSchema.$id}] no diff=${diff}`);
                 }
             }
         };

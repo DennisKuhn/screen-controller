@@ -126,10 +126,14 @@ export const getIpcArgsLog = (update: IpcChangeArgsType): string => {
     const itemUpdate = (update as IpcItemChangeArgsType).name ? (update as IpcItemChangeArgsType) : undefined;
     const mapUpdate = (update as IpcMapChangeArgsType).map ? (update as IpcMapChangeArgsType) : undefined;
     const arrayUpdate = (update as IpcArrayChangeArgsType).array ? (update as IpcArrayChangeArgsType) : undefined;
+    const spliceUpdate = (update as IpcArraySpliceArgs).added !== undefined && (update as IpcArraySpliceArgs).removedCount !== undefined ? (update as IpcArraySpliceArgs) : undefined;
     const name = itemUpdate?.name;
     const map = mapUpdate?.map;
     const array = arrayUpdate?.array;
     const newValue = update['newValue'];
 
-    return `(${item}.${map ?? array ?? ''}${mapUpdate ? '.' + mapUpdate.name : arrayUpdate ? '[' + arrayUpdate.index + ']' : name} ,${type})${newValue ? '=' + newValue : ''}`;
+    return (
+        `(${item}.${map ?? array ?? ''}${mapUpdate ? '.' + mapUpdate.name : arrayUpdate ? '[' + arrayUpdate.index + ']' : name} ,${type})` +
+        `${newValue ? '=' + newValue : spliceUpdate ? '-' + spliceUpdate.removedCount + '+' + spliceUpdate.added.length.toFixed() + spliceUpdate.added : ''}`
+    );
 };

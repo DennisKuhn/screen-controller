@@ -1,7 +1,7 @@
 import { toJS, observe, IObjectDidChange } from 'mobx';
 import { IpcRendererEvent, ipcRenderer as electronIpcRenderer, remote } from 'electron';
 import { SetupBase } from '../SetupBase';
-import { SetupItemId, SetupBaseInterface, SetupLinkInterface } from '../SetupInterface';
+import { SetupItemId, SetupBaseInterface, SetupLinkInterface, PropertyType } from '../SetupInterface';
 import { ControllerImpl, LocalChangeArgsType, LocalMapChangeArgsType, LocalItemChangeArgsType, LocalArrayChangeArgsType } from './Controller';
 import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap } from '../Container';
@@ -152,7 +152,7 @@ export class Renderer extends ControllerImpl {
 
             if (id == Root.name) {
                 item = Root.createNewBlank();
-                console.warn(`${this.constructor.name}: load(${id}): new Blank`, cloneDeep( item ));
+                console.warn(`${this.constructor.name}: load(${id}): new Blank`, cloneDeep(item));
                 this.persist({ item: item, type: 'add', name: '', newValue: '' });
             } else if (id == Screen.name) {
                 item = Screen.createNewBlank(Root.name);
@@ -201,26 +201,29 @@ export class Renderer extends ControllerImpl {
         const index = (change as LocalArrayChangeArgsType).index;
         const map = (change as LocalMapChangeArgsType).map;
         const name = (change as LocalItemChangeArgsType).name;
-        
-        
+
+
         console.log(
             `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}`,
             cloneDeep(change),
-            cloneDeep( item ),
-            change['newValue']);
+            cloneDeep(item));
 
         const shallow = item.getShallow();
 
         // Update shallow as newValue not applied yet (called by intercept)
         const newValue = 'newValue' in change ? change.newValue : undefined;
 
-        if ((newValue != undefined) && (name !== '')) {
-            if (array) {
-                shallow[array][index] = SetupBase.getPlainValue(newValue);
-            } else if (map) {
-                shallow[map][name] = newValue == null ? newValue : SetupBase.getPlainValue(newValue);
-            } else {
-                shallow[name] = SetupBase.getPlainValue( newValue );
+        if (name !== '') {
+            if (change.type == 'splice') {
+                (shallow[array] as Array<PropertyType>).splice(index, change.removedCount, ...change.added);
+            } else if (newValue != undefined) {
+                if (array) {
+                    shallow[array][index] = SetupBase.getPlainValue(newValue);
+                } else if (map) {
+                    shallow[map][name] = newValue == null ? newValue : SetupBase.getPlainValue(newValue);
+                } else {
+                    shallow[name] = SetupBase.getPlainValue(newValue);
+                }
             }
         }
 
@@ -261,5 +264,5 @@ export class Renderer extends ControllerImpl {
                 }
             }
         }
-    } 
+    }
 }

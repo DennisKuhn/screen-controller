@@ -3,10 +3,10 @@ import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent } from 'electron';
 import { isEqual, cloneDeep } from 'lodash';
 import { SetupBase, PropertyType as ObjectPropertyType } from '../SetupBase';
-import { SetupBaseInterface, PropertyType as InterfacePropertyType } from '../SetupInterface';
+import { SetupBaseInterface, PropertyType as InterfacePropertyType, PropertyType } from '../SetupInterface';
 import { create } from '../SetupFactory';
-import { ObservableSetupBaseMap } from '../Container';
-import { IpcChangeArgsType, IpcArrayChangeArgsType, IpcMapChangeArgsType, IpcItemChangeArgsType, getIpcArgsLog, IpcArrayUpdateArgs } from '../IpcInterface';
+import { ObservableSetupBaseMap, SetupBaseInterfaceDictionary } from '../Container';
+import { IpcChangeArgsType, IpcArrayChangeArgsType, IpcMapChangeArgsType, IpcItemChangeArgsType, getIpcArgsLog, IpcArrayUpdateArgs, IpcArraySpliceArgs } from '../IpcInterface';
 import { callerAndfName } from '../../utils/debugging';
 
 export declare interface Controller {
@@ -392,27 +392,42 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         const hasRemote = this.remoteUpdates.has(item.id) && this.remoteUpdates.get(item.id)?.[array]?.[index] !== undefined;
         const remotePlainValue = hasRemote ? this.remoteUpdates.get(item.id)?.[array][index] : undefined;
 
-        if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
+        if (changes.type == 'splice') {
+            const { item, array, index, type, added, removedCount } = changes;
+            const remoteArray: Array<PropertyType> | undefined = this.remoteUpdates.get(item.id)?.[array];
+            const localArray: Array<ObjectPropertyType> = item[array];
+
+            const hasUpdate = (remoteArray !== undefined) && (remoteArray.length == (localArray.length + added.length - removedCount));
+
+            if (hasUpdate) {
+                console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip remoteUpdate`);    
+            } else {
+                console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`, changes);
+
+                this.propagate && this.propagate({
+                    item: item.id,
+                    array,
+                    index,
+                    type,
+                    added: (changes as LocalArraySpliceArgs).added,
+                    removedCount: (changes as LocalArraySpliceArgs).removedCount
+                });
+                this.persist && this.persist(changes);
+            }
+        } else if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
             console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip remoteUpdate ${remotePlainValue}`);
         } else {
-            switch (type) {
-                case 'update':
-                    console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`, changes);
+            const { item, array, index, type } = changes;
+            console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`, changes);
 
-                    this.propagate && this.propagate({
-                        item: item.id,
-                        array,
-                        index,
-                        type,
-                        newValue: SetupBase.getPlainValue((changes as LocalArrayUpdateArgs).newValue)
-                    });
-                    this.persist && this.persist(changes);
-
-                    break;
-                case 'splice':
-                    console.error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)}`, changes);
-                    break;
-            }
+            this.propagate && this.propagate({
+                item: item.id,
+                array,
+                index,
+                type,
+                newValue: SetupBase.getPlainValue((changes as LocalArrayUpdateArgs).newValue)
+            });
+            this.persist && this.persist(changes);
         }
     }
 
@@ -506,12 +521,8 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             const item = this.configs.get(update.item);
 
             if (!item) {
-                console.error(
-                    `${callerAndfName()}${getIpcArgsLog(update)}: not found in this.configs`
-                );
-                throw new Error(
-                    `${callerAndfName()}${getIpcArgsLog(update)}: not found in this.configs`
-                );
+                console.error(`${callerAndfName()}${getIpcArgsLog(update)}: not found in this.configs`);
+                throw new Error(`${callerAndfName()}${getIpcArgsLog(update)}: not found in this.configs`);
             }
 
             this.remoteUpdates.set(
@@ -528,7 +539,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
             const key = arrayUpdate ? arrayUpdate.index : itemUpdate ? itemUpdate.name : '';
 
-            const remoteTarget: SetupBase | ObservableSetupBaseMap<SetupBase> | IObservableArray = mapUpdate ? remoteItem[mapUpdate.map] :
+            const remoteTarget: SetupBaseInterface | SetupBaseInterfaceDictionary<SetupBaseInterface> | Array<InterfacePropertyType> = mapUpdate ? remoteItem[mapUpdate.map] :
                 arrayUpdate ? remoteItem[arrayUpdate.array] : remoteItem;
 
 
@@ -560,7 +571,9 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                     // delete (remoteItem[mapUpdate.map] as ObservableSetupBaseMap<SetupBase>).delete(update.name);
                     break;
                 case 'splice':
-                    throw new Error(`${callerAndfName()}${getIpcArgsLog(update)} need to implement splice !!: ${JSON.stringify(update)}`);
+                    console.debug(
+                        `${callerAndfName()}${getIpcArgsLog(update)} ==${remoteTarget[key]}`);
+                    (remoteTarget as Array<InterfacePropertyType>).splice(update.index, update.removedCount, ...update.added);
                     break;
             }
         } else {
@@ -640,13 +653,19 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                         {
                             const { newValue } = update as IpcArrayUpdateArgs;
                             console.log(
-                                `[${sender}]${callerAndfName()}(${update.item}.${array}[${index}], ${update.type}, persist=${persist}) = ${newValue}`);
+                                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)}, persist=${persist}) ==${localItem[array][index]}`);
 
                             localItem[array][index] = this.getValue(newValue);
                         }
                         break;
                     case 'splice':
-                        console.error(`${callerAndfName()}${getIpcArgsLog(update)}, persist = ${persist}): implement -> ${update.type} <-`);
+                        {
+                            console.debug(`${callerAndfName()}${getIpcArgsLog(update)}, persist = ${persist})`);
+                            const { added, index, removedCount } = update as IpcArraySpliceArgs;
+                            const target = localItem[array] as IObservableArray;
+
+                            target.spliceWithArray(index, removedCount, added);
+                        }
                         break;
                 }
             } else {
