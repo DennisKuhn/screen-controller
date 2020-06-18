@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain as electronIpcMain, IpcMainEvent, WebContents } from 'electron';
 import { JSONSchema7 } from 'json-schema';
-import { IMapDidChange, isObservableProp, reaction } from 'mobx';
+import { IMapDidChange, isObservableProp, reaction, toJS, isObservableArray, IArrayChange, IArraySplice } from 'mobx';
 import { callerAndfName } from '../../utils/debugging';
 import { Plugin } from '../Application/Plugin';
 import { ObservableSetupBaseMap } from '../Container';
@@ -10,7 +10,8 @@ import { SetupBase } from '../SetupBase';
 import { create } from '../SetupFactory';
 import { SetupItemId } from '../SetupInterface';
 import { UpdateChannel } from '../UpdateChannel';
-import { ControllerImpl, LocalChangeArgsType, LocalItemChangeArgsType, LocalMapArgs, LocalMapChangeArgsType, SetupPromise, LocalArrayChangeArgsType } from './Controller';
+import { ControllerImpl, LocalChangeArgsType, LocalItemChangeArgsType, LocalMapChangeArgsType, SetupPromise, LocalArrayChangeArgsType } from './Controller';
+import { omit } from 'lodash';
 
 interface ChangeListener {
     senderId: number;
@@ -201,6 +202,24 @@ export class Main extends ControllerImpl {
                                 } as LocalChangeArgsType
                             );
                         })
+                );
+            } else if (isObservableArray(value)) {
+                // console.log(`[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
+
+                listener.disposers.push(
+                    value.observe(
+                        (change: IArrayChange | IArraySplice) => {
+                            this.onChangeItemChanged(
+                                listener,
+                                {
+                                    ...omit( change, 'object'),
+                                    array: propertyName,
+                                    item
+                                }
+                            );
+                        },
+                        false
+                    )
                 );
             } else if (isObservableProp(item, propertyName)) {
                 // console.log(`[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
@@ -470,11 +489,7 @@ export class Main extends ControllerImpl {
 
 
     protected persist = (change: LocalChangeArgsType): void => {
-        const { item, type } = change;
-        const array = (change as LocalArrayChangeArgsType).array;
-        const index = (change as LocalArrayChangeArgsType).index;
-        const map = (change as LocalMapArgs).map;
-        const name = (change as LocalItemChangeArgsType).name;
+        const { item } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
@@ -482,24 +497,24 @@ export class Main extends ControllerImpl {
 
         if (this.ipcStorage == undefined)
             throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: no ipcStorage`);
+
+        if (this.ipcStorage.isDestroyed()) {
+            console.warn(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: ipcStorage is destroyed`);
+            return;
+        }
         
         const channel = this.updateChannels[this.ipcStorage.id];
 
         if (channel == undefined)
             throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: no channel for ${this.ipcStorage.id}`);
         
-        console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} -> [${this.ipcStorage.id}]`);
+        // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} -> [${this.ipcStorage.id}]`);
 
         channel.send(
             'change',
             {
+                ...toJS( change, {recurseEverything: true} ),
                 item: item.id,
-                type: type,
-                name: name,
-                ...(name ? { name } : undefined),
-                ...(array ? { array } : undefined),
-                ...(index !== undefined ? { index } : undefined),
-                ...(map ? { map } : undefined),
                 ...(('newValue' in change) ? { newValue: (change.newValue == null ? null : SetupBase.getPlainValue(change.newValue)) } : undefined),
                 ...(('oldValue' in change) ? { oldValue: (change.oldValue == null ? null : SetupBase.getPlainValue(change.oldValue)) } : undefined)
             } as IpcChangeArgsType,

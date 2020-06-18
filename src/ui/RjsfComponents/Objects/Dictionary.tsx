@@ -85,7 +85,7 @@ const ItemForm = ({ itemId, expand, schemaChoices, rootSchema }: { itemId: strin
 
 const add = async (parentId: string, mapName: string, className: string): Promise<void> => {
     const parent = await controller.getSetup(parentId, 1);
-    const newItem = SetupBase.createNew(className, parentId);
+    const newItem = SetupBase.createNew(className, parentId, mapName);
 
     console.debug(`DictionaryTemplate[${parentId}.${mapName}].add created ${newItem.className}@${newItem.id} add to ${newItem.parentId}.${mapName}`);
     const map = parent[mapName] as ObservableSetupBaseMap<SetupBase>;

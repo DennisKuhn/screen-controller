@@ -9,6 +9,7 @@ export interface SetupBaseInterface {
     /** Application unique, persistent, e.g. <ClassName>-<auto increment> */
     id: SetupItemId;
     parentId: SetupItemId;
+    parentProperty: PropertyKey;
     className: string;
     /** Displayname */
     name: string;

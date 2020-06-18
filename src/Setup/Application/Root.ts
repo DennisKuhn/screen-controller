@@ -33,8 +33,8 @@ export class Root extends SetupBase {
 
     static createNewBlank = (): Root => new Root(
         {
-            ...SetupBase.createNewInterface(Root.name, Root.name, Root.name),
-            screen: Screen.newInterface(Root.name)
+            ...SetupBase.createNewInterface(Root.name, Root.name, 'parent', Root.name),
+            screen: Screen.newInterface(Root.name, 'screen')
         } as SetupBaseInterface
     );
 

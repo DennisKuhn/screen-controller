@@ -155,7 +155,7 @@ export class Renderer extends ControllerImpl {
                 console.warn(`${this.constructor.name}: load(${id}): new Blank`, cloneDeep(item));
                 this.persist({ item: item, type: 'add', name: '', newValue: '' });
             } else if (id == Screen.name) {
-                item = Screen.createNewBlank(Root.name);
+                item = Screen.createNewBlank(Root.name, 'screen');
                 console.warn(`${this.constructor.name}: load(${id}): new Blank`, cloneDeep(item));
                 this.persist({ item: item, type: 'add', name: '', newValue: '' });
             } else
@@ -203,7 +203,7 @@ export class Renderer extends ControllerImpl {
         const name = (change as LocalItemChangeArgsType).name;
 
 
-        console.log( `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}`/*, cloneDeep(change), cloneDeep(item)*/);
+        // console.log( `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}`/*, cloneDeep(change), cloneDeep(item) */);
 
         const shallow = item.getShallow();
 

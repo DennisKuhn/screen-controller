@@ -1,7 +1,7 @@
 import { Rectangle } from './Rectangle';
 import { SetupBase } from '../SetupBase';
 import { JSONSchema7 } from 'json-schema';
-import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
+import { PropertyKey, SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { SimpleRectangle } from './RectangleInterface';
 
 export class RelativeRectangle extends Rectangle {
@@ -25,15 +25,15 @@ export class RelativeRectangle extends Rectangle {
         ]
     }
 
-    static newInterface = (parentId: SetupItemId, source: SimpleRectangle): SetupBaseInterface =>
+    static newInterface = (parentId: SetupItemId, parentProperty: PropertyKey, source: SimpleRectangle): SetupBaseInterface =>
         ({
-            ...SetupBase.createNewInterface(RelativeRectangle.name, parentId),
+            ...SetupBase.createNewInterface(RelativeRectangle.name, parentId, parentProperty),
             ...source
         });
 
-    static create = (parentId: SetupItemId, source: SimpleRectangle): RelativeRectangle =>
+    static create = (parentId: SetupItemId, parentProperty: PropertyKey, source: SimpleRectangle): RelativeRectangle =>
         new RelativeRectangle(
-            RelativeRectangle.newInterface(parentId, source));
+            RelativeRectangle.newInterface(parentId, parentProperty, source));
 
     static register(): void {
         SetupBase.register(RelativeRectangle, RelativeRectangle.schema, Rectangle.uiSchema);

@@ -115,7 +115,8 @@ const setRequired = (target: SetupBaseInterface, schema: JSONSchema7, root: JSON
 
                         target[property] = SetupBase.createNewInterface(
                             className,
-                            target.id
+                            target.id,
+                            property
                         );
                     } else {
                         // console.log(

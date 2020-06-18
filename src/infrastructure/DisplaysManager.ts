@@ -43,7 +43,7 @@ export default class DisplaysManager {
                 // console.log(`DisplaysManager.checkDisplays: add ${displayId}`);
                 screen.displays.set(
                     displayId,
-                    Display.createNew(displayId, screen.id)
+                    Display.createNew(displayId, screen.id, 'displays' )
                 );
             }
         }

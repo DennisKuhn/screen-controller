@@ -3,9 +3,9 @@ import { JSONSchema7 } from 'json-schema';
 import { ObservableSetupBaseMap, ObservableArray } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary, cloneDeep } from 'lodash';
-import Ajv, { ValidateFunction } from 'ajv';
+import Ajv, { ValidateFunction, CompilationContext } from 'ajv';
 import { observable, toJS, isObservableArray } from 'mobx';
-import { SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
+import { PropertyKey, SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
 import deref from 'json-schema-deref-sync';
@@ -37,7 +37,7 @@ type PropertyBaseType = SetupBase |
     boolean;
 
 export type PropertyType =
-    PropertyBaseType | 
+    PropertyBaseType |
     ObservableArray<PropertyBaseType>;
 
 export interface SetupConstructor<SetupType extends SetupBase> {
@@ -47,6 +47,7 @@ export interface SetupConstructor<SetupType extends SetupBase> {
 interface ClassInfo {
     schema: JSONSchema7;
     uiSchema: UiSchema;
+    notPersisted: string[];
     plainSchema?: JSONSchema7;
     validate?: ValidateFunction;
 }
@@ -55,10 +56,11 @@ export abstract class SetupBase {
     readonly id: SetupItemId;
     readonly parentId: SetupItemId;
     readonly className: string;
+    readonly parentProperty: PropertyKey;
 
     @observable name: string;
 
-    private static notSerialisedProperties = ['_parent', 'parent'];
+    private static notSerialisedProperties = ['_parent', 'parent', 'notPersisted', 'info'];
 
     static readonly schemaUri = 'https://github.com/maoriora/screen-controller/schemas/SetupSchema.json#';
 
@@ -68,6 +70,7 @@ export abstract class SetupBase {
         properties: {
             id: { type: 'string' },
             parentId: { type: 'string' },
+            parentProperty: { type: 'string' },
             className: { type: 'string' },
             name: { type: 'string' }
         },
@@ -89,14 +92,44 @@ export abstract class SetupBase {
         }
     });
 
-
     public static readonly uiSchema: UiSchema = {
         id: { 'ui:widget': 'hidden' },
         parentId: { 'ui:widget': 'hidden' },
         className: { 'ui:widget': 'hidden' },
     };
 
-    public static ajv = new Ajv();
+    public static ajv = (new Ajv()).addKeyword(
+        'sc-persist',
+        {
+            valid: true,
+            inline: (it: CompilationContext, keyword, schema, parentSchema): string => {
+                // console.warn(`${callerAndfName()}:`, { it, keyword, schema, parentSchema });
+
+                const propertyName = /(.*\.properties\.)([a-zA-Z]*)(\.)/.exec(it.schemaPath)?.[2];
+                const info = SetupBase.infos[it.baseId];
+
+                if (!propertyName) throw new Error(`Can't find property in ${it.schemaPath}`);
+                if (!info) throw new Error(`Can't find info ${it.baseId} in ${Object.keys(SetupBase.infos)}`);
+
+                // if (dataPath == '.' + parentDataProperty) {
+                if (schema == false) {
+                    console.log(`${callerAndfName()}: ${it.baseId} don't persist ${propertyName}`);
+                    info.notPersisted.push(propertyName);
+                } else {
+                    console.warn(`${callerAndfName()}: ${it.baseId} ${propertyName}: sc-persist: true: schema=${JSON.stringify(parentSchema)},`);
+                }
+                // } else {
+                //  console.warn(`${callerAndfName()}: sc-persist: ignore nested schema=${JSON.stringify(schema)}, dataPath=${dataPath}, parentDataProperty=${parentDataProperty}`);
+                // }
+
+                return 'true';
+            }
+        }
+    );
+
+    shouldPersist(property: string): boolean {
+        return (! this.info.notPersisted.includes(property));
+    }
 
     public static readonly SCHEMA_REF = { $ref: SetupBase.name };
     public static readonly PERCENT_REF = { $ref: 'Percent' };
@@ -123,6 +156,7 @@ export abstract class SetupBase {
                     definitions: SetupBase.activeSchema.definitions,
                     $ref: '#/definitions/' + schema.$id
                 },
+                notPersisted: [],
                 uiSchema: { ...SetupBase.uiSchema, ...uiSchema }
             };
         }
@@ -248,7 +282,7 @@ export abstract class SetupBase {
                     typeof prospect == 'object'
                     && prospect.type == 'null'
                     && subSchema.oneOf?.splice(index, 1).length
-                    && console.log('mergeOneOfNull: removed null from', {...subSchema.oneOf})
+                    && console.log('mergeOneOfNull: removed null from', { ...subSchema.oneOf })
                 )
         );
     }
@@ -326,13 +360,8 @@ export abstract class SetupBase {
 
 
     public getPlainSchema(): JSONSchema7 {
-        if (!(this.className in SetupBase.infos))
-            throw new Error(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}) no info: ${JSON.stringify(SetupBase.infos)}`);
-
-        const info = SetupBase.infos[this.className];
-
-        if (info.plainSchema == undefined) {
-            const plainSchema = toJS(info.schema, { recurseEverything: true });
+        if (this.info.plainSchema == undefined) {
+            const plainSchema = toJS(this.info.schema, { recurseEverything: true });
 
             replaceAbstractRefsWithOneOfConcrets(plainSchema);
             // console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).replaced AbstractRefsWithOneOfConcrets:`, { ...plainSchema });
@@ -364,32 +393,28 @@ export abstract class SetupBase {
 
                 SetupBase.moveRefsToDefsToDefs(merged);
 
-                console.log( `SetupBase[${this.constructor.name}].getPlainSchema(${this.className})`
+                console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className})`
                     // , { ...merged }, toJS(info.schema, { recurseEverything: true })
                 );
 
-                info.plainSchema = merged;
+                this.info.plainSchema = merged;
             }
         }
-        if (info.plainSchema == undefined)
+        if (this.info.plainSchema == undefined)
             throw new Error(`SetupBase[${this.constructor.name}][${this.className}]: no plainSchema`);
 
-        return info.plainSchema;
+        return this.info.plainSchema;
     }
 
     public getSchema(): JSONSchema7 {
-        if (!(this.className in SetupBase.infos))
-            throw new Error(`SetupBase[${this.constructor.name}].getSchema(${this.className}) no info: ${JSON.stringify(SetupBase.infos)}`);
-
-        return SetupBase.infos[this.className].schema;
+        return this.info.schema;
     }
 
     public static getUiSchema(className: string): UiSchema {
-        if (!(className in SetupBase.infos))
-            throw new Error(`SetupBase.getUiSchema(${className}) no info: ${JSON.stringify(SetupBase.infos)}`);
-
         return SetupBase.infos[className].uiSchema;
     }
+
+    protected info: ClassInfo;
 
     protected constructor(source: SetupBaseInterface) {
         if (source.id in SetupBase.instances)
@@ -404,18 +429,18 @@ export abstract class SetupBase {
             } else
                 throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
 
-        const info = this.initClassInfo(source);
+        this.info = this.initClassInfo(source);
 
         //TODO remove:> source.name = source.name ?? source.id;
         source.name = source.name ?? source.id;
 
-        if (info.validate == undefined)
+        if (this.info.validate == undefined)
             throw new Error(`SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: no validate`);
 
-        if (info.validate(source) != true) {
+        if (this.info.validate(source) != true) {
             throw new Error(
                 `SetupBase[${this.constructor.name}@${source.id}, ${source.className}]: Validation error:\n` +
-                `${info.validate.errors?.map(
+                `${this.info.validate.errors?.map(
                     error => `${error.schemaPath} // ${error.dataPath} ${error.propertyName ? '@' + error.propertyName : ''} : ${error.message} ${JSON.stringify(error.params)}`
                 ).join(';\n')}\n` +
                 `source:\n${JSON.stringify(source)}`);
@@ -424,10 +449,12 @@ export abstract class SetupBase {
 
         this.id = source.id;
         this.parentId = source.parentId;
+        this.parentProperty = source.parentProperty;
         this.className = source.className;
         this.name = source.name;
         SetupBase.instances[this.id] = this;
     }
+
 
     get parent(): (SetupBase | undefined) {
         return SetupBase.instances[this.parentId];
@@ -493,7 +520,7 @@ export abstract class SetupBase {
      * value changes (like null to object) are ignored
      */
     getShallow(): SetupBaseInterface {
-        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, className: this.className, name: this.name };
+        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, parentProperty: this.parentProperty, className: this.className, name: this.name };
 
         for (const propertyName in this) {
             if (propertyName in shallow) {
@@ -550,7 +577,7 @@ export abstract class SetupBase {
     }
 
     getPlain(depth: number): SetupBaseInterface {
-        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, className: this.className, name: this.name };
+        const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, parentProperty: this.parentProperty, className: this.className, name: this.name };
 
         for (const propertyName in this) {
             if (propertyName in shallow) {
@@ -623,7 +650,7 @@ export abstract class SetupBase {
                     }
                     return shallow;
                 } else if (isObservableArray(objectValue)) {
-                    return objectValue.map( item => SetupBase.getPlainValue(item) );
+                    return objectValue.map(item => SetupBase.getPlainValue(toJS(item, { recurseEverything: true })));
                 }
                 throw new Error(`SetupBase.getPlainValue(${objectValue}) not supported so far: ${typeof objectValue}`);
             default:
@@ -631,13 +658,14 @@ export abstract class SetupBase {
         }
     }
 
-    public static createNewInterface(className: string, parentId: SetupItemId, id?: SetupItemId): SetupBaseInterface {
+    public static createNewInterface(className: string, parentId: SetupItemId, parentProperty: PropertyKey, id?: SetupItemId): SetupBaseInterface {
         id = id == undefined ? SetupBase.getNewId(className) : id;
 
         const info = SetupBase.infos[className];
         const plain: SetupBaseInterface = {
             id,
             parentId,
+            parentProperty,
             className,
             name: id,
         };
@@ -647,8 +675,8 @@ export abstract class SetupBase {
         return plain;
     }
 
-    public static createNew(className: string, parentId: SetupItemId): SetupBase {
-        const plain = SetupBase.createNewInterface(className, parentId);
+    public static createNew(className: string, parentId: SetupItemId, parentProperty: PropertyKey): SetupBase {
+        const plain = SetupBase.createNewInterface(className, parentId, parentProperty);
 
         const newItem = create(plain);
 

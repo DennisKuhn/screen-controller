@@ -6,7 +6,7 @@ import { Rectangle } from '../Default/Rectangle';
 import { SimpleRectangle } from '../Default/RectangleInterface';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
 import { SetupBase } from '../SetupBase';
-import { SetupBaseInterface, SetupItemId } from '../SetupInterface';
+import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface';
 import { callerAndfName } from '../../utils/debugging';
 import { Plugin } from './Plugin';
 
@@ -66,14 +66,14 @@ export class Browser extends SetupBase {
     }
 
 
-    static create(parentId: SetupItemId, relative: SimpleRectangle): Browser {
-        const newConfig = SetupBase.createNewInterface(Browser.name, parentId);
+    static create(parentId: SetupItemId, parentProperty: PropertyKey, relative: SimpleRectangle): Browser {
+        const newConfig = SetupBase.createNewInterface(Browser.name, parentId, parentProperty);
 
         return new Browser( 
             {
                 ...newConfig,
                 plugins: {},
-                relative: RelativeRectangle.newInterface(newConfig.id, relative)
+                relative: RelativeRectangle.newInterface(newConfig.id, 'relative', relative)
             } as SetupBaseInterface
         );
     }
@@ -83,7 +83,7 @@ export class Browser extends SetupBase {
     }
 
     addPlugin = (schema: JSONSchema7 ): void => { 
-        const plugin = Plugin.create(this.id, schema);
+        const plugin = Plugin.create(this.id, 'plugins', schema);
 
         this.plugins.set(
             plugin.id,

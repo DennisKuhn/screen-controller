@@ -1,11 +1,12 @@
 import { Display } from './Display';
 import { SetupBase } from '../SetupBase';
-import { SetupBaseInterface, SetupItemId } from '../SetupInterface';
+import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface';
 import { ObservableSetupBaseMap } from '../Container';
-import { JSONSchema7 } from 'json-schema';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import { Gradient } from '../Default/Gradient';
 import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
+import { create } from '../SetupFactory';
 
 export class Screen extends SetupBase {
     static schema: JSONSchema7 = {
@@ -23,7 +24,7 @@ export class Screen extends SetupBase {
                     rotateColors: { type: 'boolean', default: true },
                     fps: { type: 'number', default: 25 },
                     startGradient: { $ref: Gradient.name },
-                    activeGradient: { $ref: Gradient.name },
+                    activeGradient: { allOf: [ {$ref: Gradient.name}, {'sc-persist': false}] } as JSONSchema7Definition,
                     displays: {
                         type: 'object',
                         additionalProperties: {
@@ -48,8 +49,8 @@ export class Screen extends SetupBase {
     displays: ObservableSetupBaseMap<Display>;
     @observable rotateColors = true;
     @observable fps: number;
-    startGradient: Gradient;
-    activeGradient?: Gradient;
+    @observable startGradient: Gradient;
+    @observable activeGradient?: Gradient;
 
     constructor(source: SetupBaseInterface) {
         super(source);
@@ -65,15 +66,22 @@ export class Screen extends SetupBase {
         }
     }
 
-    static newInterface = (parentId: SetupItemId): SetupBaseInterface => ({
-        ...SetupBase.createNewInterface(Screen.name, parentId, Screen.name),
+    static newInterface = (parentId: SetupItemId, parentProperty: PropertyKey): SetupBaseInterface => ({
+        ...SetupBase.createNewInterface(Screen.name, parentId, parentProperty, Screen.name),
         displays: {}
     } as SetupBaseInterface);
 
+    createActiveGradient(): void {
+        this.activeGradient = create(
+            {
+                ...this.startGradient,
+                ...SetupBase.createNewInterface(Gradient.name, this.id, 'activeGradient')
+            }) as Gradient;
+    }
 
-    static createNewBlank = (parentId: SetupItemId): Screen =>
+    static createNewBlank = (parentId: SetupItemId, parentProperty: PropertyKey): Screen =>
         new Screen(
-            Screen.newInterface(parentId)
+            Screen.newInterface(parentId, parentProperty)
         );
 
     static register(): void {

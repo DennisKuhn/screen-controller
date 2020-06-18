@@ -1,6 +1,6 @@
 import { Browser } from './Browser';
 import { SetupBase } from '../SetupBase';
-import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
+import { PropertyKey, SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
 
@@ -41,12 +41,15 @@ export class Display extends SetupBase {
 
     addBrowser = (): void => {
         const newBrowser = Browser.create(
-            this.id, {
+            this.id,
+            'browsers',
+            {
                 x: 0,
                 y: 0,
                 height: 1,
                 width: 1
-            });
+            }
+        );
         this.browsers.set(
             newBrowser.id,
             newBrowser
@@ -63,10 +66,10 @@ export class Display extends SetupBase {
     }
 
 
-    static createNew(displayId: SetupItemId, parentId: SetupItemId): Display {
+    static createNew(displayId: SetupItemId, parentId: SetupItemId, parentProperty: PropertyKey): Display {
         return new Display(
             {
-                ...SetupBase.createNewInterface(Display.name, parentId, displayId ),
+                ...SetupBase.createNewInterface(Display.name, parentId, parentProperty, displayId ),
                 browsers: {}
             } as SetupBaseInterface
         );

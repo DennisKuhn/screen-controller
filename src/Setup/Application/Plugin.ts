@@ -1,5 +1,5 @@
 import { SetupBase } from '../SetupBase';
-import { SetupBaseInterface, SetupItemId, Dictionary } from '../SetupInterface';
+import { PropertyKey, SetupBaseInterface, SetupItemId, Dictionary } from '../SetupInterface';
 import { Rectangle } from '../Default/Rectangle';
 import { JSONSchema7 } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
@@ -189,21 +189,21 @@ export class Plugin extends SetupBase implements PluginInterface {
         SetupBase.register(Plugin, schema, Plugin.uiSchema);
 
         Plugin.pluginSchemaIds.includes(schema.$id) || Plugin.pluginSchemaIds.push(schema.$id);
-            
+
 
         if (process.type == 'renderer') {
             Plugin.persistSchema(schema);
         }
     }
 
-    static create(parentId: SetupItemId, schema: JSONSchema7): Plugin {
+    static create(parentId: SetupItemId, parentProperty: PropertyKey, schema: JSONSchema7): Plugin {
 
         if (!schema.$id) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.$id`);
         if (!schema.allOf) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.allOf`);
 
         const className = schema.$id;
 
-        const baseSetup = SetupBase.createNewInterface(className, parentId);
+        const baseSetup = SetupBase.createNewInterface(className, parentId, parentProperty);
         const defaultSetup = {};
 
         for (const entry of schema.allOf) {
@@ -224,12 +224,16 @@ export class Plugin extends SetupBase implements PluginInterface {
         const plain: SetupBaseInterface = {
             ...defaultSetup,
             ...baseSetup,
-            relativeBounds: RelativeRectangle.newInterface(baseSetup.id, {
-                x: 0,
-                y: 0,
-                width: 1,
-                height: 1
-            })
+            relativeBounds: RelativeRectangle.newInterface(
+                baseSetup.id,
+                'relativeBounds',
+                {
+                    x: 0,
+                    y: 0,
+                    width: 1,
+                    height: 1
+                }
+            )
         } as SetupBaseInterface;
 
         // console.log(`Plugin.createNew(${parentId}, ${schema.$id})`, { ...plain });

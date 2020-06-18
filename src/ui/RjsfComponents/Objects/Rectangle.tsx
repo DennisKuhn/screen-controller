@@ -45,6 +45,7 @@ const RectangleObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
         if (rect.className == RelativeRectangle.name) {
             parent[property] = RelativeRectangle.create(
                 parent.id,
+                property,
                 isFullscreen ?
                     { x: 0, y: 0, width: 1, height: 1 } :
                     { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }
@@ -52,6 +53,7 @@ const RectangleObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
         } else {
             parent[property] = PlainRectangle.create(
                 parent.id,
+                property,
                 isFullscreen ?
                     { x: 0, y: 0, width: 1, height: 1 } :
                     { x: 0.25, y: 0.25, width: 0.5, height: 0.5 }

@@ -1,5 +1,5 @@
 import { SetupBase } from '../SetupBase';
-import { SetupItemId, SetupBaseInterface } from '../SetupInterface';
+import { PropertyKey, SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { SimpleRectangle, RectangleInterface } from './RectangleInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
@@ -56,12 +56,13 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
         };
     }
 
-    static newInterface = (parentId: SetupItemId, source: SimpleRectangle): SetupBaseInterface => ({
-        ...SetupBase.createNewInterface(Rectangle.name, parentId),
+    static newInterface = (parentId: SetupItemId, parentProperty: PropertyKey, source: SimpleRectangle): SetupBaseInterface => ({
+        ...SetupBase.createNewInterface(Rectangle.name, parentId, parentProperty),
         ...source
     });
 
-    static create = (parentId: SetupItemId, source: SimpleRectangle): Rectangle => new Rectangle(Rectangle.newInterface(parentId, source));
+    static create = (parentId: SetupItemId, parentProperty: PropertyKey, source: SimpleRectangle): Rectangle =>
+        new Rectangle(Rectangle.newInterface(parentId, parentProperty, source));
 
     static register(): void {
         SetupBase.register(Rectangle, Rectangle.schema, Rectangle.uiSchema);
