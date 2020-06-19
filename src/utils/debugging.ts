@@ -45,11 +45,11 @@ export const checkOrphans = (showFound = false): void => {
         if (item.parentId) {
             const textParent = localStorage.getItem(item.parentId);
             if (textParent == null) {
-                console.error(`Loaded ${item.parentId} as null instead of string`);
+                console.warn(`${id} is orphaned parentId=${item.parentId}`);
             } else {
                 const parent = JSON.parse(textParent);
                 if (parent == undefined) {
-                    console.error(`${id} is orphaned parentId=${item.parentId}`, item);
+                    console.error(`${id}'s parent ${item.parentId} can't be parsed: ${textParent}`, {item, textParent});
                 } else {
                     let found = false;
                     for (const [propertyName, propertyValue] of Object.entries(parent)) {
@@ -59,11 +59,11 @@ export const checkOrphans = (showFound = false): void => {
                             const value = propertyValue as Record<string, any>;
 
                             if (('id' in value) && (value['id'] == id)) {
-                                showFound && console.log(`Found ${id} as ${parent.id}.${propertyName}`);
+                                showFound && console.debug(`Found ${id} as ${parent.id}.${propertyName}`);
                                 found = true;
                                 break;
                             } else if (id in value) {
-                                showFound && console.log(`Found ${id} in ${parent.id}.${propertyName}`);
+                                showFound && console.debug(`Found ${id} in ${parent.id}.${propertyName}`);
                                 found = true;
                             }
                         }
@@ -72,8 +72,10 @@ export const checkOrphans = (showFound = false): void => {
                         console.error(`Can not find ${id} in ${parent.id}`);
                 }
             }
+        } else if (id.startsWith('PluginSchema-')) {
+            showFound && console.debug(`Found ${id}`);
         } else {
-            console.log(`${id} has no parentId`, item);
+            console.log(`${id} has no parentId, nor startsWith('PluginSchema-')`, item);
         }
     }
 };

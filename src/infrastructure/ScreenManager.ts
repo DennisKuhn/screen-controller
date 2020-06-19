@@ -15,8 +15,7 @@ const update = (screen: Screen): void => {
     if (screen.rotateColors) {
         colorPosition = (colorPosition + 1) % 360;
 
-        (frames % dbgFrames ==  0) && console.time('ScreenManager.update');
-        // (colorPosition == 10) && console.profile('ScreenManager.update');
+        // (frames % dbgFrames ==  0) && console.time('ScreenManager.update');
 
         if (!screen.activeGradient) throw new Error(`${callerAndfName()} no screen.activeGradient`);
         if (!isObservableArray(screen.activeGradient.colors)) throw new Error(`${callerAndfName()} screen.activeGradient.color is not ObservableArray`);
@@ -30,10 +29,9 @@ const update = (screen: Screen): void => {
                 )
             );
 
-        (frames % dbgFrames ==  0) && console.timeEnd('ScreenManager.update');
-        //(colorPosition == 10) && console.profileEnd('ScreenManager.update');
+        // (frames % dbgFrames ==  0) && console.timeEnd('ScreenManager.update');
     }
-    if (frames % dbgFrames == 1) {
+    if ((frames % dbgFrames == 1) && ((frames / ((performance.now() - framesStart) / 1000)) < (screen.fps * 0.9))) {
         console.debug(`ScreenManager.update fps: ${(frames / ((performance.now() - framesStart) / 1000)).toFixed(1)}`);
     }
 };

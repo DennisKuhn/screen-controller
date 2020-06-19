@@ -6,7 +6,7 @@ import { SetupBase, PropertyType as ObjectPropertyType } from '../SetupBase';
 import { SetupBaseInterface, PropertyType as InterfacePropertyType, PropertyType } from '../SetupInterface';
 import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap, SetupBaseInterfaceDictionary } from '../Container';
-import { IpcChangeArgsType, IpcArrayChangeArgsType, IpcMapChangeArgsType, IpcItemChangeArgsType, getIpcArgsLog, IpcArrayUpdateArgs, IpcArraySpliceArgs } from '../IpcInterface';
+import { IpcChangeArgsType, IpcArrayChangeArgsType, IpcMapChangeArgsType, IpcItemChangeArgsType, getIpcArgsLog, IpcArrayUpdateArgs, IpcArraySpliceArgs } from './IpcInterface';
 import { callerAndfName } from '../../utils/debugging';
 
 export declare interface Controller {
@@ -45,7 +45,7 @@ export interface LocalItemArgs extends LocalChangeArgs {
 export interface LocalItemUpdateArgs extends LocalItemArgs {
     type: 'update';
     newValue: ObjectPropertyType;
-    oldValue: ObjectPropertyType;
+    oldValue: ObjectPropertyType | undefined;
 }
 
 export interface LocalItemAddArgs extends LocalItemArgs {
@@ -88,7 +88,7 @@ export interface LocalArrayUpdateArgs extends LocalArrayArgs {
 
 export interface LocalArraySpliceArgs extends LocalArrayArgs {
     type: 'splice';
-    added: [];
+    added: ObjectPropertyType[];
     removedCount: number;
 }
 
@@ -399,7 +399,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         const remotePlainValue = hasRemote ? this.remoteUpdates.get(item.id)?.[array][index] : undefined;
 
         if (changes.type == 'splice') {
-            const { item, array, index, type, added, removedCount } = changes;
+            const { added, removedCount } = changes;
             const remoteArray: Array<PropertyType> | undefined = this.remoteUpdates.get(item.id)?.[array];
             const localArray: Array<ObjectPropertyType> = item[array];
 
@@ -409,30 +409,15 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                 // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip remoteUpdate`);    
             } else {
                 // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`/*, changes*/);
-
-                this.propagate && this.propagate({
-                    item: item.id,
-                    array,
-                    index,
-                    type,
-                    added: (changes as LocalArraySpliceArgs).added,
-                    removedCount: (changes as LocalArraySpliceArgs).removedCount
-                });
+                this.propagate && this.propagate( ControllerImpl.local2Ipc(changes) );
                 this.tryPersist(changes);
             }
         } else if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
             console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip remoteUpdate ${remotePlainValue}`);
         } else {
-            const { item, array, index, type } = changes;
             console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`/*, changes*/);
 
-            this.propagate && this.propagate({
-                item: item.id,
-                array,
-                index,
-                type,
-                newValue: SetupBase.getPlainValue((changes as LocalArrayUpdateArgs).newValue)
-            });
+            this.propagate && this.propagate( ControllerImpl.local2Ipc(changes) );
             this.tryPersist(changes);
         }
     }
@@ -513,8 +498,103 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         const newValue = update['newValue'];
 
         return (
-            `(${item.id}.${map ?? array ?? ''}${mapUpdate ? '.' + mapUpdate.name : arrayUpdate ? '[' + arrayUpdate.index + ']' : name} ,${type})${newValue ? '=' + newValue : ''}`
+            `(${item.id}.${map ?? array ?? ''}${mapUpdate ? '.' + mapUpdate.name : arrayUpdate ? '[' + arrayUpdate.index + ']' : name} ,${type})` +
+            `${newValue ? '=' + (newValue instanceof SetupBase ? '[' + newValue.id + '/' + newValue.className + ']' : newValue) : ''}`
         );
+    }
+
+    protected static local2Ipc = (local: LocalChangeArgsType): IpcChangeArgsType => {
+        let result: IpcChangeArgsType;
+        // {
+        //     item: local.item.id,
+        //     type: local.type
+        // };
+        switch (local.type) {
+            case 'add':
+                if ('map' in local) {
+                    result = {
+                        type: local.type,
+                        item: local.item.id,
+                        name: local.name,
+                        map: local.map,
+                        newValue: local.newValue == null ? null : local.newValue.getShallow()
+                    };
+                } else {
+                    result = {
+                        type: local.type,
+                        item: local.item.id,
+                        name: local.name,
+                        newValue: SetupBase.getPlainValue(local.newValue)
+                    };
+                }
+                break;
+            case 'delete':
+                result = {
+                    type: local.type,
+                    item: local.item.id,
+                    name: local.name,
+                    map: local.map
+                };
+                break;
+            case 'remove':
+                result = {
+                    type: local.type,
+                    item: local.item.id,
+                    name: local.name
+                };
+                break;
+            case 'splice':
+                result = {
+                    type: local.type,
+                    item: local.item.id,
+                    index: local.index,
+                    array: local.array,
+                    added: local.added.map(item => SetupBase.getPlainValue(item)),
+                    removedCount: local.removedCount
+                };
+                break;
+            case 'update':
+                if ('array' in local) {
+                    result = {
+                        type: local.type,
+                        item: local.item.id,
+                        index: local.index,
+                        array: local.array,
+                        newValue: SetupBase.getPlainValue(local.newValue)
+                    };
+                } else if ('map' in local) {
+                    result = {
+                        type: local.type,
+                        item: local.item.id,
+                        name: local.name,
+                        map: local.map,
+                        newValue: local.newValue == null ? null : local.newValue.getShallow()
+                    };
+                } else {
+                    result = {
+                        type: local.type,
+                        item: local.item.id,
+                        name: local.name,
+                        newValue: SetupBase.getPlainValue(local.newValue),
+                        oldValue: local.oldValue == undefined ? local.oldValue : SetupBase.getPlainValue(local.oldValue)
+                    };
+                }
+                break;
+        }
+
+        // this.updateChannels[listener.senderId].send(
+        //     'change',
+        //     {
+        //         item: item.id,
+        //         type: change.type,
+        //         name: change.name,
+        //         ...(map ? { map } : undefined),
+        //         ...((change.type == 'add' || change.type == 'update') ? { newValue: (change.newValue == null ? null : SetupBase.getPlainValue(change.newValue)) } : undefined)
+        //     } as IpcChangeArgsType,
+        //     persist
+        // );
+
+        return result;
     }
 
     private addRemoteUpdate(update: IpcChangeArgsType): boolean {
@@ -589,8 +669,6 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         }
         return true;
     }
-
-
 
     createNewSetup(plain: SetupBaseInterface): SetupBase {
         const newSetup = create(plain);

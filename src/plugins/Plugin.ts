@@ -152,8 +152,9 @@ export class Plugin {
             this.render(this.screen.activeGradient?.colors[0] ?? 'green');
         }
 
-        (this.frames % dbgFrames == 1) &&
-            console.info(
+        (this.frames % dbgFrames == 1)
+            && ((this.frames / ((time - this.start) / 1000)) < (0.9 * this.screen.fps))
+            && console.info(
                 `${callerAndfName()}[${this.setup.className}][${this.setup.id}]:` +
                 ` fps=${(this.frames / ((time - this.start) / 1000)).toFixed(2)} skipped=${(this.skippedFrames / ((time - this.start) / 1000)).toFixed(2)}`);
 

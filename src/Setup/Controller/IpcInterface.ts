@@ -1,5 +1,5 @@
 import electron, { IpcRendererEvent, IpcMainEvent } from 'electron';
-import { SetupItemId, SetupBaseInterface, PropertyKey, PropertyType as InterfacePropertyType } from './SetupInterface';
+import { SetupItemId, SetupBaseInterface, PropertyKey, PropertyType as InterfacePropertyType } from '../SetupInterface';
 import { JSONSchema7 } from 'json-schema';
 
 export type ChangeChannel = 'change';
@@ -26,7 +26,7 @@ export interface IpcAddArgs extends IpcItemChangeArgs {
 export interface IpcUpdateArgs extends IpcItemChangeArgs {
     type: 'update';
     newValue: InterfacePropertyType;
-    oldValue: InterfacePropertyType;
+    oldValue: InterfacePropertyType | undefined;
 }
 
 export interface IpcRemoveArgs extends IpcItemChangeArgs {

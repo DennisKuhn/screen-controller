@@ -1,16 +1,16 @@
 import { BrowserWindow, ipcMain as electronIpcMain, IpcMainEvent, WebContents } from 'electron';
 import { JSONSchema7 } from 'json-schema';
-import { IMapDidChange, isObservableProp, reaction, toJS, isObservableArray, IArrayChange, IArraySplice } from 'mobx';
+import { IArrayChange, IArraySplice, IMapDidChange, isObservableArray, isObservableProp, reaction } from 'mobx';
 import { callerAndfName } from '../../utils/debugging';
 import { Plugin } from '../Application/Plugin';
 import { ObservableSetupBaseMap } from '../Container';
-import { IpcAddSchemaArgs, IpcChangeArgsType, IpcInitArgs, IpcMain, IpcRegisterArgs, IpcWindow, getIpcArgsLog } from '../IpcInterface';
 import { resolve } from '../JsonSchemaTools';
 import { SetupBase } from '../SetupBase';
 import { create } from '../SetupFactory';
 import { SetupItemId } from '../SetupInterface';
 import { UpdateChannel } from '../UpdateChannel';
-import { ControllerImpl, LocalChangeArgsType, LocalItemChangeArgsType, LocalMapChangeArgsType, SetupPromise, LocalArrayChangeArgsType } from './Controller';
+import { ControllerImpl, LocalChangeArgsType, SetupPromise } from './Controller';
+import { getIpcArgsLog, IpcAddSchemaArgs, IpcChangeArgsType, IpcInitArgs, IpcMain, IpcRegisterArgs, IpcWindow } from './IpcInterface';
 
 interface ChangeListener {
     senderId: number;
@@ -208,6 +208,7 @@ export class Main extends ControllerImpl {
                 listener.disposers.push(
                     value.observe(
                         (change: IArrayChange | IArraySplice) => {
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
                             const { object, ...rest } = change;
 
                             this.onChangeItemChanged(
@@ -251,137 +252,10 @@ export class Main extends ControllerImpl {
 
         if (channel == undefined) {
             console.error(`${callerAndfName()}[${listener.senderId}](${ControllerImpl.getLocalArgsLog(change)} ): no channel`);
+            this.unRegister(listener.senderId);
             return;
         }
-        const map = (change as LocalMapChangeArgsType).map;
-        const array = (change as LocalArrayChangeArgsType).array;
-
-        if ((change as LocalMapChangeArgsType).map != undefined) {
-            const mapChange = change as LocalMapChangeArgsType;
-            switch (mapChange.type) {
-                case 'add':
-                    channel.send(
-                        'change',
-                        {
-                            item: item.id,
-                            type: mapChange.type,
-                            name: mapChange.name,
-                            map: map,
-                            newValue: mapChange.newValue == null ? null : mapChange.newValue.getShallow()
-                        },
-                        false
-                    );
-                    break;
-                case 'update':
-                    channel.send(
-                        'change',
-                        {
-                            item: item.id,
-                            type: mapChange.type,
-                            name: mapChange.name,
-                            map: map,
-                            newValue: mapChange.newValue == null ? null : mapChange.newValue.getShallow()
-                        },
-                        false
-                    );
-                    break;
-                case 'delete':
-                    channel.send(
-                        'change',
-                        {
-                            item: item.id,
-                            type: mapChange.type,
-                            name: mapChange.name,
-                            map: map
-                        },
-                        false
-                    );
-                    break;
-            }
-        } else if ((change as LocalArrayChangeArgsType).array != undefined) {
-            const arrayChange = change as LocalArrayChangeArgsType;
-            switch (arrayChange.type) {
-                case 'update':
-                    channel.send(
-                        'change',
-                        {
-                            item: item.id,
-                            type: arrayChange.type,
-                            index: arrayChange.index,
-                            array: map,
-                            newValue: SetupBase.getPlainValue( arrayChange.newValue )
-                        },
-                        false
-                    );
-                    break;
-                case 'splice':
-                    channel.send(
-                        'change',
-                        {
-                            item: item.id,
-                            type: arrayChange.type,
-                            index: arrayChange.index,
-                            added: arrayChange.added,
-                            removedCount: arrayChange.removedCount,
-                            array: array
-                        },
-                        false
-                    );
-                    break;
-            }
-        } else {
-            const itemChange = change as LocalItemChangeArgsType;
-            switch (itemChange.type) {
-                case 'add':
-                    channel.send(
-                        'change',
-                        {
-                            item: item.id,
-                            type: itemChange.type,
-                            name: itemChange.name,
-                            newValue: SetupBase.getPlainValue(itemChange.newValue)
-                        },
-                        false
-                    );
-                    break;
-                case 'update':
-                    channel.send(
-                        'change',
-                        {
-                            item: item.id,
-                            type: itemChange.type,
-                            name: itemChange.name,
-                            newValue: SetupBase.getPlainValue(itemChange.newValue),
-                            oldValue: SetupBase.getPlainValue(itemChange.oldValue)
-                        },
-                        false
-                    );
-                    break;
-                case 'remove':
-                    channel.send(
-                        'change',
-                        {
-                            item: item.id,
-                            type: itemChange.type,
-                            name: itemChange.name
-                        },
-                        false
-                    );
-                    break;
-            }
-        }
-
-        // this.updateChannels[listener.senderId].send(
-        //     'change',
-        //     {
-        //         item: item.id,
-        //         type: change.type,
-        //         name: change.name,
-        //         ...(map ? { map } : undefined),
-        //         ...((change.type == 'add' || change.type == 'update') ? { newValue: (change.newValue == null ? null : SetupBase.getPlainValue(change.newValue)) } : undefined)
-        //     } as IpcChangeArgsType,
-        //     persist
-        // );
+        channel.send('change', ControllerImpl.local2Ipc(change));
     }
 
 
@@ -488,9 +362,9 @@ export class Main extends ControllerImpl {
             });
     }
 
-
     protected persist = (change: LocalChangeArgsType): void => {
         const { item } = change;
+        // const { item } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
@@ -513,12 +387,7 @@ export class Main extends ControllerImpl {
 
         channel.send(
             'change',
-            {
-                ...toJS( change, {recurseEverything: true} ),
-                item: item.id,
-                ...(('newValue' in change) ? { newValue: (change.newValue == null ? null : SetupBase.getPlainValue(change.newValue)) } : undefined),
-                ...(('oldValue' in change) ? { oldValue: (change.oldValue == null ? null : SetupBase.getPlainValue(change.oldValue)) } : undefined)
-            } as IpcChangeArgsType,
+            ControllerImpl.local2Ipc(change),
             true
         );
     }

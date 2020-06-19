@@ -1,11 +1,11 @@
-import { toJS, observe, IObjectDidChange } from 'mobx';
+import { toJS, observe, IObjectDidChange, isObservableArray, IObservableArray } from 'mobx';
 import { IpcRendererEvent, ipcRenderer as electronIpcRenderer, remote } from 'electron';
-import { SetupBase } from '../SetupBase';
+import { SetupBase, PropertyType as SetupPropertyType } from '../SetupBase';
 import { SetupItemId, SetupBaseInterface, SetupLinkInterface, PropertyType } from '../SetupInterface';
 import { ControllerImpl, LocalChangeArgsType, LocalMapChangeArgsType, LocalItemChangeArgsType, LocalArrayChangeArgsType } from './Controller';
 import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap } from '../Container';
-import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs } from '../IpcInterface';
+import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs } from './IpcInterface';
 
 import { Root } from '../Application/Root';
 import { Screen } from '../Application/Screen';
@@ -91,10 +91,10 @@ export class Renderer extends ControllerImpl {
 
     private registrations = new Array<{ itemId: SetupItemId; depth: number }>()
 
-    protected onCached = (item: SetupBase, depth: number): void => {
+    // protected onCached = (item: SetupBase, depth: number): void => {
 
-        // this.registerWithMain(item, depth);
-    }
+    //     // this.registerWithMain(item, depth);
+    // }
 
     protected registerWithMain(item: SetupBase, depth: number): void {
 
@@ -190,6 +190,42 @@ export class Renderer extends ControllerImpl {
         }
     }
 
+    private delete = (item: SetupBase): void => {
+        console.debug(`${callerAndfName()}(${item.id})`);
+        localStorage.removeItem(item.id);
+        for (const [propertyName, propertyChild] of Object.entries(item)) {
+            if (propertyChild instanceof SetupBase) {
+                console.debug(`${callerAndfName()}(${item.id}) delete child ${propertyName}==${propertyChild.id}`);
+                this.delete(propertyChild);
+            } else if (propertyChild instanceof ObservableSetupBaseMap) {
+                this.deleteMap( propertyChild as ObservableSetupBaseMap<SetupBase>);
+            } else if (isObservableArray(propertyChild)) {
+                this.deleteArray( propertyChild as IObservableArray<SetupPropertyType>);
+            }
+        }
+    };
+
+    private deleteMap = (map: ObservableSetupBaseMap<SetupBase>): void => {
+        for (const [childId, prospect] of map.entries()) {
+            const child = prospect ?? this.tryGetSetupSync(childId, 0);
+            if (!child) throw new Error(`${callerAndfName()} can't get map child [${childId}]`);
+
+            this.delete(child);
+        }
+    };
+
+    private deleteArray = (array: IObservableArray<SetupPropertyType>): void => {
+        for (const prospect of array) {
+            if (prospect instanceof SetupBase) {
+                console.debug(`${callerAndfName()} delete array child ${prospect.id}`);
+                this.delete(prospect);
+            } else if (prospect instanceof ObservableSetupBaseMap) {
+                this.deleteMap(prospect as ObservableSetupBaseMap<SetupBase>);
+            } else if (isObservableArray(prospect)) {
+                this.deleteArray(prospect as IObservableArray<SetupPropertyType>);
+            }
+        }
+    }
 
     protected persist = (change: LocalChangeArgsType): void => {
         const { item } = change;
@@ -212,7 +248,14 @@ export class Renderer extends ControllerImpl {
 
         if (name !== '') {
             if (change.type == 'splice') {
-                (shallow[array] as Array<PropertyType>).splice(index, change.removedCount, ...change.added);
+                (shallow[array] as Array<PropertyType>).splice(
+                    index,
+                    change.removedCount,
+                    ...change.added.map( item => SetupBase.getPlainValue(item))
+                );
+            } else if (change.type == 'delete') {
+                delete shallow[change.map][change.name];
+                localStorage.removeItem(change.name);
             } else if (newValue != undefined) {
                 if (array) {
                     shallow[array][index] = SetupBase.getPlainValue(newValue);
@@ -251,7 +294,10 @@ export class Renderer extends ControllerImpl {
             }
         } else if (change.type == 'delete') {
             console.debug(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} delete ${change.name}`);
-            localStorage.removeItem(change.name);
+            const toBeDeleted: SetupBase | undefined = item[change.map].get(change.name) ?? this.tryGetSetupSync(change.map, 0);
+            if (!toBeDeleted) throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}can't get ${change.name}`);
+
+            this.delete(toBeDeleted);
         } else if (name === '') {
             /// Persists properties children
             for (const child of Object.values(item)) {
