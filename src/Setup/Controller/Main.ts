@@ -11,7 +11,6 @@ import { create } from '../SetupFactory';
 import { SetupItemId } from '../SetupInterface';
 import { UpdateChannel } from '../UpdateChannel';
 import { ControllerImpl, LocalChangeArgsType, LocalItemChangeArgsType, LocalMapChangeArgsType, SetupPromise, LocalArrayChangeArgsType } from './Controller';
-import { omit } from 'lodash';
 
 interface ChangeListener {
     senderId: number;
@@ -80,12 +79,12 @@ export class Main extends ControllerImpl {
     }
 
     private unRegister = (channelId: number): void => {
-        console.log(`${callerAndfName()}(${channelId})`);
+        console.log(`${callerAndfName()}[${channelId}]`);
 
         this.changeListeners
             .filter(listener => listener.senderId == channelId)
             .forEach(listener => {
-                // console.log(`${callerAndfName()}(${channelId}): ${listener.itemId},${listener.depth} disposer: ${listener.disposers.length}`);
+                console.log(`${callerAndfName()}[${channelId}]: ${listener.itemId},${listener.depth} disposer: ${listener.disposers.length}`);
                 listener.disposers.forEach(disposer => disposer());
                 this.changeListeners.splice(
                     this.changeListeners.indexOf(listener)
@@ -204,15 +203,17 @@ export class Main extends ControllerImpl {
                         })
                 );
             } else if (isObservableArray(value)) {
-                // console.log(`[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
+                console.log(`[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
 
                 listener.disposers.push(
                     value.observe(
                         (change: IArrayChange | IArraySplice) => {
+                            const { object, ...rest } = change;
+
                             this.onChangeItemChanged(
                                 listener,
                                 {
-                                    ...omit( change, 'object'),
+                                    ...rest,
                                     array: propertyName,
                                     item
                                 }

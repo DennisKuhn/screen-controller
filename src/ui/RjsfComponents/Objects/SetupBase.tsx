@@ -1,15 +1,11 @@
-import React, { ReactNode, useCallback } from 'react';
-
-
-import { ObjectFieldTemplateProps } from '@rjsf/core';
-
-import HiddenField from '../Fields/Hidden';
-
-import { SetupBaseInterface } from '../../../Setup/SetupInterface';
-import { TreeItem } from '@material-ui/lab';
+import { createStyles, IconButton, makeStyles } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { makeStyles, IconButton, createStyles } from '@material-ui/core';
+import { TreeItem } from '@material-ui/lab';
+import { ObjectFieldTemplateProps } from '@rjsf/core';
+import React, { ReactNode, useCallback } from 'react';
 import controller from '../../../Setup/Controller/Factory';
+import { SetupBaseInterface } from '../../../Setup/SetupInterface';
+import HiddenField from '../Fields/Hidden';
 
 const useItemLabelStyles = makeStyles(() =>
     createStyles({

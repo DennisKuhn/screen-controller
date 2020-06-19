@@ -112,3 +112,4 @@ dist
 out
 tmp.*
 src/wallpaper/apikeys.js
+vscode-profile*

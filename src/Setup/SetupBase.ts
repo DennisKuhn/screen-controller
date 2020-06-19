@@ -95,6 +95,7 @@ export abstract class SetupBase {
     public static readonly uiSchema: UiSchema = {
         id: { 'ui:widget': 'hidden' },
         parentId: { 'ui:widget': 'hidden' },
+        parentProperty: { 'ui:widget': 'hidden' },
         className: { 'ui:widget': 'hidden' },
     };
 

@@ -93,7 +93,7 @@ export class Renderer extends ControllerImpl {
 
     protected onCached = (item: SetupBase, depth: number): void => {
 
-        this.registerWithMain(item, depth);
+        // this.registerWithMain(item, depth);
     }
 
     protected registerWithMain(item: SetupBase, depth: number): void {

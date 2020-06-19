@@ -19,6 +19,7 @@ export class Plugin {
     private div?: HTMLDivElement;
     private canvas?: HTMLCanvasElement;
     private renderingContext?: CanvasRenderingContext2D;
+    private screen?: Screen;
 
     private interval?: NodeJS.Timeout;
 
@@ -44,7 +45,7 @@ export class Plugin {
             this.element.style.border = '1px solid orange';
             window.document.body.appendChild(this.element);
 
-            autorun(this.setBounds);
+            this.renderAutorunDisposers.push(autorun(this.setBounds));
         }
     }
 
@@ -79,24 +80,84 @@ export class Plugin {
             //         (this.plugin as IntervalPlugin).renderInterval
             //     );
             // }
-            const start = performance.now();
-            let frames = 0;
+
             controller.getSetup(Screen.name, 0)
                 .then(setup => {
-                    this.renderAutorunDisposer = autorun(
-                        (/*r: IReactionPublic*/) => {
-                            const span = performance.now() - start;
-                            frames += 1;
-                            const fps = frames / (span / 1000);
-                            if (frames % 1000 == 0) console.info(`${callerAndfName()}[${this.setup.className}][${this.setup.id}]: fps=${fps}`);
-
-                            const gradient = this.createGradient(setup as Screen);
-
-                            render(gradient);
-                        });
-                }
-                );
+                    this.screen = setup as Screen;
+                    this.renderAutorunDisposers.push(
+                        autorun(this.renderer)
+                    );
+                });
         }
+    }
+
+    lastFps = 0;
+    start?: number;
+    frames = 0;
+    skippedFrames = 0;
+    continuesSkipped = 0;
+    requestedAnimationFrame?: number;
+
+    private renderer = (/*r: IReactionPublic*/): void => {
+        if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
+        if (this.lastFps != this.screen.fps) {
+            this.lastFps = this.screen.fps;
+            this.frames = 0;
+            this.skippedFrames = 0;
+            this.continuesSkipped = 0;
+            this.start = undefined;
+        }
+
+        // Give mobx something to observe for autorun
+        this.screen.getShallow();
+        this.setup.getShallow();
+
+        if (this.rendering === true) {
+            this.skippedFrames += 1;
+            this.continuesSkipped += 1;
+            // Wait for next frame
+        } else {
+            if ((this.continuesSkipped > 1) && ((this.frames + this.skippedFrames) > (3 * this.screen.fps))) {
+                console.warn(
+                    `${callerAndfName()}: continuesSkipped=${this.continuesSkipped} =>` +
+                    ` screen.fps=${this.screen.fps}-=${this.continuesSkipped - 1} ${this.frames}+${this.skippedFrames}`);
+                this.screen.fps -= (this.continuesSkipped - 1);
+            }
+            this.continuesSkipped = 0;
+            this.rendering = true;
+
+            this.requestedAnimationFrame = requestAnimationFrame(
+                this.renderNow
+            );
+        }
+    }
+
+    private rendering = false;
+
+    private renderNow = (time: number): void => {
+        //console.debug(`renderNow this=${this} start=${this.start} screen=${this.screen} render=${typeof this.render}`);
+
+        this.start = this.start ?? time;
+        if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
+        if (this.render == undefined) throw new Error(`${callerAndfName()}: this.render is undefined`);
+
+        const dbgFrames = 2 * this.screen.fps;
+        this.frames += 1;
+
+        if (this.canvas) {
+            this.render(
+                this.createGradient(this.screen)
+            );
+        } else if (this.div) {
+            this.render(this.screen.activeGradient?.colors[0] ?? 'green');
+        }
+
+        (this.frames % dbgFrames == 1) &&
+            console.info(
+                `${callerAndfName()}[${this.setup.className}][${this.setup.id}]:` +
+                ` fps=${(this.frames / ((time - this.start) / 1000)).toFixed(2)} skipped=${(this.skippedFrames / ((time - this.start) / 1000)).toFixed(2)}`);
+
+        this.rendering = false;
     }
 
     private createGradient = (screen: Screen): CanvasGradient | string => {
@@ -118,7 +179,7 @@ export class Plugin {
         const { scaledBounds } = this.setup;
 
         let gradient: CanvasGradient | string;
-        
+
         switch (type) {
             case 'Solid':
                 gradient = colors[0];
@@ -133,7 +194,7 @@ export class Plugin {
                     (scaledBounds.width + scaledBounds.height) / 4);
 
                 for (let i = 0; i < colors.length; i += 1) {
-                    gradient.addColorStop(i / (colors.length - 1), colors[i]);        
+                    gradient.addColorStop(i / (colors.length - 1), colors[i]);
                 }
                 break;
             case 'Horizontal':
@@ -152,7 +213,7 @@ export class Plugin {
         return gradient;
     };
 
-    private renderAutorunDisposer: IReactionDisposer | undefined;
+    private renderAutorunDisposers: IReactionDisposer[] = [];
 
     constructor(protected setup: PluginSetup, protected registration: Registration) {
         this.createElement();
@@ -183,13 +244,22 @@ export class Plugin {
     }
 
     close = (): void => {
-        this.renderAutorunDisposer &&
-            this.renderAutorunDisposer();
+        this.requestedAnimationFrame &&
+            cancelAnimationFrame(this.requestedAnimationFrame);
+        this.requestedAnimationFrame = undefined;
+
+        this.renderAutorunDisposers.forEach(
+            disposer => disposer()
+        );
+        this.renderAutorunDisposers.length = 0;
 
         this.interval &&
             clearInterval(this.interval);
+        this.interval = undefined;
 
         this.element &&
             window.document.body.removeChild(this.element);
+
+        this.canvas = this.renderingContext = this.element = undefined;
     }
 }

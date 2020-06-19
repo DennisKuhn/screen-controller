@@ -4,7 +4,7 @@ import { Add } from '@material-ui/icons';
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import { cloneDeep } from 'lodash';
-import React, { } from 'react';
+import React from 'react';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
 import controller from '../../../Setup/Controller/Factory';
 import { SetupBase } from '../../../Setup/SetupBase';
@@ -72,7 +72,7 @@ const ItemForm = ({ itemId, expand, schemaChoices, rootSchema }: { itemId: strin
 
     schema.definitions = rootSchema.definitions;
 
-    // console.log(`Dictionary.tsx/ItemForm: [${plainItem.id}]`, { ...{ plainItem, schema, schemaChoices, rootSchema}});
+    console.log(`Dictionary.tsx/ItemForm: [${item.id}]` );
 
     return (
         <Form
