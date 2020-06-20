@@ -40,11 +40,10 @@ const SetupBaseObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
     // console.debug( `SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}/${setup?.className}` /*, props */ );
 
     const deleteItem = useCallback(
-        async () => {
-            const parent = await controller.getSetup(setup.parentId, 1);
+        () => {
+            const parent = controller.tryGetSetupSync(setup.parentId, 1);
 
-            if (!parent)
-                throw new Error(`SetupBaseTemplate[${idSchema?.$id},${setup.id}].deleteItem can't get parent ${setup.parentId}`);
+            if (!parent) throw new Error(`SetupBaseTemplate[${idSchema?.$id},${setup.id}].deleteItem can't get parent ${setup.parentId}`);
 
             console.debug(`SetupBaseTemplate[${idSchema?.$id},${setup.id}].deleteItem from ${parent.id}`);
 

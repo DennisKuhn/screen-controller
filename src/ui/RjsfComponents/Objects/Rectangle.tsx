@@ -26,12 +26,9 @@ const RectangleObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
     
     const property = props.idSchema.$id.split('_').pop();
 
-    if (!item)
-        throw new Error(`Rectangle[${rect.id}] failed controller.tryGetSetupSync()`);
-    if (!parent)
-        throw new Error(`Rectangle[${rect.id}] failed .parent`);
-    if (!property)
-        throw new Error(`Rectangle[${rect.id}] failed get parent property from ${props.idSchema.$id}`);
+    if (!item) throw new Error(`Rectangle[${rect.id}] failed controller.tryGetSetupSync()`);
+    if (!parent) throw new Error(`Rectangle[${rect.id}] failed .parent`);
+    if (!property) throw new Error(`Rectangle[${rect.id}] failed get parent property from ${props.idSchema.$id}`);
 
     // console.debug(`RectangleObjectTemplate[${parent.id}].${property}[${item.id}]`, { ...props });
 

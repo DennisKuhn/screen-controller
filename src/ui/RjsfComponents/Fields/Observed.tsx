@@ -32,13 +32,13 @@ const getTarget = (idSchemaId: string): [SetupBase, string] => {
         parent = controller.tryGetSetupSync(stack[iStack], 0);
     }
     if (parent == undefined)
-        throw new Error(`ObservedField[${idSchemaId}].[${name}] failed to get root parent stack=${stack}`);
+        throw new Error(`ObservedField[${idSchemaId}].[${propertyName}] failed to get root parent stack=${stack}`);
 
     while (iStack < (stack.length - 2)) {
         iStack++;
         parent = parent[stack[iStack]];
         if (parent == undefined)
-            throw new Error(`ObservedField[${idSchemaId}].[${name}] failed to get parent child ${stack[iStack]} stack=${stack}`);
+            throw new Error(`ObservedField[${idSchemaId}].[${propertyName}] failed to get parent child ${stack[iStack]} stack=${stack}`);
     }
 
     // targetCache.set(idSchemaId, [parent, propertyName]);

@@ -56,23 +56,21 @@ const NewItemTile = ({ schema, addItem, key }: { schema: JSONSchema7; key: strin
 );
 
 
-const ItemForm = ({ itemId, expand, schemaChoices, rootSchema }: { itemId: string; expand: boolean; schemaChoices: JSONSchema7Definition[]; rootSchema: JSONSchema7 }):
-    JSX.Element => {
+const ItemForm = (props: { itemId: string; expand: boolean; schemaChoices: JSONSchema7Definition[]; rootSchema: JSONSchema7 }): JSX.Element => {
+    const { itemId, expand, schemaChoices, rootSchema } = props;    
+
     const item = controller.tryGetSetupSync(itemId, 0);
-    if (!item)
-        throw new Error(`Dictionary.tsx/ItemForm: can't get ${itemId} from controller`);
+    if (!item) throw new Error(`Dictionary.tsx/ItemForm: can't get ${itemId} from controller`);
 
     const schema = cloneDeep(schemaChoices.find(prospect =>
         (typeof prospect == 'object') && (prospect.$id == item.className)));
 
-    if (!schema)
-        throw new Error(`Dictionary.tsx/ItemForm: can't find ${item.className} in schemaChoices[].$id ${JSON.stringify(schemaChoices)}`);
-    if (typeof schema != 'object')
-        throw new Error(`Dictionary.tsx/ItemForm: schema for ${item.className} is not an object (${typeof schema}) ${JSON.stringify(schemaChoices)}`);
+    if (!schema) throw new Error(`Dictionary.tsx/ItemForm: can't find ${item.className} in schemaChoices[].$id ${JSON.stringify(schemaChoices)}`);
+    if (typeof schema != 'object') throw new Error(`Dictionary.tsx/ItemForm: schema for ${item.className} is not an object (${typeof schema}) ${JSON.stringify(schemaChoices)}`);
+
+    console.log(`Dictionary.tsx/ItemForm: [${item.id}]`);
 
     schema.definitions = rootSchema.definitions;
-
-    console.log(`Dictionary.tsx/ItemForm: [${item.id}]` );
 
     return (
         <Form
@@ -83,45 +81,43 @@ const ItemForm = ({ itemId, expand, schemaChoices, rootSchema }: { itemId: strin
     );
 };
 
-const add = async (parentId: string, mapName: string, className: string): Promise<void> => {
-    const parent = await controller.getSetup(parentId, 1);
+const add = (parentId: string, mapName: string, className: string): void => {
+    const parent = controller.tryGetSetupSync(parentId, 1);
+    if (!parent) throw new Error(`DictionaryTemplate[${parentId}.${mapName}].add ${className}@${mapName} can't get parent ${parentId}`);
+
+    const map = parent[mapName] as ObservableSetupBaseMap<SetupBase>;
+    if (!map) throw new Error(`DictionaryTemplate[${parentId}.${mapName}].add ${className}@${parentId} can't get map ${mapName} in ${JSON.stringify(parent)}`);
+
     const newItem = SetupBase.createNew(className, parentId, mapName);
 
     console.debug(`DictionaryTemplate[${parentId}.${mapName}].add created ${newItem.className}@${newItem.id} add to ${newItem.parentId}.${mapName}`);
-    const map = parent[mapName] as ObservableSetupBaseMap<SetupBase>;
-
-    if (!map)
-        throw new Error(`DictionaryTemplate[${parentId}.${mapName}].add created ${newItem.className}@${newItem.id} can't get map ${newItem.parentId}.${mapName}`);
 
     map.set(newItem.id, newItem);
     // console.log(`DictionaryTemplate[${parentId}.${mapName}].added ${newItem.className}@${newItem.id} in ${newItem.parentId}.${mapName}`);
 };
 
-const addItem = async (parentId: string, mapName: string, schema: JSONSchema7): Promise<void> => {
-    if (typeof schema.additionalProperties != 'object')
+const addItem = (parentId: string, mapName: string, schema: JSONSchema7): void => {
+    const itemSchema = schema.additionalProperties;
+    if (typeof itemSchema != 'object')
         throw new Error(`DictionaryTemplate[${parentId}.${mapName}].addItem no additionalProperties: ${JSON.stringify(schema)}`);
 
-    const itemSchema = schema.additionalProperties;
-
-    if (typeof (itemSchema.properties?.className as JSONSchema7)?.const != 'string')
-        throw new Error(`DictionaryTemplate[${parentId}.${mapName}].addItem no className.const: ${JSON.stringify(itemSchema)}`);
-
-    const className = (itemSchema.properties?.className as JSONSchema7)?.const as string;
+    const className = (itemSchema.properties?.className as JSONSchema7)?.const;
+    if (typeof className != 'string')
+        throw new Error(`DictionaryTemplate[${parentId}.${mapName}].addItem no className.const[string]: ${JSON.stringify(itemSchema)}`);
 
     // console.debug(`DictionaryTemplate[${parentId}.${mapName}].addItem create (${className}, ${parentId})`);
 
-    await add(parentId, mapName, className);
+    add(parentId, mapName, className);
 };
 
-const addSchemaItem = async (parentId: string, mapName: string, newSchema: JSONSchema7): Promise<void> => {
-    if (typeof (newSchema.properties?.className as JSONSchema7)?.const != 'string')
-        throw new Error(`DictionaryTemplate[${parentId}.${mapName}].addSchemaItem no className.const: ${JSON.stringify(newSchema)}`);
+const addSchemaItem = (parentId: string, mapName: string, newSchema: JSONSchema7): void => {
+    const className = (newSchema.properties?.className as JSONSchema7)?.const;
 
-    const className = (newSchema.properties?.className as JSONSchema7)?.const as string;
+    if (typeof className != 'string') throw new Error(`DictionaryTemplate[${parentId}.${mapName}].addSchemaItem no className.const[string]: ${JSON.stringify(newSchema)}`);
 
     // console.log(`DictionaryTemplate[${parentId}.${mapName}].addSchemaItem create (${className}, ${parentId})`);
 
-    await add(parentId, mapName, className);
+    add(parentId, mapName, className);
 };
 
 
@@ -145,7 +141,7 @@ const DictionaryObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Ele
                 nodeId={idSchema.$id}
                 label={}
             > */}
-            <ItemLabel title={props.title} {...(choices ? {} : { factory: (): Promise<void> => addItem(parentId, mapName, schema) })} />
+            <ItemLabel title={props.title} {...(choices ? {} : { factory: (): void => addItem(parentId, mapName, schema) })} />
             {(choices &&
                 <GridList cellHeight={100} cols={3}>
                     {choices.map((schema, index) =>
