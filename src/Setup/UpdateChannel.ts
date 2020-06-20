@@ -76,10 +76,10 @@ export class UpdateChannel {
         if (hasUpdate) {
             skipChange = isEqual(update, change['newValue']);
 
-            console.log(
-                `${callerAndfName()}[${this.ipc.id}]${getIpcArgsLog(change)}, ${persist}) ${skipChange ? 'skip receivd' : 'send newer'} [${updateKey}]`,
-                /* change['newValue'] */
-            );
+            // console.log(
+            //     `${callerAndfName()}[${this.ipc.id}]${getIpcArgsLog(change)}, ${persist}) ${skipChange ? 'skip receivd' : 'send newer'} [${updateKey}]`,
+            //     /* change['newValue'] */
+            // );
             delete this.received[updateKey];
         }
         if (!skipChange) {
@@ -91,7 +91,7 @@ export class UpdateChannel {
             //     this.onError && this.onError(this);
             // } else {
             try {
-                // console.log(`${callerAndfName()}[${this.ipc.id}]${getIpcArgsLog(change)}, ${persist})`);
+                // console.debug(`${callerAndfName()}[${this.ipc.id}]${getIpcArgsLog(change)}, ${persist})`);
 
                 this.ipc.send(/*channel*/ 'change', change, persist === true);
             } catch (error) {

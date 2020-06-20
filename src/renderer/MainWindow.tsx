@@ -3,6 +3,7 @@ import windowsIpc, { CHANNEL, IpcArgs } from '../infrastructure/Windows.ipc';
 import controller from '../Setup/Controller/Factory';
 import { Screen } from '../Setup/Application/Screen';
 
+
 export default function MainWindow(): JSX.Element {
     controller.getSetup(Screen.name, 0).then(
         screen => {

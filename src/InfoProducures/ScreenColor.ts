@@ -46,22 +46,22 @@ const start = async (): Promise<void> => {
         screen.createActiveGradient();
     }
 
-    autoRunDisposer = autorun(
-        () => {
-            const timeout = 1000 / screen.fps;
-            console.debug(`ScreenManager fps=${screen.fps} setInterval=${timeout} ${interval !== undefined ? 'clearInterval(' + interval + ')' : ''}`);
-            if (interval !== undefined) {
-                clearInterval(interval);
-            }  
-            framesStart = performance.now();
-            frames = 0;
-            interval = setInterval(
-                update,
-                timeout,
-                screen
-            );
+    const updateInterval = (): void => {
+        const timeout = 1000 / screen.fps;
+        console.debug(`ScreenColor fps=${screen.fps} setInterval=${timeout.toFixed(1)} ${interval !== undefined ? 'clearInterval(' + interval + ')' : ''}`);
+        if (interval !== undefined) {
+            clearInterval(interval);
         }
-    );
+        framesStart = performance.now();
+        frames = 0;
+        interval = setInterval(
+            update,
+            timeout,
+            screen
+        );
+    };
+
+    autoRunDisposer = autorun( updateInterval );
 };
 
 export const stop = (): void => {

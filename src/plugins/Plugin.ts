@@ -117,7 +117,7 @@ export class Plugin {
             this.continuesSkipped += 1;
             // Wait for next frame
         } else {
-            if ((this.continuesSkipped > 1) && ((this.frames + this.skippedFrames) > (3 * this.screen.fps))) {
+            if ((this.continuesSkipped > 1) && ((this.frames + this.skippedFrames) > (3 * this.screen.fps)) && (this.screen.fps > this.continuesSkipped) ) {
                 console.warn(
                     `${callerAndfName()}: continuesSkipped=${this.continuesSkipped} =>` +
                     ` screen.fps=${this.screen.fps}-=${this.continuesSkipped - 1} ${this.frames}+${this.skippedFrames}`);

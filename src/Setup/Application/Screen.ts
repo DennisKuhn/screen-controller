@@ -7,6 +7,7 @@ import { Gradient } from '../Default/Gradient';
 import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
 import { create } from '../SetupFactory';
+import { Time } from '../Default/Time';
 
 export class Screen extends SetupBase {
     static schema: JSONSchema7 = {
@@ -21,10 +22,13 @@ export class Screen extends SetupBase {
                     id: { const: Screen.name },
                     className: { const: Screen.name },
                     parentId: { const: 'Root' },
-                    rotateColors: { type: 'boolean', default: true },
+                    longitude: { type: 'number' },
+                    latitude: { type: 'number' },
+                    time: { allOf: [{ $ref: Time.name }, { 'sc-persist': false }] } as JSONSchema7Definition,
                     fps: { type: 'number', default: 25 },
+                    rotateColors: { type: 'boolean', default: true },
                     startGradient: { $ref: Gradient.name },
-                    activeGradient: { allOf: [ {$ref: Gradient.name}, {'sc-persist': false}] } as JSONSchema7Definition,
+                    activeGradient: { allOf: [{ $ref: Gradient.name }, { 'sc-persist': false }] } as JSONSchema7Definition,
                     displays: {
                         type: 'object',
                         additionalProperties: {
@@ -45,12 +49,14 @@ export class Screen extends SetupBase {
         activeGradient: { 'ui:widget': 'hidden' }
     };
 
-
     displays: ObservableSetupBaseMap<Display>;
     @observable rotateColors = true;
     @observable fps: number;
     @observable startGradient: Gradient;
     @observable activeGradient?: Gradient;
+    @observable time?: Time;
+    @observable longitude?: number;
+    @observable latitude?: number;
 
     constructor(source: SetupBaseInterface) {
         super(source);
@@ -63,6 +69,12 @@ export class Screen extends SetupBase {
         this.startGradient = new Gradient(source['startGradient']);
         if (source['activeGradient']) {
             this.activeGradient = new Gradient(source['activeGradient']);
+        }
+        if (source['longitude']) {
+            this.longitude = source['longitude'];
+        }
+        if (source['latitude']) {
+            this.latitude = source['latitude'];
         }
     }
 

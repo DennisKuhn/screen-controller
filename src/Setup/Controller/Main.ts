@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain as electronIpcMain, IpcMainEvent, WebContents } from 'electron';
 import { JSONSchema7 } from 'json-schema';
-import { IArrayChange, IArraySplice, IMapDidChange, isObservableArray, isObservableProp, reaction } from 'mobx';
+import { IArrayChange, IArraySplice, IMapDidChange, isObservableArray, isObservableProp, reaction, IReactionDisposer, Lambda } from 'mobx';
 import { callerAndfName } from '../../utils/debugging';
 import { Plugin } from '../Application/Plugin';
 import { ObservableSetupBaseMap } from '../Container';
@@ -12,11 +12,18 @@ import { UpdateChannel } from '../UpdateChannel';
 import { ControllerImpl, LocalChangeArgsType, SetupPromise } from './Controller';
 import { getIpcArgsLog, IpcAddSchemaArgs, IpcChangeArgsType, IpcInitArgs, IpcMain, IpcRegisterArgs, IpcWindow } from './IpcInterface';
 
-interface ChangeListener {
-    senderId: number;
+
+interface Renderer {
+    // senderId: number;
+    channel: UpdateChannel;
+    subscriptions: Subscription[];
+    disposers: Map<SetupItemId, Lambda[]>;
+    updates: {};
+}
+
+interface Subscription {
     itemId: SetupItemId;
     depth: number;
-    disposers: (() => void)[];
 }
 
 export class Main extends ControllerImpl {
@@ -28,7 +35,6 @@ export class Main extends ControllerImpl {
     private ipcStorage: IpcWindow | undefined;
 
     private promises = new Array<SetupPromise>();
-    private changeListeners = new Array<ChangeListener>();
 
     constructor() {
         super();
@@ -41,21 +47,18 @@ export class Main extends ControllerImpl {
         this.ipc.on('addSchema', this.onAddSchema);
     }
 
-    private senderUpdates = new Array<{}>();
-
-    private updateChannels = new Array<UpdateChannel | undefined>();
-
+    private renderers = new Array<Renderer | undefined>();
 
     async onSetupChanged(e: Event, update: IpcChangeArgsType, persist?: boolean): Promise<void> {
         const mainEvent = e as IpcMainEvent;
-        const updateChannel = this.updateChannels[mainEvent.sender.id];
+        const renderer = this.renderers[mainEvent.sender.id];
 
-        if (!updateChannel)
-            throw new Error(`${callerAndfName()}(${mainEvent.sender.id} doesn't exist in updateChannels ${Array.from(this.updateChannels.keys())})`);
+        if (!renderer)
+            throw new Error(`${callerAndfName()}(${mainEvent.sender.id} doesn't exist in renderer ${Array.from(this.renderers.keys())})`);
 
-        console.log(`${callerAndfName()}[${mainEvent.sender.id}]${getIpcArgsLog(update)}`);
+        // console.log(`${callerAndfName()}[${mainEvent.sender.id}]${getIpcArgsLog(update)}`);
 
-        updateChannel.addReceived(update);
+        renderer.channel.addReceived(update);
 
         super.onSetupChanged(e, update, persist);
     }
@@ -65,12 +68,14 @@ export class Main extends ControllerImpl {
 
         Plugin.add(args.schema);
 
-        for (const listener of this.updateChannels) {
-            if ((listener != undefined) && (listener.ipc.id != e.sender.id)) {
-                console.log(`${callerAndfName()}(${e.sender.id}, ${args.schema.$id}) send to ${listener.ipc.id}`);
-                listener.ipc.send('addSchema', { schema: args.schema });
+        const sendSchema = (listener, id): void => {
+            if ((listener != undefined) && (id != e.sender.id)) {
+                console.log(`${callerAndfName()}(${e.sender.id}, ${args.schema.$id}) send to ${id}`);
+                listener.channel.ipc.send('addSchema', { schema: args.schema });
             }
-        }
+        };
+
+        this.renderers.forEach(sendSchema);
     }
 
 
@@ -81,196 +86,196 @@ export class Main extends ControllerImpl {
     private unRegister = (channelId: number): void => {
         console.log(`${callerAndfName()}[${channelId}]`);
 
-        this.changeListeners
-            .filter(listener => listener.senderId == channelId)
-            .forEach(listener => {
-                console.log(`${callerAndfName()}[${channelId}]: ${listener.itemId},${listener.depth} disposer: ${listener.disposers.length}`);
-                listener.disposers.forEach(disposer => disposer());
-                this.changeListeners.splice(
-                    this.changeListeners.indexOf(listener)
-                );
-            });
+        const renderer = this.renderers[channelId];
 
+        if (!renderer) throw new Error(`${callerAndfName()} can't find [${channelId}] `);
 
-        this.updateChannels[channelId] = undefined;
+        renderer.disposers.forEach(item =>
+            item.forEach(disposer => disposer())
+        );
+
+        this.renderers[channelId] = undefined;
     }
 
     private register = (target: WebContents, { itemId, depth }: IpcRegisterArgs): void => {
-        const senderId = target.id;
+        const { id } = target;
+
+        let renderer = this.renderers[id];
+
+        // if (this.configs.size == 0) {
+        //     // console.log(`${callerAndfName()}[${this.changeListeners.length}]` +
+        //     //     `(senderId=${senderId}, ${itemId}, d=${depth}) ignore - Hopefully own init for full config`);
+        //     return;
+        // }
 
 
-        if (this.configs.size == 0) {
-            // console.log(`${callerAndfName()}[${this.changeListeners.length}]` +
-            //     `(senderId=${senderId}, ${itemId}, d=${depth}) ignore - Hopefully own init for full config`);
-            return;
-        }
+        if (renderer == undefined) {
+            console.log(`${callerAndfName()}[${this.renderers.length}](senderId=${id}, ${itemId}, d=${depth}) create renderer`);
 
-
-        if (this.updateChannels[senderId] == undefined) {
-            console.log(`${callerAndfName()}[${this.changeListeners.length}]` +
-                `(senderId=${senderId}, ${itemId}, d=${depth}) create updateChannel`);
-
-            this.updateChannels[senderId] = new UpdateChannel(target);
-            target.once('destroyed', () => this.unRegister(senderId));
+            this.renderers[id] = renderer = {
+                channel: new UpdateChannel(target),
+                disposers: new Map<SetupItemId, IReactionDisposer[]>(),
+                subscriptions: new Array<Subscription>(),
+                updates: {}
+            };
+            target.once('destroyed', () => this.unRegister(id));
 
         } else {
             // console.log(`${callerAndfName()}[${this.changeListeners.length}]` +
             //     `(senderId=${senderId}, ${itemId}, d=${depth}) updateChannel exists`);
         }
-        const listener: ChangeListener = {
-            senderId,
+
+        const subscription: Subscription = {
             itemId,
-            depth,
-            disposers: new Array<(() => void)>()
+            depth
         };
-
-        this.changeListeners.push(listener);
-
-        if (this.senderUpdates[senderId] == undefined) {
-            this.senderUpdates[senderId] = {};
-        }
-
-        this.connectChangeListenerToExisting(listener);
+        renderer.subscriptions.push(subscription);
+        this.connectChangeListenerToExisting(subscription, renderer);
     }
 
-    connectChangeListenerToExisting(listener: ChangeListener, item?: SetupBase, depth?: number): void {
+    connectChangeListenerToExisting(subscription: Subscription, renderer: Renderer, item?: SetupBase, depth?: number): void {
 
         if (this.configs.size == 0) {
-            console.log(`${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]: no config yet`);
+            console.log(`${callerAndfName()}[${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}]: no config yet`);
             return;
         }
 
-        item = item ?? this.configs.get(listener.itemId);
+        item = item ?? this.configs.get(subscription.itemId);
         depth = depth ?? 0;
 
         if (!item)
-            throw new Error(`${callerAndfName()}([${listener.senderId},${listener.itemId},${listener.depth}] @ ${depth}`);
+            throw new Error(`${callerAndfName()}([${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}] @ ${depth}`);
 
-        this.connectChangeListener(item, listener, depth);
+        this.connectChangeListener(item, renderer);
 
         for (const value of Object.values(item)) {
-            if (((listener.depth == -1) || (depth < listener.depth)) && (value instanceof ObservableSetupBaseMap)) {
+            if (((subscription.depth == -1) || (depth < subscription.depth)) && (value instanceof ObservableSetupBaseMap)) {
                 // console.log(
-                //     `${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]:` +
+                //     `${callerAndfName()}[${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}]:` +
                 //     ` observe ${item.id}.${propertyName} as ObservableSetupBaseMap`);
 
                 for (const child of value.values()) {
                     if (child)
-                        this.connectChangeListenerToExisting(listener, child, depth + 1);
+                        this.connectChangeListenerToExisting(subscription, renderer, child, depth + 1);
                 }
 
             } else if (value instanceof SetupBase) {
                 // console.log(
-                //     `[${this.constructor.name}].connectChangeListenerToExisting[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
-                this.connectChangeListenerToExisting(listener, value, depth);
+                //     `[${this.constructor.name}].connectChangeListenerToExisting[${renderer.channel.ipc.id}` + 
+                //     `,${subscription.itemId},${subscription.depth}]: observe ${item.id}.${propertyName}`);
+                this.connectChangeListenerToExisting(subscription, renderer, value, depth);
             } else {
                 // console.log(
-                //     `${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]: ignore ${propertyName}.${item.id}`);
+                //     `${callerAndfName()}[${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}]: ignore ${propertyName}.${item.id}`);
             }
         }
     }
 
-    private connectChangeListener(item: SetupBase, listener: ChangeListener, offset = 0): void {
-        // console.log(`${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}] ${item.id} @${listener.depth - offset}`);
+    private connectChangeListener(item: SetupBase, renderer: Renderer): void {
+        // console.log(`${callerAndfName()}[${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}] ${item.id} @${listener.depth - offset}`);
 
-        for (const [propertyName, value] of Object.entries(item)) {
-            if (value instanceof ObservableSetupBaseMap) {
-                // console.log(
-                //     `${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]:` +
-                //     ` observe ${item.id}.${propertyName} as ObservableSetupBaseMap`);
-                listener.disposers.push(
-                    (value as ObservableSetupBaseMap<SetupBase>)
-                        .observe((changes: IMapDidChange<string, SetupBase | null>) => {
-                            if ((changes.type == 'update') && (changes.oldValue == null) && (changes.newValue != null)) {
-                                console.log(
-                                    `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
-                                    ` (${item.id}.${propertyName}.${changes.name}) ignore overwriting null`);
-                                return;
-                            }
-                            // console.debug(
-                            //     `[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]` +
-                            //     ` ${item.id}.${propertyName}.${changes.name}, ${changes.type})`);
-                            this.onChangeItemChanged(
-                                listener,
-                                {
-                                    item: item,
-                                    map: propertyName,
-                                    name: changes.name,
-                                    type: changes.type,
-                                    ...((changes.type == 'add' || changes.type == 'update') ? { newValue: changes.newValue } : undefined)
-                                } as LocalChangeArgsType
-                            );
-                        })
-                );
-            } else if (isObservableArray(value)) {
-                console.log(`[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
+        let disposers = renderer.disposers.get(item.id);
 
-                listener.disposers.push(
-                    value.observe(
-                        (change: IArrayChange | IArraySplice) => {
-                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                            const { object, ...rest } = change;
+        if (!disposers) {
+            disposers = new Array<Lambda>();
+            renderer.disposers.set(item.id, disposers);
 
-                            this.onChangeItemChanged(
-                                listener,
-                                {
-                                    ...rest,
-                                    array: propertyName,
-                                    item
+            for (const [propertyName, value] of Object.entries(item)) {
+                if (value instanceof ObservableSetupBaseMap) {
+                    // console.log(
+                    //     `${callerAndfName()}[${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}]:` +
+                    //     ` observe ${item.id}.${propertyName} as ObservableSetupBaseMap`);
+                    disposers.push(
+                        (value as ObservableSetupBaseMap<SetupBase>)
+                            .observe((changes: IMapDidChange<string, SetupBase | null>) => {
+                                if ((changes.type == 'update') && (changes.oldValue == null) && (changes.newValue != null)) {
+                                    console.log(
+                                        `[${this.constructor.name}].connectChangeListener[${renderer.channel.ipc.id}]` +
+                                        ` (${item.id}.${propertyName}.${changes.name}) ignore overwriting null`);
+                                    return;
                                 }
-                            );
-                        },
-                        false
-                    )
-                );
-            } else if (isObservableProp(item, propertyName)) {
-                // console.log(`[${this.constructor.name}].connectChangeListener[${listener.senderId},${listener.itemId},${listener.depth}]: observe ${item.id}.${propertyName}`);
+                                // console.debug(
+                                //     `[${this.constructor.name}].connectChangeListener[${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}]` +
+                                //     ` ${item.id}.${propertyName}.${changes.name}, ${changes.type})`);
+                                this.onChangeItemChanged(
+                                    renderer,
+                                    {
+                                        item: item,
+                                        map: propertyName,
+                                        name: changes.name,
+                                        type: changes.type,
+                                        ...((changes.type == 'add' || changes.type == 'update') ? { newValue: changes.newValue } : undefined)
+                                    } as LocalChangeArgsType
+                                );
+                            })
+                    );
+                } else if (isObservableArray(value)) {
+                    // console.log(`[${this.constructor.name}].connectChangeListener[${renderer.channel.ipc.id}]: observe ${item.id}.${propertyName}`);
 
-                listener.disposers.push(
-                    reaction(
-                        () => item[propertyName],
-                        newValue => this.onChangeItemChanged(listener, { item, name: propertyName, type: 'update', newValue, oldValue: item[propertyName] }),
-                        {
-                            name: `ChangeListener[${listener.senderId}, ${listener.itemId}, ${listener.depth}] @ ${item.id}.${propertyName} @${offset}`
-                        }
-                    )
-                );
-            } else {
-                // console.log(`${callerAndfName()}[${listener.senderId},${listener.itemId},${listener.depth}]: ignore ${propertyName}.${item.id}`);
+                    disposers.push(
+                        value.observe(
+                            (change: IArrayChange | IArraySplice) => {
+                                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                                const { object, ...rest } = change;
+
+                                this.onChangeItemChanged(
+                                    renderer,
+                                    {
+                                        ...rest,
+                                        array: propertyName,
+                                        item
+                                    }
+                                );
+                            },
+                            false
+                        )
+                    );
+                } else if (isObservableProp(item, propertyName)) {
+                    // console.log(`[${this.constructor.name}].connectChangeListener[${renderer.channel.ipc.id}]: observe ${item.id}.${propertyName}`);
+
+                    disposers.push(
+                        reaction(
+                            () => item[propertyName],
+                            newValue => this.onChangeItemChanged(renderer, { item, name: propertyName, type: 'update', newValue, oldValue: item[propertyName] }),
+                            {
+                                name: `ChangeListener[${renderer.channel.ipc.id}, ${item.id}.${propertyName}]`
+                            }
+                        )
+                    );
+                } else {
+                    // console.log(`${callerAndfName()}[${renderer.channel.ipc.id}]: ignore ${propertyName}.${item.id}`);
+                }
             }
         }
     }
 
-    private onChangeItemChanged = (listener: ChangeListener, change: LocalChangeArgsType): void => {
+    private onChangeItemChanged = (renderer: Renderer, change: LocalChangeArgsType): void => {
         const { item, type } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
                 `${callerAndfName()}(${name}, ${type} ): Invalid object: ${JSON.stringify(item)}`);
 
-        const channel = this.updateChannels[listener.senderId];
-
-        if (channel == undefined) {
-            console.error(`${callerAndfName()}[${listener.senderId}](${ControllerImpl.getLocalArgsLog(change)} ): no channel`);
-            this.unRegister(listener.senderId);
-            return;
-        }
-        channel.send('change', ControllerImpl.local2Ipc(change));
+        renderer.channel.send('change', ControllerImpl.local2Ipc(change));
     }
 
 
     private connectChangeListeners(item: SetupBase): void {
         // console.log(`${callerAndfName()}[${this.changeListeners.length}](${item.id},${fireImmediately})`);
-        for (const listener of this.changeListeners) {
-            /// Check if ancestor in within depth is listening
-            for (
-                let offset = 0, ancestor: SetupBase | undefined = item;
-                ((listener.depth == -1) || (offset <= listener.depth)) && (ancestor);
-                offset += 1, ancestor = ancestor.parentId == ancestor.id ? undefined : this.configs.get(ancestor.parentId)
-            ) {
-                if (listener.itemId == ancestor.id) {
-                    this.connectChangeListener(item, listener, offset);
-                    break;
+        for (const renderer of this.renderers) {
+            if (renderer) {
+                for (const subscription of renderer.subscriptions) {
+                    /// Check if ancestor in within depth is listening
+                    for (
+                        let offset = 0, ancestor: SetupBase | undefined = item;
+                        ((subscription.depth == -1) || (offset <= subscription.depth)) && (ancestor);
+                        offset += 1, ancestor = ancestor.parentId == ancestor.id ? undefined : this.configs.get(ancestor.parentId)
+                    ) {
+                        if (subscription.itemId == ancestor.id) {
+                            this.connectChangeListener(item, renderer);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -377,12 +382,12 @@ export class Main extends ControllerImpl {
             console.warn(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: ipcStorage is destroyed`);
             return;
         }
-        
-        const channel = this.updateChannels[this.ipcStorage.id];
+
+        const channel = this.renderers[this.ipcStorage.id]?.channel;
 
         if (channel == undefined)
             throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: no channel for ${this.ipcStorage.id}`);
-        
+
         // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} -> [${this.ipcStorage.id}]`);
 
         channel.send(

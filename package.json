@@ -122,6 +122,7 @@
         "@types/react-dom": "^16.8.4",
         "@types/react-router-dom": "^5.1.4",
         "@types/shortid": "^0.0.29",
+        "@types/suncalc": "^1.8.0",
         "@types/webpack-env": "^1.15.1",
         "ajv": "^6.12.2",
         "chartist": "^0.11.4",
@@ -141,13 +142,13 @@
         "react": "^16.8.1",
         "react-chartist": "^0.14.3",
         "react-dom": "^16.13.1",
-        "react-google-maps": "9.4.5",
         "react-router-dom": "^5.1.2",
         "react-scripts": "^3.4.1",
         "react-swipeable-views": "^0.13.9",
         "require-glob": "^3.2.0",
         "rxjs": "^6.5.5",
         "shortid": "^2.2.15",
+        "suncalc": "^1.8.0",
         "typescript": "^3.8.3",
         "worker-loader": "^2.0.0"
     }

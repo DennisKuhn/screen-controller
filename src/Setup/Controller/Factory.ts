@@ -5,6 +5,7 @@ import { MainWindow } from './MainWindow';
 import { Renderer } from './Renderer';
 import { checkOrphans } from '../../utils/debugging';
 
+
 interface Win extends Window {
     checkOrphans: () => void;
 }
