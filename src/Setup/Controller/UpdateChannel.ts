@@ -1,8 +1,8 @@
 import { isEqual } from 'lodash';
 import { Observable, Subscriber } from 'rxjs';
 import { distinctUntilChanged, tap } from 'rxjs/operators';
-import { callerAndfName } from '../utils/debugging';
-import { IpcChangeArgsType, IpcWindow, getIpcArgsLog } from './Controller/IpcInterface';
+import { callerAndfName } from '../../utils/debugging';
+import { IpcChangeArgsType, IpcWindow, getIpcArgsLog } from './IpcInterface';
 import { performance } from 'perf_hooks';
 
 interface IpcSend {

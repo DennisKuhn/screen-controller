@@ -3,9 +3,9 @@ import { SetupBaseInterface } from '../SetupInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
+import { Gradient as GradientInterface } from './GradientInterface';
 
-
-export class Gradient extends SetupBase {
+export class Gradient extends SetupBase implements GradientInterface {
     static readonly schema: JSONSchema7 = {
         $id: Gradient.name,
         allOf: [

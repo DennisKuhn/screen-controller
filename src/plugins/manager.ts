@@ -9,7 +9,7 @@ import { callerAndfName } from '../utils/debugging';
 import { Plugin } from './Plugin';
 import { Registration } from './PluginInterface';
 
-const pluginDir = 'D:\\Dennis\\Projects\\wallpaper-plugins\\dist\\';
+const pluginDir = 'D:\\Dennis\\Projects\\wallpaper-plugins\\dist\\src\\';
 
 type PluginReg = Registration;
 type InnerPlugin = { default: PluginReg };

@@ -8,6 +8,7 @@ import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
 import { create } from '../SetupFactory';
 import { Time } from '../Default/Time';
+import { cloneDeep } from 'lodash';
 
 export class Screen extends SetupBase {
     static schema: JSONSchema7 = {

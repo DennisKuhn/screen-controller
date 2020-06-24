@@ -1,6 +1,7 @@
 import { JSONSchema7 } from 'json-schema';
 import React from 'react';
 import { PluginInterface as PluginSetup } from '../Setup/Application/PluginInterface';
+import { Screen } from '../Setup/Application/Screen';
 
 //export const PLUGIN_SCHEMA_REF = { $ref: '#/definitions/Plugin' };
 export const PLUGIN_SCHEMA_REF = { $ref: 'Plugin' };
@@ -9,7 +10,7 @@ export interface Plugin {
 }
 
 export interface RenderPlugin extends Plugin {
-    render: (gradient: any) => void;
+    render: (screen: Screen, gradient?: CanvasGradient | string) => void;
 }
 
 export interface IntervalPlugin extends RenderPlugin {

@@ -48,6 +48,7 @@ export class Time extends SetupBase implements TimeInterface {
                 type: 'object',
                 properties: {
                     className: { const: Time.name },
+                    local: { type: 'number' },
                     second: { type: 'number' },
                     minute: { type: 'number' },
                     hour12: { type: 'number' },
@@ -60,7 +61,7 @@ export class Time extends SetupBase implements TimeInterface {
                     yearFull: { type: 'number' },
                     sunPosition: { type: 'number' }
                 },
-                required: ['second', 'minute', 'hour12', 'hour24', 'isAm', 'dayOfTheWeek', 'dayOfTheMonth', 'month', 'yearShort', 'yearFull', 'sunPosition']
+                required: ['local', 'second', 'minute', 'hour12', 'hour24', 'isAm', 'dayOfTheWeek', 'dayOfTheMonth', 'month', 'yearShort', 'yearFull', 'sunPosition']
             }
         ]
     }
@@ -70,6 +71,7 @@ export class Time extends SetupBase implements TimeInterface {
         name: { 'ui:widget': 'hidden' }
     };
 
+    @observable local: number;
     @observable second: number;
     @observable minute: number;
     @observable hour12: number;
@@ -86,6 +88,7 @@ export class Time extends SetupBase implements TimeInterface {
     constructor(source: SetupBaseInterface) {
         super(source);
 
+        this.local = source['local'];
         this.second = source['second'];
         this.minute = source['minute'];
         this.hour12 = source['hour12'];

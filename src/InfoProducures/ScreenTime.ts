@@ -36,6 +36,7 @@ const update = (screen: Screen): void => {
     }
     const position: SunPositions = SunPositions[positionEntry[0]];
     
+    (time.local != now.valueOf()) && (time.local = now.valueOf());
     (time.second != now.getSeconds()) && (time.second = now.getSeconds());
     (time.minute != now.getMinutes()) && (time.minute = now.getMinutes());
     (time.hour12 != H24_12(now.getHours())) && (time.hour12 = H24_12(now.getHours()));

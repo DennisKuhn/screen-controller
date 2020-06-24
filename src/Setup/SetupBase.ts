@@ -4,7 +4,7 @@ import { ObservableSetupBaseMap, ObservableArray } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary, cloneDeep } from 'lodash';
 import Ajv, { ValidateFunction, CompilationContext } from 'ajv';
-import { observable, toJS, isObservableArray } from 'mobx';
+import { observable, toJS, isObservableArray, $mobx } from 'mobx';
 import { PropertyKey, SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
@@ -454,6 +454,7 @@ export abstract class SetupBase {
         this.className = source.className;
         this.name = source.name;
         SetupBase.instances[this.id] = this;
+        SetupBase.mobxInstances[this[$mobx].name] = this;
     }
 
 
@@ -486,7 +487,7 @@ export abstract class SetupBase {
         if (source.length) {
             switch (typeof source[0]) {
                 case 'object':
-                    array = observable.array<T>([], { name: this.id + '-' + name });
+                    array = observable.array<T>([], { name: this.id + '.' + name });
                     for (const plain of source) {
                         const plainSetup = plain as SetupBaseInterface;
                         if (plainSetup.id) {
@@ -500,13 +501,13 @@ export abstract class SetupBase {
                 case 'boolean':
                 case 'number':
                 case 'string':
-                    array = observable.array<T>(source, { name: this.id + '-' + name });
+                    array = observable.array<T>(source, { name: this.id + '.' + name });
                     break;
                 default:
                     throw new Error(`$${callerAndfName()}: unsupported type == ${typeof source[0]} = ${JSON.stringify(source[0])}`);
             }
         } else {
-            array = observable.array<T>(source, { name: this.id + '-' + name });
+            array = observable.array<T>(source, { name: this.id + '.' + name });
         }
 
         return array;
@@ -684,7 +685,8 @@ export abstract class SetupBase {
         return newItem;
     }
 
-    private static instances: { [index: string]: SetupBase } = {};
+    public static instances: { [index: string]: SetupBase } = {};
+    public static mobxInstances: { [index: string]: SetupBase } = {};
 
     public static getNewId(prefix: string): string {
         return prefix + '-' + shortid.generate();

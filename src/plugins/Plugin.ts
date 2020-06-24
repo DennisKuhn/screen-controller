@@ -1,9 +1,10 @@
+import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, Lambda, observe } from 'mobx';
 import { Plugin as PluginSetup } from '../Setup/Application/Plugin';
-import { Plugin as PluginInterface, Registration, CanvasRegistration, HtmlRegistration, PlainRegistration, RenderPlugin, IntervalPlugin } from './PluginInterface';
-import { autorun, IReactionDisposer } from 'mobx';
-import controller from '../Setup/Controller/Factory';
 import { Screen } from '../Setup/Application/Screen';
+import controller from '../Setup/Controller/Factory';
+import { SetupBase } from '../Setup/SetupBase';
 import { callerAndfName } from '../utils/debugging';
+import { CanvasRegistration, HtmlRegistration, PlainRegistration, Plugin as PluginInterface, Registration, RenderPlugin } from './PluginInterface';
 
 
 /**
@@ -13,7 +14,7 @@ export class Plugin {
 
     private plugin?: PluginInterface;
 
-    private render?: (gradient: any) => void;
+    private render?: (screen: Screen, gradient?: CanvasGradient | string) => void;
 
     private element?: HTMLElement;
     private div?: HTMLDivElement;
@@ -84,12 +85,60 @@ export class Plugin {
             controller.getSetup(Screen.name, 0)
                 .then(setup => {
                     this.screen = setup as Screen;
-                    this.renderAutorunDisposers.push(
-                        autorun(this.renderer)
-                    );
+                    this.startRender();
                 });
         }
     }
+
+    private observers = new Array<Lambda>();
+
+
+    startObserver = (observableInfo: IDependencyTree): void => {
+        let matches = /^(.+@[0-9]+)(\.)(.*)$/.exec(observableInfo.name);
+        let objectId;
+        let objectProperty;
+        let object;
+
+        if (matches?.length == 4) {
+            objectId = matches?.[1];
+            objectProperty = matches?.[3];
+            if (!objectId) throw new Error(`Plugin[${this.setup.id}] dependency=${observableInfo.name} can't get objectId`);
+            if (!objectProperty) throw new Error(`Plugin[${this.setup.id}] dependency=${observableInfo.name} can't get objectProperty`);
+
+            object = SetupBase.mobxInstances[objectId];
+            this.observers.push(
+                observe(object, objectProperty as any, this.renderer)
+            );
+        } else {
+            matches = /^(.+)(\.)(.+)$/.exec(observableInfo.name);
+
+            objectId = matches?.[1];
+            objectProperty = matches?.[3];
+            if (!objectId) throw new Error(`Plugin[${this.setup.id}] dependency=${observableInfo.name} can't get objectId`);
+            if (!objectProperty) throw new Error(`Plugin[${this.setup.id}] dependency=${observableInfo.name} can't get objectProperty`);
+
+            object = SetupBase.instances[objectId];
+            this.observers.push(
+                observe(object[objectProperty], this.renderer)
+            );
+        }
+        observableInfo.dependencies?.forEach(
+            this.startObserver
+        );
+
+        console.log(`${callerAndfName()}[${this.setup.id}] dependency=${observableInfo.name} [${objectId}].${objectProperty}`);
+    };
+
+    startRender = (): void => {
+        const disposer = autorun(this.renderer);
+        const toBeObserved = getDependencyTree(disposer);
+
+        disposer();
+
+        toBeObserved.dependencies?.forEach(
+            this.startObserver
+        );
+    };
 
     lastFps = 0;
     start?: number;
@@ -98,6 +147,10 @@ export class Plugin {
     continuesSkipped = 0;
     requestedAnimationFrame?: number;
 
+    /**
+     * If not rendering requestAnimaitonFrame for renderNow.
+     * If this.start is undefined, the requestAnimationFrame is skipped, to be able to detect dependcies of render
+     */
     private renderer = (/*r: IReactionPublic*/): void => {
         if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
         if (this.lastFps != this.screen.fps) {
@@ -108,16 +161,12 @@ export class Plugin {
             this.start = undefined;
         }
 
-        // Give mobx something to observe for autorun
-        this.screen.getShallow();
-        this.setup.getShallow();
-
         if (this.rendering === true) {
             this.skippedFrames += 1;
             this.continuesSkipped += 1;
             // Wait for next frame
         } else {
-            if ((this.continuesSkipped > 1) && ((this.frames + this.skippedFrames) > (3 * this.screen.fps)) && (this.screen.fps > this.continuesSkipped) ) {
+            if ((this.continuesSkipped > 1) && ((this.frames + this.skippedFrames) > (3 * this.screen.fps)) && (this.screen.fps > this.continuesSkipped)) {
                 console.warn(
                     `${callerAndfName()}: continuesSkipped=${this.continuesSkipped} =>` +
                     ` screen.fps=${this.screen.fps}-=${this.continuesSkipped - 1} ${this.frames}+${this.skippedFrames}`);
@@ -126,9 +175,13 @@ export class Plugin {
             this.continuesSkipped = 0;
             this.rendering = true;
 
-            this.requestedAnimationFrame = requestAnimationFrame(
-                this.renderNow
-            );
+            if (this.start === undefined) {
+                this.renderNow(performance.now());
+            } else {
+                this.requestedAnimationFrame = requestAnimationFrame(
+                    this.renderNow
+                );
+            }
         }
     }
 
@@ -146,10 +199,15 @@ export class Plugin {
 
         if (this.canvas) {
             this.render(
+                this.screen,
                 this.createGradient(this.screen)
             );
         } else if (this.div) {
-            this.render(this.screen.activeGradient?.colors[0] ?? 'green');
+            if (this.screen?.activeGradient?.colors[0] === undefined) {
+                this.render(this.screen);
+            } else {
+                this.render(this.screen, this.screen.activeGradient.colors[0]);
+            }
         }
 
         (this.frames % dbgFrames == 1)
@@ -211,6 +269,7 @@ export class Plugin {
                 }
                 break;
         }
+        // console.log(`${callerAndfName()}[${this.setup.className}][${this.setup.id}] `, {type, colors, scaledBounds, gradient});
         return gradient;
     };
 
@@ -253,6 +312,11 @@ export class Plugin {
             disposer => disposer()
         );
         this.renderAutorunDisposers.length = 0;
+
+        this.observers.forEach(
+            disposer => disposer()
+        );
+        this.observers.length = 0;
 
         this.interval &&
             clearInterval(this.interval);

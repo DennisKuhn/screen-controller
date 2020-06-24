@@ -8,9 +8,9 @@ import { resolve } from '../JsonSchemaTools';
 import { SetupBase } from '../SetupBase';
 import { create } from '../SetupFactory';
 import { SetupItemId } from '../SetupInterface';
-import { UpdateChannel } from '../UpdateChannel';
+import { UpdateChannel } from './UpdateChannel';
 import { ControllerImpl, LocalChangeArgsType, SetupPromise } from './Controller';
-import { getIpcArgsLog, IpcAddSchemaArgs, IpcChangeArgsType, IpcInitArgs, IpcMain, IpcRegisterArgs, IpcWindow } from './IpcInterface';
+import { IpcAddSchemaArgs, IpcChangeArgsType, IpcInitArgs, IpcMain, IpcRegisterArgs, IpcWindow } from './IpcInterface';
 
 
 interface Renderer {

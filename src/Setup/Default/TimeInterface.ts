@@ -18,6 +18,7 @@ export enum SunPositions {
 }
 
 export interface Time extends SetupBaseInterface {
+    local: number;
     second: number;
     minute: number;
     hour12: number;
