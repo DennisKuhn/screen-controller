@@ -369,7 +369,6 @@ export class Main extends ControllerImpl {
 
     protected persist = (change: LocalChangeArgsType): void => {
         const { item } = change;
-        // const { item } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(

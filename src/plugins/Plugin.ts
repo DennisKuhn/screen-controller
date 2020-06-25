@@ -1,4 +1,4 @@
-import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, Lambda, observe } from 'mobx';
+import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, Lambda, observe, IValueDidChange } from 'mobx';
 import { Plugin as PluginSetup } from '../Setup/Application/Plugin';
 import { Screen } from '../Setup/Application/Screen';
 import controller from '../Setup/Controller/Factory';
@@ -92,12 +92,33 @@ export class Plugin {
 
     private observers = new Array<Lambda>();
 
+    observeChangePropertyObject = (change: IValueDidChange<any>): void => {
+        switch (typeof change.newValue) {
+            case 'object':
+                console.debug(`${callerAndfName()} ${change.object['id']} type=${typeof change.newValue} ${change.newValue['id']}`, change);
+
+                this.resetFrameStats();
+                this.disposeRunning();
+                this.start = undefined;
+                this.startRender();
+                break;
+            case 'boolean':
+            case 'number':
+            case 'string':
+                console.error(`${callerAndfName()} ${change.object['id']} ignore type=${typeof change.newValue}`, change);
+                break;
+            default:
+                console.error(`${callerAndfName()} ${change.object['id']} unsupported type=${typeof change.newValue}`, change);
+                break;
+        }
+    };
 
     startObserver = (observableInfo: IDependencyTree): void => {
         let matches = /^(.+@[0-9]+)(\.)(.*)$/.exec(observableInfo.name);
         let objectId;
         let objectProperty;
         let object;
+        let type;
 
         if (matches?.length == 4) {
             objectId = matches?.[1];
@@ -106,9 +127,18 @@ export class Plugin {
             if (!objectProperty) throw new Error(`Plugin[${this.setup.id}] dependency=${observableInfo.name} can't get objectProperty`);
 
             object = SetupBase.mobxInstances[objectId];
+            
             this.observers.push(
                 observe(object, objectProperty as any, this.renderer)
             );
+            type = typeof object[objectProperty];
+            switch (type) {
+                case 'object':
+                case 'undefined':
+                    console.log(`${callerAndfName()}[${this.setup.id}] dependency=${observableInfo.name} [${objectId}].${objectProperty}/${type} observeChangePropertyObject`);
+                    observe(object, objectProperty as any, this.observeChangePropertyObject);
+                    break;
+            }
         } else {
             matches = /^(.+)(\.)(.+)$/.exec(observableInfo.name);
 
@@ -122,11 +152,10 @@ export class Plugin {
                 observe(object[objectProperty], this.renderer)
             );
         }
+        console.log(`${callerAndfName()}[${this.setup.id}] dependency=${observableInfo.name} [${objectId}].${objectProperty}/${type}`, observableInfo.dependencies);
         observableInfo.dependencies?.forEach(
             this.startObserver
         );
-
-        console.log(`${callerAndfName()}[${this.setup.id}] dependency=${observableInfo.name} [${objectId}].${objectProperty}`);
     };
 
     startRender = (): void => {
@@ -147,6 +176,13 @@ export class Plugin {
     continuesSkipped = 0;
     requestedAnimationFrame?: number;
 
+    resetFrameStats = (): void => {
+        this.frames = 0;
+        this.skippedFrames = 0;
+        this.continuesSkipped = 0;
+        this.start = undefined;
+    }
+
     /**
      * If not rendering requestAnimaitonFrame for renderNow.
      * If this.start is undefined, the requestAnimationFrame is skipped, to be able to detect dependcies of render
@@ -155,10 +191,7 @@ export class Plugin {
         if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
         if (this.lastFps != this.screen.fps) {
             this.lastFps = this.screen.fps;
-            this.frames = 0;
-            this.skippedFrames = 0;
-            this.continuesSkipped = 0;
-            this.start = undefined;
+            this.resetFrameStats();
         }
 
         if (this.rendering === true) {
@@ -303,7 +336,7 @@ export class Plugin {
         }
     }
 
-    close = (): void => {
+    disposeRunning = (): void => {
         this.requestedAnimationFrame &&
             cancelAnimationFrame(this.requestedAnimationFrame);
         this.requestedAnimationFrame = undefined;
@@ -321,6 +354,12 @@ export class Plugin {
         this.interval &&
             clearInterval(this.interval);
         this.interval = undefined;
+
+        this.rendering = false;
+    }
+
+    close = (): void => {
+        this.disposeRunning();
 
         this.element &&
             window.document.body.removeChild(this.element);

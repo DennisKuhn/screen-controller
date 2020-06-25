@@ -1,4 +1,4 @@
-import { isObservableProp, intercept, ObservableMap, IMapWillChange, IValueWillChange, isObservableArray, IArrayWillChange, IArrayWillSplice, IObservableArray } from 'mobx';
+import { isObservableProp, intercept, ObservableMap, IMapWillChange, IValueWillChange, isObservableArray, IArrayWillChange, IArrayWillSplice, IObservableArray, IObjectWillChange } from 'mobx';
 import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent } from 'electron';
 import { isEqual, cloneDeep } from 'lodash';
@@ -261,14 +261,36 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
     protected onItemConnected: ((item: SetupBase) => void) | undefined;
 
-
     protected connectPersistPropagate(args: ConnectItemArgs): void {
         const { item } = args;
+
 
         if (!this.configs.has(item.id)) {
             // console.log( `${callerAndfName()}( ${item.className}[${item.id}]` );
 
             this.configs.set(item.id, item);
+
+            //TODO: Use below for value changes and below for maps and array (e.g. remove isOBservableProp)
+            // intercept(
+            //     item,
+            //     (change: IObjectWillChange) => {
+            //         const { name } = change;
+            //         if (typeof name !== 'string') throw new Error(`${callerAndfName()} typeof name == ${typeof name} is not supported, must be string`);
+
+            //         switch (change.type) {
+            //             case 'add':
+            //                 this.onItemChanged({ item, name, type: change.type, newValue: change.newValue });
+            //                 break;
+            //             case 'update':
+            //                 this.onItemChanged({ item, name, type: change.type, newValue: change.newValue, oldValue: item[name] });
+            //                 break;
+            //             case 'remove':
+            //                 this.onItemChanged({ item, name, type: change.type });
+            //                 break;
+            //         }
+            //         return change;
+            //     }
+            // );
 
             for (const [propertyName, value] of Object.entries(item)) {
                 if (value instanceof ObservableSetupBaseMap) {
@@ -384,9 +406,9 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             if (newSetup) {
                 this.connectPersistPropagate({ item: newSetup });
             }
-            if (this.remoteUpdates.has(change.item.id)) {
-                this.addRemoteUpdate(ipcChange);
-            }
+            // if (this.remoteUpdates.has(change.item.id)) {
+            this.addRemoteUpdate(ipcChange);
+            // }
             this.propagate && this.propagate(ipcChange);
             this.tryPersist(change);
         }
@@ -691,16 +713,12 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
     async onSetupChanged(e: Event, update: IpcChangeArgsType, persist?: boolean): Promise<void> {
         const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
 
+        const hasItem = this.configs.has(update.item);
         // console.log(
         //     `ControllerImpl[${this.constructor.name}].onSetupChanged(${sender}, ${update.item}.${'map' in update ? update['map'] + '.' : ''}.${update.name}` +
         //     ` ${update.type} = ${update['newValue']}, persist=${persist}) hasItem=${this.configs.has(update.item)}`
         // );
 
-        if ( /* (process.type != 'browser') && */ (!this.configs.has(update.item))) {
-            console.error(
-                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)} hasItem=-> ${this.configs.has(update.item)} <- proces.type=${process.type}`
-            );
-        }
 
         const localItem =
             this.configs.get(update.item) ??
@@ -708,6 +726,18 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         const map = (update as IpcMapChangeArgsType).map;
         const name = (update as IpcItemChangeArgsType).name;
         const array = (update as IpcArrayChangeArgsType).array;
+
+        if ( /* (process.type != 'browser') && */ (!hasItem)) {
+            const parent = this.configs.get(localItem.parentId) ??
+                await this.getSetup(localItem.parentId, 0);
+            console.warn(
+                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)} hasItem=${hasItem} localItem=${localItem.parentId}.${localItem.parentProperty}.${localItem.id}` +
+                ` .parent=${localItem.parent?.id} parent=${parent?.id} .${localItem.parentProperty}=${parent?.[localItem.parentProperty]}`
+            );
+            if (parent[localItem.parentProperty] === undefined) {
+                parent[localItem.parentProperty] = localItem;
+            }
+        }
 
         if (this.addRemoteUpdate(update)) {
             if (map) {
