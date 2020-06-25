@@ -26,8 +26,9 @@ export class Screen extends SetupBase {
                     longitude: { type: 'number' },
                     latitude: { type: 'number' },
                     time: { allOf: [{ $ref: Time.name }, { 'sc-persist': false }] } as JSONSchema7Definition,
-                    fps: { type: 'number', default: 25 },
+                    fps: { type: 'number', default: 5 },
                     rotateColors: { type: 'boolean', default: true },
+                    rotateSteps: { type: 'number', default: 3, minimum: 1, maximum: 359 },
                     startGradient: { $ref: Gradient.name },
                     activeGradient: { allOf: [{ $ref: Gradient.name }, { 'sc-persist': false }] } as JSONSchema7Definition,
                     displays: {
@@ -52,6 +53,7 @@ export class Screen extends SetupBase {
 
     displays: ObservableSetupBaseMap<Display>;
     @observable rotateColors = true;
+    @observable rotateSteps: number;
     @observable fps: number;
     @observable startGradient: Gradient;
     @observable activeGradient?: Gradient;
@@ -65,6 +67,8 @@ export class Screen extends SetupBase {
         this.displays = this.createMap<Display>(source['displays'], 'displays');
 
         this.rotateColors = source['rotateColors'];
+        this.rotateSteps = source['rotateSteps'];
+
         this.fps = source['fps'];
 
         this.startGradient = new Gradient(source['startGradient']);

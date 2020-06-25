@@ -1,5 +1,6 @@
 import { Renderer } from './Renderer';
 import { Browser } from '../Application/Browser';
+import { callerAndfName } from '../../utils/debugging';
 
 type Size = { width: number; height: number };
 type SizeCallback = (size: Size) => void;
@@ -30,12 +31,12 @@ export class Paper extends Renderer {
         if (!this.browser) {
             this.browser = await this.getSetup(this.browserId, -1) as Browser;
 
-            // console.log(
-            //     `${this.constructor.name}[${this.browserId}](): got Browser (${this.browser.plugins.size}):` +
-            //     ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
-            //     ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`,
-            //     this.browser
-            // );
+            console.log(
+                `${callerAndfName()}[${this.browserId}](): ${this.browser.name} (${this.browser.plugins.size}):` +
+                ` width=${this.browser.relative.width}/${this.browser.scaled?.width}/${this.browser.device?.width}` +
+                ` height=${this.browser.relative.height}/${this.browser.scaled?.height}/${this.browser.device?.height}`,
+                this.browser
+            );
         }
         return this.browser;
     }

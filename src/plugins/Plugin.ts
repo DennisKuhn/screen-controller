@@ -1,10 +1,12 @@
-import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, Lambda, observe, IValueDidChange } from 'mobx';
+import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, Lambda, observe, IValueDidChange, IReactionPublic } from 'mobx';
 import { Plugin as PluginSetup } from '../Setup/Application/Plugin';
 import { Screen } from '../Setup/Application/Screen';
 import controller from '../Setup/Controller/Factory';
 import { SetupBase } from '../Setup/SetupBase';
 import { callerAndfName } from '../utils/debugging';
 import { CanvasRegistration, HtmlRegistration, PlainRegistration, Plugin as PluginInterface, Registration, RenderPlugin } from './PluginInterface';
+import { Resolver } from 'dns';
+import { cloneDeep } from 'lodash';
 
 
 /**
@@ -46,7 +48,7 @@ export class Plugin {
             this.element.style.border = '1px solid orange';
             window.document.body.appendChild(this.element);
 
-            this.renderAutorunDisposers.push(autorun(this.setBounds));
+            this.setBoundsDisposer = autorun(this.setBounds);
         }
     }
 
@@ -95,7 +97,7 @@ export class Plugin {
     observeChangePropertyObject = (change: IValueDidChange<any>): void => {
         switch (typeof change.newValue) {
             case 'object':
-                console.debug(`${callerAndfName()} ${change.object['id']} type=${typeof change.newValue} ${change.newValue['id']}`, change);
+                console.debug(`${callerAndfName()} [${this.setup.id}]  ${change.object['id']} type=${typeof change.newValue} ${change.newValue['id']}`, change);
 
                 this.resetFrameStats();
                 this.disposeRunning();
@@ -105,10 +107,10 @@ export class Plugin {
             case 'boolean':
             case 'number':
             case 'string':
-                console.error(`${callerAndfName()} ${change.object['id']} ignore type=${typeof change.newValue}`, change);
+                console.error(`${callerAndfName()} [${this.setup.id}]  ${change.object['id']} ignore type=${typeof change.newValue}`, change);
                 break;
             default:
-                console.error(`${callerAndfName()} ${change.object['id']} unsupported type=${typeof change.newValue}`, change);
+                console.error(`${callerAndfName()} [${this.setup.id}] ${change.object['id']} unsupported type=${typeof change.newValue}`, change);
                 break;
         }
     };
@@ -127,7 +129,7 @@ export class Plugin {
             if (!objectProperty) throw new Error(`Plugin[${this.setup.id}] dependency=${observableInfo.name} can't get objectProperty`);
 
             object = SetupBase.mobxInstances[objectId];
-            
+
             this.observers.push(
                 observe(object, objectProperty as any, this.renderer)
             );
@@ -135,7 +137,7 @@ export class Plugin {
             switch (type) {
                 case 'object':
                 case 'undefined':
-                    console.log(`${callerAndfName()}[${this.setup.id}] dependency=${observableInfo.name} [${objectId}].${objectProperty}/${type} observeChangePropertyObject`);
+                    // console.debug(`${callerAndfName()}[${this.setup.id}] dependency=${observableInfo.name} [${objectId}].${objectProperty}/${type} observeChangePropertyObject`);
                     observe(object, objectProperty as any, this.observeChangePropertyObject);
                     break;
             }
@@ -152,17 +154,44 @@ export class Plugin {
                 observe(object[objectProperty], this.renderer)
             );
         }
-        console.log(`${callerAndfName()}[${this.setup.id}] dependency=${observableInfo.name} [${objectId}].${objectProperty}/${type}`, observableInfo.dependencies);
+        // console.debug(`${callerAndfName()}[${this.setup.id}] dependency=${observableInfo.name} [${objectId}].${objectProperty}/${type}`, observableInfo.dependencies);
         observableInfo.dependencies?.forEach(
             this.startObserver
         );
     };
 
-    startRender = (): void => {
-        const disposer = autorun(this.renderer);
-        const toBeObserved = getDependencyTree(disposer);
+    startRender = async (): Promise<void> => {
+        let disposer: IReactionDisposer | undefined;
+        // let toBeObserved: IDependencyTree | undefined;
 
+        await new Promise(
+            (resolve, reject) => {
+                // console.log(`${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} autorun...`);
+                disposer = autorun(
+                    (reaction: IReactionPublic) => {
+                        console.log(
+                            `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} autorun`
+                            // ,{disposer, toBeObserved: cloneDeep(toBeObserved)}
+                        );
+                        this.renderNow(performance.now());    
+                        // toBeObserved = disposer == undefined ? undefined : cloneDeep(getDependencyTree(disposer));
+                        resolve();
+                    }
+                );
+            }
+        );
+
+        console.log(
+            `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} awaited`,
+            // { disposer, toBeObserved: cloneDeep(toBeObserved) }
+        );
+        if (!disposer) throw new Error(`${callerAndfName()} no disposer`);
+
+        const toBeObserved = /*toBeObserved?.dependencies ? toBeObserved :*/ cloneDeep( getDependencyTree(disposer));
         disposer();
+        console.log(
+            `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} gotTree`,
+            { disposer, toBeObserved: cloneDeep(toBeObserved) });
 
         toBeObserved.dependencies?.forEach(
             this.startObserver
@@ -200,10 +229,7 @@ export class Plugin {
             // Wait for next frame
         } else {
             if ((this.continuesSkipped > 1) && ((this.frames + this.skippedFrames) > (3 * this.screen.fps)) && (this.screen.fps > this.continuesSkipped)) {
-                console.warn(
-                    `${callerAndfName()}: continuesSkipped=${this.continuesSkipped} =>` +
-                    ` screen.fps=${this.screen.fps}-=${this.continuesSkipped - 1} ${this.frames}+${this.skippedFrames}`);
-                this.screen.fps -= (this.continuesSkipped - 1);
+                console.warn( `${callerAndfName()}: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} ${this.frames}+${this.skippedFrames}`);
             }
             this.continuesSkipped = 0;
             this.rendering = true;
@@ -221,7 +247,7 @@ export class Plugin {
     private rendering = false;
 
     private renderNow = (time: number): void => {
-        //console.debug(`renderNow this=${this} start=${this.start} screen=${this.screen} render=${typeof this.render}`);
+        // console.debug(`${callerAndfName()}[${this.setup.id}] renderNow start=${this.start}`);
 
         this.start = this.start ?? time;
         if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
@@ -307,6 +333,7 @@ export class Plugin {
     };
 
     private renderAutorunDisposers: IReactionDisposer[] = [];
+    private setBoundsDisposer: IReactionDisposer | undefined;
 
     constructor(protected setup: PluginSetup, protected registration: Registration) {
         this.createElement();
@@ -360,6 +387,9 @@ export class Plugin {
 
     close = (): void => {
         this.disposeRunning();
+        this.setBoundsDisposer &&
+            this.setBoundsDisposer();
+        this.setBoundsDisposer = undefined;
 
         this.element &&
             window.document.body.removeChild(this.element);

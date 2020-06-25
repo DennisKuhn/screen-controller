@@ -4,6 +4,7 @@ import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
 import { Gradient as GradientInterface } from './GradientInterface';
+import { ObservableArray } from '../Container';
 
 export class Gradient extends SetupBase implements GradientInterface {
     static readonly schema: JSONSchema7 = {
@@ -37,7 +38,7 @@ export class Gradient extends SetupBase implements GradientInterface {
     };
 
     @observable type: 'Solid' | 'Circular' | 'Horizontal' | 'Vertical';
-    @observable colors: string[];
+    @observable colors: ObservableArray<string>;
 
     constructor(source: SetupBaseInterface) {
         super(source);

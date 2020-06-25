@@ -13,7 +13,7 @@ const update = (screen: Screen): void => {
     const dbgFrames = 2 * screen.fps;
     frames += 1;
     if (screen.rotateColors) {
-        colorPosition = (colorPosition + 1) % 360;
+        colorPosition = (colorPosition + screen.rotateSteps) % 360;
 
         // (frames % dbgFrames ==  0) && console.time('ScreenManager.update');
 
@@ -38,17 +38,23 @@ const update = (screen: Screen): void => {
 
 let interval: NodeJS.Timeout | undefined;
 let autoRunDisposer: IReactionDisposer | undefined;
+let screen: Screen | undefined;
 
-const start = async (): Promise<void> => {
-    const screen = (await controller.getSetup(Screen.name, 0)) as Screen;
+const resetGradient = (): void => {
+    if (!screen) throw new Error(`${callerAndfName()} no screen`);
+    if (!screen.activeGradient) throw new Error(`${callerAndfName()} no screen.activeGradient`);
+    const { activeGradient, startGradient } = screen;
 
-    if (screen.activeGradient == undefined) {
-        screen.createActiveGradient();
-    }
+    activeGradient.colors.replace(startGradient.colors);
+};
 
-    const updateInterval = (): void => {
-        const timeout = 1000 / screen.fps;
-        console.debug(`ScreenColor fps=${screen.fps} setInterval=${timeout.toFixed(1)} ${interval !== undefined ? 'clearInterval(' + interval + ')' : ''}`);
+const updateInterval = (): void => {
+    if (!screen) throw new Error(`${callerAndfName()} no screen`);
+    const { rotateColors, fps } = screen;
+
+    if (rotateColors) {
+        const timeout = 1000 / fps;
+        console.debug(`${callerAndfName()} fps=${screen?.fps} setInterval=${timeout.toFixed(1)} ${interval !== undefined ? 'clearInterval(' + interval + ')' : ''}`);
         if (interval !== undefined) {
             clearInterval(interval);
         }
@@ -59,9 +65,25 @@ const start = async (): Promise<void> => {
             timeout,
             screen
         );
-    };
+    } else if (interval !== undefined) {
+        console.debug(`${callerAndfName()} clearInterval(${interval})`);
+        clearInterval(interval);
+        interval = undefined;
+        resetGradient();
+    } else {
+        resetGradient();
+    }
+};
 
-    autoRunDisposer = autorun( updateInterval );
+const start = async (): Promise<void> => {
+    screen = (await controller.getSetup(Screen.name, 0)) as Screen;
+
+    if (screen.activeGradient == undefined) {
+        screen.createActiveGradient();
+    }
+
+
+    autoRunDisposer = autorun(updateInterval);
 };
 
 export const stop = (): void => {

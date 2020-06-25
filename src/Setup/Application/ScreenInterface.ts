@@ -6,6 +6,7 @@ import { Display } from './DisplayInterface';
 export interface Screen extends SetupBaseInterface {
     displays: Dictionary<Display>;
     rotateColors: boolean;
+    rotateSteps: number;
     fps: number;
     startGradient: Gradient;
     activeGradient?: Gradient;
