@@ -1,3 +1,4 @@
+import { setInterval, clearInterval } from 'timers';
 import Color from 'color';
 import { Screen } from '../Setup/Application/Screen';
 import controller from '../Setup/Controller/Factory';

@@ -1,4 +1,5 @@
-import { autorun, IReactionDisposer, toJS } from 'mobx';
+import { setInterval, clearInterval } from 'timers';
+import { autorun, IReactionDisposer } from 'mobx';
 import suncalc from 'suncalc';
 import { Screen } from '../Setup/Application/Screen';
 import controller from '../Setup/Controller/Factory';

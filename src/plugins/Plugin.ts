@@ -1,11 +1,10 @@
-import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, Lambda, observe, IValueDidChange, IReactionPublic } from 'mobx';
+import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, Lambda, observe, IValueDidChange } from 'mobx';
 import { Plugin as PluginSetup } from '../Setup/Application/Plugin';
 import { Screen } from '../Setup/Application/Screen';
 import controller from '../Setup/Controller/Factory';
 import { SetupBase } from '../Setup/SetupBase';
 import { callerAndfName } from '../utils/debugging';
 import { CanvasRegistration, HtmlRegistration, PlainRegistration, Plugin as PluginInterface, Registration, RenderPlugin } from './PluginInterface';
-import { Resolver } from 'dns';
 import { cloneDeep } from 'lodash';
 
 
@@ -162,36 +161,24 @@ export class Plugin {
 
     startRender = async (): Promise<void> => {
         let disposer: IReactionDisposer | undefined;
-        // let toBeObserved: IDependencyTree | undefined;
 
         await new Promise(
-            (resolve, reject) => {
-                // console.log(`${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} autorun...`);
+            (resolve /*, reject*/) => {
                 disposer = autorun(
-                    (reaction: IReactionPublic) => {
-                        console.log(
-                            `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} autorun`
-                            // ,{disposer, toBeObserved: cloneDeep(toBeObserved)}
-                        );
+                    () => {
+                        // console.log( `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} autorun` );
                         this.renderNow(performance.now());    
-                        // toBeObserved = disposer == undefined ? undefined : cloneDeep(getDependencyTree(disposer));
                         resolve();
                     }
                 );
             }
         );
 
-        console.log(
-            `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} awaited`,
-            // { disposer, toBeObserved: cloneDeep(toBeObserved) }
-        );
         if (!disposer) throw new Error(`${callerAndfName()} no disposer`);
 
-        const toBeObserved = /*toBeObserved?.dependencies ? toBeObserved :*/ cloneDeep( getDependencyTree(disposer));
+        const toBeObserved = cloneDeep( getDependencyTree(disposer));
         disposer();
-        console.log(
-            `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} gotTree`,
-            { disposer, toBeObserved: cloneDeep(toBeObserved) });
+        console.log( `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} gotTree`, toBeObserved);
 
         toBeObserved.dependencies?.forEach(
             this.startObserver

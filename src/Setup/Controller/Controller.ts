@@ -1,4 +1,4 @@
-import { isObservableProp, intercept, ObservableMap, IMapWillChange, IValueWillChange, isObservableArray, IArrayWillChange, IArrayWillSplice, IObservableArray, IObjectWillChange } from 'mobx';
+import { isObservableProp, intercept, ObservableMap, IMapWillChange, IValueWillChange, isObservableArray, IArrayWillChange, IArrayWillSplice, IObservableArray } from 'mobx';
 import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent } from 'electron';
 import { isEqual, cloneDeep } from 'lodash';
