@@ -106,7 +106,7 @@ export class Plugin {
             case 'boolean':
             case 'number':
             case 'string':
-                if(change.oldValue !== undefined) {
+                if (change.oldValue !== undefined) {
                     console.error(`${callerAndfName()} [${this.setup.id}]  ${change.object['id']} ignore type=${typeof change.newValue}`, change);
                 } else {
                     console.debug(`${callerAndfName()} [${this.setup.id}]  ${change.object['id']} ignore type=${typeof change.newValue}`, change);

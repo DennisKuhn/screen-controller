@@ -4,11 +4,11 @@ import { Rectangle } from '../Default/Rectangle';
 import { JSONSchema7 } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
 import { create } from '../SetupFactory';
-import { extendObservable, observable, decorate } from 'mobx';
+import { extendObservable, observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
 import { setOptionals } from '../JsonSchemaTools';
-import { callerAndfName } from '../../utils/debugging';
+import {  } from '../../utils/debugging';
 
 /**
  * Template for plugin setup. Registered under plugin-className
