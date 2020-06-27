@@ -173,7 +173,9 @@ export class Renderer extends ControllerImpl {
         for (const [propertyName, value] of Object.entries(item)) {
             const setup = (value as SetupBaseInterface);
 
-            if (setup.id) {
+            if (value === undefined) {
+                // skip optional
+            } else  if (setup.id) {
                 item[propertyName] = { id: setup.id };
             } else if (Array.isArray(value)) {
                 // Keep elements as they are

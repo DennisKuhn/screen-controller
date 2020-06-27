@@ -3,6 +3,7 @@ import { SetupBaseInterface } from './SetupInterface';
 import { SetupBase } from './SetupBase';
 import { cloneDeep, merge } from 'lodash';
 import mergeAllOf from 'json-schema-merge-allof';
+import { callerAndfName } from '../utils/debugging';
 
 export const resolve = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => {
     if (typeof schema.$ref != 'string')
@@ -158,6 +159,43 @@ export const setDefaults = (target: SetupBaseInterface, schema: JSONSchema7, roo
     return target;
 };
 
+/**
+ * 
+ * @param target Non-existing optional variables are set to undefined in observables. E.g. so they exist as member.
+ * @param observables dictionary of unused optional members set to undefined
+ * @param schema
+ * @param root schema with /definitions
+ */
+export const setOptionals = (target: SetupBase, observables: any, schema: JSONSchema7, root: JSONSchema7): void => {
+
+    console.log(`${callerAndfName()} ( target=${target.id}, ${schema.$id}.${schema.$ref}.${schema.type} )`, target, schema);
+
+    if (schema.$ref != undefined) {
+        setOptionals(
+            target,
+            observables,
+            resolve(schema as { $ref: string }, root),
+            root
+        );
+    }
+    if (schema.allOf) {
+        for (const entry of schema.allOf) {
+            setOptionals(target, observables, entry as JSONSchema7, root);
+        }
+    }
+    if (schema.properties) {
+        for (const property in schema.properties) {
+            if ((!(property in target)) && ((schema.required == undefined)
+                || (!schema.required.includes(property)))) {
+               
+                console.debug(`${callerAndfName()} ${target.id}.${property} = undefined`/*, target, schema */);
+                observables[property] = undefined;
+            }
+        }
+    }
+};
+
+
 export const forEach = (schema: JSONSchema7, action: (s: JSONSchema7) => void): void => {
     action(schema);
 
@@ -259,7 +297,7 @@ export const getConcretes = (abstractId: string, root: JSONSchema7): JSONSchema7
         // console.log(`getConcretes(${abstractId}) return cached ${cached.length}`);
         return cached;
     }
-    
+
     // console.log(`getConcretes(${abstractId})`);
 
     const concretes: JSONSchema7[] = [];
@@ -307,7 +345,7 @@ const expandAbstractRef = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 
 
                 if (concretes.length) {
                     // console.log(`expandAbstractRef: ${option.$ref} replace .oneOf[${index}] = ${concretes.length}`);
-                    
+
                     oneOf.splice(index, 1);
                     oneOf.push(...concretes);
                 }

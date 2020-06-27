@@ -1,4 +1,4 @@
-import { isObservableProp, intercept, ObservableMap, IMapWillChange, IValueWillChange, isObservableArray, IArrayWillChange, IArrayWillSplice, IObservableArray } from 'mobx';
+import { intercept, ObservableMap, IMapWillChange, isObservableArray, IArrayWillChange, IArrayWillSplice, IObservableArray, IObjectWillChange } from 'mobx';
 import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent } from 'electron';
 import { isEqual, cloneDeep } from 'lodash';
@@ -266,31 +266,34 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
 
         if (!this.configs.has(item.id)) {
+            const onObjectChange = (change: IObjectWillChange): IObjectWillChange => {
+                const { name } = change;
+
+                if (typeof name !== 'string') throw new Error(`${callerAndfName()} typeof name == ${typeof name} is not supported, must be string`);
+
+                // console.debug(`${callerAndfName()} change(${item.id}, ${name}, ${change.type}): ${change['newValue']}`);
+
+                switch (change.type) {
+                    case 'add':
+                        this.onItemChanged({ item, name, type: change.type, newValue: change.newValue });
+                        break;
+                    case 'update':
+                        this.onItemChanged({ item, name, type: change.type, newValue: change.newValue, oldValue: item[name] });
+                        break;
+                    case 'remove':
+                        this.onItemChanged({ item, name, type: change.type });
+                        break;
+                }
+                return change;
+            };
             // console.log( `${callerAndfName()}( ${item.className}[${item.id}]` );
 
             this.configs.set(item.id, item);
 
-            //TODO: Use below for value changes and below for maps and array (e.g. remove isOBservableProp)
-            // intercept(
-            //     item,
-            //     (change: IObjectWillChange) => {
-            //         const { name } = change;
-            //         if (typeof name !== 'string') throw new Error(`${callerAndfName()} typeof name == ${typeof name} is not supported, must be string`);
-
-            //         switch (change.type) {
-            //             case 'add':
-            //                 this.onItemChanged({ item, name, type: change.type, newValue: change.newValue });
-            //                 break;
-            //             case 'update':
-            //                 this.onItemChanged({ item, name, type: change.type, newValue: change.newValue, oldValue: item[name] });
-            //                 break;
-            //             case 'remove':
-            //                 this.onItemChanged({ item, name, type: change.type });
-            //                 break;
-            //         }
-            //         return change;
-            //     }
-            // );
+            intercept(
+                item,
+                onObjectChange
+            );
 
             for (const [propertyName, value] of Object.entries(item)) {
                 if (value instanceof ObservableSetupBaseMap) {
@@ -310,18 +313,6 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                             return changes;
                         }
                     );
-                } else if (isObservableProp(item, propertyName)) {
-                    // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName}` );
-                    intercept(
-                        item,
-                        propertyName as any,
-                        (change: IValueWillChange<ObjectPropertyType>) => {
-                            this.onItemChanged({ item, name: propertyName, type: change.type, newValue: change.newValue, oldValue: item[propertyName] });
-                            return change;
-                        }
-                    );
-                } else {
-                    // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): ignore ${propertyName}`);
                 }
             }
 
@@ -443,7 +434,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                 // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip remoteUpdate`);    
             } else {
                 // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`/*, changes*/);
-                this.propagate && this.propagate( ControllerImpl.local2Ipc(changes) );
+                this.propagate && this.propagate(ControllerImpl.local2Ipc(changes));
                 this.tryPersist(changes);
             }
         } else if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
@@ -451,7 +442,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         } else {
             // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`/*, changes*/);
 
-            this.propagate && this.propagate( ControllerImpl.local2Ipc(changes) );
+            this.propagate && this.propagate(ControllerImpl.local2Ipc(changes));
             this.tryPersist(changes);
         }
     }

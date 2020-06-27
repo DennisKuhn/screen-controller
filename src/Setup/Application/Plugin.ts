@@ -4,9 +4,11 @@ import { Rectangle } from '../Default/Rectangle';
 import { JSONSchema7 } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
 import { create } from '../SetupFactory';
-import { extendObservable, observable } from 'mobx';
+import { extendObservable, observable, decorate } from 'mobx';
 import { UiSchema } from '@rjsf/core';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
+import { setOptionals } from '../JsonSchemaTools';
+import { callerAndfName } from '../../utils/debugging';
 
 /**
  * Template for plugin setup. Registered under plugin-className
@@ -95,8 +97,16 @@ export class Plugin extends SetupBase implements PluginInterface {
                 // console.log(`${this.constructor.name}[${setup.className}][${this.id}].init: skip ${propertyName}=${this[propertyName]}` /*, updateSetup */);
             }
         }
+        setOptionals(this, observables, this.getSchema(), this.getSchema());
         // console.log(`${this.constructor.name}[${setup.className}][${this.id}].init extendObservable( ${observables} )`);
         extendObservable(this, observables);
+
+        // for (const [property, value] of Object.entries(this)) {
+        //     if (value === undefined) {
+        //         console.log(`${callerAndfName()}[${setup.className}][${this.id}] make undefined ${property} observable`);
+        //         decorate(this, { [property as any]: observable });
+        //     }
+        // }
         return this;
     }
 

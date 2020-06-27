@@ -19,6 +19,7 @@ import { FormContext } from './FormContext';
 import DictionaryObject from './Objects/Dictionary';
 import RectangleObject from './Objects/Rectangle';
 import SetupObject from './Objects/SetupBase';
+import LocalFileWidget from './Widgets/LocalFile';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -92,6 +93,8 @@ const addCustom = (item: UiSchema, schema: JSONSchema7, root?: JSONSchema7): voi
         } else if (schema.type == 'object' && schema.additionalProperties) {
             // console.log(`Form.addCustom(${schema.$id}, ${schema.type}) set [ui:ObjectFieldTemplate] = DictionaryObject`);
             item['ui:ObjectFieldTemplate'] = DictionaryObject;
+        } else if (schema.type == 'string' && schema['sc-localfile'] == true) {
+            item['ui:widget'] = LocalFileWidget;
         }
 
         if (schema.properties) {
@@ -160,7 +163,6 @@ const SetupBaseForm = observer(({ root, expand, schema }: { root: SetupBase; exp
                 noHtml5Validate={true}
                 schema={schema}
                 formData={root.getShallow()}
-                // formData={toJS(root, { recurseEverything: true, exportMapsAsObjects: true })}
                 uiSchema={uiSchema}
                 fields={{ SchemaField: ObservedField }}
                 formContext={formContext}
