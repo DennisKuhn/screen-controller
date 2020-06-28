@@ -1947,6 +1947,11 @@
   resolved "https://registry.yarnpkg.com/@types/eslint-visitor-keys/-/eslint-visitor-keys-1.0.0.tgz#1ee30d79544ca84d68d4b3cdb0af4f205663dd2d"
   integrity sha512-OCutwjDZ4aFS6PB1UZ988C4YgwlBHJd6wCeQqaLdmadZ/7e+w79+hbMUFC1QXDNCmdyoRfAFdm0RypzwR+Qpag==
 
+"@types/fpsmeter@^0.3.30":
+  version "0.3.30"
+  resolved "https://registry.yarnpkg.com/@types/fpsmeter/-/fpsmeter-0.3.30.tgz#ec0dac267bdf3f4388f9b7e952b17009f898a16c"
+  integrity sha512-ra4x3rJvjoiVgEZDGaixhEVf/ZjmtRZi2uoI4iWiWC+5E3S70bVYxy8q1aOfebk5fUoUg7Rv4LAUhH6Jp9DDew==
+
 "@types/glob@^7.1.1":
   version "7.1.2"
   resolved "https://registry.yarnpkg.com/@types/glob/-/glob-7.1.2.tgz#06ca26521353a545d94a0adc74f38a59d232c987"
@@ -5860,6 +5865,11 @@ forwarded@~0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/forwarded/-/forwarded-0.1.2.tgz#98c23dab1175657b8c0573e8ceccd91b0ff18c84"
   integrity sha1-mMI9qxF1ZXuMBXPozszZGw/xjIQ=
+
+fpsmeter@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/fpsmeter/-/fpsmeter-0.3.1.tgz#f134d41a1af06a717b35523ee698552d7f0f3ce5"
+  integrity sha1-8TTUGhrwanF7NVI+5phVLX8PPOU=
 
 fragment-cache@^0.2.1:
   version "0.2.1"

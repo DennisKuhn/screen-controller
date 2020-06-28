@@ -16,6 +16,7 @@ import {  } from '../../utils/debugging';
 export class Plugin extends SetupBase implements PluginInterface {
     @observable relativeBounds: RelativeRectangle;
     @observable scaledBounds?: Rectangle;
+    @observable showFpsMeter: boolean;
 
     private static readonly schema: JSONSchema7 = {
         $id: Plugin.name,
@@ -27,9 +28,10 @@ export class Plugin extends SetupBase implements PluginInterface {
                 type: 'object',
                 properties: {
                     relativeBounds: { $ref: RelativeRectangle.name },
-                    scaledBounds: { $ref: Rectangle.name }
+                    scaledBounds: { $ref: Rectangle.name },
+                    showFpsMeter: { type: 'boolean', default: true }
                 },
-                required: ['relativeBounds']
+                required: ['relativeBounds', 'showFpsMeter' ]
             }
         ]
     }
@@ -38,13 +40,15 @@ export class Plugin extends SetupBase implements PluginInterface {
         scaledBounds: { 'ui:widget': 'hidden' }
     };
 
-    constructor(setup: SetupBaseInterface) {
+    constructor(setup: SetupBaseInterface) {        
         super(setup);
+        const source = setup as PluginInterface;
 
-        this.relativeBounds = new RelativeRectangle(setup['relativeBounds']);
+        this.relativeBounds = new RelativeRectangle(source.relativeBounds);
+        this.showFpsMeter = source.showFpsMeter;
 
-        if (setup['scaledBounds']) {
-            this.scaledBounds = new Rectangle(setup['scaledBounds']);
+        if (source.scaledBounds) {
+            this.scaledBounds = new Rectangle(source.scaledBounds);
         }
 
         this.init(setup);

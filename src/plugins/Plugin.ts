@@ -6,25 +6,40 @@ import { SetupBase } from '../Setup/SetupBase';
 import { callerAndfName } from '../utils/debugging';
 import { CanvasRegistration, HtmlRegistration, PlainRegistration, Plugin as PluginInterface, Registration, RenderPlugin } from './PluginInterface';
 import { cloneDeep } from 'lodash';
-
+import 'fpsmeter';
+import { SetupItemId } from 'src/Setup/SetupInterface';
 /**
  * Wrapper for plugin instance.
  */
 export class Plugin {
 
+    private fpsMeter?: FPSMeter;
     private plugin?: PluginInterface;
 
     private render?: (screen: Screen, gradient?: CanvasGradient | string) => void;
 
+    /**
+     * Contains element for implementation and fpsMeter
+     */
+    private wrapper?: HTMLElement;
+
+    /**
+     * Child of wrapper, used by plugin implementation, could be a canvas or div
+     */
     private element?: HTMLElement;
+
     private div?: HTMLDivElement;
+
     private canvas?: HTMLCanvasElement;
     private renderingContext?: CanvasRenderingContext2D;
+
     private screen?: Screen;
 
     private interval?: NodeJS.Timeout;
+    private static browserMeters: { [key: string]: SetupItemId[] } = {};
 
     createElement = (): void => {
+
         if ((this.registration as CanvasRegistration).canvasFactory) {
             // console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].createElement canvasFactory`);
             this.element = this.canvas = window.document.createElement('canvas');
@@ -41,10 +56,13 @@ export class Plugin {
         }
         if (this.element) {
             // console.log(`${this.constructor.name}[${this.setup.className}][${this.setup.id}].createElement init ${this.element}`);
+            this.wrapper = window.document.createElement('div');
+            this.wrapper.id = this.setup.id + '-wrapper';
+            window.document.body.appendChild(this.wrapper);
             this.element.id = this.setup.id;
             this.element.style.position = 'fixed';
             this.element.style.border = '1px solid orange';
-            window.document.body.appendChild(this.element);
+            this.wrapper.appendChild(this.element);
 
             this.setBoundsDisposer = autorun(this.setBounds);
         }
@@ -85,6 +103,23 @@ export class Plugin {
             controller.getSetup(Screen.name, 0)
                 .then(setup => {
                     this.screen = setup as Screen;
+
+                    if (!(this.setup.parentId in Plugin.browserMeters)) {
+                        Plugin.browserMeters[this.setup.parentId] = new Array<string>();
+                    }
+                    const position = Plugin.browserMeters[this.setup.parentId].push(this.setup.id) - 1;
+
+                    const options: FPSMeterOptions = {
+                        interval: 5000,
+                        smoothing: 20,
+                        heat: 1,
+                        graph: 1,
+                        maxFps: this.screen.fps,
+                        left: (position * (5 + 119)) + 'px',
+                        theme: 'transparent'
+                    };
+                    this.fpsMeter = new FPSMeter(this.wrapper, options);
+                    // this.fpsMeter.pause();
                     this.startRender();
                 });
         }
@@ -99,7 +134,6 @@ export class Plugin {
 
                 this.resetFrameStats();
                 this.disposeRunning();
-                this.start = undefined;
                 this.startRender();
                 break;
             case 'boolean':
@@ -170,7 +204,7 @@ export class Plugin {
                 disposer = autorun(
                     () => {
                         // console.log( `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} autorun` );
-                        this.renderNow(performance.now());    
+                        this.renderNow(/*performance.now()*/);
                         resolve();
                     }
                 );
@@ -179,83 +213,70 @@ export class Plugin {
 
         if (!disposer) throw new Error(`${callerAndfName()} no disposer`);
 
-        const toBeObserved = cloneDeep( getDependencyTree(disposer));
+        const toBeObserved = cloneDeep(getDependencyTree(disposer));
         disposer();
-        console.log( `${callerAndfName()}[${this.setup.id}] track renderer rendering=${this.rendering} start=${this.start} gotTree`, toBeObserved);
+        console.log(`${callerAndfName()}[${this.setup.id}] track renderer gotTree`, toBeObserved);
 
         toBeObserved.dependencies?.forEach(
             this.startObserver
         );
     };
 
-    lastFps = 0;
-    start?: number;
-    frames = 0;
     skippedFrames = 0;
     continuesSkipped = 0;
     requestedAnimationFrame?: number;
 
     resetFrameStats = (): void => {
-        this.frames = 0;
         this.skippedFrames = 0;
         this.continuesSkipped = 0;
-        this.start = undefined;
     }
 
     /**
      * If not rendering requestAnimaitonFrame for renderNow.
-     * If this.start is undefined, the requestAnimationFrame is skipped, to be able to detect dependcies of render
      */
     private renderer = (/*r: IReactionPublic*/): void => {
         if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
-        if (this.lastFps != this.screen.fps) {
-            this.lastFps = this.screen.fps;
-            this.resetFrameStats();
-        }
 
         if (this.rendering === true) {
             this.skippedFrames += 1;
             this.continuesSkipped += 1;
             // Wait for next frame
         } else {
-            if ((this.continuesSkipped > 1) && ((this.frames + this.skippedFrames) > (3 * this.screen.fps)) && (this.screen.fps > this.continuesSkipped)) {
-                console.warn( `${callerAndfName()}: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} ${this.frames}+${this.skippedFrames}`);
+            if (this.continuesSkipped > 1)  {
+                console.warn(`${callerAndfName()}: continuesSkipped=${this.continuesSkipped} totalSkipped=${this.skippedFrames} fps=${this.screen.fps} `);
             }
             this.continuesSkipped = 0;
             this.rendering = true;
 
-            this.requestedAnimationFrame = requestAnimationFrame( this.renderNow );
+            this.requestedAnimationFrame = requestAnimationFrame(this.renderNow);
         }
     }
 
     private rendering = false;
 
-    private renderNow = (time: number): void => {
+    private renderNow = (/*time: number*/): void => {
         // console.debug(`${callerAndfName()}[${this.setup.id}] renderNow start=${this.start}`);
+        this.setup.showFpsMeter && this.fpsMeter != undefined && this.fpsMeter.tickStart();
+        try {
+            if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
+            if (this.render == undefined) throw new Error(`${callerAndfName()}: this.render is undefined`);
 
-        this.start = this.start ?? time;
-        if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
-        if (this.render == undefined) throw new Error(`${callerAndfName()}: this.render is undefined`);
+            if (this.canvas) {
+                this.render(
+                    this.screen,
+                    this.createGradient(this.screen)
+                );
+            } else if (this.div) {
+                this.render(this.screen);
+            }
 
-        const dbgFrames = 2 * this.screen.fps;
-        this.frames += 1;
-
-        if (this.canvas) {
-            this.render(
-                this.screen,
-                this.createGradient(this.screen)
-            );
-        } else if (this.div) {
-            this.render(this.screen);
+            this.rendering = false;
+        } finally {
+            if (this.setup.showFpsMeter && this.fpsMeter != undefined) {
+                this.fpsMeter.tick();
+                this.fpsMeter.render();
+            };
         }
-
-        (this.frames % dbgFrames == 1)
-            && ((this.frames / ((time - this.start) / 1000)) < (0.9 * this.screen.fps))
-            && console.info(
-                `${callerAndfName()}[${this.setup.className}][${this.setup.id}]:` +
-                ` fps=${(this.frames / ((time - this.start) / 1000)).toFixed(2)} skipped=${(this.skippedFrames / ((time - this.start) / 1000)).toFixed(2)}`);
-
-        this.rendering = false;
     }
 
     private createGradient = (screen: Screen): CanvasGradient | string => {
