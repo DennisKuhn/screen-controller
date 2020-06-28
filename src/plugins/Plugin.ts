@@ -7,7 +7,6 @@ import { callerAndfName } from '../utils/debugging';
 import { CanvasRegistration, HtmlRegistration, PlainRegistration, Plugin as PluginInterface, Registration, RenderPlugin } from './PluginInterface';
 import { cloneDeep } from 'lodash';
 
-
 /**
  * Wrapper for plugin instance.
  */
@@ -225,13 +224,7 @@ export class Plugin {
             this.continuesSkipped = 0;
             this.rendering = true;
 
-            if (this.start === undefined) {
-                this.renderNow(performance.now());
-            } else {
-                this.requestedAnimationFrame = requestAnimationFrame(
-                    this.renderNow
-                );
-            }
+            this.requestedAnimationFrame = requestAnimationFrame( this.renderNow );
         }
     }
 
@@ -253,11 +246,7 @@ export class Plugin {
                 this.createGradient(this.screen)
             );
         } else if (this.div) {
-            if (this.screen?.activeGradient?.colors[0] === undefined) {
-                this.render(this.screen);
-            } else {
-                this.render(this.screen, this.screen.activeGradient.colors[0]);
-            }
+            this.render(this.screen);
         }
 
         (this.frames % dbgFrames == 1)

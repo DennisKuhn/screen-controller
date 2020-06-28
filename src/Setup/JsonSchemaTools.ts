@@ -168,7 +168,7 @@ export const setDefaults = (target: SetupBaseInterface, schema: JSONSchema7, roo
  */
 export const setOptionals = (target: SetupBase, observables: any, schema: JSONSchema7, root: JSONSchema7): void => {
 
-    console.log(`${callerAndfName()} ( target=${target.id}, ${schema.$id}.${schema.$ref}.${schema.type} )`, target, schema);
+    // console.log(`${callerAndfName()} ( target=${target.id}, ${schema.$id}.${schema.$ref}.${schema.type} )` /*, target, schema*/);
 
     if (schema.$ref != undefined) {
         setOptionals(
@@ -185,7 +185,7 @@ export const setOptionals = (target: SetupBase, observables: any, schema: JSONSc
     }
     if (schema.properties) {
         for (const property in schema.properties) {
-            if ((!(property in target)) && ((schema.required == undefined)
+            if ((!(property in target)) && (!(property in observables)) && ((schema.required == undefined)
                 || (!schema.required.includes(property)))) {
                
                 console.debug(`${callerAndfName()} ${target.id}.${property} = undefined`/*, target, schema */);

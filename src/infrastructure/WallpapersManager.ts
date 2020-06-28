@@ -1,13 +1,16 @@
-import WallpaperWindow from '../ElectronWallpaperWindow/WallpaperWindow';
-import controller from '../Setup/Controller/Factory';
-import { Screen } from '../Setup/Application/Screen';
+import { protocol } from 'electron';
+import { IMapDidChange } from 'mobx';
+import WallpaperWindow, { WallpaperWindowConstructorOptions } from '../ElectronWallpaperWindow/WallpaperWindow';
 import { Browser } from '../Setup/Application/Browser';
 import { Display } from '../Setup/Application/Display';
-import { IMapDidChange } from 'mobx';
+import { Screen } from '../Setup/Application/Screen';
+import controller from '../Setup/Controller/Factory';
+import { callerAndfName } from '../utils/debugging';
 
 
 declare const WALLPAPER_PRELOAD_WEBPACK_ENTRY: string;
 declare const WALLPAPER_WEBPACK_ENTRY: string;
+
 
 
 export default class WallpapersManager {
@@ -22,23 +25,30 @@ export default class WallpapersManager {
     public static async run(): Promise<void> {
         //console.log('WallpapersManager.run');
 
+        // Couldn't get it working and it would intercept ALL file requests not just local
+        protocol.interceptFileProtocol('file', (req, callback) => {
+            const url = req.url.substr(7);
+            console.log(`${callerAndfName()} intercepting: ${req.url} => ${decodeURI(url)}`);
+            callback(decodeURI( url));
+        }
+        );
+
         WallpapersManager.screen = (await controller.getSetup(Screen.name, 2)) as Screen;
 
         WallpapersManager.screen.displays.observe(WallpapersManager.updateDisplays);
 
         WallpapersManager.connectDisplays();
-
-        /** @TODO Create existing */
     }
 
     private static createWallpaperWindow(displayId: number, browser: Browser): void {
         // console.log(
         //     `WallpapersManager.createWallpaperWindow[${displayId}][${browser.id}]: ` +
         //     ` ${browser.relative.x},${browser.relative.y} ${browser.relative.width}*${browser.relative.height}`);
-        
-        const wallpaperProperties = {
+
+        const wallpaperProperties: WallpaperWindowConstructorOptions = {
             webPreferences: {
                 nodeIntegration: true,
+                webSecurity: false,
                 preload: WALLPAPER_PRELOAD_WEBPACK_ENTRY,
                 additionalArguments: [
                     `--browserid=${browser.id}`
@@ -78,9 +88,9 @@ export default class WallpapersManager {
 
         for (const display of WallpapersManager.screen.displays.values()) {
             if (!display) throw new Error('WallpapersManager.connectDisplays() null display');
-            
+
             display.browsers.observe(WallpapersManager.updateBrowsers);
-            
+
             for (const browser of display.browsers.values()) {
                 if (!browser) throw new Error(`WallpapersManager.connectDisplays[${display.id}] null browser`);
 
@@ -114,12 +124,12 @@ export default class WallpapersManager {
                 for (const browser of changes.oldValue.browsers.values()) {
                     if (!browser)
                         throw new Error(`WallpapersManager.updateDisplays(${changes.type}}) null browser`);
-                    
+
                     const paper = WallpapersManager.papers.get(browser.id);
 
                     if (!paper)
                         throw new Error(`WallpapersManager.updateDisplays(${changes.type}, ${changes.oldValue.id}) no paper for ${browser.id}`);
-                    
+
                     // console.log(`WallpapersManager.updateDisplays(${paper.displayId}) close ${paper.browser.id}`);
                     paper.browserWindow.close();
                     WallpapersManager.papers.delete(paper.browser.id);

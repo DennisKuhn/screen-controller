@@ -9,7 +9,7 @@ import { autorun } from 'mobx';
 import { isEqual } from 'lodash';
 import { callerAndfName } from '../utils/debugging';
 
-interface WallpaperWindowConstructorOptions extends BrowserWindowConstructorOptions {
+export interface WallpaperWindowConstructorOptions extends BrowserWindowConstructorOptions {
     displayId: number;
     browser: Browser;
 }

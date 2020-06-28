@@ -1,7 +1,7 @@
 import { intercept, ObservableMap, IMapWillChange, isObservableArray, IArrayWillChange, IArrayWillSplice, IObservableArray, IObjectWillChange } from 'mobx';
 import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent } from 'electron';
-import { isEqual, cloneDeep } from 'lodash';
+import { isEqual } from 'lodash';
 import { SetupBase, PropertyType as ObjectPropertyType } from '../SetupBase';
 import { SetupBaseInterface, PropertyType as InterfacePropertyType, PropertyType } from '../SetupInterface';
 import { create } from '../SetupFactory';
@@ -383,9 +383,11 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) = ${change['newValue']}`);
 
         if (isEqual(itemPlainValue, remotePlainValue)) {
-            // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} skip remoteUpdate=${remotePlainValue}`);
+            // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} skip remoteUpdate=` +
+            //     `${remotePlainValue && remotePlainValue['id'] ? remotePlainValue['id'] : remotePlainValue}`);
         } else {
-            // console.debug( `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} != ${JSON.stringify(remotePlainValue)}`);
+            // console.debug(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} != ` +
+            //     `${remotePlainValue && remotePlainValue['id'] ? remotePlainValue['id'] : remotePlainValue}`);
 
             const ipcChange = {
                 item: item.id,
@@ -657,9 +659,9 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             if (arrayUpdate?.type == 'splice') {
                 //Todo: How to check splice update
             } else if ((!newItem) && isEqual(remoteTarget[key], update['newValue'])) {
-                console.warn(`${callerAndfName()}${getIpcArgsLog(update)}: skip already equal (old,new):`,
+                console.warn(`${callerAndfName()}${getIpcArgsLog(update)}: skip already equal (old,new):`/*,
                     cloneDeep(remoteTarget[key]),
-                    cloneDeep(update['newValue']));
+                    cloneDeep(update['newValue'])*/);
                 return false;
             }
             // console.log(`${callerAndfName()}${getIpcArgsLog(update)}: = ${update['newValue']} newItem=${newItem}`);
@@ -801,7 +803,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             }
         } else {
             console.warn(
-                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)}, persist=${persist}) ==? ${update['newValue']} skip remote update`, cloneDeep(update));
+                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)}, persist=${persist}) ==? ${update['newValue']} skip remote update`/*, cloneDeep(update)*/);
         }
 
         (persist == true) && this.tryPersist({

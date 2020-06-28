@@ -1,47 +1,63 @@
-import React from 'react';
-import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import {  } from '../../../utils/debugging';
+import { Button, TextField, makeStyles, createStyles, Theme } from '@material-ui/core';
 import { WidgetProps } from '@rjsf/core';
+import { remote } from 'electron';
+import React from 'react';
+import { callerAndfName } from '../../../utils/debugging';
+import { fs2Url } from '../../../utils/Url';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         root: {
-            '& > *': {
-                margin: theme.spacing(1),
-            },
+            margin: theme.spacing(1),
+            display: 'flex'
         },
-        input: {
-            display: 'none',
+        label: {
+            flexGrow: 1
         },
-    }),
+        icon: {
+            flexGrow: 0
+        }
+    })
 );
 
+const showDialog = (): Promise<Electron.OpenDialogReturnValue> => remote.dialog.showOpenDialog(
+    {
+        properties: ['openFile'],
+        filters: [
+            { name: 'Images', extensions: ['jpg', 'jpeg', 'svg', 'png', 'gif'] },
+            { name: 'All Files', extensions: ['*'] }
+        ]
+    }
+);
 
 const OpenFile = (props: WidgetProps): JSX.Element => {
-    const classes = useStyles();
 
-    return (< >
-        <input
-            accept="image/*"
-            className={classes.input}
-            id="contained-button-file"
-            multiple={false}
-            type="file"
-            onChange={(e): void => props.onChange(e.target.value) }
+    console.debug(`${callerAndfName()}`, props)
+
+    const classes = useStyles();
+    const handleDialog = async (): Promise<void> => {
+        const response = await showDialog();
+
+        if (!response.canceled) {
+            console.log(`${callerAndfName()} ${response.filePaths[0]} => ${fs2Url(response.filePaths[0]).href}`);
+            props.onChange(fs2Url(response.filePaths[0]).href);
+        }
+    };
+
+
+    return (<div className={classes.root} >
+        <Button variant="contained" color="primary" onClick={handleDialog} className={classes.icon}>
+            Select
+        </Button>
+        <TextField
+            value={props.value}
+            InputProps={{
+                readOnly: true,
+            }}
+            variant="filled"
+            className={classes.label}
         />
-        <label htmlFor="contained-button-file" >
-            <Button variant="contained" color="primary" component="span" >
-                Select
-            </Button>
-        </label>
-    </ >
-    );
-    //     return (
-    //         <button id= "custom" className = { props.value ? "checked" : "unchecked" } onClick = {() => props.onChange(!props.value)}>
-    //             { String(props.value) }
-    //             < /button>
-    //   );
+    </div>);
 };
 
 export default OpenFile;

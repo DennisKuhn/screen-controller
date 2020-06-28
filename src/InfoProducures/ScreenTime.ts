@@ -36,7 +36,7 @@ const update = (screen: Screen): void => {
         return;
     }
     const position: SunPositions = SunPositions[positionEntry[0]];
-    
+
     (time.local != now.valueOf()) && (time.local = now.valueOf());
     (time.second != now.getSeconds()) && (time.second = now.getSeconds());
     (time.minute != now.getMinutes()) && (time.minute = now.getMinutes());
@@ -51,18 +51,24 @@ const update = (screen: Screen): void => {
     (time.sunPosition != position) && (time.sunPosition = position);
 
     if (screen.time == undefined) {
-        console.debug(`${callerAndfName()}: Create time ${positionEntry[0]}`, time);
+        console.debug(
+            `${callerAndfName()}: Create time ${positionEntry[0]} ` +
+            `${time.hour24.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:` +
+            `${time.minute.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:` +
+            `${time.second.toLocaleString(undefined, { minimumIntegerDigits: 2 })} ${time.local}`
+            //            , toJS(time, { recurseEverything: true })
+        );
         screen.time = create(time) as Time;
     } else {
-    //         console.debug(
-    //             `${callerAndfName()}: Update time ${positionEntry[0]} ` +
-    //             `${time.hour24.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:` +
-    //             `${time.minute.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:` +
-    //             `${time.second.toLocaleString(undefined, { minimumIntegerDigits: 2 })} ${time.local}`
-    // //            , toJS(time, { recurseEverything: true })
-    //         );
+        //         console.debug(
+        //             `${callerAndfName()}: Update time ${positionEntry[0]} ` +
+        //             `${time.hour24.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:` +
+        //             `${time.minute.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:` +
+        //             `${time.second.toLocaleString(undefined, { minimumIntegerDigits: 2 })} ${time.local}`
+        // //            , toJS(time, { recurseEverything: true })
+        //         );
     }
-    
+
 };
 
 let interval: NodeJS.Timeout | undefined;
@@ -77,10 +83,10 @@ const start = async (): Promise<void> => {
             return;
         }
 
-        sunTimes = Object.entries( suncalc.getTimes(new Date(), screen.latitude, screen.longitude) )
+        sunTimes = Object.entries(suncalc.getTimes(new Date(), screen.latitude, screen.longitude))
             .sort(([, a], [, b]) => a.valueOf() - b.valueOf());
 
-        console.debug(`${callerAndfName()} ${interval !== undefined ? 'clearInterval(' + interval + ')' : ''} ${(new Date())}`, {...sunTimes});
+        console.debug(`${callerAndfName()} ${interval !== undefined ? 'clearInterval(' + interval + ')' : ''} ${(new Date())} ${screen.latitude} ${screen.longitude}`);
 
         if (interval !== undefined) {
             clearInterval(interval);

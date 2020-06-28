@@ -271,6 +271,7 @@ export class Renderer extends ControllerImpl {
 
         Renderer.createLinks(shallow);
         localStorage.setItem(item.id, JSON.stringify(shallow));
+        // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} stored ${item.id}=${JSON.stringify(shallow)}`);
 
         const newSetup = newValue instanceof SetupBase ? newValue as SetupBase : undefined;
         const oldValue = 'oldValue' in change ? change.oldValue : undefined;
