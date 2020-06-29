@@ -110,8 +110,9 @@ export class Plugin {
                     const position = Plugin.browserMeters[this.setup.parentId].push(this.setup.id) - 1;
 
                     const options: FPSMeterOptions = {
+                        label: this.setup.name,
                         interval: 5000,
-                        smoothing: 20,
+                        smoothing: 30,
                         heat: 1,
                         graph: 1,
                         maxFps: this.screen.fps,
@@ -222,7 +223,6 @@ export class Plugin {
         );
     };
 
-    skippedFrames = 0;
     continuesSkipped = 0;
     requestedAnimationFrame?: number;
 
@@ -238,14 +238,14 @@ export class Plugin {
         if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
 
         if (this.rendering === true) {
-            this.skippedFrames += 1;
             this.continuesSkipped += 1;
-            // Wait for next frame
+            this.setup.continuesSkipped = this.continuesSkipped;
         } else {
             if (this.continuesSkipped > 1)  {
-                console.warn(`${callerAndfName()}: continuesSkipped=${this.continuesSkipped} totalSkipped=${this.skippedFrames} fps=${this.screen.fps} `);
+                console.warn(`${callerAndfName()}: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} `);
+                this.continuesSkipped = 0;
+                this.setup.continuesSkipped = this.continuesSkipped;
             }
-            this.continuesSkipped = 0;
             this.rendering = true;
 
             this.requestedAnimationFrame = requestAnimationFrame(this.renderNow);
@@ -256,7 +256,7 @@ export class Plugin {
 
     private renderNow = (/*time: number*/): void => {
         // console.debug(`${callerAndfName()}[${this.setup.id}] renderNow start=${this.start}`);
-        this.setup.showFpsMeter && this.fpsMeter != undefined && this.fpsMeter.tickStart();
+        this.fpsMeter != undefined && this.fpsMeter.tickStart();
         try {
             if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
             if (this.render == undefined) throw new Error(`${callerAndfName()}: this.render is undefined`);
@@ -272,10 +272,21 @@ export class Plugin {
 
             this.rendering = false;
         } finally {
-            if (this.setup.showFpsMeter && this.fpsMeter != undefined) {
+            if (this.fpsMeter != undefined) {
                 this.fpsMeter.tick();
-                this.fpsMeter.render();
-            };
+                if (this.setup.showFpsMeter) {
+                    if (this.fpsMeter.isPaused == 1) {
+                        this.fpsMeter.show();
+                    }
+                    this.fpsMeter.render();
+                } else if (this.fpsMeter.isPaused == 0) {
+                    this.fpsMeter.hide();
+                }
+                this.setup.cpuUsage = this.fpsMeter.usage;
+                this.setup.fps = this.fpsMeter.fps;
+            } else {
+                console.error(`${callerAndfName()} no this.fpsMeter`);
+            }
         }
     }
 
@@ -392,8 +403,12 @@ export class Plugin {
             this.setBoundsDisposer();
         this.setBoundsDisposer = undefined;
 
-        this.element &&
-            window.document.body.removeChild(this.element);
+        this.fpsMeter && this.fpsMeter.destroy();
+        this.fpsMeter = undefined;
+
+        this.wrapper &&
+            window.document.body.removeChild(this.wrapper);
+        this.wrapper = undefined;
 
         this.canvas = this.renderingContext = this.element = undefined;
     }

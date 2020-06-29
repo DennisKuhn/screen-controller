@@ -18,6 +18,7 @@ import '../Application/Browser';
 import '../Application/Display';
 import '../Application/Screen';
 import '../Application/Root';
+import { readlink } from 'fs';
 
 
 
@@ -407,8 +408,35 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         }
     }
 
-    private shouldPersist = ({ item }: LocalChangeArgsType): boolean =>
-        ((item.parent == undefined) || item.parent.shouldPersist(item.parentProperty));
+    private shouldPersist = (change: LocalChangeArgsType): boolean => {
+        const { item } = change;
+        let shouldPersist = (change.item.parent == undefined) || change.item.parent.shouldPersist(change.item.parentProperty);
+
+        if (shouldPersist) {
+            switch (change.type) {
+                case 'add':
+                case 'remove':
+                case 'update':
+                    if ('array' in change) {
+                        shouldPersist = item.shouldPersist(change.array);
+                    } else if ('map' in change) {
+                        shouldPersist = item.shouldPersist(change.map);
+                    } else {
+                        shouldPersist = item.shouldPersist(change.name);
+                    }
+                    break;
+                case 'delete':
+                    shouldPersist = item.shouldPersist(change.map);
+                    break;
+                case 'splice':
+                    shouldPersist = item.shouldPersist(change.array);
+                    break;
+                default:
+                    throw new Error(`${callerAndfName()} change.type==${change['type']} not supported`)
+            }
+        }
+        return shouldPersist;
+    };
 
     private tryPersist = (change: LocalChangeArgsType): void => {
         this.persist != undefined

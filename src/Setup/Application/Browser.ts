@@ -1,13 +1,14 @@
 import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
+import { callerAndfName } from '../../utils/debugging';
 import { ObservableSetupBaseMap } from '../Container';
 import { Rectangle } from '../Default/Rectangle';
 import { SimpleRectangle } from '../Default/RectangleInterface';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
 import { SetupBase } from '../SetupBase';
 import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface';
-import { callerAndfName } from '../../utils/debugging';
+import { Browser as BrowserInterface } from './BrowserInterface';
 import { Plugin } from './Plugin';
 
 export class Browser extends SetupBase {
@@ -25,6 +26,8 @@ export class Browser extends SetupBase {
                     relative: { $ref: RelativeRectangle.name },
                     scaled: { $ref: Rectangle.name },
                     device: { $ref: Rectangle.name },
+                    performanceInterval: { type: 'number', default: 1000 },
+                    cpuUsage: { type: 'number' } as JSONSchema7,
                     plugins: {
                         type: 'object',
                         additionalProperties: {
@@ -35,26 +38,32 @@ export class Browser extends SetupBase {
                         }
                     }
                 },
-                required: ['relative', 'plugins']
+                required: ['relative', 'plugins', 'performanceInterval']
             }
         ]
     };
 
     public static readonly uiSchema: UiSchema = {
         scaled: { 'ui:widget': 'hidden' },
-        device: { 'ui:widget': 'hidden' }
+        device: { 'ui:widget': 'hidden' },
+        cpuUsage: { 'ui:readonly': true }
     };
 
 
     @observable relative: RelativeRectangle;
     @observable scaled?: Rectangle;
     @observable device?: Rectangle;
+    @observable performanceInterval: number;
+    @observable cpuUsage?: number;
 
     plugins: ObservableSetupBaseMap<Plugin>;
 
     constructor(source: SetupBaseInterface) {
         super(source);
+        const setup = source as BrowserInterface;
         
+        this.performanceInterval = setup.performanceInterval;        
+
         this.relative = new RelativeRectangle(source['relative']);
         if (source['scaled']) {
             this.scaled = new Rectangle(source['scaled']);

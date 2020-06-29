@@ -17,6 +17,9 @@ export class Plugin extends SetupBase implements PluginInterface {
     @observable relativeBounds: RelativeRectangle;
     @observable scaledBounds?: Rectangle;
     @observable showFpsMeter: boolean;
+    @observable fps?: number;
+    @observable cpuUsage?: number;
+    @observable continuesSkipped?: number;
 
     private static readonly schema: JSONSchema7 = {
         $id: Plugin.name,
@@ -29,7 +32,10 @@ export class Plugin extends SetupBase implements PluginInterface {
                 properties: {
                     relativeBounds: { $ref: RelativeRectangle.name },
                     scaledBounds: { $ref: Rectangle.name },
-                    showFpsMeter: { type: 'boolean', default: true }
+                    showFpsMeter: { type: 'boolean', default: true },
+                    fps: { type: 'number' },
+                    cpuUsage: { type: 'number' } as JSONSchema7,
+                    continuesSkipped: { type: 'number' }
                 },
                 required: ['relativeBounds', 'showFpsMeter' ]
             }
@@ -37,7 +43,8 @@ export class Plugin extends SetupBase implements PluginInterface {
     }
 
     public static readonly uiSchema: UiSchema = {
-        scaledBounds: { 'ui:widget': 'hidden' }
+        scaledBounds: { 'ui:widget': 'hidden' },
+        cpuUsage: { 'ui:readonly': true }
     };
 
     constructor(setup: SetupBaseInterface) {        

@@ -8,6 +8,7 @@ import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
 import { callerAndfName } from '../utils/debugging';
 import { Plugin } from './Plugin';
 import { Registration } from './PluginInterface';
+import { setInterval, clearInterval } from 'timers';
 
 const pluginDir = 'D:\\Dennis\\Projects\\wallpaper-plugins\\dist\\src\\';
 
@@ -108,7 +109,22 @@ export class Manager {
         return registration;
     }
 
+    private performanceInterval;
+    private updatePerformance = (): void => {
+        this.browser.cpuUsage = process.getCPUUsage().percentCPUUsage / 100;
+    }
+
+    private setPerformanceInterval = (): void => {
+        this.performanceInterval && clearInterval(this.performanceInterval);
+
+        this.performanceInterval = setInterval(this.updatePerformance, this.browser.performanceInterval);
+    }
+
     constructor(private browser: Browser) {
+        browser.cpuUsage = process.getCPUUsage().percentCPUUsage;
+
+        autorun(this.setPerformanceInterval);
+
         this.loadPlugins().then(() => {
             // console.log(`${this.constructor.name}[${browser.id}] loaded Plugins()`);
             browser.plugins.observe(
