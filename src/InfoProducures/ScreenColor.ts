@@ -33,7 +33,7 @@ const update = (screen: Screen): void => {
         // (frames % dbgFrames ==  0) && console.timeEnd('ScreenManager.update');
     }
     if ((frames % dbgFrames == 1) && ((frames / ((performance.now() - framesStart) / 1000)) < (screen.fps * 0.9))) {
-        console.debug(`ScreenManager.update fps: ${(frames / ((performance.now() - framesStart) / 1000)).toFixed(1)}`);
+        console.debug(`${callerAndfName()} fps[${screen.fps}] == ${(frames / ((performance.now() - framesStart) / 1000)).toFixed(1)}`);
     }
 };
 
