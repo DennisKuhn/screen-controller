@@ -110,7 +110,7 @@ export class Main extends ControllerImpl {
 
 
         if (renderer == undefined) {
-            console.log(`${callerAndfName()}[${this.renderers.length}](senderId=${id}, ${itemId}, d=${depth}) create renderer`);
+            console.log(`${callerAndfName()}[@${this.renderers.length}](senderId=${id}, ${itemId}, d=${depth}) create renderer`);
 
             this.renderers[id] = renderer = {
                 channel: new UpdateChannel(target),
@@ -298,7 +298,7 @@ export class Main extends ControllerImpl {
     private onInit = (e: IpcMainEvent, init: IpcInitArgs): void => {
         const { schema, root: rootPlain } = init;
 
-        console.log(`${callerAndfName()}: sender=${e.sender}`/*, schema*/);
+        console.log(`${callerAndfName()}: sender=${e.sender.id}`/*, schema*/);
 
 
         if (!schema.definitions)

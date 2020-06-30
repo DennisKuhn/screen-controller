@@ -133,7 +133,6 @@ export class Plugin {
             case 'object':
                 console.debug(`${callerAndfName()} [${this.setup.id}]  ${change.object['id']} type=${typeof change.newValue} ${change.newValue['id']}`, change);
 
-                this.resetFrameStats();
                 this.disposeRunning();
                 this.startRender();
                 break;
@@ -226,11 +225,6 @@ export class Plugin {
     continuesSkipped = 0;
     requestedAnimationFrame?: number;
 
-    resetFrameStats = (): void => {
-        this.skippedFrames = 0;
-        this.continuesSkipped = 0;
-    }
-
     /**
      * If not rendering requestAnimaitonFrame for renderNow.
      */
@@ -243,8 +237,8 @@ export class Plugin {
         } else {
             if (this.continuesSkipped > 1)  {
                 console.warn(`${callerAndfName()}: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} `);
-                this.continuesSkipped = 0;
-                this.setup.continuesSkipped = this.continuesSkipped;
+                
+                this.setup.continuesSkipped = this.continuesSkipped = 0;
             }
             this.rendering = true;
 

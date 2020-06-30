@@ -1,7 +1,7 @@
 import { SetupBase } from '../SetupBase';
 import { PropertyKey, SetupBaseInterface, SetupItemId, Dictionary } from '../SetupInterface';
 import { Rectangle } from '../Default/Rectangle';
-import { JSONSchema7 } from 'json-schema';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
 import { create } from '../SetupFactory';
 import { extendObservable, observable } from 'mobx';
@@ -33,9 +33,9 @@ export class Plugin extends SetupBase implements PluginInterface {
                     relativeBounds: { $ref: RelativeRectangle.name },
                     scaledBounds: { $ref: Rectangle.name },
                     showFpsMeter: { type: 'boolean', default: true },
-                    fps: { type: 'number' },
-                    cpuUsage: { type: 'number' } as JSONSchema7,
-                    continuesSkipped: { type: 'number' }
+                    fps: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    cpuUsage: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    continuesSkipped: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
                 },
                 required: ['relativeBounds', 'showFpsMeter' ]
             }
@@ -44,7 +44,9 @@ export class Plugin extends SetupBase implements PluginInterface {
 
     public static readonly uiSchema: UiSchema = {
         scaledBounds: { 'ui:widget': 'hidden' },
-        cpuUsage: { 'ui:readonly': true }
+        fps: { 'ui:readonly': true },
+        cpuUsage: { 'ui:readonly': true },
+        continuesSkipped: { 'ui:readonly': true }
     };
 
     constructor(setup: SetupBaseInterface) {        

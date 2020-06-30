@@ -20,6 +20,7 @@ export class Root extends SetupBase {
                     screen: { $ref: Screen.name },
                     mainPerformanceInterval: { type: 'number', default: 1000 },
                     mainCpuUsage: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    mainPid: { type: 'number' },
                 },
                 required: ['screen', 'mainPerformanceInterval']
             }
@@ -29,6 +30,7 @@ export class Root extends SetupBase {
     screen: Screen;
     @observable mainPerformanceInterval: number;
     @observable mainCpuUsage?: number;
+    @observable mainPid?: number;
 
     constructor(source: SetupBaseInterface) {
         super(source);

@@ -121,8 +121,7 @@ export class Manager {
     }
 
     constructor(private browser: Browser) {
-        browser.cpuUsage = process.getCPUUsage().percentCPUUsage;
-
+        browser.pid = process.pid;
         autorun(this.setPerformanceInterval);
 
         this.loadPlugins().then(() => {

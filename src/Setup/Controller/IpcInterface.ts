@@ -135,6 +135,6 @@ export const getIpcArgsLog = (update: IpcChangeArgsType): string => {
 
     return (
         `(${item}.${map ?? array ?? ''}${mapUpdate ? '.' + mapUpdate.name : arrayUpdate ? '[' + arrayUpdate.index + ']' : name} ,${type})` +
-        `${newValue ? '=' + newValue : spliceUpdate ? '-' + spliceUpdate.removedCount + '+' + spliceUpdate.added.length.toFixed() + spliceUpdate.added : ''}`
+        `${newValue !== undefined ? '=' + ( newValue.id ? newValue.id : newValue ) : spliceUpdate ? '-' + spliceUpdate.removedCount + '+' + spliceUpdate.added.length.toFixed() + spliceUpdate.added : ''}`
     );
 };

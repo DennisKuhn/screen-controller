@@ -408,8 +408,11 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         }
     }
 
+    private oncePersisted = new Map<string, null>();
+
     private shouldPersist = (change: LocalChangeArgsType): boolean => {
         const { item } = change;
+        let key = item.id;
         let shouldPersist = (change.item.parent == undefined) || change.item.parent.shouldPersist(change.item.parentProperty);
 
         if (shouldPersist) {
@@ -432,9 +435,15 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                     shouldPersist = item.shouldPersist(change.array);
                     break;
                 default:
-                    throw new Error(`${callerAndfName()} change.type==${change['type']} not supported`)
+                    throw new Error(`${callerAndfName()} change.type==${change['type']} not supported`);
             }
+            key += '.' + (change['array'] ?? change['map'] ?? change['name']);
         }
+        if ((shouldPersist == false) && (this.oncePersisted.has(key) == false )) {
+            this.oncePersisted.set(key, null );
+            shouldPersist = true;            
+        }
+        shouldPersist && console.debug(`${callerAndfName()}(${ControllerImpl.getLocalArgsLog(change)}) shouldPersist[${key}]=${shouldPersist}`, this.oncePersisted);
         return shouldPersist;
     };
 
@@ -735,10 +744,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         const sender = (e as IpcMainEvent).sender ? (e as IpcMainEvent).sender.id : ((e as IpcRendererEvent).senderId ? (e as IpcRendererEvent).senderId : '?');
 
         const hasItem = this.configs.has(update.item);
-        // console.log(
-        //     `ControllerImpl[${this.constructor.name}].onSetupChanged(${sender}, ${update.item}.${'map' in update ? update['map'] + '.' : ''}.${update.name}` +
-        //     ` ${update.type} = ${update['newValue']}, persist=${persist}) hasItem=${this.configs.has(update.item)}`
-        // );
+        // console.log( `[${sender}]${callerAndfName()}(${getIpcArgsLog(update)}, persist=${persist}) hasItem=${this.configs.has(update.item)}` );
 
 
         const localItem =
@@ -752,7 +758,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             const parent = this.configs.get(localItem.parentId) ??
                 await this.getSetup(localItem.parentId, 0);
             console.warn(
-                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)} hasItem=${hasItem} localItem=${localItem.parentId}.${localItem.parentProperty}.${localItem.id}` +
+                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)}, persist=${persist}) hasItem=${hasItem} localItem=${localItem.parentId}.${localItem.parentProperty}.${localItem.id}` +
                 ` .parent=${localItem.parent?.id} parent=${parent?.id} .${localItem.parentProperty}=${parent?.[localItem.parentProperty]}`
             );
             if (parent[localItem.parentProperty] === undefined) {
@@ -830,8 +836,8 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                 }
             }
         } else {
-            console.warn(
-                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)}, persist=${persist}) ==? ${update['newValue']} skip remote update`/*, cloneDeep(update)*/);
+            // console.warn(
+            //     `[${sender}]${callerAndfName()}${getIpcArgsLog(update)}, persist=${persist}) ==? ${update['newValue']} skip remote update`/*, cloneDeep(update)*/);
         }
 
         (persist == true) && this.tryPersist({

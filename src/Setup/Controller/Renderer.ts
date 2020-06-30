@@ -5,7 +5,7 @@ import { SetupItemId, SetupBaseInterface, SetupLinkInterface, PropertyType } fro
 import { ControllerImpl, LocalChangeArgsType, LocalMapChangeArgsType, LocalItemChangeArgsType, LocalArrayChangeArgsType } from './Controller';
 import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap } from '../Container';
-import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs } from './IpcInterface';
+import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs, getIpcArgsLog } from './IpcInterface';
 
 import { Root } from '../Application/Root';
 import { Screen } from '../Application/Screen';
@@ -165,7 +165,7 @@ export class Renderer extends ControllerImpl {
     }
 
     protected readonly propagate = (update: IpcChangeArgsType): void => {
-        // console.log(`${callerAndfName()}(${update.item}, ${update.name}, ${update.type}) send to main`/*, item*/);
+        // console.debug(`${callerAndfName()}${getIpcArgsLog(update)}) send to main`/*, item*/);
         this.ipc.send('change', update);
     }
 

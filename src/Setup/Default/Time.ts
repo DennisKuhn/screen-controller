@@ -68,7 +68,19 @@ export class Time extends SetupBase implements TimeInterface {
 
     public static readonly uiSchema: UiSchema = {
         ...SetupBase.uiSchema,
-        name: { 'ui:widget': 'hidden' }
+        name: { 'ui:widget': 'hidden' },
+        local: { 'ui:readonly': true },
+        second: { 'ui:readonly': true },
+        minute: { 'ui:readonly': true },
+        hour12: { 'ui:readonly': true },
+        hour24: { 'ui:readonly': true },
+        isAm: { 'ui:readonly': true },
+        dayOfTheWeek: { 'ui:readonly': true },
+        dayOfTheMonth: { 'ui:readonly': true },
+        month: { 'ui:readonly': true },
+        yearShort: { 'ui:readonly': true },
+        yearFull: { 'ui:readonly': true },
+        sunPosition: { 'ui:readonly': true }
     };
 
     @observable local: number;
@@ -83,7 +95,6 @@ export class Time extends SetupBase implements TimeInterface {
     @observable yearShort: number;
     @observable yearFull: number;
     @observable sunPosition: SunPositions;
-
 
     constructor(source: SetupBaseInterface) {
         super(source);

@@ -1,5 +1,5 @@
 import { UiSchema } from '@rjsf/core';
-import { JSONSchema7 } from 'json-schema';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import { observable } from 'mobx';
 import { callerAndfName } from '../../utils/debugging';
 import { ObservableSetupBaseMap } from '../Container';
@@ -27,7 +27,8 @@ export class Browser extends SetupBase {
                     scaled: { $ref: Rectangle.name },
                     device: { $ref: Rectangle.name },
                     performanceInterval: { type: 'number', default: 1000 },
-                    cpuUsage: { type: 'number' } as JSONSchema7,
+                    cpuUsage: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    pid: { type: 'number' },
                     plugins: {
                         type: 'object',
                         additionalProperties: {
@@ -46,6 +47,7 @@ export class Browser extends SetupBase {
     public static readonly uiSchema: UiSchema = {
         scaled: { 'ui:widget': 'hidden' },
         device: { 'ui:widget': 'hidden' },
+        pid: { 'ui:readonly': true },
         cpuUsage: { 'ui:readonly': true }
     };
 
@@ -55,6 +57,7 @@ export class Browser extends SetupBase {
     @observable device?: Rectangle;
     @observable performanceInterval: number;
     @observable cpuUsage?: number;
+    @observable pid?: number;
 
     plugins: ObservableSetupBaseMap<Plugin>;
 
@@ -65,13 +68,13 @@ export class Browser extends SetupBase {
         this.performanceInterval = setup.performanceInterval;        
 
         this.relative = new RelativeRectangle(source['relative']);
-        if (source['scaled']) {
-            this.scaled = new Rectangle(source['scaled']);
+        if (setup.scaled) {
+            this.scaled = new Rectangle(setup.scaled);
         }
-        if (source['device']) {
-            this.device = new Rectangle(source['device']);
+        if (setup.device) {
+            this.device = new Rectangle(setup.device);
         }
-        this.plugins = this.createMap<Plugin>(source['plugins'], 'plugins');
+        this.plugins = this.createMap<Plugin>(setup.plugins, 'plugins');
     }
 
 

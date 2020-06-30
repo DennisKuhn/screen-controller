@@ -30,18 +30,11 @@ const updateInterval = (): void => {
 
 const start = async (): Promise<void> => {
     root = (await controller.getSetup(Root.name, 0)) as Root;
+    root.mainPid = process.pid;
 
-    console.debug(`${callerAndfName()}`);
+    console.debug(`${callerAndfName()} mainPid=${root.mainPid}`);
 
     autoRunDisposer = autorun(updateInterval);
-
-    if (interval !== undefined) {
-        clearInterval(interval);
-    }
-    interval = setInterval(
-        update,
-        1000
-    );
 };
 
 export const stop = (): void => {

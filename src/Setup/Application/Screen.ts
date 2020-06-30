@@ -1,6 +1,7 @@
 import { Display } from './Display';
 import { SetupBase } from '../SetupBase';
 import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface';
+import { Screen as ScreenInterface } from './ScreenInterface';
 import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import { Gradient } from '../Default/Gradient';
@@ -62,23 +63,27 @@ export class Screen extends SetupBase {
 
     constructor(source: SetupBaseInterface) {
         super(source);
+        const setup = source as ScreenInterface;
         
-        this.displays = this.createMap<Display>(source['displays'], 'displays');
+        this.displays = this.createMap<Display>(setup.displays, 'displays');
 
-        this.rotateColors = source['rotateColors'];
-        this.rotateSteps = source['rotateSteps'];
+        this.rotateColors = setup.rotateColors;
+        this.rotateSteps = setup.rotateSteps;
 
-        this.fps = source['fps'];
+        this.fps = setup.fps;
 
-        this.startGradient = new Gradient(source['startGradient']);
-        if (source['activeGradient']) {
-            this.activeGradient = new Gradient(source['activeGradient']);
+        this.startGradient = new Gradient(setup.startGradient);
+        if (setup.activeGradient) {
+            this.activeGradient = new Gradient(setup.activeGradient);
         }
-        if (source['longitude']) {
-            this.longitude = source['longitude'];
+        if (setup.longitude) {
+            this.longitude = setup.longitude;
         }
-        if (source['latitude']) {
-            this.latitude = source['latitude'];
+        if (setup.latitude) {
+            this.latitude = setup.latitude;
+        }
+        if (setup.time) {
+            this.time = new Time(setup.time);
         }
     }
 

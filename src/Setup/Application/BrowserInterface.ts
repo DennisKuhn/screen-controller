@@ -9,4 +9,5 @@ export interface Browser extends SetupBaseInterface {
     plugins: Dictionary<PluginInterface>;
     performanceInterval: number;
     cpuUsage?: number;
+    pid?: number;
 }

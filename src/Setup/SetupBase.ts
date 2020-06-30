@@ -129,7 +129,15 @@ export abstract class SetupBase {
     );
 
     shouldPersist(property: string): boolean {
-        return (! this.info.notPersisted.includes(property));
+        let ancestor = this.constructor;
+        let notPersisted;
+
+        do {
+            notPersisted = SetupBase.infos[ancestor.name]?.notPersisted.includes(property);
+            ancestor = Object.getPrototypeOf(ancestor);
+        } while ((!notPersisted) && (ancestor) && (ancestor !== Object));
+
+        return ! notPersisted;
     }
 
     public static readonly SCHEMA_REF = { $ref: SetupBase.name };

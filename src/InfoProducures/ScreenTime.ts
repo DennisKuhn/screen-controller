@@ -51,7 +51,7 @@ const update = (screen: Screen): void => {
     (time.sunPosition != position) && (time.sunPosition = position);
 
     if (screen.time == undefined) {
-        console.debug(
+        console.warn(
             `${callerAndfName()}: Create time ${positionEntry[0]} ` +
             `${time.hour24.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:` +
             `${time.minute.toLocaleString(undefined, { minimumIntegerDigits: 2 })}:` +
