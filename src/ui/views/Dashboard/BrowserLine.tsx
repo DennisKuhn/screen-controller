@@ -6,6 +6,7 @@ import { Browser } from '../../../Setup/Application/Browser';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import RelativeRectangle from '../../Fields/RelativeRectangle';
 import BrowserPlugins from './BrowserPlugins';
+import { getCpuUsage, getCpuText, getCpuClass } from './Tools';
 
 interface Props {
     browser: Browser;
@@ -17,20 +18,19 @@ const useStyles = makeStyles((/*theme*/) =>
 
 const Label = observer(({ browser }: Props): JSX.Element => {
     const classes = useStyles();
-    const cpuUsage = (browser.cpuUsage ?? 0) * 100;
+    const cpuUsage = getCpuUsage(browser.cpuUsage);
+    const cpuText = getCpuText( cpuUsage );
+    const cpuClass = classes[getCpuClass(cpuUsage)];
 
     return (
         <div className={classes.browserLabel}>
+            <Typography className={cpuClass}>{cpuText}</Typography>
             <TextField
                 className={classes.browserName}
                 value={browser.name}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>): string => browser.name = e.target.value }
             />
             <RelativeRectangle rect={browser.relative} />
-            {(cpuUsage == undefined) ? (<></>) :
-                (cpuUsage < 5) ? <Typography className={classes.successText}> - {cpuUsage.toFixed(1)} %cpu</Typography> :
-                    (cpuUsage < 10) ? <Typography className={classes.warningText}> - {cpuUsage.toFixed(0)} %CPU</Typography> :
-                        <Typography className={classes.dangerText}> - {cpuUsage.toFixed(0)} %CPU</Typography>}
         </div>
     );
 });

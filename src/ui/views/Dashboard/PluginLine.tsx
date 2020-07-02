@@ -1,8 +1,12 @@
-import { Plugin } from '../../../Setup/Application/Plugin';
+import { makeStyles, TextField, Typography } from '@material-ui/core';
 import { observer } from 'mobx-react-lite';
-import React from 'react';
+import React, { ChangeEvent } from 'react';
+import { Plugin } from '../../../Setup/Application/Plugin';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import { makeStyles, Grid, Typography } from '@material-ui/core';
+import GridContainer from '../../components/Grid/GridContainer';
+import GridItem from '../../components/Grid/GridItem';
+import RelativeRectangle from '../../Fields/RelativeRectangle';
+import { getCpuClass, getCpuText, getCpuUsage } from './Tools';
 
 interface Props {
     plugin: Plugin;
@@ -15,32 +19,35 @@ const useStyles = makeStyles((/*theme*/) =>
 
 const PluginLine = observer(({ plugin }: Props): JSX.Element => {
     const classes = useStyles();
-    const cpuUsage = (plugin.cpuUsage ?? 0) * 100;
+    const cpuUsage = getCpuUsage(plugin.cpuUsage);
+    const cpuText = getCpuText(cpuUsage);
+    const cpuClass = classes[getCpuClass(cpuUsage)];
     
-    return (<Grid container item>
-        <Grid item>
-            {
-                (cpuUsage < 5) ? <Typography className={classes.successText}>{cpuUsage.toFixed(1)}</Typography> :
-                    (cpuUsage < 10) ? <Typography className={classes.warningText}>{cpuUsage.toFixed(0)}</Typography> :
-                        <Typography className={classes.dangerText}>{cpuUsage.toFixed(0)}</Typography>}
-        </Grid>
-        <Grid item>
+    return (<GridContainer item>
+        <GridItem>
+            <Typography className={cpuClass}>{cpuText}</Typography>
+        </GridItem>
+        <GridItem>
             <Typography>
                 {(plugin.fps ?? 0).toFixed(1)}
             </Typography>
-        </Grid>
-        <Grid item>
+        </GridItem>
+        <GridItem>
             <Typography>
-                {plugin.continuesSkipped}
+                {plugin.skipped}
             </Typography>
-        </Grid>
-        <Grid item>
-            <Typography>
-                {plugin.name}
-            </Typography>
-        </Grid>
-
-    </Grid>);
+        </GridItem>
+        <GridItem>
+            <TextField
+                className={classes.browserName}
+                value={plugin.name}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>): string => plugin.name = e.target.value}
+            />
+        </GridItem>
+        <GridItem>
+            <RelativeRectangle rect={plugin.relativeBounds} />
+        </GridItem>
+    </GridContainer>);
 });
 
 export default PluginLine;

@@ -20,6 +20,7 @@ export class Plugin extends SetupBase implements PluginInterface {
     @observable fps?: number;
     @observable cpuUsage?: number;
     @observable continuesSkipped?: number;
+    @observable skipped?: number;
 
     private static readonly schema: JSONSchema7 = {
         $id: Plugin.name,
@@ -34,6 +35,7 @@ export class Plugin extends SetupBase implements PluginInterface {
                     scaledBounds: { $ref: Rectangle.name },
                     showFpsMeter: { type: 'boolean', default: true },
                     fps: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    skipped: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
                     cpuUsage: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
                     continuesSkipped: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
                 },
@@ -46,7 +48,8 @@ export class Plugin extends SetupBase implements PluginInterface {
         scaledBounds: { 'ui:widget': 'hidden' },
         fps: { 'ui:readonly': true },
         cpuUsage: { 'ui:readonly': true },
-        continuesSkipped: { 'ui:readonly': true }
+        continuesSkipped: { 'ui:widget': 'hidden' },
+        skipped: { 'ui:readonly': true }
     };
 
     constructor(setup: SetupBaseInterface) {        

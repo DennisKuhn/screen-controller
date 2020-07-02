@@ -6,8 +6,10 @@ import { SetupBase } from '../Setup/SetupBase';
 import { callerAndfName } from '../utils/debugging';
 import { CanvasRegistration, HtmlRegistration, PlainRegistration, Plugin as PluginInterface, Registration, RenderPlugin } from './PluginInterface';
 import { cloneDeep } from 'lodash';
-import 'fpsmeter';
+// import FPSMeter, { FPSMeterOptions } from 'fpsmeter';
 import { SetupItemId } from 'src/Setup/SetupInterface';
+import 'fpsmeter';
+
 /**
  * Wrapper for plugin instance.
  */
@@ -233,11 +235,14 @@ export class Plugin {
 
         if (this.rendering === true) {
             this.continuesSkipped += 1;
+            this.fpsMeter != undefined && this.fpsMeter.skip();
             this.setup.continuesSkipped = this.continuesSkipped;
         } else {
             if (this.continuesSkipped > 1)  {
-                console.warn(`${callerAndfName()}: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} `);
-                
+                console.warn(`${callerAndfName()}[${this.setup.id}]: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} `);                
+                this.setup.continuesSkipped = this.continuesSkipped = 0;
+            } if (this.continuesSkipped > 0) {
+                console.debug(`${callerAndfName()}[${this.setup.id}]: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} `);
                 this.setup.continuesSkipped = this.continuesSkipped = 0;
             }
             this.rendering = true;
@@ -247,6 +252,9 @@ export class Plugin {
     }
 
     private rendering = false;
+    private lastFps: number | undefined;
+    private lastUsage: number | undefined;
+    private lastSkipped: number | undefined;
 
     private renderNow = (/*time: number*/): void => {
         // console.debug(`${callerAndfName()}[${this.setup.id}] renderNow start=${this.start}`);
@@ -276,10 +284,17 @@ export class Plugin {
                 } else if (this.fpsMeter.isPaused == 0) {
                     this.fpsMeter.hide();
                 }
-                this.setup.cpuUsage = this.fpsMeter.usage;
-                this.setup.fps = this.fpsMeter.fps;
+                if (this.lastUsage != this.fpsMeter.monitorUsage) {
+                    this.setup.cpuUsage = this.lastUsage = this.fpsMeter.monitorUsage;
+                }
+                if (this.lastFps != this.fpsMeter.monitorFps) {
+                    this.setup.fps = this.lastFps = this.fpsMeter.monitorFps;
+                }
+                if (this.lastSkipped != this.fpsMeter.monitorSkipped) {
+                    this.setup.skipped = this.lastSkipped = this.fpsMeter.monitorSkipped;
+                }
             } else {
-                console.error(`${callerAndfName()} no this.fpsMeter`);
+                console.error(`${callerAndfName()}[${this.setup.id}] no this.fpsMeter`);
             }
         }
     }

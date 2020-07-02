@@ -1,12 +1,11 @@
-import { makeStyles, Grid } from '@material-ui/core';
 import { observer } from 'mobx-react-lite';
 import React, { useState, useEffect } from 'react';
-import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
 import { Browser } from '../../../Setup/Application/Browser';
 import { Plugin } from '../../../Setup/Application/Plugin';
 import controller from '../../../Setup/Controller/Factory';
 import PluginLine from './PluginLine';
+import GridContainer from '../../components/Grid/GridContainer';
 
 interface Props {
     browser: Browser;
@@ -14,11 +13,11 @@ interface Props {
 
 
 const BrowserPlugins = observer(({ plugins }: {plugins: ObservableSetupBaseMap<Plugin>}): JSX.Element => {
-    return (<Grid container>
+    return (<GridContainer>
         {plugins.mapEntries(([id, plugin]) =>
             <PluginLine key={id} plugin={plugin} />
         )}
-    </Grid>);
+    </GridContainer>);
 });
 
 

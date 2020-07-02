@@ -8,4 +8,5 @@ export interface PluginInterface extends SetupBaseInterface {
     fps?: number;
     cpuUsage?: number;
     continuesSkipped?: number;
+    skipped?: number;
 }

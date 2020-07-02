@@ -20,7 +20,6 @@ import DictionaryObject from './Objects/Dictionary';
 import RectangleObject from './Objects/Rectangle';
 import SetupObject from './Objects/SetupBase';
 import LocalFileWidget from './Widgets/LocalFile';
-import { callerAndfName } from '../../utils/debugging';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
