@@ -15,6 +15,16 @@ class ObservableArrayMap<K, V> extends ObservableMap<K, V> {
         }
         return result;
     }
+    mapEntries<O>(mapper: ([K, V]) => O): O[] {
+        const result: O[] = new Array<O>(this.size);
+        let i = 0;
+
+        for (const entry of this.entries()) {
+            result[i] = mapper(entry);
+            i += 1;
+        }
+        return result;
+    }
     mapKeys<O>(mapper: (value: K) => O): O[] {
         const result: O[] = new Array<O>(this.size);
         let i = 0;

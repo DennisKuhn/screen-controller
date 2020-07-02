@@ -68,11 +68,17 @@ export class Browser extends SetupBase {
         this.performanceInterval = setup.performanceInterval;        
 
         this.relative = new RelativeRectangle(source['relative']);
-        if (setup.scaled) {
+        if (setup.scaled !== undefined) {
             this.scaled = new Rectangle(setup.scaled);
         }
-        if (setup.device) {
+        if (setup.device !== undefined) {
             this.device = new Rectangle(setup.device);
+        }
+        if (setup.pid !== undefined) {
+            this.pid = setup.pid;
+        }
+        if (setup.cpuUsage !== undefined) {
+            this.cpuUsage = setup.cpuUsage;
         }
         this.plugins = this.createMap<Plugin>(setup.plugins, 'plugins');
     }

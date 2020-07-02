@@ -30,7 +30,6 @@ import CardFooter from '../../components/Card/CardFooter';
 import { bugs, website, server } from '../../variables/general';
 
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import Displays from './Displays';
 
 interface Props {
     classes: any;
@@ -61,9 +60,29 @@ class Dashboard extends React.Component<Props, State> {
         const { classes } = this.props;
         return (
             <div>
-                <Displays />
                 <GridContainer>
                     <GridItem xs={12} sm={6} md={3}>
+                        <Card>
+                            <CardHeader color="warning" stats={true} icon={true}>
+                                <CardIcon color="warning">
+                                    <Icon>content_copy</Icon>
+                                </CardIcon>
+                                <p className={classes.cardCategory}>Used Space</p>
+                                <h3 className={classes.cardTitle}>
+                                    49/50 <small>GB</small>
+                                </h3>
+                            </CardHeader>
+                            <CardFooter stats={true}>
+                                <div className={classes.stats}>
+                                    <Danger>
+                                        <Warning />
+                                    </Danger>
+                                    <a href="#pablo" onClick={e => e.preventDefault()}>
+                                        Get more space
+                  </a>
+                                </div>
+                            </CardFooter>
+                        </Card>
                     </GridItem>
                     <GridItem xs={12} sm={6} md={3}>
                         <Card>

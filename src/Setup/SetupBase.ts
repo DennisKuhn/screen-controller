@@ -557,6 +557,7 @@ export abstract class SetupBase {
                                 shallow[propertyName as string][id] = null;
                             }
                         } else if (isObservableArray(value)) {
+                            // console.log(`SetupBase[${this.constructor.name}].getShallow: copy ${propertyName} of ObservableArray`);
                             shallow[propertyName as string] = value.map(item => SetupBase.getPlainValue(item));
                         } else {
                             throw new Error(`SetupBase[${this.constructor.name}].getShallow: Invalid class type ${typeof value} for ${propertyName}`);
@@ -567,7 +568,7 @@ export abstract class SetupBase {
                         // console.warn(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'undefined':
-                        // console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
+                        console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName} of type ${typeof value}`);
                         break;
                     case 'bigint':
                         throw new Error(`SetupBase[${this.constructor.name}].getShallow: Invalid type ${typeof value} for ${propertyName}`);

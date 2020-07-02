@@ -20,6 +20,7 @@ import DictionaryObject from './Objects/Dictionary';
 import RectangleObject from './Objects/Rectangle';
 import SetupObject from './Objects/SetupBase';
 import LocalFileWidget from './Widgets/LocalFile';
+import { callerAndfName } from '../../utils/debugging';
 
 const useStyles = makeStyles((/*theme*/) => ({
     percentField: {
@@ -141,7 +142,7 @@ const SetupBaseForm = observer(({ root, expand, schema }: { root: SetupBase; exp
     const formContext: FormContext = { schema };
     const uiSchema = fixUiSchema(Screen.uiSchema, schema);
 
-    // console.debug(`SetupBaseForm(${root.id}/${root.className})`/*, uiSchema*/);
+    // console.debug(`${callerAndfName()}(${root.id}/${root.className})`, root);
 
     return (
         <TreeView

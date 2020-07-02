@@ -59,12 +59,16 @@ export class Plugin extends SetupBase implements PluginInterface {
         if (source.scaledBounds) {
             this.scaledBounds = new Rectangle(source.scaledBounds);
         }
-
+        if (source.continuesSkipped) {
+            this.continuesSkipped = source.continuesSkipped;
+        }
+        if (source.cpuUsage) {
+            this.cpuUsage = source.cpuUsage;
+        }
+        if (source.fps) {
+            this.fps = source.fps;
+        }
         this.init(setup);
-        // for (const propertyName in this) {
-        //     console.log(`${this.constructor.name}[${setup.className}][${setup.id}] observable(${propertyName})=${this[propertyName]}`);
-        //     // observable(this, propertyName);
-        // }
     }
 
     init(setup: SetupBaseInterface): SetupBase {

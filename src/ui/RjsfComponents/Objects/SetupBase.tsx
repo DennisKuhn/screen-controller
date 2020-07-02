@@ -6,6 +6,7 @@ import React, { ReactNode, useCallback } from 'react';
 import controller from '../../../Setup/Controller/Factory';
 import { SetupBaseInterface } from '../../../Setup/SetupInterface';
 import HiddenField from '../Fields/Hidden';
+import { callerAndfName } from '../../../utils/debugging';
 
 const useItemLabelStyles = makeStyles(() =>
     createStyles({
@@ -37,7 +38,7 @@ const SetupBaseObjectFieldTemplate = (props: ObjectFieldTemplateProps): JSX.Elem
     const { properties, formData, idSchema } = props;
     const setup = formData as SetupBaseInterface;
 
-    // console.debug( `SetupBaseTemplate[${idSchema?.$id}]: setup.id=${setup?.id}/${setup?.className}` /*, props */ );
+    // console.debug( `${callerAndfName()}[${idSchema?.$id}][${setup?.id}/${setup?.className}]`, props );
 
     const deleteItem = useCallback(
         () => {
