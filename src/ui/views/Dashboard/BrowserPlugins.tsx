@@ -5,19 +5,48 @@ import { Browser } from '../../../Setup/Application/Browser';
 import { Plugin } from '../../../Setup/Application/Plugin';
 import controller from '../../../Setup/Controller/Factory';
 import PluginLine from './PluginLine';
-import GridContainer from '../../components/Grid/GridContainer';
+import { TableContainer, TableHead, Table, TableRow, TableCell, TableBody } from '@material-ui/core';
 
 interface Props {
     browser: Browser;
 }
 
 
-const BrowserPlugins = observer(({ plugins }: {plugins: ObservableSetupBaseMap<Plugin>}): JSX.Element => {
-    return (<GridContainer>
-        {plugins.mapEntries(([id, plugin]) =>
-            <PluginLine key={id} plugin={plugin} />
-        )}
-    </GridContainer>);
+const BrowserPlugins = observer(({ plugins }: { plugins: ObservableSetupBaseMap<Plugin> }): JSX.Element => {
+
+    return (
+        <TableContainer>
+            <Table size="small">
+                <TableHead>
+                    <TableRow>
+                        <TableCell>CPU</TableCell>
+                        <TableCell>fps</TableCell>
+                        <TableCell>Skipped</TableCell>
+                        <TableCell>Name</TableCell>
+                        <TableCell>x</TableCell>
+                        <TableCell>y</TableCell>
+                        <TableCell>Width</TableCell>
+                        <TableCell>Height</TableCell>
+                    </TableRow>                    
+                    <TableRow>
+                        <TableCell>[%]</TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                        <TableCell>[%]</TableCell>
+                        <TableCell>[%]</TableCell>
+                        <TableCell>[%]</TableCell>
+                        <TableCell>[%]</TableCell>
+                    </TableRow>                    
+                </TableHead>
+                <TableBody>
+                    {plugins.mapEntries(([id, plugin]) =>
+                        <PluginLine key={id} plugin={plugin} />
+                    )}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
 });
 
 

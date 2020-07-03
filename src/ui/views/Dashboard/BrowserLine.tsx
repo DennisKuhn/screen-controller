@@ -1,12 +1,21 @@
-import { makeStyles, TextField, Typography, withStyles } from '@material-ui/core';
-import { TreeItem } from '@material-ui/lab';
+import {
+    Box,
+    Collapse,
+    IconButton,
+    makeStyles,
+    TableCell,
+    TableRow,
+    TextField,
+    withStyles
+} from '@material-ui/core';
+import { ExpandLess, ExpandMore } from '@material-ui/icons';
 import { observer } from 'mobx-react-lite';
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, Fragment, useState } from 'react';
 import { Browser } from '../../../Setup/Application/Browser';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import RelativeRectangle from '../../Fields/RelativeRectangle';
 import BrowserPlugins from './BrowserPlugins';
-import { getCpuUsage, getCpuText, getCpuClass } from './Tools';
+import RectangleCells from './RectangleCells';
+import BrowserPerformanceCells from './BrowserPerformanceCells';
 
 interface Props {
     browser: Browser;
@@ -16,35 +25,47 @@ const useStyles = makeStyles((/*theme*/) =>
     dashboardStyle
 );
 
-const Label = observer(({ browser }: Props): JSX.Element => {
-    const classes = useStyles();
-    const cpuUsage = getCpuUsage(browser.cpuUsage);
-    const cpuText = getCpuText( cpuUsage );
-    const cpuClass = classes[getCpuClass(cpuUsage)];
-
-    return (
-        <div className={classes.browserLabel}>
-            <Typography className={cpuClass}>{cpuText}</Typography>
-            <TextField
-                className={classes.browserName}
-                value={browser.name}
-                onChange={(e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>): string => browser.name = e.target.value }
-            />
-            <RelativeRectangle rect={browser.relative} />
-        </div>
-    );
-});
-
 const BrowserLine = observer(({ browser }: Props): JSX.Element => {
+    const classes = useStyles();
+
+    const [open, setOpen] = useState(false);
+    const hasPlugins = browser.plugins.size > 0;
 
     return (
-        <TreeItem
-            nodeId={browser.id}
-            label={<Label browser={browser} />}
-        >
-            <BrowserPlugins browser={browser} />
-        </TreeItem>
+        <Fragment>
+            <TableRow key={browser.id + '.row'}>
+                {hasPlugins ?
+                    <TableCell>
+                        <IconButton aria-label="expand row" size="small" onClick={(): void => setOpen(!open)}>
+                            {open ? <ExpandLess /> : <ExpandMore />}
+                        </IconButton>
+                    </TableCell> :
+                    <TableCell />
+                }
+                <BrowserPerformanceCells browser={browser} />
+                <TableCell>
+                    <TextField
+                        className={classes.browserName}
+                        value={browser.name}
+                        onChange={(e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>): string => browser.name = e.target.value}
+                    />
+                </TableCell>
+                <RectangleCells rect={browser.relative} />
+            </TableRow>
+            {hasPlugins &&
+                <TableRow key={browser.id + '.pluginsRow'}>
+                    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
+                        <Collapse in={open} timeout="auto" unmountOnExit>
+                            <Box margin={1}>
+                                <BrowserPlugins browser={browser} />
+                            </Box>
+                        </Collapse>
+                    </TableCell>
+                </TableRow>
+            }
+        </Fragment>
     );
 });
+
 
 export default withStyles(dashboardStyle)(BrowserLine);
