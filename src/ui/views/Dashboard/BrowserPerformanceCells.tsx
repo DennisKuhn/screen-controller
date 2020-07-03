@@ -39,11 +39,11 @@ const BrowserPerformanceCells = observer(({ browser }: Props): JSX.Element => {
     }
     const pluginsCpuUsage = getCpuUsage(pluginsUsage / browser.cpuUsage);
     const pluginsCpuText = getCpuText(pluginsCpuUsage);
-    const pluginsCpuClass = classes[getCpuClass(pluginsCpuUsage)];
+    // const pluginsCpuClass = classes[getCpuClass(pluginsCpuUsage)];
 
     const otherCpuUsage = getCpuUsage((browser.cpuUsage - pluginsUsage) / browser.cpuUsage);
     const otherCpuText = getCpuText(otherCpuUsage);
-    const otherCpuClass = classes[getCpuClass(otherCpuUsage)];
+    // const otherCpuClass = classes.;
 
 
     return (
@@ -52,10 +52,10 @@ const BrowserPerformanceCells = observer(({ browser }: Props): JSX.Element => {
                 <Typography className={cpuClass}>{cpuText}</Typography>
             </TableCell>
             <TableCell>
-                <Typography className={pluginsCpuClass}>{pluginsCpuText}</Typography>
+                <Typography >{pluginsCpuText}</Typography>
             </TableCell>
             <TableCell>
-                <Typography className={otherCpuClass}>{otherCpuText}</Typography>
+                <Typography >{otherCpuText}</Typography>
             </TableCell>
         </Fragment>
     );

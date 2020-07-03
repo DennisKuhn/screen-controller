@@ -79,10 +79,8 @@ const DisplayCard = observer((props: Props): JSX.Element => {
                                             <TableCell>CPU [%]</TableCell>
                                             <TableCell>CPU [%]</TableCell>
                                             <TableCell>Name</TableCell>
-                                            <TableCell>x</TableCell>
-                                            <TableCell>y</TableCell>
-                                            <TableCell>Width</TableCell>
-                                            <TableCell>Height</TableCell>
+                                            <TableCell colSpan={2}>Position</TableCell>
+                                            <TableCell colSpan={2}>Size</TableCell>
                                         </TableRow>
                                         <TableRow>
                                             <TableCell />
@@ -90,10 +88,8 @@ const DisplayCard = observer((props: Props): JSX.Element => {
                                             <TableCell>Plugins</TableCell>
                                             <TableCell>Other</TableCell>
                                             <TableCell></TableCell>
-                                            <TableCell>[%]</TableCell>
-                                            <TableCell>[%]</TableCell>
-                                            <TableCell>[%]</TableCell>
-                                            <TableCell>[%]</TableCell>
+                                            <TableCell colSpan={2}>[%]</TableCell>
+                                            <TableCell colSpan={2}>[%]</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>

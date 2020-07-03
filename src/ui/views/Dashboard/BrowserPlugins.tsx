@@ -23,20 +23,16 @@ const BrowserPlugins = observer(({ plugins }: { plugins: ObservableSetupBaseMap<
                         <TableCell>fps</TableCell>
                         <TableCell>Skipped</TableCell>
                         <TableCell>Name</TableCell>
-                        <TableCell>x</TableCell>
-                        <TableCell>y</TableCell>
-                        <TableCell>Width</TableCell>
-                        <TableCell>Height</TableCell>
+                        <TableCell colSpan={2}>Position</TableCell>
+                        <TableCell colSpan={2}>Size</TableCell>
                     </TableRow>                    
                     <TableRow>
                         <TableCell>[%]</TableCell>
                         <TableCell></TableCell>
                         <TableCell></TableCell>
                         <TableCell></TableCell>
-                        <TableCell>[%]</TableCell>
-                        <TableCell>[%]</TableCell>
-                        <TableCell>[%]</TableCell>
-                        <TableCell>[%]</TableCell>
+                        <TableCell colSpan={2}>[%]</TableCell>
+                        <TableCell colSpan={2}>[%]</TableCell>
                     </TableRow>                    
                 </TableHead>
                 <TableBody>

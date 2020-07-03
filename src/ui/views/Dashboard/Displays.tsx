@@ -1,19 +1,18 @@
 import { observer } from 'mobx-react-lite';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Fragment } from 'react';
 import { Screen } from '../../../Setup/Application/Screen';
 import controller from '../../../Setup/Controller/Factory';
-import GridContainer from '../../components/Grid/GridContainer';
 import DisplayCard from './DisplayCard';
 import { remote } from 'electron';
 
 const electronDisplays = remote.screen.getAllDisplays();
 
 const Displays = observer(({ screen }: { screen: Screen }): JSX.Element =>
-    <GridContainer>
+    <Fragment>
         {screen.displays.mapEntries(([id, display]) =>
             <DisplayCard key={id} display={display} info={electronDisplays.find(info => info.id == id )} />
         )}
-    </GridContainer>);
+    </Fragment>);
 
 
 

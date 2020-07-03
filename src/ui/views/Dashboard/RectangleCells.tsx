@@ -1,7 +1,9 @@
-import { makeStyles, TextField, TextFieldProps, TableCell } from '@material-ui/core';
+import { makeStyles, TextField, TextFieldProps, TableCell, Typography } from '@material-ui/core';
 import { observer } from 'mobx-react-lite';
 import React from 'react';
 import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
+import MoveRectangleButton from './MoveRectangleButton';
+import RectangleButton from './RectangleButton';
 
 
 export const useStyles = makeStyles((/*theme*/) => ({
@@ -33,36 +35,16 @@ export function PercentField(props: TextFieldProps): React.ReactElement {
 const RectangleCells = observer(({ rect }: { rect: RelativeRectangle }): JSX.Element => (
     <>
         <TableCell>
-            <PercentField
-                value={rect.x}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
-                    rect.x = Number(event.target.value);
-                }}
-            />
+            <Typography>{(rect.x * 100).toFixed(0)}, {(rect.y * 100).toFixed(0)}</Typography>
         </TableCell>
         <TableCell>
-            <PercentField
-                value={rect.y}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
-                    rect.y = Number(event.target.value);
-                }}
-            />
+            <RectangleButton rect={rect} moveNotSize={true} />
         </TableCell>
         <TableCell>
-            <PercentField
-                value={rect.width}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
-                    rect.width = Number(event.target.value);
-                }}
-            />
+            <Typography>{(rect.width * 100).toFixed(0)} * {(rect.height * 100).toFixed(0)}</Typography>
         </TableCell>
         <TableCell>
-            <PercentField
-                value={rect.height}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
-                    rect.height = Number(event.target.value);
-                }}
-            />
+            <RectangleButton rect={rect} moveNotSize={false} />
         </TableCell>
     </>
 ));
