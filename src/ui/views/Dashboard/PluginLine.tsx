@@ -1,10 +1,11 @@
-import { makeStyles, TextField, Typography, TableRow, TableCell } from '@material-ui/core';
+import { IconButton, makeStyles, TableCell, TableRow, TextField, Typography } from '@material-ui/core';
+import { PausePresentation, Slideshow, Visibility, VisibilityOff } from '@material-ui/icons';
 import { observer } from 'mobx-react-lite';
 import React, { ChangeEvent } from 'react';
 import { Plugin } from '../../../Setup/Application/Plugin';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import { getCpuClass, getCpuText, getCpuUsage } from './Tools';
 import RectangleCells from './RectangleCells';
+import { getCpuClass, getCpuText, getCpuUsage } from './Tools';
 
 interface Props {
     plugin: Plugin;
@@ -39,9 +40,22 @@ const Performance = observer(({ plugin }: Props): JSX.Element => {
     );
 });
 
+const Actions = observer(({ plugin }: Props): JSX.Element => {
+    return (
+        <TableCell>
+            <IconButton>
+                {true ? <Slideshow /> : <PausePresentation />}
+            </IconButton>
+            <IconButton>
+                {true ? <Visibility /> : <VisibilityOff />}
+            </IconButton>
+        </TableCell>
+    );
+});
+
 const PluginLine = observer(({ plugin }: Props): JSX.Element => {
     const classes = useStyles();
-    
+
     return (<TableRow>
         <Performance plugin={plugin} />
         <TableCell>
@@ -51,6 +65,7 @@ const PluginLine = observer(({ plugin }: Props): JSX.Element => {
                 onChange={(e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>): string => plugin.name = e.target.value}
             />
         </TableCell>
+        <Actions plugin={plugin} />
         <RectangleCells rect={plugin.relativeBounds} />
     </TableRow>);
 });

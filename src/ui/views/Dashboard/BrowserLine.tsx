@@ -8,7 +8,7 @@ import {
     TextField,
     withStyles
 } from '@material-ui/core';
-import { ExpandLess, ExpandMore } from '@material-ui/icons';
+import { ExpandLess, ExpandMore, Slideshow, PausePresentation, Visibility, VisibilityOff } from '@material-ui/icons';
 import { observer } from 'mobx-react-lite';
 import React, { ChangeEvent, Fragment, useState } from 'react';
 import { Browser } from '../../../Setup/Application/Browser';
@@ -24,6 +24,20 @@ interface Props {
 const useStyles = makeStyles((/*theme*/) =>
     dashboardStyle
 );
+
+const Actions = observer(({ browser }: Props): JSX.Element => {
+    return (
+        <TableCell>
+            <IconButton>
+                {true ? <Slideshow /> : <PausePresentation />}
+            </IconButton>
+            <IconButton>
+                {true ? <Visibility /> : <VisibilityOff />}
+            </IconButton>
+        </TableCell>
+    );
+});
+
 
 const BrowserLine = observer(({ browser }: Props): JSX.Element => {
     const classes = useStyles();
@@ -50,6 +64,7 @@ const BrowserLine = observer(({ browser }: Props): JSX.Element => {
                         onChange={(e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>): string => browser.name = e.target.value}
                     />
                 </TableCell>
+                <Actions browser={browser} />
                 <RectangleCells rect={browser.relative} />
             </TableRow>
             {hasPlugins &&

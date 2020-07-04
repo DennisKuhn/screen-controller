@@ -45,8 +45,18 @@ const DisplayCard = observer((props: Props): JSX.Element => {
         .map(browser => browser?.plugins.size ?? 0)
         .reduce((result, size) => result + size);
 
+    const loadedPlugins = plugins > 0 && display.browsers
+        .map(browser => browser?.plugins)
+        .reduce(
+            (loaded, plugins) =>
+                loaded || plugins !== undefined && plugins
+                    .map(candidate => candidate != null)
+                    .some(isLoaded => isLoaded),
+            false
+        );
+
     return (
-        <GridItem xs={12} sm={open ? 12 : 6} md={open ? 10 : 4} lg={open ? 8 : 3} xl={open ? 6 : 2}>
+        <GridItem xs={12} sm={open ? 12 : 6} md={open ? 12 : 4} lg={open ? 8 : 3} xl={open ? 6 : 2}>
             <Card>
                 <CardHeader color={(cpuUsage < 5) ? 'success' : (cpuUsage < 10) ? 'warning' : 'danger'} stats={true} icon={true}>
                     <CardIcon color={(cpuUsage < 5) ? 'success' : (cpuUsage < 10) ? 'warning' : 'danger'}>
@@ -76,20 +86,11 @@ const DisplayCard = observer((props: Props): JSX.Element => {
                                         <TableRow>
                                             <TableCell />
                                             <TableCell>CPU [%]</TableCell>
-                                            <TableCell>CPU [%]</TableCell>
-                                            <TableCell>CPU [%]</TableCell>
+                                            <TableCell>{loadedPlugins ? '' : ''}</TableCell>
+                                            <TableCell>{loadedPlugins ? '' : ''}</TableCell>
                                             <TableCell>Name</TableCell>
-                                            <TableCell colSpan={2}>Position</TableCell>
-                                            <TableCell colSpan={2}>Size</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell />
-                                            <TableCell>Total</TableCell>
-                                            <TableCell>Plugins</TableCell>
-                                            <TableCell>Other</TableCell>
                                             <TableCell></TableCell>
-                                            <TableCell colSpan={2}>[%]</TableCell>
-                                            <TableCell colSpan={2}>[%]</TableCell>
+                                            <TableCell></TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -99,7 +100,6 @@ const DisplayCard = observer((props: Props): JSX.Element => {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-
                         </Box>
                     </Collapse>
                 </CardBody>

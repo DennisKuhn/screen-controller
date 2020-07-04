@@ -19,20 +19,12 @@ const BrowserPlugins = observer(({ plugins }: { plugins: ObservableSetupBaseMap<
             <Table size="small">
                 <TableHead>
                     <TableRow>
-                        <TableCell>CPU</TableCell>
+                        <TableCell>CPU [%]</TableCell>
                         <TableCell>fps</TableCell>
-                        <TableCell>Skipped</TableCell>
+                        <TableCell></TableCell>
                         <TableCell>Name</TableCell>
-                        <TableCell colSpan={2}>Position</TableCell>
-                        <TableCell colSpan={2}>Size</TableCell>
-                    </TableRow>                    
-                    <TableRow>
-                        <TableCell>[%]</TableCell>
                         <TableCell></TableCell>
                         <TableCell></TableCell>
-                        <TableCell></TableCell>
-                        <TableCell colSpan={2}>[%]</TableCell>
-                        <TableCell colSpan={2}>[%]</TableCell>
                     </TableRow>                    
                 </TableHead>
                 <TableBody>

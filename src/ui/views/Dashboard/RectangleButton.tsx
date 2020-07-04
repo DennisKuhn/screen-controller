@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@material-ui/lab';
 import { RelativeRectangle } from 'src/Setup/Default/RelativeRectangle';
-import { OpenWith, ArrowUpward, ArrowDownward, ArrowForward, ArrowBack, AspectRatio, Height,  } from '@material-ui/icons';
+import { OpenWith, ArrowUpward, ArrowDownward, ArrowForward, ArrowBack, AspectRatio, Height, } from '@material-ui/icons';
 import { makeStyles, Theme, createStyles } from '@material-ui/core';
 
 interface Props {
     rect: RelativeRectangle;
     moveNotSize: boolean;
+    className: string;
 }
 const btnSize = 40;
 const useStyles = makeStyles((theme: Theme) =>
@@ -27,11 +28,13 @@ const useStyles = makeStyles((theme: Theme) =>
             height: btnSize,
             width: btnSize,
             position: 'relative'
+        },
+        icon: {
+            backgroundColor: 'transparent',
         }
-
     }),
 );
-const RectangleButton = observer(({ rect, moveNotSize }: Props): JSX.Element => {
+const RectangleButton = observer(({ rect, moveNotSize, className }: Props): JSX.Element => {
     const [open, setOpen] = useState(false);
     const classes = useStyles();
 
@@ -55,43 +58,48 @@ const RectangleButton = observer(({ rect, moveNotSize }: Props): JSX.Element => 
     }
 
     return (
-        <div className={classes.speedDialContainer}>
-            <SpeedDial
-                ariaLabel={moveNotSize ? 'Move' : 'Resize'}
-                open={open}
-                className={classes.speedDial}
-                hidden={false}
-                icon={<SpeedDialIcon icon={moveNotSize ? <OpenWith /> : <AspectRatio />} />}
-                onClose={handleClose}
-                onOpen={handleOpen}
-                direction="left"
-                FabProps={{ size: 'small' }}
-            >
-                <SpeedDialAction
-                    key={rect.id + 'right'}
-                    tooltipTitle={'right'}
-                    icon={moveNotSize ? <ArrowForward /> : <Height fontSize="small" style={{ transform: 'rotate(90deg)' }} />}
-                    onClick={handleRight}
-                />
-                <SpeedDialAction
-                    key={rect.id + 'left'}
-                    tooltipTitle={'left'}
-                    icon={moveNotSize ? <ArrowBack /> : <Height fontSize="large" style={{ transform: 'rotate(90deg)' }} />}                    
-                    onClick={handleLeft}
-                />
-                <SpeedDialAction
-                    key={rect.id + 'down'}
-                    tooltipTitle={'down'}
-                    icon={moveNotSize ? <ArrowDownward /> : <Height fontSize="small" />}
-                    onClick={handleDown}
-                />
-                <SpeedDialAction
-                    key={rect.id + 'up'}
-                    tooltipTitle={'up'}
-                    icon={moveNotSize ? <ArrowUpward /> : <Height fontSize="large" />}
-                    onClick={handleUp}
-                />
-            </SpeedDial>
+        <div className={className}>
+            <div className={classes.speedDialContainer}>
+                <SpeedDial
+                    ariaLabel={moveNotSize ? 'Move' : 'Resize'}
+                    open={open}
+                    className={classes.speedDial}
+                    hidden={false}
+                    icon={<SpeedDialIcon
+                        icon={moveNotSize ? <OpenWith className={classes.icon} color="action" /> : <AspectRatio className={classes.icon} color="action" />}
+                        openIcon={moveNotSize ? <OpenWith className={classes.icon} color="action" /> : <AspectRatio className={classes.icon} color="action" />}
+                    />}
+                    onClose={handleClose}
+                    onOpen={handleOpen}
+                    direction="left"
+                    FabProps={{ size: 'small', className: classes.icon }}
+                >
+                    <SpeedDialAction
+                        key={rect.id + 'right'}
+                        tooltipTitle={moveNotSize ? 'right' : 'narrow'}
+                        icon={moveNotSize ? <ArrowForward /> : <Height fontSize="small" style={{ transform: 'rotate(90deg)' }} />}
+                        onClick={handleRight}
+                    />
+                    <SpeedDialAction
+                        key={rect.id + 'left'}
+                        tooltipTitle={moveNotSize ? 'left' : 'wider'}
+                        icon={moveNotSize ? <ArrowBack /> : <Height fontSize="large" style={{ transform: 'rotate(90deg)' }} />}
+                        onClick={handleLeft}
+                    />
+                    <SpeedDialAction
+                        key={rect.id + 'down'}
+                        tooltipTitle={moveNotSize ? 'down' : 'shorter'}
+                        icon={moveNotSize ? <ArrowDownward /> : <Height fontSize="small" />}
+                        onClick={handleDown}
+                    />
+                    <SpeedDialAction
+                        key={rect.id + 'up'}
+                        tooltipTitle={moveNotSize ? 'up' : 'taller'}
+                        icon={moveNotSize ? <ArrowUpward /> : <Height fontSize="large" />}
+                        onClick={handleUp}
+                    />
+                </SpeedDial>
+            </div>
         </div>
     );
 });
