@@ -86,8 +86,7 @@ const DisplayCard = observer((props: Props): JSX.Element => {
                                         <TableRow>
                                             <TableCell />
                                             <TableCell>CPU [%]</TableCell>
-                                            <TableCell>{loadedPlugins ? '' : ''}</TableCell>
-                                            <TableCell>{loadedPlugins ? '' : ''}</TableCell>
+                                            {loadedPlugins && <TableCell colSpan={2} />}
                                             <TableCell>Name</TableCell>
                                             <TableCell></TableCell>
                                             <TableCell></TableCell>
@@ -95,7 +94,7 @@ const DisplayCard = observer((props: Props): JSX.Element => {
                                     </TableHead>
                                     <TableBody>
                                         {display.browsers.map(browser => browser ?
-                                            <BrowserLine key={browser.id} browser={browser as Browser} />
+                                            <BrowserLine key={browser.id} browser={browser as Browser} addPerformanceFiller={loadedPlugins} />
                                             : (<div>no browser</div>))}
                                     </TableBody>
                                 </Table>

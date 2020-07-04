@@ -19,13 +19,18 @@ import BrowserPerformanceCells from './BrowserPerformanceCells';
 
 interface Props {
     browser: Browser;
+    addPerformanceFiller: boolean;
+}
+
+interface ActionProps {
+    browser: Browser;
 }
 
 const useStyles = makeStyles((/*theme*/) =>
     dashboardStyle
 );
 
-const Actions = observer(({ browser }: Props): JSX.Element => {
+const Actions = observer(({ browser }: ActionProps): JSX.Element => {
     return (
         <TableCell>
             <IconButton>
@@ -39,7 +44,7 @@ const Actions = observer(({ browser }: Props): JSX.Element => {
 });
 
 
-const BrowserLine = observer(({ browser }: Props): JSX.Element => {
+const BrowserLine = observer(({ browser, addPerformanceFiller }: Props): JSX.Element => {
     const classes = useStyles();
 
     const [open, setOpen] = useState(false);
@@ -56,7 +61,7 @@ const BrowserLine = observer(({ browser }: Props): JSX.Element => {
                     </TableCell> :
                     <TableCell />
                 }
-                <BrowserPerformanceCells browser={browser} />
+                <BrowserPerformanceCells browser={browser} addFiller={addPerformanceFiller}/>
                 <TableCell>
                     <TextField
                         className={classes.browserName}

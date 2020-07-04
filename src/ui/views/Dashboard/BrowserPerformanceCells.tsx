@@ -12,9 +12,10 @@ const useStyles = makeStyles((/*theme*/) =>
 
 interface Props {
     browser: Browser;
+    addFiller: boolean;
 }
 
-const BrowserPerformanceCells = observer(({ browser }: Props): JSX.Element => {
+const BrowserPerformanceCells = observer(({ browser, addFiller }: Props): JSX.Element => {
     const usages = browser.plugins.map(plugin => plugin?.cpuUsage);
     const pluginsUsage = usages && usages.length > 0 ?
         usages.reduce((total, usage) =>
@@ -32,8 +33,7 @@ const BrowserPerformanceCells = observer(({ browser }: Props): JSX.Element => {
                 <TableCell>
                     <Typography className={cpuClass}>{cpuText}</Typography>
                 </TableCell>
-                <TableCell />
-                <TableCell />
+                {addFiller && <TableCell colSpan={2} />}
             </Fragment>
         );
     }
