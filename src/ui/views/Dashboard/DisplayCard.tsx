@@ -56,7 +56,7 @@ const DisplayCard = observer((props: Props): JSX.Element => {
         );
 
     return (
-        <GridItem xs={12} sm={open ? 12 : 6} md={open ? 12 : 4} lg={open ? 8 : 3} xl={open ? 6 : 2}>
+        <GridItem xs={12} sm={open ? 12 : 6} md={open ? 12 : 6} lg={open ? 8 : 4} xl={open ? 6 : 2}>
             <Card>
                 <CardHeader color={(cpuUsage < 5) ? 'success' : (cpuUsage < 10) ? 'warning' : 'danger'} stats={true} icon={true}>
                     <CardIcon color={(cpuUsage < 5) ? 'success' : (cpuUsage < 10) ? 'warning' : 'danger'}>

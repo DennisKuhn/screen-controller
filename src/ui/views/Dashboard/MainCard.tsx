@@ -32,9 +32,8 @@ const MainCard = observer((props: Props): JSX.Element => {
     const cpuText = getCpuText(cpuUsage);
     const cpuClass = classes[getCpuClass(cpuUsage)];
 
-
     return (
-        <GridItem xs={12} sm={6} md={4} lg={3} xl={2}>
+        <GridItem xs={12} sm={6} md={6} lg={4} xl={2}>
             <Card>
                 <CardHeader color={(cpuUsage < 5) ? 'success' : (cpuUsage < 10) ? 'warning' : 'danger'} stats={true} icon={true}>
                     <CardIcon color={(cpuUsage < 5) ? 'success' : (cpuUsage < 10) ? 'warning' : 'danger'}>
