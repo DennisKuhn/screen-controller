@@ -385,7 +385,7 @@ export abstract class SetupBase {
             //     `${callerAndfName()}(${info.schema.$id}).mergedOneOfNulls:`,
             //     cloneDeep(merged));
 
-            console.debug(`${callerAndfName()}(${info.schema.$id})`, merged/*, toJS(info.schema, { recurseEverything: true }) */);
+            //console.debug(`${callerAndfName()}(${info.schema.$id})`, merged/*, toJS(info.schema, { recurseEverything: true }) */);
 
             info.simpleClassSchema = merged;
         }

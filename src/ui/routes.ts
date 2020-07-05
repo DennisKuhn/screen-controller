@@ -8,6 +8,7 @@ import Unarchive from '@material-ui/icons/Unarchive';
 import Language from '@material-ui/icons/Language';
 // core components/views for Admin layout
 import DashboardPage from './views/Dashboard/Dashboard';
+import SetupPage from './views/Setup/SetupScreen';
 import DisplaysPage from './views/Displays/Displays';
 import ScreenPage from './views/Screen/Screen';
 import UserProfile from './views/UserProfile/UserProfile';
@@ -18,6 +19,7 @@ import NotificationsPage from './views/Notifications/Notifications';
 import UpgradeToPro from './views/UpgradeToPro/UpgradeToPro';
 // core components/views for RTL layout
 import RTLPage from './views/RTLPage/RTLPage';
+import { Settings } from '@material-ui/icons';
 
 const dashboardRoutes = [
     {
@@ -26,6 +28,14 @@ const dashboardRoutes = [
         rtlName: 'لوحة القيادة',
         icon: Dashboard,
         component: DashboardPage,
+        layout: '/admin'
+    },
+    {
+        path: '/setup',
+        name: 'Setup',
+        rtlName: 'لوحة القيادة',
+        icon: Settings,
+        component: SetupPage,
         layout: '/admin'
     },
     {
