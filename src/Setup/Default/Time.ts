@@ -4,6 +4,7 @@ import { Time as TimeInterface } from './TimeInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
+import { asScSchema7 } from '../ScSchema7';
 
 export enum SunPositions {
     sunrise = 0, // sunrise (top edge of the sun appears on the horizon)
@@ -48,18 +49,19 @@ export class Time extends SetupBase implements TimeInterface {
                 type: 'object',
                 properties: {
                     className: { const: Time.name },
-                    local: { type: 'number' },
-                    second: { type: 'number' },
-                    minute: { type: 'number' },
-                    hour12: { type: 'number' },
-                    hour24: { type: 'number' },
+                    name: asScSchema7({ scHidden: true }),
+                    local: asScSchema7({ type: 'number', scViewOnly: true }),
+                    second: asScSchema7({ type: 'number', scViewOnly: true }),
+                    minute: asScSchema7({ type: 'number', scViewOnly: true }),
+                    hour12: asScSchema7({ type: 'number', scViewOnly: true }),
+                    hour24: asScSchema7({ type: 'number', scViewOnly: true }),
                     isAm: { type: 'boolean' },
-                    dayOfTheWeek: { type: 'number' },
-                    dayOfTheMonth: { type: 'number' },
-                    month: { type: 'number' },
-                    yearShort: { type: 'number' },
-                    yearFull: { type: 'number' },
-                    sunPosition: { type: 'number' }
+                    dayOfTheWeek: asScSchema7({ type: 'number', scViewOnly: true }),
+                    dayOfTheMonth: asScSchema7({ type: 'number', scViewOnly: true }),
+                    month: asScSchema7({ type: 'number', scViewOnly: true }),
+                    yearShort: asScSchema7({ type: 'number', scViewOnly: true }),
+                    yearFull: asScSchema7({ type: 'number', scViewOnly: true }),
+                    sunPosition: asScSchema7({ type: 'number', scViewOnly: true })
                 },
                 required: ['local', 'second', 'minute', 'hour12', 'hour24', 'isAm', 'dayOfTheWeek', 'dayOfTheMonth', 'month', 'yearShort', 'yearFull', 'sunPosition']
             }

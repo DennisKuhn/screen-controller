@@ -3,12 +3,13 @@ import { SetupBase } from '../SetupBase';
 import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface';
 import { Screen as ScreenInterface } from './ScreenInterface';
 import { ObservableSetupBaseMap } from '../Container';
-import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { JSONSchema7 } from 'json-schema';
 import { Gradient } from '../Default/Gradient';
 import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
 import { create } from '../SetupFactory';
 import { Time } from '../Default/Time';
+import { asScSchema7 } from '../ScSchema7';
 
 export class Screen extends SetupBase {
     static schema: JSONSchema7 = {
@@ -25,12 +26,12 @@ export class Screen extends SetupBase {
                     parentId: { const: 'Root' },
                     longitude: { type: 'number' },
                     latitude: { type: 'number' },
-                    time: { allOf: [{ $ref: Time.name }, { scPersist: false }] } as JSONSchema7Definition,
+                    time: { allOf: [{ $ref: Time.name }, asScSchema7({ scVolatile: true })] },
                     fps: { type: 'number', default: 5 },
                     rotateColors: { type: 'boolean', default: true },
                     rotateSteps: { type: 'number', default: 3, minimum: 1, maximum: 359 },
                     startGradient: { $ref: Gradient.name },
-                    activeGradient: { allOf: [{ $ref: Gradient.name }, { scPersist: false }] } as JSONSchema7Definition,
+                    activeGradient: { allOf: [{ $ref: Gradient.name }, asScSchema7({ scHidden: true, scVolatile: true })] },
                     displays: {
                         type: 'object',
                         additionalProperties: {

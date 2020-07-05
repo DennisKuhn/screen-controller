@@ -4,6 +4,7 @@ import { SimpleRectangle, RectangleInterface } from './RectangleInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
+import { asScSchema7 } from '../ScSchema7';
 
 export class Rectangle extends SetupBase implements SimpleRectangle, RectangleInterface {
     public static readonly SCHEMA_REF = { $ref: Rectangle.name };
@@ -16,6 +17,7 @@ export class Rectangle extends SetupBase implements SimpleRectangle, RectangleIn
                 type: 'object',
                 properties: {
                     className: { default: Rectangle.name },
+                    name: asScSchema7({ scHidden: true }),
                     x: { type: 'number' },
                     y: { type: 'number' },
                     width: { type: 'number' },

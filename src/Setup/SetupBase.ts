@@ -3,7 +3,7 @@ import { JSONSchema7 } from 'json-schema';
 import { ObservableSetupBaseMap, ObservableArray } from './Container';
 import { create, register } from './SetupFactory';
 import { Dictionary, cloneDeep } from 'lodash';
-import Ajv, { ValidateFunction, CompilationContext } from 'ajv';
+import Ajv, { ValidateFunction } from 'ajv';
 import { observable, toJS, isObservableArray, $mobx } from 'mobx';
 import { PropertyKey, SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
 import { remote } from 'electron';
@@ -12,6 +12,7 @@ import deref from 'json-schema-deref-sync';
 import mergeAllOf from 'json-schema-merge-allof';
 import { setDefaults, replaceEach, replaceAbstractRefsWithOneOfConcrets, forEach } from './JsonSchemaTools';
 import { callerAndfName } from '../utils/debugging';
+import { asScSchema7, ScSchema7 } from './ScSchema7';
 
 switch (process.type) {
     case 'browser': // Main
@@ -44,12 +45,17 @@ export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
 }
 
+interface PropertyInfos {
+    [key: string]: ScSchema7;
+}
+
 interface ClassInfo {
     schema: JSONSchema7;
     uiSchema: UiSchema;
-    notPersisted: string[];
     plainSchema?: JSONSchema7;
+    simpleClassSchema?: JSONSchema7;
     validate?: ValidateFunction;
+    properties?: PropertyInfos;
 }
 
 export abstract class SetupBase {
@@ -68,10 +74,10 @@ export abstract class SetupBase {
         $id: SetupBase.name,
         type: 'object',
         properties: {
-            id: { type: 'string' },
-            parentId: { type: 'string' },
-            parentProperty: { type: 'string' },
-            className: { type: 'string' },
+            id: asScSchema7({ type: 'string', scHidden: true }),
+            parentId: asScSchema7({ type: 'string', scHidden: true }),
+            parentProperty: asScSchema7({ type: 'string', scHidden: true }),
+            className: asScSchema7({ type: 'string', scHidden: true }),
             name: { type: 'string' }
         },
         required: ['id', 'parentId', 'className']
@@ -99,45 +105,25 @@ export abstract class SetupBase {
         className: { 'ui:widget': 'hidden' },
     };
 
-    public static ajv = (new Ajv()).addKeyword(
-        'scPersist',
-        {
-            valid: true,
-            inline: (it: CompilationContext, keyword, schema, parentSchema): string => {
-                // console.warn(`${callerAndfName()}:`, { it, keyword, schema, parentSchema });
+    public static ajv = (new Ajv())
+        .addKeyword( 'scVolatile', { valid: true })
+        .addKeyword( 'scViewOnly', { valid: true })
+        .addKeyword( 'scHidden', { valid: true })
+        .addKeyword( 'scTranslationId', { valid: true })
+        .addKeyword( 'scFormat', { valid: true } );
 
-                const propertyName = /(.*\.properties\.)([a-zA-Z]*)(\.|$)/.exec(it.schemaPath)?.[2];
-                const info = SetupBase.infos[it.baseId];
+    public volatile(property: string): boolean {
+        if (this.info.simpleClassSchema == undefined)
+            throw new Error(`${callerAndfName()}[${this.constructor.name}](${this.className}) no simpleClassSchema: ${JSON.stringify(this.info)}`);
+        if (this.info.simpleClassSchema.properties == undefined)
+            throw new Error(`${callerAndfName()}[${this.constructor.name}](${this.className}) no properties in simpleClassSchema: ${JSON.stringify(this.info.simpleClassSchema)}`);
 
-                if (!propertyName) throw new Error(`${it.baseId} Can't find property in ${it.schemaPath}`);
-                if (!info) throw new Error(`Can't find info ${it.baseId} in ${Object.keys(SetupBase.infos)}`);
+        if (this.info.simpleClassSchema.properties[property] == undefined)
+            throw new Error(
+                `${callerAndfName()}[${this.constructor.name}](${this.className}) no ${property} in simpleClassSchema.properties:` +
+                `${JSON.stringify(this.info.simpleClassSchema.properties) }`);
 
-                // if (dataPath == '.' + parentDataProperty) {
-                if (schema == false) {
-                    console.log(`${callerAndfName()}: ${it.baseId} don't persist ${propertyName} (${it.schemaPath})`);
-                    info.notPersisted.push(propertyName);
-                } else {
-                    console.warn(`${callerAndfName()}: ${it.baseId} ${propertyName}: scPersist: true: schema=${JSON.stringify(parentSchema)}`);
-                }
-                // } else {
-                //  console.warn(`${callerAndfName()}: scPersist: ignore nested schema=${JSON.stringify(schema)}, dataPath=${dataPath}, parentDataProperty=${parentDataProperty}`);
-                // }
-
-                return 'true';
-            }
-        }
-    );
-
-    shouldPersist(property: string): boolean {
-        let ancestor = this.constructor;
-        let notPersisted;
-
-        do {
-            notPersisted = SetupBase.infos[ancestor.name]?.notPersisted.includes(property);
-            ancestor = Object.getPrototypeOf(ancestor);
-        } while ((!notPersisted) && (ancestor) && (ancestor !== Object));
-
-        return ! notPersisted;
+        return (this.info.simpleClassSchema.properties[property] as ScSchema7)?.scVolatile == true;
     }
 
     public static readonly SCHEMA_REF = { $ref: SetupBase.name };
@@ -165,7 +151,6 @@ export abstract class SetupBase {
                     definitions: SetupBase.activeSchema.definitions,
                     $ref: '#/definitions/' + schema.$id
                 },
-                notPersisted: [],
                 uiSchema: { ...SetupBase.uiSchema, ...uiSchema }
             };
         }
@@ -200,11 +185,13 @@ export abstract class SetupBase {
         const info = SetupBase.infos[source.className];
 
         if (info.validate == undefined) {
-            console.log(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator` /*, toJS(info.schema, { recurseEverything: true }) */);
+            // console.debug(`SetupBase[${this.constructor.name}].initClassInfo(${source.className}) create validator` /*, toJS(info.schema, { recurseEverything: true }) */);
 
             info.validate = SetupBase.ajv.compile(info.schema);
         }
-
+        if (info.simpleClassSchema == undefined) {
+            SetupBase.createSimpleClassSchema(info);
+        }
         return info;
     }
 
@@ -367,42 +354,87 @@ export abstract class SetupBase {
         }
     }
 
+    /**
+     * Create a simple dereferenced schema valid for this class and its non-object properties.
+     * @param info 
+     * Only the $id of child objects should be used, their properties and further nested may dissapear.
+     */
+    private static createSimpleClassSchema(info: ClassInfo): void {
+        const simpleSchema = toJS(info.schema, { recurseEverything: true });
+
+        replaceAbstractRefsWithOneOfConcrets(simpleSchema);
+        // console.log(`${callerAndfName()}(${info.schema.$id}).replaced AbstractRefsWithOneOfConcrets:`, cloneDeep(simpleSchema));
+
+        SetupBase.fixRefs(simpleSchema);
+
+        const derefed = deref(simpleSchema);
+
+        if (derefed instanceof Error) {
+            console.error(`${callerAndfName()}(${info.schema.$id}) deref error: ${derefed}`, derefed, cloneDeep(simpleSchema));
+        } else {
+            // console.log(`${callerAndfName()}(${info.schema.$id}) derefed schema:`, cloneDeep(derefed));
+
+            const merged = mergeAllOf(derefed) as JSONSchema7;
+
+            // console.log(
+            //     `${callerAndfName()}(${info.schema.$id}).merged schema:`,
+            //     cloneDeep(merged));
+
+            SetupBase.mergeOneOfNulls(merged);
+            // console.log(
+            //     `${callerAndfName()}(${info.schema.$id}).mergedOneOfNulls:`,
+            //     cloneDeep(merged));
+
+            console.debug(`${callerAndfName()}(${info.schema.$id})`, merged/*, toJS(info.schema, { recurseEverything: true }) */);
+
+            info.simpleClassSchema = merged;
+        }
+    }
+
+    public getSimpleClassSchema(): JSONSchema7 {
+        if (this.info.simpleClassSchema == undefined)
+            throw new Error(`${callerAndfName()}[${this.constructor.name}](${this.className}): no simpleClassSchema`);
+
+        return this.info.simpleClassSchema;
+    }
+
+
 
     public getPlainSchema(): JSONSchema7 {
         if (this.info.plainSchema == undefined) {
             const plainSchema = toJS(this.info.schema, { recurseEverything: true });
 
             replaceAbstractRefsWithOneOfConcrets(plainSchema);
-            // console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).replaced AbstractRefsWithOneOfConcrets:`, { ...plainSchema });
+            // console.log(`${callerAndfName()}[${this.constructor.name}](${this.className}).replaced AbstractRefsWithOneOfConcrets:`, { ...plainSchema });
 
             SetupBase.fixRefs(plainSchema);
 
             const derefed = deref(plainSchema);
 
             if (derefed instanceof Error) {
-                console.error(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved error: ${derefed}`, derefed, { ...plainSchema });
+                console.error(`${callerAndfName()}[${this.constructor.name}](${this.className}).resolved error: ${derefed}`, derefed, { ...plainSchema });
             } else {
-                // console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).resolved schema:`, { ...derefed }, { ...plainSchema });
+                // console.log(`${callerAndfName()}[${this.constructor.name}](${this.className}).resolved schema:`, { ...derefed }, { ...plainSchema });
 
                 const merged = mergeAllOf(derefed) as JSONSchema7;
 
                 // console.log(
-                //     `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).merged schema:`,
+                //     `${callerAndfName()}[${this.constructor.name}](${this.className}).merged schema:`,
                 //     { ...merged }, { ...derefed }, { ...plainSchema });
 
                 SetupBase.fixDuplicateIds(merged);
                 // console.log(
-                //     `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).fixedDuplicateIds:`,
+                //     `${callerAndfName()}[${this.constructor.name}](${this.className}).fixedDuplicateIds:`,
                 //     { ...merged });
 
                 SetupBase.mergeOneOfNulls(merged);
                 // console.log(
-                //     `SetupBase[${this.constructor.name}].getPlainSchema(${this.className}).mergedOneOfNulls:`,
+                //     `${callerAndfName()}[${this.constructor.name}](${this.className}).mergedOneOfNulls:`,
                 //     { ...merged });
 
                 SetupBase.moveRefsToDefsToDefs(merged);
 
-                console.log(`SetupBase[${this.constructor.name}].getPlainSchema(${this.className})`
+                console.log(`${callerAndfName()}[${this.constructor.name}](${this.className})`
                     // , { ...merged }, toJS(info.schema, { recurseEverything: true })
                 );
 
@@ -439,6 +471,11 @@ export abstract class SetupBase {
                 throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
 
         this.info = this.initClassInfo(source);
+
+        if (this.info.simpleClassSchema == undefined) {
+            this.info.simpleClassSchema = this.getSimpleClassSchema();
+        }
+
 
         //TODO remove:> source.name = source.name ?? source.id;
         source.name = source.name ?? source.id;

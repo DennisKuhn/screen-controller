@@ -30,6 +30,8 @@ export const resolve = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => 
     return resolve(resolved, root);
 };
 
+export const getProperty = (path: string): string | undefined => /(.*\.properties\.)([a-zA-Z]*)(\.|$)/.exec(path)?.[2];
+
 /**
  * First resolve $ref in allOf and then mergeAllOf
  * @param schema will be modified during resolving

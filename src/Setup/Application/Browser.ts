@@ -1,5 +1,5 @@
 import { UiSchema } from '@rjsf/core';
-import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
 import { callerAndfName } from '../../utils/debugging';
 import { ObservableSetupBaseMap } from '../Container';
@@ -10,6 +10,7 @@ import { SetupBase } from '../SetupBase';
 import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface';
 import { Browser as BrowserInterface } from './BrowserInterface';
 import { Plugin } from './Plugin';
+import { asScSchema7 } from '../ScSchema7';
 
 export class Browser extends SetupBase {
 
@@ -24,11 +25,21 @@ export class Browser extends SetupBase {
                 properties: {
                     className: { const: Browser.name },
                     relative: { $ref: RelativeRectangle.name },
-                    scaled: { $ref: Rectangle.name },
-                    device: { $ref: Rectangle.name },
+                    scaled: {
+                        allOf: [
+                            { $ref: Rectangle.name },
+                            asScSchema7({ scHidden: true })
+                        ]
+                    },
+                    device: {
+                        allOf: [
+                            { $ref: Rectangle.name },
+                            asScSchema7({ scHidden: true })
+                        ]
+                    },
                     performanceInterval: { type: 'number', default: 1000 },
-                    cpuUsage: { type: 'number', scPersist: false } as JSONSchema7Definition,
-                    pid: { type: 'number' },
+                    cpuUsage: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
+                    pid: asScSchema7({ type: 'number', scViewOnly: true }),
                     plugins: {
                         type: 'object',
                         additionalProperties: {

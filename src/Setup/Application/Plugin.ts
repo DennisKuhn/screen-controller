@@ -1,7 +1,7 @@
 import { SetupBase } from '../SetupBase';
 import { PropertyKey, SetupBaseInterface, SetupItemId, Dictionary } from '../SetupInterface';
 import { Rectangle } from '../Default/Rectangle';
-import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { JSONSchema7 } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
 import { create } from '../SetupFactory';
 import { extendObservable, observable } from 'mobx';
@@ -9,6 +9,7 @@ import { UiSchema } from '@rjsf/core';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
 import { setOptionals } from '../JsonSchemaTools';
 import {  } from '../../utils/debugging';
+import { asScSchema7 } from '../ScSchema7';
 
 /**
  * Template for plugin setup. Registered under plugin-className
@@ -32,12 +33,12 @@ export class Plugin extends SetupBase implements PluginInterface {
                 type: 'object',
                 properties: {
                     relativeBounds: { $ref: RelativeRectangle.name },
-                    scaledBounds: { $ref: Rectangle.name },
+                    scaledBounds: {allOf: [{ $ref: Rectangle.name }, asScSchema7({scHidden: true })]},
                     showFpsMeter: { type: 'boolean', default: true },
-                    fps: { type: 'number', scPersist: false } as JSONSchema7Definition,
-                    skipped: { type: 'number', scPersist: false } as JSONSchema7Definition,
-                    cpuUsage: { type: 'number', scPersist: false } as JSONSchema7Definition,
-                    continuesSkipped: { type: 'number', scPersist: false } as JSONSchema7Definition,
+                    fps: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
+                    skipped: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
+                    cpuUsage: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
+                    continuesSkipped: asScSchema7({ type: 'number', scHidden: true, scVolatile: true }),
                 },
                 required: ['relativeBounds', 'showFpsMeter' ]
             }

@@ -1,8 +1,9 @@
 import { SetupBase } from '../SetupBase';
 import { SetupBaseInterface } from '../SetupInterface';
 import { Screen } from './Screen';
-import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
+import { asScSchema7 } from '../ScSchema7';
 
 export class Root extends SetupBase {
     static schema: JSONSchema7 = {
@@ -19,7 +20,7 @@ export class Root extends SetupBase {
                     parentId: { const: Root.name },
                     screen: { $ref: Screen.name },
                     mainPerformanceInterval: { type: 'number', default: 1000 },
-                    mainCpuUsage: { type: 'number', scPersist: false } as JSONSchema7Definition,
+                    mainCpuUsage: asScSchema7({ type: 'number', scVolatile: true }),
                     mainPid: { type: 'number' },
                 },
                 required: ['screen', 'mainPerformanceInterval']
@@ -40,7 +41,7 @@ export class Root extends SetupBase {
 
     static createNewBlank = (): Root => new Root(
         {
-            ...SetupBase.createNewInterface(Root.name, Root.name, 'parent', Root.name),
+            ...SetupBase.createNewInterface(Root.name, Root.name, 'parentId', Root.name),
             screen: Screen.newInterface(Root.name, 'screen'),
             mainPerformanceInterval: 1000
         } as SetupBaseInterface

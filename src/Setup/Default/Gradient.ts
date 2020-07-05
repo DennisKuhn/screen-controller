@@ -5,6 +5,7 @@ import { observable } from 'mobx';
 import { UiSchema } from '@rjsf/core';
 import { Gradient as GradientInterface } from './GradientInterface';
 import { ObservableArray } from '../Container';
+import { asScSchema7 } from '../ScSchema7';
 
 export class Gradient extends SetupBase implements GradientInterface {
     static readonly schema: JSONSchema7 = {
@@ -15,6 +16,7 @@ export class Gradient extends SetupBase implements GradientInterface {
                 type: 'object',
                 properties: {
                     className: { const: Gradient.name },
+                    name: asScSchema7({scHidden: true}),
                     type: { type: 'string', enum: ['Solid', 'Circular', 'Horizontal', 'Vertical'], default: 'Circular' },
                     colors: {
                         type: 'array',

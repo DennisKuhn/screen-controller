@@ -18,7 +18,7 @@ import '../Application/Browser';
 import '../Application/Display';
 import '../Application/Screen';
 import '../Application/Root';
-import { readlink } from 'fs';
+import { Root } from '../Application/Root';
 
 
 
@@ -413,7 +413,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
     private shouldPersist = (change: LocalChangeArgsType): boolean => {
         const { item } = change;
         let key = item.id;
-        let shouldPersist = (change.item.parent == undefined) || change.item.parent.shouldPersist(change.item.parentProperty);
+        let shouldPersist = (change.item.parent == undefined) || (change.item.id == Root.name) || (!change.item.parent.volatile(change.item.parentProperty));
 
         if (shouldPersist) {
             switch (change.type) {
@@ -421,18 +421,18 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                 case 'remove':
                 case 'update':
                     if ('array' in change) {
-                        shouldPersist = item.shouldPersist(change.array);
+                        shouldPersist = !item.volatile(change.array);
                     } else if ('map' in change) {
-                        shouldPersist = item.shouldPersist(change.map);
+                        shouldPersist = !item.volatile(change.map);
                     } else {
-                        shouldPersist = item.shouldPersist(change.name);
+                        shouldPersist = !item.volatile(change.name);
                     }
                     break;
                 case 'delete':
-                    shouldPersist = item.shouldPersist(change.map);
+                    shouldPersist = !item.volatile(change.map);
                     break;
                 case 'splice':
-                    shouldPersist = item.shouldPersist(change.array);
+                    shouldPersist = !item.volatile(change.array);
                     break;
                 default:
                     throw new Error(`${callerAndfName()} change.type==${change['type']} not supported`);
