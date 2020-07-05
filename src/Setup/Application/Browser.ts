@@ -27,7 +27,7 @@ export class Browser extends SetupBase {
                     scaled: { $ref: Rectangle.name },
                     device: { $ref: Rectangle.name },
                     performanceInterval: { type: 'number', default: 1000 },
-                    cpuUsage: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    cpuUsage: { type: 'number', scPersist: false } as JSONSchema7Definition,
                     pid: { type: 'number' },
                     plugins: {
                         type: 'object',

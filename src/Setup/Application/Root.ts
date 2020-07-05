@@ -19,7 +19,7 @@ export class Root extends SetupBase {
                     parentId: { const: Root.name },
                     screen: { $ref: Screen.name },
                     mainPerformanceInterval: { type: 'number', default: 1000 },
-                    mainCpuUsage: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    mainCpuUsage: { type: 'number', scPersist: false } as JSONSchema7Definition,
                     mainPid: { type: 'number' },
                 },
                 required: ['screen', 'mainPerformanceInterval']

@@ -25,12 +25,12 @@ export class Screen extends SetupBase {
                     parentId: { const: 'Root' },
                     longitude: { type: 'number' },
                     latitude: { type: 'number' },
-                    time: { allOf: [{ $ref: Time.name }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    time: { allOf: [{ $ref: Time.name }, { scPersist: false }] } as JSONSchema7Definition,
                     fps: { type: 'number', default: 5 },
                     rotateColors: { type: 'boolean', default: true },
                     rotateSteps: { type: 'number', default: 3, minimum: 1, maximum: 359 },
                     startGradient: { $ref: Gradient.name },
-                    activeGradient: { allOf: [{ $ref: Gradient.name }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    activeGradient: { allOf: [{ $ref: Gradient.name }, { scPersist: false }] } as JSONSchema7Definition,
                     displays: {
                         type: 'object',
                         additionalProperties: {

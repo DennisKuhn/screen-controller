@@ -100,27 +100,27 @@ export abstract class SetupBase {
     };
 
     public static ajv = (new Ajv()).addKeyword(
-        'sc-persist',
+        'scPersist',
         {
             valid: true,
             inline: (it: CompilationContext, keyword, schema, parentSchema): string => {
                 // console.warn(`${callerAndfName()}:`, { it, keyword, schema, parentSchema });
 
-                const propertyName = /(.*\.properties\.)([a-zA-Z]*)(\.)/.exec(it.schemaPath)?.[2];
+                const propertyName = /(.*\.properties\.)([a-zA-Z]*)(\.|$)/.exec(it.schemaPath)?.[2];
                 const info = SetupBase.infos[it.baseId];
 
-                if (!propertyName) throw new Error(`Can't find property in ${it.schemaPath}`);
+                if (!propertyName) throw new Error(`${it.baseId} Can't find property in ${it.schemaPath}`);
                 if (!info) throw new Error(`Can't find info ${it.baseId} in ${Object.keys(SetupBase.infos)}`);
 
                 // if (dataPath == '.' + parentDataProperty) {
                 if (schema == false) {
-                    console.log(`${callerAndfName()}: ${it.baseId} don't persist ${propertyName}`);
+                    console.log(`${callerAndfName()}: ${it.baseId} don't persist ${propertyName} (${it.schemaPath})`);
                     info.notPersisted.push(propertyName);
                 } else {
-                    console.warn(`${callerAndfName()}: ${it.baseId} ${propertyName}: sc-persist: true: schema=${JSON.stringify(parentSchema)},`);
+                    console.warn(`${callerAndfName()}: ${it.baseId} ${propertyName}: scPersist: true: schema=${JSON.stringify(parentSchema)}`);
                 }
                 // } else {
-                //  console.warn(`${callerAndfName()}: sc-persist: ignore nested schema=${JSON.stringify(schema)}, dataPath=${dataPath}, parentDataProperty=${parentDataProperty}`);
+                //  console.warn(`${callerAndfName()}: scPersist: ignore nested schema=${JSON.stringify(schema)}, dataPath=${dataPath}, parentDataProperty=${parentDataProperty}`);
                 // }
 
                 return 'true';

@@ -34,10 +34,10 @@ export class Plugin extends SetupBase implements PluginInterface {
                     relativeBounds: { $ref: RelativeRectangle.name },
                     scaledBounds: { $ref: Rectangle.name },
                     showFpsMeter: { type: 'boolean', default: true },
-                    fps: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
-                    skipped: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
-                    cpuUsage: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
-                    continuesSkipped: { allOf: [{ type: 'number' }, { 'sc-persist': false }] } as JSONSchema7Definition,
+                    fps: { type: 'number', scPersist: false } as JSONSchema7Definition,
+                    skipped: { type: 'number', scPersist: false } as JSONSchema7Definition,
+                    cpuUsage: { type: 'number', scPersist: false } as JSONSchema7Definition,
+                    continuesSkipped: { type: 'number', scPersist: false } as JSONSchema7Definition,
                 },
                 required: ['relativeBounds', 'showFpsMeter' ]
             }
