@@ -5,20 +5,19 @@ import { makeStyles } from '@material-ui/core';
 
 const useStyle = makeStyles({
     grid: {
-        margin: '0 -15px !important',
-        width: 'unset'
+        padding: '0 15px !important'
     }
 });
 
-function GridContainer(props: any): JSX.Element {
+function GridContainerItem({ ...props }: any): JSX.Element {
     const { children, ...rest } = props;
     const classes = useStyle();
-
+    
     return (
-        <Grid container={true} {...rest} className={classes.grid}>
+        <Grid container={true} item={true} {...rest} className={classes.grid}>
             {children}
         </Grid>
     );
 }
 
-export default GridContainer;
+export default GridContainerItem;

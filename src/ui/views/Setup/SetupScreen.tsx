@@ -1,13 +1,11 @@
-import React, { Fragment, useState, useEffect } from 'react';
-import GridContainer from '../../components/Grid/GridContainer';
-
-import Form from './Form';
 import { Typography } from '@material-ui/core';
+import React, { useEffect, useState } from 'react';
 import { Root } from '../../../Setup/Application/Root';
 import controller from '../../../Setup/Controller/Factory';
 import { SetupBase } from '../../../Setup/SetupBase';
-
-
+import Form from './Form';
+//import './Material';
+import './MaterialCompact';
 
 const render = (): JSX.Element => {
     const [root, setRoot] = useState(undefined as SetupBase | undefined);
