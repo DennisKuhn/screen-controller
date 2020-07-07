@@ -26,7 +26,7 @@ export class Screen extends SetupBase {
                     parentId: { const: 'Root' },
                     longitude: { type: 'number' },
                     latitude: { type: 'number' },
-                    time: { allOf: [{ $ref: Time.name }, asScSchema7({ scVolatile: true })] },
+                    time: { allOf: [{ $ref: Time.name }, asScSchema7({ scVolatile: true, scViewOnly: true })] },
                     fps: { type: 'number', default: 5 },
                     rotateColors: { type: 'boolean', default: true },
                     rotateSteps: { type: 'number', default: 3, minimum: 1, maximum: 359 },

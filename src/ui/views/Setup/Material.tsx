@@ -1,4 +1,4 @@
-import { TextField, Typography } from '@material-ui/core';
+import { TextField, Typography, Input } from '@material-ui/core';
 import React from 'react';
 import GridContainer from '../../components/Grid/GridContainer';
 import GridContainerItem from '../../components/Grid/GridContainerItem';
@@ -13,6 +13,4 @@ register.register('Field', undefined, GridContainerItem, Props.None);
 register.register('LabelContainer', undefined, GridItem, Props.None);
 register.register('LabelView', undefined, Typography, Props.View);
 register.register('ValueContainer', undefined, GridItem, Props.None);
-register.register('ValueInput', 'number', NumberField, Props.Input);
-register.register('ValueInput', 'string', TextField, Props.Input);
-register.register('ValueInput', undefined, TextField, Props.Input);
+register.register('ValueInput', undefined, Input, Props.Input);

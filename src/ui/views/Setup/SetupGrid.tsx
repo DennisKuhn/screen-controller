@@ -81,6 +81,7 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
         return <Fragment key={props.elementKey}>{props['children']}</Fragment>;
     } else {
         const selected = getProps(props, entry.props);
+        console.log(`${callerAndfName()}`, { selected, children: props['children'], contentChild: props.contentChild});
         return React.createElement(entry.element, selected, props['children'], props.contentChild);
     }
 };
@@ -164,7 +165,7 @@ const FieldBuilder = ({ property, schema, setup }: FieldBuilderProps): JSX.Eleme
         rawValue: String(setup[property]),
         value: String(setup[property]),
         cacheId: baseKey,
-        readOnly: schema.readOnly === true,
+        readOnly: schema.readOnly === true || schema.scViewOnly === true,
         helperText: schema.description,
         rawHelperText: schema.scDescriptionTranslationId ?? schema.description,
         type: getType(schema),
