@@ -6,6 +6,7 @@ export interface ScSchema7 extends JSONSchema7 {
     scViewOnly?: boolean;
     scHidden?: boolean;
     scTranslationId?: string;
+    scDescriptionTranslationId?: string;
 
     scFormat?: 'color';
 }

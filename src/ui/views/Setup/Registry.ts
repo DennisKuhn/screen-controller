@@ -1,44 +1,93 @@
 import { JSONSchema7 } from 'json-schema';
+import { ChangeEvent, PropsWithChildren } from 'react';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { callerAndfName } from '../../../utils/debugging';
-import { PropsWithChildren } from 'react';
 
-export interface BaseProps {
+export interface KeyProps {
     key: string;
+}
 
+export interface WrapperProps extends KeyProps {
+    elementKey: string;
+    contentChild?: string;
+}
+
+export interface BaseProps extends KeyProps {
+
+    /** Item containing property */
     item: SetupBase;
+
     cacheId: string;
 
-    /** Simplified schema of the object or property, same as item.getSimpleClassSchema().properties[property]  */
+    /** Simplified schema of the object or property, same as item.getSimpleClassSchema()[.properties[property]]  */
     schema: JSONSchema7;
+    
+    /** Either translated( schema.scDescriptionTranslationId ) or same a rawHelperText */
+    helperText?: string;
+    /** schema.scDescriptionTranslationId | schema.description */
+    rawHelperText?: string;
+
+    /** Either translated(schema.scTranslationId) or same as rawText */
+    label: string;
+
+    /** schema.scTranslationId | schema.title [| property] */
+    rawLabel: string;
+}
+
+export interface ViewProps extends KeyProps {
+    /** Either translated(schema.scTranslationId) or same as rawText */
+    children: string;
+}
+
+export type FieldType = 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'number' | 'password' | 'text' | 'time' | 'url';
+
+export interface InputProps extends KeyProps {
+    /**
+     * Can be either used directly by an input element or called with a new value
+     */
+    onChange: (change: ChangeEvent | string | number | boolean ) => void;
+
+    /** Possibly translated value or same as rawValue */
+    value: string | number | boolean;
+
+    type: FieldType;
+
+    readOnly: boolean;
+}
+
+export interface LabelProps extends KeyProps {
+    /** Either translated(schema.scTranslationId) or same as rawText */
+    label: string;
 }
 
 export interface ObjectProps extends PropsWithChildren<BaseProps> {
 }
 
-export interface PropertyProps extends BaseProps {
-    key: string;
+export interface PropertyProps extends PropsWithChildren<BaseProps> {
 
-    item: SetupBase;
     /** Property name in item */
     property: string;
 
-    /** Either translated(schema.scTranslationId) or same as rawText */
-    label: string | number;
-
-    /** schema.scTranslationId | schema.title | property */
-    rawLabel: string | number;
-
     /** Possibly translated value or same as rawValue */
-    value: string | number;
+    value: string | number | boolean;
 
     /** item[property] */
     rawValue: string | number;
 
+    readOnly: boolean;
 }
 
+export enum Props {
+    None = 0,
+    Base = 1,
+    Property = 2,
+    View = 4,
+    Input = 8,
+    Label = 16
+}
 
-export type PropsType = PropertyProps | BaseProps;
+export type PropsType = KeyProps | PropertyProps | BaseProps | ViewProps | InputProps | LabelProps;
+export type AllPropsType = KeyProps & PropertyProps & BaseProps & ViewProps & InputProps & LabelProps;
 
 export type ObjectElement = React.ComponentType<BaseProps & React.ComponentProps<any>>;
 export type PropertyElement = React.ComponentType<PropertyProps & React.ComponentProps<any>>;
@@ -49,74 +98,89 @@ export type ElementType = ObjectElement | PropertyElement | null;
  */
 export type Category = 'Object' | 'Field' | 'LabelContainer' | 'LabelView' | 'ValueContainer' | 'ValueInput';
 
+export interface Entry {
+    element: ElementType;
+    props: Props;
+}
 
 export interface Registry {
-    register(category: 'Object', typeName: string | undefined, element: ObjectElement): void;
-    register(category: 'Field', typeName: string | undefined, element: PropertyElement): void;
-    register(category: 'LabelContainer', typeName: string | undefined, element: PropertyElement): void;
-    register(category: 'LabelView', typeName: string | undefined, element: PropertyElement): void;
-    register(category: 'ValueContainer', typeName: string | undefined, element: PropertyElement): void;
-    register(category: 'ValueInput', typeName: string | undefined, element: PropertyElement): void;
+    register(category: 'Object', typeName: string | undefined, element: null, props?: Props.None): void;
+    register(category: 'Field', typeName: string | undefined, element: null, props?: Props.None): void;
+    register(category: 'LabelContainer', typeName: string | undefined, element: null, props?: Props.None): void;
+    register(category: 'LabelView', typeName: string | undefined, element: null, props?: Props.None): void;
+    register(category: 'ValueContainer', typeName: string | undefined, element: null, props?: Props.None): void;
+    register(category: 'ValueInput', typeName: string | undefined, element: null, props?: Props.None): void;
+
+    register(category: 'Object', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
+    register(category: 'Field', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property): void;
+    register(category: 'LabelContainer', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property): void;
+    register(category: 'LabelView', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property | Props.View): void;
+    register(category: 'ValueContainer', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property): void;
+    register(category: 'ValueInput', typeName: string | undefined, element: PropertyElement,
+        props: Props.None | Props.Base | Props.Property | Props.Input | Props.Label): void;
+    
+    get(category: Category, cacheId: string, keys: (string | undefined)[]): Entry;
 }
 
 class Register {
-    default: ElementType | undefined;
-    elements = new Map<string, ElementType>();
+    default: Entry | undefined;
+    elements = new Map<string, Entry>();
 
     /**
      * @param name if undefined us as default fallback, otherwise key
      * @param element a container element contructor/function
+     * @param props selector
      * @example register( undefined,  GridContainer )
      * register( 'number', TextInput )
      */
-    register = (name: string | undefined, element: ElementType): void => {
+    register = (name: string | undefined, element: ElementType, props: Props): void => {
         const existingField = name == undefined ? this.default : this.elements.get(name);
 
         if (existingField) {
-            console.warn(`${callerAndfName()} change [${name ?? 'default'}] from ${existingField.name} to ${element == null ? 'null' : element.name}`);
+            console.warn(`${callerAndfName()} change [${name ?? 'default'}] from ${existingField.element?.name} to ${element == null ? 'null' : element.name}`);
         } else {
-            console.debug(`${callerAndfName()} [${name ?? 'default'}]=${element == null ? 'null' : element.name}`);
+            // console.debug(`${callerAndfName()} [${name ?? 'default'}]=${element == null ? 'null' : element.name}`);
         }
         if (name == undefined) {
-            this.default = element;
+            this.default = { element, props };
         } else {
-            this.elements.set(name, element);
+            this.elements.set(name, { element, props });
         }
     }
 
-    get = (keys: (string | undefined)[]): ElementType => {
-        let element: undefined | ElementType;
+    get = (keys: (string | undefined)[]): Entry => {
+        let entry: undefined | Entry;
 
         for (
             let index = 0;
-            index < keys.length && (element == undefined);
+            index < keys.length && (entry === undefined);
             index += 1
         ) {
             const key = keys[index];
             if (key !== undefined) {
-                element = this.elements.get(key);
+                entry = this.elements.get(key);
             }
         }
-        if (element === undefined) {
-            element = this.default;
+        if (entry === undefined) {
+            entry = this.default;
         }
-        if (element === undefined)
+        if (entry === undefined)
             throw new Error(`${callerAndfName()} no default for: ${keys.join(', ')}`);
 
-        return element;
+        return entry;
     }
 }
 
 class CategoryRecord {
     register = new Register();
-    cache = new Map<string, ElementType>();
+    cache = new Map<string, Entry>();
 }
 
 type Registers = {
     [key in Category]: CategoryRecord;
 }
 
-export class Registry {
+class RegistryImplementation implements Registry {
     private registers: Registers = {
         Object: new CategoryRecord(),
         Field: new CategoryRecord(),
@@ -137,8 +201,12 @@ export class Registry {
      * register( 'ValueInput', undefined, TextInput )
      * register( 'ValueInput', 'number', TextInput )
      */
-    register(category: Category, typeName: string | undefined, element: ElementType): void {
-        this.registers[category].register.register(typeName, element);
+    register(category: Category, typeName: string | undefined, element: ElementType, props?: Props): void {
+        console.debug(
+            `${callerAndfName()}[${category}][${typeName ?? 'default'}]=${element == null ? 'null' : (element.name ?? element.displayName ?? element.constructor?.name)} ` +
+            `props=${props == undefined ? 'undefined=None' : Props[props]}`
+        );
+        this.registers[category].register.register(typeName, element, props ?? Props.None);
     }
 
     /**
@@ -148,19 +216,19 @@ export class Registry {
      * @param keys searched in order
      * @example get( 'Object', 'DigiTime-12', ['DigiTime', 'Plugin', 'SetupBase'] )
      */
-    get = (category: Category, cacheId: string, keys: (string | undefined)[]): ElementType => {
+    get = (category: Category, cacheId: string, keys: (string | undefined)[]): Entry => {
         const register = this.registers[category];
-        let element = register.cache.get(cacheId);
+        let entry = register.cache.get(cacheId);
 
-        if (element === undefined) {
-            element = register.register.get(keys);
-            register.cache.set(cacheId, element);
+        if (entry === undefined) {
+            entry = register.register.get(keys);
+            register.cache.set(cacheId, entry);
         }
 
-        return element;
+        return entry;
     };
 }
 
-const registry = new Registry();
+const registry: Registry = new RegistryImplementation();
 
 export default registry;
