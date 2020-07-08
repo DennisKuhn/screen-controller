@@ -10,7 +10,7 @@ import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
 import deref from 'json-schema-deref-sync';
 import mergeAllOf from 'json-schema-merge-allof';
-import { setDefaults, replaceEach, replaceAbstractRefsWithOneOfConcrets, forEach, resolve, resolveAndMergeAllOff, resolveAllOff, resolveRef, registerAllOfs, resolveScAllOf, replaceAbstractWithOneOfConcrets } from './JsonSchemaTools';
+import { setDefaults, replaceEach, replaceAbstractRefsWithOneOfConcrets, forEach, resolve, resolveAndMergeAllOff, resolveAllOff, resolveRef, registerAllOfs, resolveScAllOf, replaceAbstractWithOneOfConcrets, forEachShallow } from './JsonSchemaTools';
 import { callerAndfName } from '../utils/debugging';
 import { asScSchema7, ScSchema7 } from './ScSchema7';
 
@@ -367,7 +367,7 @@ export abstract class SetupBase {
         const simpleSchema: ScSchema7 =toJS( resolve(info.schema, info.schema), {recurseEverything: true } );
         console.debug(`${callerAndfName()} resolved root-Element: `, { simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
 
-        forEach(simpleSchema, resolveRef, info.schema);
+        forEachShallow(simpleSchema, resolveRef, info.schema);
         console.debug(`${callerAndfName()} resolved refs: `, { simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
 
         SetupBase.mergeOneOfNulls(simpleSchema);
@@ -382,35 +382,7 @@ export abstract class SetupBase {
 
         const merged = mergeAllOf(simpleSchema, {resolvers: {scAllOf: resolveScAllOf} as any });
         console.debug(`${callerAndfName()} merged AllOf: `, { merged: cloneDeep(merged), simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
-
-        SetupBase.createSimpleClassSchemaOLD(info);
-        // replaceAbstractRefsWithOneOfConcrets(simpleSchema);
-        // // console.log(`${callerAndfName()}(${info.schema.$id}).replaced AbstractRefsWithOneOfConcrets:`, cloneDeep(simpleSchema));
-
-        // SetupBase.fixRefs(simpleSchema);
-
-        // const derefed = deref(simpleSchema);
-
-        // if (derefed instanceof Error) {
-        //     console.error(`${callerAndfName()}(${info.schema.$id}) deref error: ${derefed}`, derefed, cloneDeep(simpleSchema));
-        // } else {
-        //     // console.log(`${callerAndfName()}(${info.schema.$id}) derefed schema:`, cloneDeep(derefed));
-
-        //     const merged = mergeAllOf(derefed, {}) as JSONSchema7;
-
-        //     // console.log(
-        //     //     `${callerAndfName()}(${info.schema.$id}).merged schema:`,
-        //     //     cloneDeep(merged));
-
-        //     SetupBase.mergeOneOfNulls(merged);
-        //     // console.log(
-        //     //     `${callerAndfName()}(${info.schema.$id}).mergedOneOfNulls:`,
-        //     //     cloneDeep(merged));
-
-        //     //console.debug(`${callerAndfName()}(${info.schema.$id})`, merged/*, toJS(info.schema, { recurseEverything: true }) */);
-
-        //     info.simpleClassSchema = merged;
-        // }
+        info.simpleClassSchema = merged;
     }
 
     private static createSimpleClassSchemaOLD(info: ClassInfo): void {

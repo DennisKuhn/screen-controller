@@ -5,6 +5,7 @@ import { cloneDeep, merge } from 'lodash';
 import mergeAllOf from 'json-schema-merge-allof';
 import { callerAndfName } from '../utils/debugging';
 import { ScSchema7 } from './ScSchema7';
+import { toJS } from 'mobx';
 
 export const resolve = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => {
     if (typeof schema.$ref != 'string')
@@ -41,7 +42,7 @@ export const resolveRef = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 
 
     // console.log(`${callerAndfName()}(${schema.$ref}): Resolved ${itemName}: `, resolved);
 
-    return resolve(resolved, root);
+    return resolved;
 };
 
 export const getProperty = (path: string): string | undefined => /(.*\.properties\.)([a-zA-Z]*)(\.|$)/.exec(path)?.[2];
@@ -203,7 +204,7 @@ export const setOptionals = (target: SetupBase, observables: any, schema: JSONSc
         for (const property in schema.properties) {
             if ((!(property in target)) && (!(property in observables)) && ((schema.required == undefined)
                 || (!schema.required.includes(property)))) {
-               
+
                 console.debug(`${callerAndfName()} ${target.id}.${property} = undefined`/*, target, schema */);
                 observables[property] = undefined;
             }
@@ -249,6 +250,50 @@ export const forEach = (schema: JSONSchema7, action: (s: JSONSchema7, ...args) =
         }
     }
 };
+
+const forEachDepth = (depth: number, schema: JSONSchema7, action: (s: JSONSchema7, ...args) => void, ...args): void => {
+    action(schema, ...args);
+
+    if (schema.properties && depth) {
+        for (const property of Object.values(schema.properties)) {
+            if (typeof property == 'object')
+                forEachDepth(depth - 1, property, action, ...args);
+        }
+    }
+    if (typeof schema.additionalProperties == 'object')
+        forEachDepth(depth, schema.additionalProperties, action, ...args);
+
+    if (schema.oneOf) {
+        for (const subSchema of schema.oneOf) {
+            if (typeof subSchema == 'object')
+                forEachDepth(depth, subSchema, action, ...args);
+        }
+    }
+    if (schema.allOf) {
+        for (const subSchema of schema.allOf) {
+            if (typeof subSchema == 'object')
+                forEachDepth(depth, subSchema, action, ...args);
+        }
+    }
+    if (schema.anyOf) {
+        for (const subSchema of schema.anyOf) {
+            if (typeof subSchema == 'object')
+                forEachDepth(depth, subSchema, action, ...args);
+        }
+    }
+    if (schema.definitions) {
+        for (const subSchema of Object.values(schema.definitions)) {
+            if (typeof subSchema == 'object')
+                forEachDepth(depth, subSchema, action, ...args);
+        }
+    }
+
+};
+
+export const forEachShallow = (schema: JSONSchema7, action: (s: JSONSchema7, ...args) => void, ...args): void => {
+    forEachDepth(1, schema, action, ...args);
+};
+
 
 
 
@@ -385,19 +430,24 @@ const replaceAbstractSchema = (schema: JSONSchema7, root: JSONSchema7): JSONSche
             oneOf: getConcretes(schema.$id, root)
         };
 
-        if (replacement.oneOf.length > 1)
-            return replacement;
+        if (replacement.oneOf.length) {
+            const clone = toJS(replacement, { recurseEverything: true });
+            forEachDepth(0, clone, resolveRef, root);
+            return clone;
+        }
     } if (schema.oneOf) {
         const oneOf = schema.oneOf;
         oneOf.forEach((option, index) => {
             if ((typeof option == 'object') && option.$id) {
                 const concretes = getConcretes(option.$id, root);
 
-                if (concretes.length > 1) {
-                    console.log(`${callerAndfName()}: ${option.$id} replace .oneOf[${index}] = ${concretes.length}`);
+                if (concretes.length) {
+                    const clone = toJS(concretes, { recurseEverything: true });
+                    console.log(`${callerAndfName()}: ${option.$id} replace .oneOf[${index}] = ${clone.length}`);
 
                     oneOf.splice(index, 1);
-                    oneOf.push(...concretes);
+                    oneOf.push(...clone);
+                    forEachDepth(0, schema, resolveRef, root);
                 }
             }
         }
@@ -500,6 +550,8 @@ export const registerAllOfs = (schema: ScSchema7, root: JSONSchema7): void => {
             if (one instanceof Object) {
                 if (typeof one.$id == 'string') {
                     sources.push(one.$id);
+                } else if (typeof one.$ref == 'string') {
+                    sources.push(one.$ref);
                 }
             }
         }
@@ -512,7 +564,7 @@ export const registerAllOfs = (schema: ScSchema7, root: JSONSchema7): void => {
 
 export const resolveScAllOf = (values: string[][], path: string[] /*, mergeSchemas, options*/): string[] => {
     const result = Array.from(values[0]);
-    
+
     for (let i = 1; i < values.length; i += 1) {
         values[i].forEach(value =>
             result.includes(value) || result.push(value));
