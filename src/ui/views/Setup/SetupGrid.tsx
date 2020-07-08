@@ -87,14 +87,20 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
 };
 
 
-const getProspect = (category: Category, props: BaseProps & WrapperProps): JSX.Element =>
-    create(
+const getProspect = (category: Category, props: BaseProps & WrapperProps): JSX.Element => {
+    const schemas = props.schema.scAllOf ?? [props.schema.$id];
+    const types = Array.isArray(props.schema.type) ? props.schema.type : [props.schema.type];
+    return create(
         register.get(
             category,
             props.cacheId,
-            [props.schema.$id, Array.isArray(props.schema.type) ? props.schema.type[0] : props.schema.type]
+            [
+                ...schemas,
+                props['type'],
+                ...types,
+            ]
         ), props);
-
+};
 
 const LabelView = (props: PropertyProps & WrapperProps): JSX.Element => getProspect('LabelView', props);
 
@@ -131,7 +137,14 @@ const getType = (schema: ScSchema7): FieldType => {
             type = 'number';
             break;
         case 'object':
-            type = 'object';
+            if (typeof schema.additionalProperties == 'object') {
+                type = 'map';
+            } else {
+                type = 'object';
+            }
+            break;
+        case 'array':
+            type = 'array';
             break;
         default:
             type = 'text';

@@ -2,6 +2,7 @@ import { JSONSchema7 } from 'json-schema';
 import { ChangeEvent, PropsWithChildren } from 'react';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { callerAndfName } from '../../../utils/debugging';
+import { ScSchema7 } from 'src/Setup/ScSchema7';
 
 export interface KeyProps {
     key: string;
@@ -20,7 +21,7 @@ export interface BaseProps extends KeyProps {
     cacheId: string;
 
     /** Simplified schema of the object or property, same as item.getSimpleClassSchema()[.properties[property]]  */
-    schema: JSONSchema7;
+    schema: ScSchema7;
     
     /** Either translated( schema.scDescriptionTranslationId ) or same a rawHelperText */
     helperText?: string;
@@ -39,7 +40,7 @@ export interface ViewProps extends KeyProps {
     children: string;
 }
 
-export type FieldType = 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'number' | 'password' | 'text' | 'time' | 'url';
+export type FieldType = 'object' | 'array' | 'map' | 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'number' | 'password' | 'text' | 'time' | 'url';
 
 export interface InputProps extends KeyProps {
     /**
@@ -96,7 +97,7 @@ export type ElementType = ObjectElement | PropertyElement | null;
 /**
  * Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]
  */
-export type Category = 'Object' | 'Field' | 'LabelContainer' | 'LabelView' | 'ValueContainer' | 'ValueInput';
+export type Category = 'Object' | 'Array' | 'Map' | 'Field' | 'LabelContainer' | 'LabelView' | 'ValueContainer' | 'ValueInput';
 
 export interface Entry {
     element: ElementType;
@@ -105,6 +106,8 @@ export interface Entry {
 
 export interface Registry {
     register(category: 'Object', typeName: string | undefined, element: null, props?: Props.None): void;
+    register(category: 'Array', typeName: string | undefined, element: null, props?: Props.None): void;
+    register(category: 'Map', typeName: string | undefined, element: null, props?: Props.None): void;
     register(category: 'Field', typeName: string | undefined, element: null, props?: Props.None): void;
     register(category: 'LabelContainer', typeName: string | undefined, element: null, props?: Props.None): void;
     register(category: 'LabelView', typeName: string | undefined, element: null, props?: Props.None): void;
@@ -112,6 +115,8 @@ export interface Registry {
     register(category: 'ValueInput', typeName: string | undefined, element: null, props?: Props.None): void;
 
     register(category: 'Object', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
+    register(category: 'Array', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
+    register(category: 'Map', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
     register(category: 'Field', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property): void;
     register(category: 'LabelContainer', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property): void;
     register(category: 'LabelView', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property | Props.View): void;
@@ -183,12 +188,16 @@ type Registers = {
 class RegistryImplementation implements Registry {
     private registers: Registers = {
         Object: new CategoryRecord(),
+        Array: new CategoryRecord(),
+        Map: new CategoryRecord(),
         Field: new CategoryRecord(),
         LabelContainer: new CategoryRecord(),
         LabelView: new CategoryRecord(),
         ValueContainer: new CategoryRecord(),
         ValueInput: new CategoryRecord()
     };
+
+    elementName = (element: ElementType): string => (element == null ? 'null' : (element.name ?? element.displayName ?? element.constructor?.name));
 
     /**
      * @param category Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]
@@ -203,7 +212,7 @@ class RegistryImplementation implements Registry {
      */
     register(category: Category, typeName: string | undefined, element: ElementType, props?: Props): void {
         console.debug(
-            `${callerAndfName()}[${category}][${typeName ?? 'default'}]=${element == null ? 'null' : (element.name ?? element.displayName ?? element.constructor?.name)} ` +
+            `${callerAndfName()}[${category}][${typeName ?? 'default'}]=${this.elementName(element)} ` +
             `props=${props == undefined ? 'undefined=None' : Props[props]}`
         );
         this.registers[category].register.register(typeName, element, props ?? Props.None);
@@ -224,7 +233,7 @@ class RegistryImplementation implements Registry {
             entry = register.register.get(keys);
             register.cache.set(cacheId, entry);
         }
-
+        console.debug(`${callerAndfName()}(${category}, ${cacheId}, [${keys.join()}])= element: ${this.elementName(entry.element)}, props: ${Props[entry.props]}/${entry.props}`);
         return entry;
     };
 }

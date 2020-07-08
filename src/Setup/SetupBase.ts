@@ -1,18 +1,29 @@
-import shortid from 'shortid';
-import { JSONSchema7 } from 'json-schema';
-import { ObservableSetupBaseMap, ObservableArray } from './Container';
-import { create, register } from './SetupFactory';
-import { Dictionary, cloneDeep } from 'lodash';
-import Ajv, { ValidateFunction } from 'ajv';
-import { observable, toJS, isObservableArray, $mobx } from 'mobx';
-import { PropertyKey, SetupItemId, SetupBaseInterface, PropertyType as InterfacePropertyType } from './SetupInterface';
-import { remote } from 'electron';
 import { UiSchema } from '@rjsf/core';
+import Ajv, { ValidateFunction } from 'ajv';
+import { remote } from 'electron';
+import { JSONSchema7 } from 'json-schema';
 import deref from 'json-schema-deref-sync';
 import mergeAllOf from 'json-schema-merge-allof';
-import { setDefaults, replaceEach, replaceAbstractRefsWithOneOfConcrets, forEach, resolve, resolveAndMergeAllOff, resolveAllOff, resolveRef, registerAllOfs, resolveScAllOf, replaceAbstractWithOneOfConcrets, forEachShallow } from './JsonSchemaTools';
+import { cloneDeep, Dictionary } from 'lodash';
+import { $mobx, isObservableArray, observable, toJS } from 'mobx';
+import shortid from 'shortid';
 import { callerAndfName } from '../utils/debugging';
+import { ObservableArray, ObservableSetupBaseMap } from './Container';
+import {
+    forEach,
+    forEachShallow,
+    registerAllOfs,
+    replaceAbstractRefsWithOneOfConcrets,
+    replaceAbstractWithOneOfConcrets,
+    replaceEach,
+    resolve,
+    resolveRef,
+    resolveScAllOf,
+    setDefaults
+} from './JsonSchemaTools';
 import { asScSchema7, ScSchema7 } from './ScSchema7';
+import { create, register } from './SetupFactory';
+import { PropertyKey, PropertyType as InterfacePropertyType, SetupBaseInterface, SetupItemId } from './SetupInterface';
 
 switch (process.type) {
     case 'browser': // Main
@@ -365,24 +376,17 @@ export abstract class SetupBase {
          * @example { $ref: 'AnalogClock' } => { $id: 'AnalogClock', allOf ....}
          */
         const simpleSchema: ScSchema7 =toJS( resolve(info.schema, info.schema), {recurseEverything: true } );
-        console.debug(`${callerAndfName()} resolved root-Element: `, { simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
 
         forEachShallow(simpleSchema, resolveRef, info.schema);
-        console.debug(`${callerAndfName()} resolved refs: `, { simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
 
         SetupBase.mergeOneOfNulls(simpleSchema);
-        console.log(`${callerAndfName()}(${info.schema.$id}).mergedOneOfNulls:`, { simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
 
         replaceAbstractWithOneOfConcrets(simpleSchema, info.schema);
-        console.debug(`${callerAndfName()} replaceAbstractWithOneOfConcrets: `, { simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
 
+        forEach(simpleSchema, registerAllOfs);
 
-        forEach(simpleSchema, registerAllOfs, info.schema);
-        console.debug(`${callerAndfName()} registered AllOfs: `, { simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
-
-        const merged = mergeAllOf(simpleSchema, {resolvers: {scAllOf: resolveScAllOf} as any });
-        console.debug(`${callerAndfName()} merged AllOf: `, { merged: cloneDeep(merged), simpleSchema: cloneDeep(simpleSchema), root: cloneDeep(info.schema) });
-        info.simpleClassSchema = merged;
+        info.simpleClassSchema = mergeAllOf(simpleSchema, {resolvers: {scAllOf: resolveScAllOf} as any });
+        console.debug(`${callerAndfName()}[${info.schema.$ref}] merged AllOf: `/*, { merged: cloneDeep(info.simpleClassSchema), root: cloneDeep(info.schema) } */);
     }
 
     private static createSimpleClassSchemaOLD(info: ClassInfo): void {

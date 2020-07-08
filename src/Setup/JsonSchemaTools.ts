@@ -304,7 +304,7 @@ export const replaceEach = (schema: JSONSchema7, root: JSONSchema7, replacer: (s
                 const replacement = replacer(prospect, root);
 
                 if (replacement) {
-                    console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
+                    // console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
                     schema.properties[property] = replacement;
                 }
                 replaceEach(schema.properties[property] as JSONSchema7, root, replacer);
@@ -315,7 +315,7 @@ export const replaceEach = (schema: JSONSchema7, root: JSONSchema7, replacer: (s
         const replacement = replacer(schema.additionalProperties, root);
 
         if (replacement) {
-            console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
+            // console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
             schema.additionalProperties = replacement;
         }
         replaceEach(schema.additionalProperties, root, replacer);
@@ -443,7 +443,7 @@ const replaceAbstractSchema = (schema: JSONSchema7, root: JSONSchema7): JSONSche
 
                 if (concretes.length) {
                     const clone = toJS(concretes, { recurseEverything: true });
-                    console.log(`${callerAndfName()}: ${option.$id} replace .oneOf[${index}] = ${clone.length}`);
+                    // console.log(`${callerAndfName()}: ${option.$id} replace .oneOf[${index}] = ${clone.length}`);
 
                     oneOf.splice(index, 1);
                     oneOf.push(...clone);
@@ -542,7 +542,7 @@ export const resolveAllOff = (schema: ScSchema7, root: JSONSchema7): void => {
  * @param root schema used for resolving
  * @returns IDs of schemas resolved
  */
-export const registerAllOfs = (schema: ScSchema7, root: JSONSchema7): void => {
+export const registerAllOfs = (schema: ScSchema7): void => {
 
     if (schema.allOf) {
         const sources = new Array<string>();
@@ -562,7 +562,7 @@ export const registerAllOfs = (schema: ScSchema7, root: JSONSchema7): void => {
     }
 };
 
-export const resolveScAllOf = (values: string[][], path: string[] /*, mergeSchemas, options*/): string[] => {
+export const resolveScAllOf = (values: string[][]/*, path: string[]*/ /*, mergeSchemas, options*/): string[] => {
     const result = Array.from(values[0]);
 
     for (let i = 1; i < values.length; i += 1) {
@@ -570,8 +570,8 @@ export const resolveScAllOf = (values: string[][], path: string[] /*, mergeSchem
             result.includes(value) || result.push(value));
     }
 
-    console.log(`${callerAndfName()}`, { values, path, result });
+    // console.log(`${callerAndfName()}`, { values, path, result });
 
     return result;
-}
+};
 
