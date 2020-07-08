@@ -1,4 +1,3 @@
-import { JSONSchema7 } from 'json-schema';
 import { ChangeEvent, PropsWithChildren } from 'react';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { callerAndfName } from '../../../utils/debugging';
@@ -64,7 +63,21 @@ export interface LabelProps extends KeyProps {
 export interface ObjectProps extends PropsWithChildren<BaseProps> {
 }
 
-export interface PropertyProps extends PropsWithChildren<BaseProps> {
+export interface PropertyProps extends BaseProps {
+
+    /** Property name in item */
+    property: string;
+
+    /** Possibly translated value or same as rawValue */
+    value: string | number | boolean;
+
+    /** item[property] */
+    rawValue: string | number;
+
+    readOnly: boolean;
+}
+
+export interface PropertyPropsWithChildren extends PropsWithChildren<PropertyProps> {
 
     /** Property name in item */
     property: string;
@@ -90,10 +103,11 @@ export enum Props {
 export type PropsType = KeyProps | PropertyProps | BaseProps | ViewProps | InputProps | LabelProps;
 export type AllPropsType = KeyProps & PropertyProps & BaseProps & ViewProps & InputProps & LabelProps;
 
-export type ObjectElement = React.ComponentType<BaseProps & React.ComponentProps<any>>;
-export type PropertyElement = React.ComponentType<PropertyProps & React.ComponentProps<any>>;
+export type ObjectElement = React.ComponentType<BaseProps & React.ComponentProps<any>> | string;
+export type PropertyElement = React.ComponentType<PropertyProps & React.ComponentProps<any>> | string;
+export type PropertyElementWithChildren = React.ComponentType<PropertyPropsWithChildren & React.ComponentProps<any>> | string;
 
-export type ElementType = ObjectElement | PropertyElement | null;
+export type ElementType = ObjectElement | PropertyElement | PropertyElementWithChildren | null;
 /**
  * Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]
  */
@@ -114,18 +128,21 @@ export interface Registry {
     register(category: 'ValueContainer', typeName: string | undefined, element: null, props?: Props.None): void;
     register(category: 'ValueInput', typeName: string | undefined, element: null, props?: Props.None): void;
 
-    register(category: 'Object', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
+    register(category: 'Object', typeName: string | undefined, element: ObjectElement , props: Props.None | Props.Base): void;
     register(category: 'Array', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
     register(category: 'Map', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
-    register(category: 'Field', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property): void;
-    register(category: 'LabelContainer', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property): void;
-    register(category: 'LabelView', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property | Props.View): void;
-    register(category: 'ValueContainer', typeName: string | undefined, element: PropertyElement, props: Props.None | Props.Base | Props.Property): void;
+    register(category: 'Field', typeName: string | undefined, element: PropertyElementWithChildren, props: Props.None | Props.Base | Props.Property): void;
+    register(category: 'LabelContainer', typeName: string | undefined, element: PropertyElementWithChildren, props: Props.None | Props.Base | Props.Property): void;
+    register(category: 'LabelView', typeName: string | undefined, element: PropertyElementWithChildren, props: Props.None | Props.Base | Props.Property | Props.View): void;
+    register(category: 'ValueContainer', typeName: string | undefined, element: PropertyElementWithChildren, props: Props.None | Props.Base | Props.Property): void;
     register(category: 'ValueInput', typeName: string | undefined, element: PropertyElement,
         props: Props.None | Props.Base | Props.Property | Props.Input | Props.Label): void;
     
     get(category: Category, cacheId: string, keys: (string | undefined)[]): Entry;
 }
+
+const getName = (element: ElementType): string =>
+    (element == null ? 'null' : typeof element == 'string' ? 'element' : (element.name ?? element.displayName ?? element.constructor?.name));
 
 class Register {
     default: Entry | undefined;
@@ -142,7 +159,7 @@ class Register {
         const existingField = name == undefined ? this.default : this.elements.get(name);
 
         if (existingField) {
-            console.warn(`${callerAndfName()} change [${name ?? 'default'}] from ${existingField.element?.name} to ${element == null ? 'null' : element.name}`);
+            console.warn(`${callerAndfName()} change [${name ?? 'default'}] from ${getName(existingField.element)} to ${getName(element)}`);
         } else {
             // console.debug(`${callerAndfName()} [${name ?? 'default'}]=${element == null ? 'null' : element.name}`);
         }
@@ -195,9 +212,7 @@ class RegistryImplementation implements Registry {
         LabelView: new CategoryRecord(),
         ValueContainer: new CategoryRecord(),
         ValueInput: new CategoryRecord()
-    };
-
-    elementName = (element: ElementType): string => (element == null ? 'null' : (element.name ?? element.displayName ?? element.constructor?.name));
+    };    
 
     /**
      * @param category Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]
@@ -212,7 +227,7 @@ class RegistryImplementation implements Registry {
      */
     register(category: Category, typeName: string | undefined, element: ElementType, props?: Props): void {
         console.debug(
-            `${callerAndfName()}[${category}][${typeName ?? 'default'}]=${this.elementName(element)} ` +
+            `${callerAndfName()}[${category}][${typeName ?? 'default'}]=${getName(element)} ` +
             `props=${props == undefined ? 'undefined=None' : Props[props]}`
         );
         this.registers[category].register.register(typeName, element, props ?? Props.None);
@@ -233,7 +248,7 @@ class RegistryImplementation implements Registry {
             entry = register.register.get(keys);
             register.cache.set(cacheId, entry);
         }
-        console.debug(`${callerAndfName()}(${category}, ${cacheId}, [${keys.join()}])= element: ${this.elementName(entry.element)}, props: ${Props[entry.props]}/${entry.props}`);
+        console.debug(`${callerAndfName()}(${category}, ${cacheId}, [${keys.join()}])= element: ${getName(entry.element)}, props: ${Props[entry.props]}/${entry.props}`);
         return entry;
     };
 }

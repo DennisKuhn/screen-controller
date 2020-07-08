@@ -40,15 +40,7 @@ const getProps = (source: PropsType & WrapperProps, props: Props): PropsType => 
         selectedProps = propertyProps;
     }
 
-    //     if (props & Props.View) {
-    //         if (!('children' in source)) throw new Error(`${callerAndfName()} sourceProps lacking children`);
-
-    //         const viewProps: ViewProps = {
-    //             ...selectedProps,
-    // //            children: source.children,
-    //         };
-    //         selectedProps = viewProps;
-    //     }
+    //     if (props & Props.View) { //<-- Handled in create() using contentChild
 
     if (props & Props.Input) {
         if (!('type' in source)) throw new Error(`${callerAndfName()} sourceProps lacking type`);
@@ -60,6 +52,7 @@ const getProps = (source: PropsType & WrapperProps, props: Props): PropsType => 
             value: source.value,
             type: source.type,
         };
+        //}
         selectedProps = newProps;
     }
 
@@ -81,8 +74,13 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
         return <Fragment key={props.elementKey}>{props['children']}</Fragment>;
     } else {
         const selected = getProps(props, entry.props);
-        console.log(`${callerAndfName()}`, { entry, props, selected, children: props['children'], contentChild: props.contentChild});
-        return React.createElement(entry.element, selected, props['children'], props.contentChild);
+        console.log(`${callerAndfName()}`, { entry, props, selected, children: props['children'], contentChild: props.contentChild });
+
+        if ((props['children'] === undefined) && (props.contentChild === undefined)) {
+            return React.createElement(entry.element, selected);
+        } else {
+            return React.createElement(entry.element, selected, props['children'], props.contentChild);
+        }
     }
 };
 
@@ -255,7 +253,7 @@ const SetupGrid = ({ setup }: SetupGridProps): JSX.Element => {
             rawLabel={label}
             helperText={schema.description}
             rawHelperText={schema.scDescriptionTranslationId ?? schema.description}
-            >
+        >
             {
                 visibleProperties.map(([property, schema]) =>
                     <FieldBuilder key={`${setup.id}.${property}-Builder`} setup={setup} property={property} schema={schema as ScSchema7} />

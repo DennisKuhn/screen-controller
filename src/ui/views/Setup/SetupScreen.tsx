@@ -4,9 +4,14 @@ import { Root } from '../../../Setup/Application/Root';
 import controller from '../../../Setup/Controller/Factory';
 import { SetupBase } from '../../../Setup/SetupBase';
 import Form from './Form';
-//import './Material';
+
 import './Meta/Structure';
-import './Meta/MaterialCompact';
+import './Meta/Html';
+//import './Meta/MaterialCompact';
+//import './Meta/Material';
+
+// import './Meta/Html'; //TODO multiple imports -> no error
+// import './Meta/Html5'; //TODO spelling mistake -> no error
 
 const render = (): JSX.Element => {
     const [root, setRoot] = useState(undefined as SetupBase | undefined);
