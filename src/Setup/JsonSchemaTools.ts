@@ -4,6 +4,7 @@ import { SetupBase } from './SetupBase';
 import { cloneDeep, merge } from 'lodash';
 import mergeAllOf from 'json-schema-merge-allof';
 import { callerAndfName } from '../utils/debugging';
+import { ScSchema7 } from './ScSchema7';
 
 export const resolve = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => {
     if (typeof schema.$ref != 'string')
@@ -12,20 +13,33 @@ export const resolve = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => 
     const itemName = schema.$ref.split(/[#/]/).pop();
 
     if (!itemName)
-        throw new Error(`setDefaults: Can't resolve ${schema.$ref} from ${JSON.stringify(root)}`);
+        throw new Error(`${callerAndfName()}: Can't resolve ${schema.$ref} from ${JSON.stringify(root)}`);
 
     if (!root.definitions)
-        throw new Error(`setDefaults: Can't resolve ${schema.$ref}=>${itemName} without definitions in ${JSON.stringify(root)}`);
+        throw new Error(`${callerAndfName()}: Can't resolve ${schema.$ref}=>${itemName} without definitions in ${JSON.stringify(root)}`);
 
     const resolved = root.definitions[itemName];
 
     if (!resolved)
-        throw new Error(`setDefaults: Can't resolve ${schema.$ref}=>${itemName} in ${JSON.stringify(root.definitions)} from ${JSON.stringify(root)}`);
+        throw new Error(`${callerAndfName()}: Can't resolve ${schema.$ref}=>${itemName} in ${JSON.stringify(root.definitions)} from ${JSON.stringify(root)}`);
 
     if (typeof resolved != 'object')
-        throw new Error(`setDefaults: Can't resolve ${schema.$ref}=>${itemName} resolved is not an object ${JSON.stringify(resolved)} from ${JSON.stringify(root)}`);
+        throw new Error(`${callerAndfName()}: Can't resolve ${schema.$ref}=>${itemName} resolved is not an object ${JSON.stringify(resolved)} from ${JSON.stringify(root)}`);
 
     // console.log(`resolve(${schema.$ref}): Resolved ${itemName}: `, resolved);
+
+    return resolve(resolved, root);
+};
+
+export const resolveRef = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 => {
+    if (typeof schema.$ref != 'string')
+        return schema;
+
+    const resolved = resolve(schema, root);
+    merge(schema, resolved);
+    delete schema.$ref;
+
+    // console.log(`${callerAndfName()}(${schema.$ref}): Resolved ${itemName}: `, resolved);
 
     return resolve(resolved, root);
 };
@@ -198,40 +212,40 @@ export const setOptionals = (target: SetupBase, observables: any, schema: JSONSc
 };
 
 
-export const forEach = (schema: JSONSchema7, action: (s: JSONSchema7) => void): void => {
-    action(schema);
+export const forEach = (schema: JSONSchema7, action: (s: JSONSchema7, ...args) => void, ...args): void => {
+    action(schema, ...args);
 
     if (schema.properties) {
         for (const property of Object.values(schema.properties)) {
             if (typeof property == 'object')
-                forEach(property, action);
+                forEach(property, action, ...args);
         }
     }
     if (typeof schema.additionalProperties == 'object')
-        forEach(schema.additionalProperties, action);
+        forEach(schema.additionalProperties, action, ...args);
 
     if (schema.oneOf) {
         for (const subSchema of schema.oneOf) {
             if (typeof subSchema == 'object')
-                forEach(subSchema, action);
+                forEach(subSchema, action, ...args);
         }
     }
     if (schema.allOf) {
         for (const subSchema of schema.allOf) {
             if (typeof subSchema == 'object')
-                forEach(subSchema, action);
+                forEach(subSchema, action, ...args);
         }
     }
     if (schema.anyOf) {
         for (const subSchema of schema.anyOf) {
             if (typeof subSchema == 'object')
-                forEach(subSchema, action);
+                forEach(subSchema, action, ...args);
         }
     }
     if (schema.definitions) {
         for (const subSchema of Object.values(schema.definitions)) {
             if (typeof subSchema == 'object')
-                forEach(subSchema, action);
+                forEach(subSchema, action, ...args);
         }
     }
 };
@@ -245,7 +259,7 @@ export const replaceEach = (schema: JSONSchema7, root: JSONSchema7, replacer: (s
                 const replacement = replacer(prospect, root);
 
                 if (replacement) {
-                    // console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
+                    console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .${property} = ${replacement.$id}/${replacement.$ref}`);
                     schema.properties[property] = replacement;
                 }
                 replaceEach(schema.properties[property] as JSONSchema7, root, replacer);
@@ -256,7 +270,7 @@ export const replaceEach = (schema: JSONSchema7, root: JSONSchema7, replacer: (s
         const replacement = replacer(schema.additionalProperties, root);
 
         if (replacement) {
-            // console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
+            console.log(`replaceEach: ${schema.$id}/${schema.$ref} replace .additionalProperties = ${replacement.$id}/${replacement.$ref}`);
             schema.additionalProperties = replacement;
         }
         replaceEach(schema.additionalProperties, root, replacer);
@@ -357,10 +371,155 @@ const expandAbstractRef = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 
     }
 };
 
-export const replaceAbstractRefsWithOneOfConcrets = (root: JSONSchema7): void => {
-
+export const replaceAbstractRefsWithOneOfConcrets = (root: JSONSchema7, defs?: JSONSchema7): void => {
+    defs = defs ?? root;
     replaceEach(
-        root, root,
+        root, defs,
         expandAbstractRef
     );
 };
+
+const replaceAbstractSchema = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 | undefined => {
+    if (schema.$id) {
+        const replacement = {
+            oneOf: getConcretes(schema.$id, root)
+        };
+
+        if (replacement.oneOf.length > 1)
+            return replacement;
+    } if (schema.oneOf) {
+        const oneOf = schema.oneOf;
+        oneOf.forEach((option, index) => {
+            if ((typeof option == 'object') && option.$id) {
+                const concretes = getConcretes(option.$id, root);
+
+                if (concretes.length > 1) {
+                    console.log(`${callerAndfName()}: ${option.$id} replace .oneOf[${index}] = ${concretes.length}`);
+
+                    oneOf.splice(index, 1);
+                    oneOf.push(...concretes);
+                }
+            }
+        }
+        );
+    }
+};
+
+export const replaceAbstractWithOneOfConcrets = (root: JSONSchema7, defs: JSONSchema7): void => {
+
+    replaceEach(
+        root, defs,
+        replaceAbstractSchema
+    );
+};
+
+
+
+/**
+ * Merge al of into schema and store IDs of merged schemas in schema.scAllOff
+ * @param schema to merge allOf and store IDs in scAllOf
+ * @param root schema used for resolving
+ * @returns IDs of schemas merged
+ */
+export const resolveAndMergeAllOff = (schema: JSONSchema7, root: JSONSchema7): string[] => {
+    const sources = new Array<string>();
+
+    if (schema.allOf) {
+        for (const one of schema.allOf) {
+            if (one instanceof Object) {
+                if (typeof one.$ref == 'string') {
+
+                    let $ref: string;
+
+                    do {
+                        $ref = one.$ref;
+                        merge(
+                            one,
+                            resolve({ $ref }, root)
+                        );
+                        sources.push($ref);
+                    } while (one.$ref != $ref);
+
+                    delete one.$ref;
+                }
+            }
+        }
+        merge(schema, mergeAllOf(schema));
+        delete schema.allOf;
+    }
+    return sources;
+};
+
+/**
+ * 
+ * @param schema to resolve allOf and store IDs in scAllOf
+ * @param root schema used for resolving
+ * @returns IDs of schemas resolved
+ */
+export const resolveAllOff = (schema: ScSchema7, root: JSONSchema7): void => {
+
+    if (schema.allOf) {
+        const sources = new Array<string>();
+        for (const one of schema.allOf) {
+            if (one instanceof Object) {
+                if (typeof one.$ref == 'string') {
+
+                    let $ref: string;
+
+                    do {
+                        $ref = one.$ref;
+                        merge(
+                            one,
+                            resolve({ $ref }, root)
+                        );
+                        sources.push($ref);
+                    } while (one.$ref != $ref);
+
+                    delete one.$ref;
+                }
+            }
+        }
+        if (schema.$id && !sources.includes(schema.$id)) {
+            sources.push(schema.$id);
+        }
+        schema.scAllOf = sources;
+    }
+};
+
+/**
+ * 
+ * @param schema to resolve allOf and store IDs in scAllOf
+ * @param root schema used for resolving
+ * @returns IDs of schemas resolved
+ */
+export const registerAllOfs = (schema: ScSchema7, root: JSONSchema7): void => {
+
+    if (schema.allOf) {
+        const sources = new Array<string>();
+        for (const one of schema.allOf) {
+            if (one instanceof Object) {
+                if (typeof one.$id == 'string') {
+                    sources.push(one.$id);
+                }
+            }
+        }
+        if (schema.$id && !sources.includes(schema.$id)) {
+            sources.unshift(schema.$id); //.push(schema.$id);
+        }
+        schema.scAllOf = sources;
+    }
+};
+
+export const resolveScAllOf = (values: string[][], path: string[] /*, mergeSchemas, options*/): string[] => {
+    const result = Array.from(values[0]);
+    
+    for (let i = 1; i < values.length; i += 1) {
+        values[i].forEach(value =>
+            result.includes(value) || result.push(value));
+    }
+
+    console.log(`${callerAndfName()}`, { values, path, result });
+
+    return result;
+}
+

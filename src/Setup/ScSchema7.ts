@@ -9,6 +9,9 @@ export interface ScSchema7 extends JSONSchema7 {
     scDescriptionTranslationId?: string;
 
     scFormat?: 'color';
+    
+    /** IDs of merged allOf schema */
+    scAllOf?: string[];
 }
 
 export const asScSchema7 = (schema: ScSchema7): ScSchema7 => schema;

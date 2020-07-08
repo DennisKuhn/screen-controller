@@ -3,13 +3,13 @@ import { SetupBase } from '../../../Setup/SetupBase';
 import SetupGrid from './SetupGrid';
 
 interface Props {
-    setup: SetupBase;
+    value: SetupBase;
 }
 
 
-const Form = ({setup}: Props): JSX.Element => {
+const Form = ({ value}: Props): JSX.Element => {
     return (
-            <SetupGrid setup={setup} />
+        <SetupGrid setup={value} />
     );
 };
 

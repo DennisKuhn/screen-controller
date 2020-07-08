@@ -1,8 +1,7 @@
 import React from 'react';
 import { TextField, Input } from '@material-ui/core';
-// import React from 'react';
-import { callerAndfName } from '../../../utils/debugging';
-import registry, { Props, InputProps, LabelProps } from './Registry';
+import { callerAndfName } from '../../../../utils/debugging';
+import registry, { Props, InputProps, LabelProps } from '../Registry';
 
 console.log(`${callerAndfName()} Register`);
 

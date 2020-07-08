@@ -5,7 +5,8 @@ import controller from '../../../Setup/Controller/Factory';
 import { SetupBase } from '../../../Setup/SetupBase';
 import Form from './Form';
 //import './Material';
-import './MaterialCompact';
+import './Meta/Structure';
+import './Meta/MaterialCompact';
 
 const render = (): JSX.Element => {
     const [root, setRoot] = useState(undefined as SetupBase | undefined);
@@ -15,7 +16,7 @@ const render = (): JSX.Element => {
             .then(setRoot);
     }, []);
 
-    return root ? <Form setup={root} /> : <Typography>Loading ...</Typography>;
+    return root ? <Form value={root} /> : <Typography>Loading ...</Typography>;
 };
 
 export default render;

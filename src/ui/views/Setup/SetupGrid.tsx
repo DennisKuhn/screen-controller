@@ -81,7 +81,7 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
         return <Fragment key={props.elementKey}>{props['children']}</Fragment>;
     } else {
         const selected = getProps(props, entry.props);
-        console.log(`${callerAndfName()}`, { selected, children: props['children'], contentChild: props.contentChild});
+        console.log(`${callerAndfName()}`, { entry, props, selected, children: props['children'], contentChild: props.contentChild});
         return React.createElement(entry.element, selected, props['children'], props.contentChild);
     }
 };
@@ -130,6 +130,9 @@ const getType = (schema: ScSchema7): FieldType => {
         case 'number':
             type = 'number';
             break;
+        case 'object':
+            type = 'object';
+            break;
         default:
             type = 'text';
             console.error(`${callerAndfName()} type=${schema.type} no yet supported: ${JSON.stringify(schema)}`);
@@ -162,8 +165,8 @@ const FieldBuilder = ({ property, schema, setup }: FieldBuilderProps): JSX.Eleme
         label,
         property,
         schema,
-        rawValue: String(setup[property]),
-        value: String(setup[property]),
+        rawValue: setup[property],
+        value: setup[property],
         cacheId: baseKey,
         readOnly: schema.readOnly === true || schema.scViewOnly === true,
         helperText: schema.description,
@@ -239,7 +242,7 @@ const SetupGrid = ({ setup }: SetupGridProps): JSX.Element => {
             rawLabel={label}
             helperText={schema.description}
             rawHelperText={schema.scDescriptionTranslationId ?? schema.description}
-        >
+            >
             {
                 visibleProperties.map(([property, schema]) =>
                     <FieldBuilder key={`${setup.id}.${property}-Builder`} setup={setup} property={property} schema={schema as ScSchema7} />
