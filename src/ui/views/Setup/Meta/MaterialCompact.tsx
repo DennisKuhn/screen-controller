@@ -31,17 +31,6 @@ const SwitchHoc = (props: LabelProps & InputProps): JSX.Element => {
                 readOnly={props.readOnly}
             />
         </FormControl>);
-    // return <FormControlLabel
-    //     value="top"
-    //     control={<Switch
-    //         checked={props.value}
-    //         onChange={props.onChange}
-    //         color="primary"
-    //         readOnly={props.readOnly}
-    //     />}
-    //     label={props.label}
-    //     labelPlacement="top"
-    // />;
 };
 
 registry.register('Object', undefined, null);

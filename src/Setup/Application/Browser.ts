@@ -10,14 +10,15 @@ import { SetupBase } from '../SetupBase';
 import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface';
 import { Browser as BrowserInterface } from './BrowserInterface';
 import { Plugin } from './Plugin';
-import { asScSchema7 } from '../ScSchema7';
+import { asScSchema7, ScSchema7 } from '../ScSchema7';
 
 export class Browser extends SetupBase {
 
-    static readonly schema: JSONSchema7 = {
+    static readonly schema: ScSchema7 = {
         $id: Browser.name,
         title: 'Browser',
         description: 'Container for plugins',
+        scIcon: 'Web',
         allOf: [
             SetupBase.SCHEMA_REF,
             {

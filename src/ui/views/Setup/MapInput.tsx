@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { InputProps, PropertyProps, WrapperProps, MapPropsWithChildren, ChangeEventArgs, isChangeEvent, AllPropsType } from './Registry';
 import { callerAndfName } from '../../../utils/debugging';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel } from './AbstractComponents';
@@ -30,12 +30,8 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup }: MapIt
     };
 
     const label = getMapKeyLabel(mapKey, schema);
-    const value = map.get(mapKey);
-    if (!value) {
-        return <Fragment />;
-    }
-    if (value === undefined) throw new Error(`${callerAndfName()} ${mapKey} is not in map`);
-    if (value === null) throw new Error(`${callerAndfName()} ${mapKey} is null in map`);
+
+    if (! mapKey) throw new Error(`${callerAndfName()} ${mapKey} is invalid=${mapKey}`);
 
     const sharedProps: AllPropsType = {
         key: baseKey,
@@ -43,8 +39,8 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup }: MapIt
         property,
         mapKey,
         schema,
-        rawValue: value,
-        value: value,
+        rawValue: mapKey,
+        value: mapKey,
         cacheId: baseKey,
         readOnly: schema.readOnly === true || schema.scViewOnly === true,
         rawLabel: label,
@@ -122,7 +118,7 @@ const MapInput = ({ item, property, value, schema, type }: InputProps & Property
             cacheId={containerKey}
             elementKey={containerKey}
             key={containerKey}
-        >
+            >
             {mapKeys.map(mapKey =>
                 <MapItemBuilder
                     setup={item}

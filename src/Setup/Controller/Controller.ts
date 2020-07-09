@@ -768,7 +768,8 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             const parent = this.configs.get(localItem.parentId) ??
                 await this.getSetup(localItem.parentId, 0);
             console.warn(
-                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)}, persist=${persist}) hasItem=${hasItem} localItem=${localItem.parentId}.${localItem.parentProperty}.${localItem.id}` +
+                `[${sender}]${callerAndfName()}${getIpcArgsLog(update)}, persist=${persist}) ` +
+                `hasItem=${hasItem} localItem=${localItem.parentId}.${localItem.parentProperty}.${localItem.id}` +
                 ` .parent=${localItem.parent?.id} parent=${parent?.id} .${localItem.parentProperty}=${parent?.[localItem.parentProperty]}`
             );
             if (parent[localItem.parentProperty] === undefined) {

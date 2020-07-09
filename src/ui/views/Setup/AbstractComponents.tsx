@@ -21,14 +21,17 @@ import { ScSchema7 } from '../../../Setup/ScSchema7';
 
 export const getType = (schema: ScSchema7): FieldType => {
     let type: FieldType | undefined;
-    
+
     if (schema.oneOf) {
         if (schema.oneOf.length < 1)
             throw new Error(`${callerAndfName()} oneOf.length=${schema.oneOf.length} not supported (yet): ${JSON.stringify(schema)}`);
         
         schema.oneOf.forEach(option => {
+            if (typeof option !== 'object' )
+                throw new Error(`${callerAndfName()} oneOf option is not a object/schema, not supported (yet), option=${JSON.stringify(option)} schema=${JSON.stringify(schema)}`);
+
             const optionType = getType(option);
-            if ((type !== undefined) && (type != optionType))
+            if ((type !== undefined) && (type !== optionType))
                 throw new Error(`${callerAndfName()} different types in OneOf not supported (yet) ${type} != ${optionType}: ${JSON.stringify(schema)}`);
             type = optionType;
         });

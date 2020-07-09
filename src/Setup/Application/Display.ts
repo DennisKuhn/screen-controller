@@ -2,13 +2,14 @@ import { Browser } from './Browser';
 import { SetupBase } from '../SetupBase';
 import { PropertyKey, SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { ObservableSetupBaseMap } from '../Container';
-import { JSONSchema7 } from 'json-schema';
+import { ScSchema7 } from '../ScSchema7';
 
 export class Display extends SetupBase {
-    static schema: JSONSchema7 = {
+    static schema: ScSchema7 = {
         $id: Display.name,
         title: 'Display',
         description: 'Represent a monitor containing browsers',
+        scIcon: 'DesktopWindows',
         allOf: [
             SetupBase.SCHEMA_REF,
             {

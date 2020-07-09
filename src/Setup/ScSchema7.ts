@@ -8,6 +8,9 @@ export interface ScSchema7 extends JSONSchema7 {
     scTranslationId?: string;
     scDescriptionTranslationId?: string;
 
+    /** Name of the material icon */
+    scIcon?: string;
+
     scFormat?: 'color';
     
     /** IDs of merged allOf schema */
