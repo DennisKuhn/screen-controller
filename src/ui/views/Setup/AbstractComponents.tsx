@@ -20,36 +20,49 @@ import register from './Registry';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
 
 export const getType = (schema: ScSchema7): FieldType => {
-    if (!schema.type) throw new Error(`${callerAndfName()} no type in schema: ${JSON.stringify(schema)}`);
-    let type: FieldType;
+    let type: FieldType | undefined;
+    
+    if (schema.oneOf) {
+        if (schema.oneOf.length < 1)
+            throw new Error(`${callerAndfName()} oneOf.length=${schema.oneOf.length} not supported (yet): ${JSON.stringify(schema)}`);
+        
+        schema.oneOf.forEach(option => {
+            const optionType = getType(option);
+            if ((type !== undefined) && (type != optionType))
+                throw new Error(`${callerAndfName()} different types in OneOf not supported (yet) ${type} != ${optionType}: ${JSON.stringify(schema)}`);
+            type = optionType;
+        });
+    } else {
+        if (!schema.type) throw new Error(`${callerAndfName()} no type in schema: ${JSON.stringify(schema)}`);
 
-    switch (schema.type) {
-        case 'boolean':
-            type = 'checkbox';
-            break;
-        case 'string':
-            type = 'text';
-            break;
-        case 'number':
-            type = 'number';
-            break;
-        case 'object':
-            if (typeof schema.additionalProperties == 'object') {
-                type = 'map';
-            } else {
-                type = 'object';
-            }
-            break;
-        case 'array':
-            type = 'array';
-            break;
-        default:
-            type = 'text';
-            console.error(`${callerAndfName()} type=${schema.type} no yet supported: ${JSON.stringify(schema)}`);
-            // throw new Error(`${callerAndfName()} type=${schema.type} no yet supported: ${JSON.stringify(schema)}`);
-            break;
+        switch (schema.type) {
+            case 'boolean':
+                type = 'checkbox';
+                break;
+            case 'string':
+                type = 'text';
+                break;
+            case 'number':
+                type = 'number';
+                break;
+            case 'object':
+                if (typeof schema.additionalProperties == 'object') {
+                    type = 'map';
+                } else {
+                    type = 'object';
+                }
+                break;
+            case 'array':
+                type = 'array';
+                break;
+            default:
+                type = 'text';
+                console.error(`${callerAndfName()} type=${schema.type} no yet supported: ${JSON.stringify(schema)}`);
+                // throw new Error(`${callerAndfName()} type=${schema.type} no yet supported: ${JSON.stringify(schema)}`);
+                break;
+        }
     }
-
+    if (type === undefined) throw new Error(`${callerAndfName()} can't find a type in schema: ${JSON.stringify(schema)}`);
     return type;
 };
 export const getLabel = (property: string, schema: ScSchema7): string => schema.scTranslationId ?? schema.title ?? property;

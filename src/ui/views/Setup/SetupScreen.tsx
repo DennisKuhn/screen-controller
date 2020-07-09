@@ -6,10 +6,10 @@ import { SetupBase } from '../../../Setup/SetupBase';
 import Form from './Form';
 
 import './Meta/Structure';
-import './Meta/Html';
+//import './Meta/Html';
 //import './Meta/HtmlCompact';
 //import './Meta/Material';
-//import './Meta/MaterialCompact';
+import './Meta/MaterialCompact';
 
 // import './Meta/Html'; //TODO multiple imports -> no error
 // import './Meta/Html5'; //TODO spelling mistake -> no error

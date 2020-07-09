@@ -5,10 +5,10 @@ const TableAndBody = (props: ObjectPropsWithChildren): JSX.Element => <table><tb
 
 register.register('Object', undefined, TableAndBody, ['None']);
 register.register('Array', undefined, TableAndBody, ['None']);
-register.register('Map', undefined, null);
+register.register('Map', undefined, TableAndBody, ['None']);
+
 register.register('Field', undefined, 'tr', ['None']);
 register.register('LabelContainer', undefined, 'th', ['None']);
 register.register('LabelView', undefined, 'label', ['View']);
 register.register('ValueContainer', undefined, 'td', ['None']);
-// register.register('ValueInput', 'map', null);
 register.register('ValueInput', undefined, 'input', ['Input']);
