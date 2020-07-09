@@ -145,6 +145,13 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                             // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}):${propertyName} success: [${childId}]`);
                         }
                     }
+                } else if (typeof value == 'object' && value instanceof SetupBase) {
+                    if (!this.test(value, depth)) {
+                        // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}):${propertyName} failed`);
+                        return false;
+                    } else {
+                        // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}):${propertyName} success: [${childId}]`);
+                    }
                 } else {
                     // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}): skip ${propertyName}`);
                 }
@@ -229,6 +236,9 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                                 // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): ${propertyName} already set [${childId}]`);
                             }
                         }
+                    } else if (typeof value == 'object' && value instanceof SetupBase) {
+                        // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap`);
+                        await this.getTree(value.id, depth);
                     } else {
                         // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): skip ${propertyName}`);
                     }
