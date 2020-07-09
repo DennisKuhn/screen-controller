@@ -386,42 +386,10 @@ export abstract class SetupBase {
         forEach(simpleSchema, registerAllOfs);
 
         info.simpleClassSchema = mergeAllOf(simpleSchema, {resolvers: {scAllOf: resolveScAllOf} as any });
-        console.debug(`${callerAndfName()}[${info.schema.$ref}] merged AllOf: `/*, { merged: cloneDeep(info.simpleClassSchema), root: cloneDeep(info.schema) } */);
+        console.debug(
+            `${callerAndfName()}[${info.schema.$ref}] merged AllOf: `,
+            process.type == 'renderer' ? { merged: cloneDeep(info.simpleClassSchema), root: cloneDeep(info.schema) } : ':-)');
     }
-
-    private static createSimpleClassSchemaOLD(info: ClassInfo): void {
-        const simpleSchema = toJS(info.schema, { recurseEverything: true });
-
-        replaceAbstractRefsWithOneOfConcrets(simpleSchema);
-        // console.log(`${callerAndfName()}(${info.schema.$id}).replaced AbstractRefsWithOneOfConcrets:`, cloneDeep(simpleSchema));
-
-        SetupBase.fixRefs(simpleSchema);
-
-        const derefed = deref(simpleSchema);
-
-        if (derefed instanceof Error) {
-            console.error(`${callerAndfName()}(${info.schema.$id}) deref error: ${derefed}`, derefed, cloneDeep(simpleSchema));
-        } else {
-            // console.log(`${callerAndfName()}(${info.schema.$id}) derefed schema:`, cloneDeep(derefed));
-
-            const merged = mergeAllOf(derefed, {}) as JSONSchema7;
-
-            // console.log(
-            //     `${callerAndfName()}(${info.schema.$id}).merged schema:`,
-            //     cloneDeep(merged));
-
-            SetupBase.mergeOneOfNulls(merged);
-            // console.log(
-            //     `${callerAndfName()}(${info.schema.$id}).mergedOneOfNulls:`,
-            //     cloneDeep(merged));
-
-            //console.debug(`${callerAndfName()}(${info.schema.$id})`, merged/*, toJS(info.schema, { recurseEverything: true }) */);
-
-            info.simpleClassSchema = merged;
-        }
-    }
-
-
 
     public getSimpleClassSchema(): JSONSchema7 {
         if (this.info.simpleClassSchema == undefined)
@@ -429,8 +397,6 @@ export abstract class SetupBase {
 
         return this.info.simpleClassSchema;
     }
-
-
 
     public getPlainSchema(): JSONSchema7 {
         if (this.info.plainSchema == undefined) {

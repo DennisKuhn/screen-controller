@@ -1,7 +1,7 @@
 import React from 'react';
 import { TextField, Input, FormControlLabel, Switch } from '@material-ui/core';
 import { callerAndfName } from '../../../../utils/debugging';
-import registry, { Props, InputProps, LabelProps } from '../Registry';
+import registry, { InputProps, LabelProps } from '../Registry';
 
 console.log(`${callerAndfName()} Register`);
 
@@ -41,12 +41,9 @@ registry.register('Field', undefined, null);
 registry.register('LabelContainer', undefined, null);
 registry.register('LabelView', undefined, null);
 registry.register('ValueContainer', undefined, null);
-registry.register('ValueInput', 'number', TextFieldHoc, Props.Input | Props.Label);
-registry.register('ValueInput', 'string', TextFieldHoc, Props.Input | Props.Label);
-registry.register('ValueInput', 'checkbox', SwitchHoc, Props.Input | Props.Label);
-registry.register('ValueInput', 'array', null);
+registry.register('ValueInput', 'number', TextFieldHoc, ['Input', 'Label']);
+registry.register('ValueInput', 'string', TextFieldHoc, ['Input', 'Label']);
+registry.register('ValueInput', 'checkbox', SwitchHoc, ['Input', 'Label']);
 registry.register('ValueInput', 'map', null);
-registry.register('ValueInput', undefined, Input, Props.Input);
+registry.register('ValueInput', undefined, Input, ['Input']);
 
-//TODO: Should produce compiler error register('ValueInput' ... | Props.View);
-//registry.register('ValueInput', undefined, TextField, Props.Input | Props.Label | Props.View);

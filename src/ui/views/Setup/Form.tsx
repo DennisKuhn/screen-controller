@@ -1,6 +1,6 @@
 import React from 'react';
 import { SetupBase } from '../../../Setup/SetupBase';
-import SetupGrid from './SetupGrid';
+import SetupObject from './SetupObject';
 
 interface Props {
     value: SetupBase;
@@ -9,7 +9,7 @@ interface Props {
 
 const Form = ({ value}: Props): JSX.Element => {
     return (
-        <SetupGrid setup={value} />
+        <SetupObject setup={value} />
     );
 };
 

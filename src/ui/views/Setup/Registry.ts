@@ -1,5 +1,5 @@
 import { ChangeEvent, PropsWithChildren } from 'react';
-import { SetupBase } from '../../../Setup/SetupBase';
+import { SetupBase, PropertyType } from '../../../Setup/SetupBase';
 import { callerAndfName } from '../../../utils/debugging';
 import { ScSchema7 } from 'src/Setup/ScSchema7';
 
@@ -14,12 +14,12 @@ export interface WrapperProps extends KeyProps {
 
 export interface BaseProps extends KeyProps {
 
-    /** Item containing property */
+    /** Item containing property, array or map */
     item: SetupBase;
 
     cacheId: string;
 
-    /** Simplified schema of the object or property, same as item.getSimpleClassSchema()[.properties[property]]  */
+    /** Simplified schema of the object, array, map or property  */
     schema: ScSchema7;
     
     /** Either translated( schema.scDescriptionTranslationId ) or same a rawHelperText */
@@ -27,41 +27,72 @@ export interface BaseProps extends KeyProps {
     /** schema.scDescriptionTranslationId | schema.description */
     rawHelperText?: string;
 
-    /** Either translated(schema.scTranslationId) or same as rawText */
+    /** Either translated(schema.scTranslationId) or same as rawLabel */
     label: string;
 
-    /** schema.scTranslationId | schema.title [| property] */
+    /** schema.scTranslationId | schema.title [| property[| index ][| key]] */
     rawLabel: string;
 }
+export type BasePropsWithChildren = PropsWithChildren<BaseProps>;
+export const isBaseProps = (prop: PropsType): prop is BaseProps =>
+    ((prop as BaseProps).cacheId !== undefined);
+
 
 export interface ViewProps extends KeyProps {
     /** Either translated(schema.scTranslationId) or same as rawText */
     children: string;
 }
 
+export type { PropertyType } from '../../../Setup/SetupBase';
+
 export type FieldType = 'object' | 'array' | 'map' | 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'number' | 'password' | 'text' | 'time' | 'url';
+
+export type ChangeEventArgs = ChangeEvent | PropertyType;
+export type ChangeHandler  = (change: ChangeEventArgs) => void;
+export const isChangeEvent = (event: ChangeEventArgs): event is ChangeEvent => typeof event == 'object' && 'target' in event;
 
 export interface InputProps extends KeyProps {
     /**
      * Can be either used directly by an input element or called with a new value
      */
-    onChange: (change: ChangeEvent | string | number | boolean ) => void;
+    onChange: ChangeHandler;
 
     /** Possibly translated value or same as rawValue */
-    value: string | number | boolean;
+    value: PropertyType;
 
     type: FieldType;
 
     readOnly: boolean;
 }
+export const isInputProps = (prop: PropsType): prop is InputProps =>
+    ((prop as InputProps).type !== undefined) &&
+    ((prop as InputProps).onChange !== undefined);
 
 export interface LabelProps extends KeyProps {
     /** Either translated(schema.scTranslationId) or same as rawText */
     label: string;
 }
+export const isLabelProps = (prop: PropsType): prop is LabelProps =>
+    ((prop as LabelProps).label !== undefined);
 
-export interface ObjectProps extends PropsWithChildren<BaseProps> {
+export interface ObjectProps extends BaseProps {
 }
+
+export type ObjectPropsWithChildren = PropsWithChildren<ObjectProps>;
+
+export interface ArrayProps extends BaseProps {
+    /** Property name in item, e.g. item[propertyName] == array */
+    property: string;
+    array: Array<any>;
+}
+export type ArrayPropsWithChildren = PropsWithChildren<ArrayProps>;
+
+export interface MapProps extends BaseProps {
+    /** Property name in item, e.g. item[propertyName] == map */
+    property: string;
+    map: Map<string, SetupBase>;
+}
+export type MapPropsWithChildren = PropsWithChildren<MapProps>;
 
 export interface PropertyProps extends BaseProps {
 
@@ -69,45 +100,41 @@ export interface PropertyProps extends BaseProps {
     property: string;
 
     /** Possibly translated value or same as rawValue */
-    value: string | number | boolean;
+    value: PropertyType;
 
     /** item[property] */
-    rawValue: string | number;
+    rawValue: PropertyType;
 
     readOnly: boolean;
 }
+export type PropertyPropsWithChildren = PropsWithChildren<PropertyProps>;
+export const isPropertyProps = (prop: PropsType): prop is PropertyProps =>
+    ((prop as PropertyProps).property !== undefined) &&
+    ((prop as PropertyProps).value !== undefined);
 
-export interface PropertyPropsWithChildren extends PropsWithChildren<PropertyProps> {
-
-    /** Property name in item */
-    property: string;
-
-    /** Possibly translated value or same as rawValue */
-    value: string | number | boolean;
-
-    /** item[property] */
-    rawValue: string | number;
-
-    readOnly: boolean;
+export interface MapPropertyProps extends PropertyProps, MapProps {
+    key: string;
 }
+export type MapPropertyPropsWithChildren = PropsWithChildren<MapPropertyProps>;
 
-export enum Props {
-    None = 0,
-    Base = 1,
-    Property = 2,
-    View = 4,
-    Input = 8,
-    Label = 16
+export interface ArrayPropertyProps extends PropertyProps, ArrayProps {
+    index: number;
 }
+export type ArrayPropertyPropsWithChildren = PropsWithChildren<ArrayPropertyProps>;
 
-export type PropsType = KeyProps | PropertyProps | BaseProps | ViewProps | InputProps | LabelProps;
+export type Props = 'None' | 'Base' | 'Property' | 'View' | 'Input' | 'Label' | 'Object' | 'Array' | 'Map';
+export type PropsSelection<Allowed extends Props = Props> = Extract<Props, Allowed>[];
+
+export type PropsType = KeyProps | PropertyProps | BaseProps | ViewProps | InputProps | LabelProps | ObjectProps | ArrayProps | MapProps ;
 export type AllPropsType = KeyProps & PropertyProps & BaseProps & ViewProps & InputProps & LabelProps;
 
-export type ObjectElement = React.ComponentType<BaseProps & React.ComponentProps<any>> | string;
+export type ObjectElement = React.ComponentType<ObjectPropsWithChildren & React.ComponentProps<any>> | string;
+export type ArrayElement = React.ComponentType<ArrayPropsWithChildren & React.ComponentProps<any>> | string;
+export type MapElement = React.ComponentType<MapPropsWithChildren & React.ComponentProps<any>> | string;
 export type PropertyElement = React.ComponentType<PropertyProps & React.ComponentProps<any>> | string;
 export type PropertyElementWithChildren = React.ComponentType<PropertyPropsWithChildren & React.ComponentProps<any>> | string;
 
-export type ElementType = ObjectElement | PropertyElement | PropertyElementWithChildren | null;
+export type ElementType = ObjectElement | ArrayElement | MapElement | PropertyElement | PropertyElementWithChildren | null;
 /**
  * Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]
  */
@@ -115,28 +142,28 @@ export type Category = 'Object' | 'Array' | 'Map' | 'Field' | 'LabelContainer' |
 
 export interface Entry {
     element: ElementType;
-    props: Props;
+    props: PropsSelection;
 }
 
 export interface Registry {
-    register(category: 'Object', typeName: string | undefined, element: null, props?: Props.None): void;
-    register(category: 'Array', typeName: string | undefined, element: null, props?: Props.None): void;
-    register(category: 'Map', typeName: string | undefined, element: null, props?: Props.None): void;
-    register(category: 'Field', typeName: string | undefined, element: null, props?: Props.None): void;
-    register(category: 'LabelContainer', typeName: string | undefined, element: null, props?: Props.None): void;
-    register(category: 'LabelView', typeName: string | undefined, element: null, props?: Props.None): void;
-    register(category: 'ValueContainer', typeName: string | undefined, element: null, props?: Props.None): void;
-    register(category: 'ValueInput', typeName: string | undefined, element: null, props?: Props.None): void;
+    register(category: 'Object', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'Array', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'Map', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'Field', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'LabelContainer', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'LabelView', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'ValueContainer', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'ValueInput', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
 
-    register(category: 'Object', typeName: string | undefined, element: ObjectElement , props: Props.None | Props.Base): void;
-    register(category: 'Array', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
-    register(category: 'Map', typeName: string | undefined, element: ObjectElement, props: Props.None | Props.Base): void;
-    register(category: 'Field', typeName: string | undefined, element: PropertyElementWithChildren, props: Props.None | Props.Base | Props.Property): void;
-    register(category: 'LabelContainer', typeName: string | undefined, element: PropertyElementWithChildren, props: Props.None | Props.Base | Props.Property): void;
-    register(category: 'LabelView', typeName: string | undefined, element: PropertyElementWithChildren, props: Props.None | Props.Base | Props.Property | Props.View): void;
-    register(category: 'ValueContainer', typeName: string | undefined, element: PropertyElementWithChildren, props: Props.None | Props.Base | Props.Property): void;
+    register(category: 'Object', typeName: string | undefined, element: ObjectElement , props: PropsSelection<'None' | 'Base'>): void;
+    register(category: 'Array', typeName: string | undefined, element: ArrayElement, props: PropsSelection<'None' | 'Base'>): void;
+    register(category: 'Map', typeName: string | undefined, element: MapElement, props: PropsSelection<'None' | 'Base'>): void;
+    register(category: 'Field', typeName: string | undefined, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
+    register(category: 'LabelContainer', typeName: string | undefined, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
+    register(category: 'LabelView', typeName: string | undefined, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property' | 'View'>): void;
+    register(category: 'ValueContainer', typeName: string | undefined, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
     register(category: 'ValueInput', typeName: string | undefined, element: PropertyElement,
-        props: Props.None | Props.Base | Props.Property | Props.Input | Props.Label): void;
+        props: PropsSelection<'None' | 'Base' | 'Property' | 'Input' | 'Label'>): void;
     
     get(category: Category, cacheId: string, keys: (string | undefined)[]): Entry;
 }
@@ -155,7 +182,7 @@ class Register {
      * @example register( undefined,  GridContainer )
      * register( 'number', TextInput )
      */
-    register = (name: string | undefined, element: ElementType, props: Props): void => {
+    register = (name: string | undefined, element: ElementType, props: PropsSelection): void => {
         const existingField = name == undefined ? this.default : this.elements.get(name);
 
         if (existingField) {
@@ -225,12 +252,12 @@ class RegistryImplementation implements Registry {
      * register( 'ValueInput', undefined, TextInput )
      * register( 'ValueInput', 'number', TextInput )
      */
-    register(category: Category, typeName: string | undefined, element: ElementType, props?: Props): void {
+    register(category: Category, typeName: string | undefined, element: ElementType, props?: PropsSelection): void {
         console.debug(
             `${callerAndfName()}[${category}][${typeName ?? 'default'}]=${getName(element)} ` +
-            `props=${props == undefined ? 'undefined=None' : Props[props]}`
+            `props=${props == undefined ? 'undefined=None' : props.join()}`
         );
-        this.registers[category].register.register(typeName, element, props ?? Props.None);
+        this.registers[category].register.register(typeName, element, props === undefined ? ['None'] : props);
     }
 
     /**
@@ -248,7 +275,7 @@ class RegistryImplementation implements Registry {
             entry = register.register.get(keys);
             register.cache.set(cacheId, entry);
         }
-        console.debug(`${callerAndfName()}(${category}, ${cacheId}, [${keys.join()}])= element: ${getName(entry.element)}, props: ${Props[entry.props]}/${entry.props}`);
+        console.debug(`${callerAndfName()}(${category}, ${cacheId}, [${keys.join()}])= element: ${getName(entry.element)}, props: ${entry.props.join()}`);
         return entry;
     };
 }

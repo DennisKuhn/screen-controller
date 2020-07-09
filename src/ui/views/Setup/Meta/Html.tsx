@@ -1,15 +1,14 @@
 import React from 'react';
-import register, { Props, ObjectProps } from '../Registry';
+import register, { ObjectPropsWithChildren } from '../Registry';
 
-const TableAndBody = (props: ObjectProps): JSX.Element => <table><tbody>{props.children}</tbody></table>;
+const TableAndBody = (props: ObjectPropsWithChildren): JSX.Element => <table><tbody>{props.children}</tbody></table>;
 
-register.register('Object', undefined, TableAndBody, Props.None);
-register.register('Array', undefined, null);
+register.register('Object', undefined, TableAndBody, ['None']);
+register.register('Array', undefined, TableAndBody, ['None']);
 register.register('Map', undefined, null);
-register.register('Field', undefined, 'tr', Props.None);
-register.register('LabelContainer', undefined, 'th', Props.None);
-register.register('LabelView', undefined, 'label', Props.View);
-register.register('ValueContainer', undefined, 'td', Props.None);
-register.register('ValueInput', 'array', null);
+register.register('Field', undefined, 'tr', ['None']);
+register.register('LabelContainer', undefined, 'th', ['None']);
+register.register('LabelView', undefined, 'label', ['View']);
+register.register('ValueContainer', undefined, 'td', ['None']);
 register.register('ValueInput', 'map', null);
-register.register('ValueInput', undefined, 'input' , Props.Input);
+register.register('ValueInput', undefined, 'input', ['Input']);
