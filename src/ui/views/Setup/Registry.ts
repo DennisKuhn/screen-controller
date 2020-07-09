@@ -113,7 +113,7 @@ export const isPropertyProps = (prop: PropsType): prop is PropertyProps =>
     ((prop as PropertyProps).value !== undefined);
 
 export interface MapPropertyProps extends PropertyProps, MapProps {
-    key: string;
+    mapKey: string;
 }
 export type MapPropertyPropsWithChildren = PropsWithChildren<MapPropertyProps>;
 

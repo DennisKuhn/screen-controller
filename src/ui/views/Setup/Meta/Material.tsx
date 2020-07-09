@@ -14,5 +14,5 @@ register.register('LabelContainer', undefined, GridItem, ['None']);
 register.register('LabelView', undefined, Typography, ['View']);
 register.register('ValueContainer', undefined, GridItem, ['None']);
 //register.register('ValueInput', 'array', null);
-register.register('ValueInput', 'map', null);
+//register.register('ValueInput', 'map', null);
 register.register('ValueInput', undefined, Input, ['Input']);

@@ -44,6 +44,6 @@ registry.register('ValueContainer', undefined, null);
 registry.register('ValueInput', 'number', TextFieldHoc, ['Input', 'Label']);
 registry.register('ValueInput', 'string', TextFieldHoc, ['Input', 'Label']);
 registry.register('ValueInput', 'checkbox', SwitchHoc, ['Input', 'Label']);
-registry.register('ValueInput', 'map', null);
+//registry.register('ValueInput', 'map', null);
 registry.register('ValueInput', undefined, Input, ['Input']);
 

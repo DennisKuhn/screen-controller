@@ -10,5 +10,5 @@ register.register('Field', undefined, 'tr', ['None']);
 register.register('LabelContainer', undefined, 'th', ['None']);
 register.register('LabelView', undefined, 'label', ['View']);
 register.register('ValueContainer', undefined, 'td', ['None']);
-register.register('ValueInput', 'map', null);
+// register.register('ValueInput', 'map', null);
 register.register('ValueInput', undefined, 'input', ['Input']);
