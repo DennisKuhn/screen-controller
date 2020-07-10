@@ -1,7 +1,7 @@
-import { makeStyles, TextField, TextFieldProps, TableCell, Typography } from '@material-ui/core';
+import { makeStyles, TextField, TextFieldProps, Typography } from '@material-ui/core';
 import { observer } from 'mobx-react-lite';
-import React, { Fragment } from 'react';
-import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
+import React from 'react';
+import { RelativeRectangle } from '../../Setup/Default/RelativeRectangle';
 import RectangleButton from './RectangleButton';
 
 
@@ -44,22 +44,29 @@ export function PercentField(props: TextFieldProps): React.ReactElement {
     );
 }
 
+interface BaseProps {
+    className?: string;
+}
 
-const RectangleCells = observer(({ rect }: { rect: RelativeRectangle }): JSX.Element => {
+interface RectangleEditorProps extends BaseProps {
+    value: RelativeRectangle;
+}
+
+const RectangleEditor = observer(({ value, className }: RectangleEditorProps ): JSX.Element => {
     const classes = useStyles();
 
-    return <Fragment>
-        <TableCell>
+    return (
+        <div className={className}>
             <span className={classes.container}>
-                <Typography variant="overline" className={classes.float}>{(rect.x * 100).toFixed(0)}, {(rect.y * 100).toFixed(0)}</Typography>
-                <RectangleButton className={classes.button} rect={rect} moveNotSize={true} />
+                <Typography variant="overline" className={classes.float}>{(value.x * 100).toFixed(0)}, {(value.y * 100).toFixed(0)}</Typography>
+                <RectangleButton className={classes.button} rect={value} moveNotSize={true} />
             </span>
             <span className={classes.container}>
-                <Typography variant="overline" className={classes.float}>{(rect.width * 100).toFixed(0)} * {(rect.height * 100).toFixed(0)}</Typography>
-                <RectangleButton className={classes.button} rect={rect} moveNotSize={false} />
+                <Typography variant="overline" className={classes.float}>{(value.width * 100).toFixed(0)} * {(value.height * 100).toFixed(0)}</Typography>
+                <RectangleButton className={classes.button} rect={value} moveNotSize={false} />
             </span>
-        </TableCell>
-    </Fragment>;
+        </div>
+    );
 });
 
-export default RectangleCells;
+export default RectangleEditor;

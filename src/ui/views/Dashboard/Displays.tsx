@@ -4,15 +4,21 @@ import { Screen } from '../../../Setup/Application/Screen';
 import controller from '../../../Setup/Controller/Factory';
 import DisplayCard from './DisplayCard';
 import { remote } from 'electron';
+import { callerAndfName } from '../../../utils/debugging';
 
 const electronDisplays = remote.screen.getAllDisplays();
 
-const Displays = observer(({ screen }: { screen: Screen }): JSX.Element =>
+const Displays = observer(({ screen }: { screen: Screen }): JSX.Element => 
     <Fragment>
-        {screen.displays.mapEntries(([id, display]) =>
-            <DisplayCard key={id} display={display} info={electronDisplays.find(info => info.id == id )} />
+        {screen.displays.mapEntries(([id, display]) => {
+            const info = electronDisplays.find(info => info.id == id);
+            if (!info) throw new Error(`${callerAndfName()} can't get electron display info for ${id}`);
+
+            return <DisplayCard key={id} display={display} info={info} />;
+        }
         )}
-    </Fragment>);
+    </Fragment>
+);
 
 
 
@@ -25,7 +31,7 @@ const DisplaysGetter = (): JSX.Element => {
             .then(setScreen);
     };
 
-    useEffect( getScreen, [] );
+    useEffect(getScreen, []);
 
     return screen ? <Displays screen={screen} /> : (<></>);
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { InputProps, PropertyProps, WrapperProps, MapPropsWithChildren, ChangeEventArgs, isChangeEvent, AllPropsType } from './Registry';
+import { InputProps, PropertyProps, WrapperProps, MapPropsWithChildren, ChangeEventArgs, isChangeEvent, MapPropertyProps, Options } from './Shared';
 import { callerAndfName } from '../../../utils/debugging';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel } from './AbstractComponents';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
@@ -16,16 +16,19 @@ interface MapItemBuilderProps {
     setup: SetupBase;
     property: string;
     baseKey: string;
+    options: Options;
 }
 
 const getMapKeyLabel = (mapKey: string, schema: ScSchema7): string => schema.scTranslationId ?? schema.title ?? mapKey;
 
-const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup }: MapItemBuilderProps): JSX.Element => {
+const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup, options }: MapItemBuilderProps): JSX.Element => {
     if (schema.scHidden == true)
         throw new Error(`${callerAndfName()} ${baseKey} is hidden`);
 
     const onChange = (change: ChangeEventArgs): void => {
         const newValue = isChangeEvent(change) ? change.target.nodeValue : change;
+        if (!(newValue instanceof SetupBase))
+            throw new Error(`${callerAndfName()} type of newValue=${typeof newValue} isn't supported yet, it should be instance of SetupBase`);
         map.set(mapKey, newValue);
     };
 
@@ -33,10 +36,11 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup }: MapIt
 
     if (! mapKey) throw new Error(`${callerAndfName()} ${mapKey} is invalid=${mapKey}`);
 
-    const sharedProps: AllPropsType = {
+    const sharedProps/*: AllPropsType & MapPropertyProps*/ = {
         key: baseKey,
         item: setup,
         property,
+        map,
         mapKey,
         schema,
         rawValue: mapKey,
@@ -48,33 +52,34 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup }: MapIt
         helperText: schema.description,
         rawHelperText: schema.scDescriptionTranslationId ?? schema.description,
         type: getType(schema),
-        onChange
+        onChange,
+        options
     };
 
-    const fieldProps: PropertyProps & WrapperProps = {
+    const fieldProps: MapPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-Field',
         elementKey: baseKey + '-Field'
     };
-    const labelContainerProps: PropertyProps & WrapperProps = {
+    const labelContainerProps: MapPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-labelContainer',
         elementKey: baseKey + '-labelContainer'
     };
-    const valueContainerProps: PropertyProps & WrapperProps = {
+    const valueContainerProps: MapPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-valueContainer',
         elementKey: baseKey + '-valueContainer'
     };
 
-    const labelViewProps: PropertyProps & WrapperProps = {
+    const labelViewProps: MapPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-labelView',
         elementKey: baseKey + '-labelView',
         contentChild: label,
     };
 
-    const valueInputProps: PropertyProps & WrapperProps = {
+    const valueInputProps: MapPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-valueInput',
         elementKey: baseKey + '-valueInput'
@@ -93,7 +98,7 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup }: MapIt
 };
 
 
-const MapInput = ({ item, property, value, schema, type }: InputProps & PropertyProps): JSX.Element => {
+const MapInput = ({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
     if ((!(value instanceof Map)) && (!isObservableMap(value))) throw new Error(`${callerAndfName()} value must be a map: ${JSON.stringify(value)}`);
     if (type !== 'map') throw new Error(`${callerAndfName()} type=${type} invalid, must be map`);
     if (typeof schema.additionalProperties !== 'object')
@@ -118,6 +123,7 @@ const MapInput = ({ item, property, value, schema, type }: InputProps & Property
             cacheId={containerKey}
             elementKey={containerKey}
             key={containerKey}
+            options={options}
             >
             {mapKeys.map(mapKey =>
                 <MapItemBuilder
@@ -128,6 +134,7 @@ const MapInput = ({ item, property, value, schema, type }: InputProps & Property
                     schema={itemSchema}
                     baseKey={`${baseKey}.${mapKey}`}
                     key={`${baseKey}-ItemBuilder.${mapKey}`}
+                    options={options}
                 />
             )}
         </ContainerMap>

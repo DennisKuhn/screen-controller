@@ -14,7 +14,7 @@ import React, { ChangeEvent, Fragment, useState } from 'react';
 import { Browser } from '../../../Setup/Application/Browser';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import BrowserPlugins from './BrowserPlugins';
-import RectangleCells from './RectangleCells';
+import RectangleEditor from '../../Fields/RectangleEditor';
 import BrowserPerformanceCells from './BrowserPerformanceCells';
 
 interface Props {
@@ -70,7 +70,9 @@ const BrowserLine = observer(({ browser, addPerformanceFiller }: Props): JSX.Ele
                     />
                 </TableCell>
                 <Actions browser={browser} />
-                <RectangleCells rect={browser.relative} />
+                <TableCell>
+                    <RectangleEditor value={browser.relative} />
+                </TableCell>
             </TableRow>
             {hasPlugins &&
                 <TableRow key={browser.id + '.pluginsRow'}>

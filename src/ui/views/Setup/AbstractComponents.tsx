@@ -8,12 +8,13 @@ import {
     isInputProps,
     isLabelProps,
     LabelProps,
-    Entry,
-    Category,
     BaseProps,
     InputProps,
-    FieldType
-} from './Registry';
+    FieldType,
+    CommonProps
+} from './Shared';
+import { Entry, Category } from './Registry';
+
 import { callerAndfName } from '../../../utils/debugging';
 import React, { Fragment } from 'react';
 import register from './Registry';
@@ -110,6 +111,7 @@ const getProps = (source: PropsType & WrapperProps, props: PropsSelection): Prop
             label: source.label,
             rawLabel: source.rawLabel,
             schema: source.schema,
+            options: source.options,
         };
         selectedProps = baseProps;
     }
@@ -172,8 +174,21 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
 };
 
 
-export const getProspect = (category: Category, props: BaseProps & WrapperProps): JSX.Element => {
-    if (props.schema === undefined) {
+export const getProspect = (category: Category, props: CommonProps & WrapperProps): JSX.Element => {
+    if (isBaseProps(props)) {
+        const schemas = props.schema.scAllOf ?? [props.schema.$id];
+        const types = Array.isArray(props.schema.type) ? props.schema.type : [props.schema.type];
+        return create(
+            register.get(
+                category,
+                props.cacheId,
+                [
+                    ...schemas,
+                    props['type'],
+                    ...types,
+                ]
+            ), props);
+    } else {
         console.warn(`${callerAndfName()}(${category}, {${Object.keys(props).join()}}) no schema`);
 
         return create(
@@ -183,18 +198,6 @@ export const getProspect = (category: Category, props: BaseProps & WrapperProps)
                 []
             ), props);
     }
-    const schemas = props.schema.scAllOf ?? [props.schema.$id];
-    const types = Array.isArray(props.schema.type) ? props.schema.type : [props.schema.type];
-    return create(
-        register.get(
-            category,
-            props.cacheId,
-            [
-                ...schemas,
-                props['type'],
-                ...types,
-            ]
-        ), props);
 };
 
 

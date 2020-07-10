@@ -1,10 +1,16 @@
-import React from 'react';
-import { TextField, Input, Switch, FormControl, InputLabel, makeStyles, Theme, Grid } from '@material-ui/core';
+import React, { Fragment } from 'react';
+import { TextField, Input, Switch, FormControl, InputLabel, makeStyles, Theme, Grid, Typography } from '@material-ui/core';
 import { callerAndfName } from '../../../../utils/debugging';
-import registry, { InputProps, LabelProps, ObjectProps, ObjectPropsWithChildren, PropertyPropsWithChildren, BaseProps, BasePropsWithChildren } from '../Registry';
+import { InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChildren, BasePropsWithChildren } from '../Shared';
+import registry from '../Registry';
 import GridContainer from '../../../components/Grid/GridContainer';
 import { TreeItem, TreeView } from '@material-ui/lab';
 import { ExpandLess, ExpandMore } from '@material-ui/icons';
+import { RelativeRectangle } from '../../../../Setup/Default/RelativeRectangle';
+import RectangleEditor from '../../../Fields/RectangleEditor';
+import DisplayCard from './Material/DisplayCard';
+import { Plugin } from '../../../../Setup/Application/Plugin';
+import { Browser } from '../../../../Setup/Application/Browser';
 
 /** Get the width of a standard browser input control */
 let inputWidth: undefined | number;
@@ -21,7 +27,12 @@ const getInputWidth = (): number => {
 
 const useStyles = makeStyles((theme: Theme) => {
     return ({
-        field: {
+        smallField: {
+            minWidth: (getInputWidth() + 2 * theme.spacing(1) + 30) / 2,
+            marginBottom: theme.spacing(2),
+            padding: '0 15px !important'
+        },
+        normalField: {
             minWidth: getInputWidth() + 2 * theme.spacing(1) + 30,
             marginBottom: theme.spacing(2),
             padding: '0 15px !important'
@@ -29,12 +40,10 @@ const useStyles = makeStyles((theme: Theme) => {
         input: {
             minWidth: getInputWidth() + 2 * theme.spacing(1),
         },
-        switchField: {
-            // '& .MuiSwitch-root': {
-            //     marginTop: theme.spacing(2)
-            // }
-        },
         switch: {
+            marginTop: theme.spacing(2)
+        },
+        rectangle: {
             marginTop: theme.spacing(2)
         },
     });
@@ -61,7 +70,7 @@ const SwitchHoc = (props: LabelProps & InputProps): JSX.Element => {
     const classes = useStyles();
 
     return (
-        <FormControl className={classes.switchField}>
+        <FormControl>
             <InputLabel shrink={props.value !== undefined}>{props.label}</InputLabel>
             <Switch
                 className={classes.switch}
@@ -69,6 +78,22 @@ const SwitchHoc = (props: LabelProps & InputProps): JSX.Element => {
                 onChange={props.onChange}
                 color="primary"
                 readOnly={props.readOnly}
+            />
+        </FormControl>);
+};
+
+const RectangleHoc = (props: LabelProps & InputProps): JSX.Element => {
+    if (!((typeof props.value == 'object') && (props.value instanceof RelativeRectangle)))
+        throw new Error(`${callerAndfName()} typeof value=${typeof props.value} must be object/RelativeRectangle`);
+    const classes = useStyles();
+
+    return (
+        <FormControl>
+            <InputLabel shrink={props.value !== undefined}>{props.label}</InputLabel>
+            <RectangleEditor
+                className={classes.rectangle}
+                value={props.value}
+            // readOnly={props.readOnly}
             />
         </FormControl>);
 };
@@ -81,8 +106,63 @@ const ObjectTreeItem = (props: ObjectPropsWithChildren): JSX.Element => (
     </TreeItem>
 );
 
-const ValueContainer = (props: PropertyPropsWithChildren): JSX.Element => (
-    <Grid item className={useStyles().field}>
+const BrowserTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
+    const browser = props.item;
+
+    if (!((typeof browser == 'object') && (browser instanceof Browser)))
+        throw new Error(`${callerAndfName()} typeof value=${typeof browser} must be object/Browser`);
+    const cpuUsage = browser.cpuUsage ? browser.cpuUsage * 100 : undefined;
+    const cpuUsageText = cpuUsage ? cpuUsage.toFixed(cpuUsage < 10 ? 1 : 0) + '%CPU' : '';
+
+    return (
+        <TreeItem nodeId={props.item.id} label={
+            <Fragment>
+                <Typography>{props.label}</Typography>
+                <Typography variant="overline">{cpuUsageText}</Typography>
+            </Fragment>
+        }>
+            <GridContainer>
+                {props.children}
+            </GridContainer>
+        </TreeItem>
+    );
+};
+
+const PluginTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
+    const plugin = props.item;
+
+    if (!((typeof plugin == 'object') && (plugin instanceof Plugin)))
+        throw new Error(`${callerAndfName()} typeof value=${typeof plugin} must be object/Plugin`);
+    const cpuUsage = plugin.cpuUsage ? plugin.cpuUsage * 100 : undefined;
+    const cpuUsageText = cpuUsage ? cpuUsage.toFixed(cpuUsage < 10 ? 1 : 0) + '%CPU' : '';
+    const fps = plugin.fps;
+    const fpsText = fps ? fps.toFixed(0) + ' fps' : '';
+
+    return (
+        <TreeItem
+            nodeId={plugin.id}
+            label={
+                <Fragment>
+                    <Typography>{props.label}</Typography>
+                    <Typography variant="overline">{cpuUsageText} {fpsText}</Typography>
+                </Fragment>
+        }
+            >
+            <GridContainer>
+                {props.children}
+            </GridContainer>
+        </TreeItem>
+    );
+};
+
+const NormalValueContainer = (props: PropertyPropsWithChildren): JSX.Element => (
+    <Grid item className={useStyles().normalField}>
+        {props.children}
+    </Grid>
+);
+
+const SmallValueContainer = (props: PropertyPropsWithChildren): JSX.Element => (
+    <Grid item className={useStyles().smallField}>
         {props.children}
     </Grid>
 );
@@ -96,15 +176,22 @@ const RootTreeView = (props: BasePropsWithChildren): JSX.Element => (
     </TreeView>
 );
 
+
 registry.register('Root', undefined, RootTreeView, ['None']);
 registry.register('Object', undefined, ObjectTreeItem, ['Base']);
+registry.register('Object', Browser.name, BrowserTreeItem, ['Base']);
+registry.register('Object', Plugin.name, PluginTreeItem, ['Base']);
 registry.register('Array', undefined, GridContainer, ['None']);
 registry.register('Map', undefined, GridContainer, ['None']);
 
 registry.register('Field', undefined, null);
 registry.register('LabelContainer', undefined, null);
 registry.register('LabelView', undefined, null);
-registry.register('ValueContainer', undefined, ValueContainer, ['Property']);
+registry.register('ValueContainer', ['checkbox', RelativeRectangle.name], SmallValueContainer, ['Property']);
+registry.register('ValueContainer', undefined, NormalValueContainer, ['Property']);
 registry.register('ValueInput', ['number', 'string'], TextFieldHoc, ['Input', 'Label']);
 registry.register('ValueInput', 'checkbox', SwitchHoc, ['Input', 'Label']);
+registry.register('ValueInput', RelativeRectangle.name, RectangleHoc, ['Input', 'Label']);
 registry.register('ValueInput', undefined, Input, ['Input']);
+
+registry.register('Object', 'Display', DisplayCard, ['Base']);

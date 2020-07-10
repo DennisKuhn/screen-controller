@@ -1,6 +1,6 @@
 import { isEqual } from 'lodash';
-import { Observable, Subscriber } from 'rxjs';
-import { distinctUntilChanged, tap } from 'rxjs/operators';
+import { Subscriber } from 'rxjs';
+// import { distinctUntilChanged, tap } from 'rxjs/operators';
 import { callerAndfName } from '../../utils/debugging';
 import { IpcChangeArgsType, IpcWindow, getIpcArgsLog } from './IpcInterface';
 import { performance } from 'perf_hooks';
@@ -13,7 +13,7 @@ interface IpcSend {
 
 export class UpdateChannel {
     private received: {} = {};
-    private observableSend: Observable<IpcSend>;
+    // private observableSend: Observable<IpcSend>;
     private sendSubscriber: Subscriber<IpcSend> | undefined;
     private in = 0;
     private out = 0;

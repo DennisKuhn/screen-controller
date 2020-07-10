@@ -3,6 +3,7 @@ import { SetupBase } from '../SetupBase';
 import { JSONSchema7 } from 'json-schema';
 import { PropertyKey, SetupItemId, SetupBaseInterface } from '../SetupInterface';
 import { SimpleRectangle } from './RectangleInterface';
+import { asScSchema7 } from '../ScSchema7';
 
 export class RelativeRectangle extends Rectangle {
     public static readonly SCHEMA_REF = { $ref: RelativeRectangle.name };
@@ -15,6 +16,7 @@ export class RelativeRectangle extends Rectangle {
                 type: 'object',
                 properties: {
                     className: { const: RelativeRectangle.name },
+                    name: asScSchema7({ scHidden: true }),
                     x: { allOf: [SetupBase.PERCENT_REF, { default: 0 }] },
                     y: { allOf: [SetupBase.PERCENT_REF, { default: 0 }] },
                     width: { allOf: [SetupBase.PERCENT_REF, { default: 1 }] },

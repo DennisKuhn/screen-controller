@@ -1,5 +1,5 @@
 import React from 'react';
-import { InputProps, PropertyProps, WrapperProps, ArrayPropsWithChildren, ChangeEventArgs, isChangeEvent, AllPropsType } from './Registry';
+import { InputProps, PropertyProps, WrapperProps, ArrayPropsWithChildren, ChangeEventArgs, isChangeEvent, ArrayPropertyProps, Options } from './Shared';
 import { callerAndfName } from '../../../utils/debugging';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel } from './AbstractComponents';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
@@ -14,11 +14,12 @@ interface ArrayItemBuilderProps {
     setup: SetupBase;
     property: string;
     baseKey: string;
+    options: Options;
 }
 
 const getIndexLabel = (index: number, schema: ScSchema7): string => schema.scTranslationId ?? schema.title ?? index.toFixed();
 
-const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup }: ArrayItemBuilderProps): JSX.Element => {
+const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup, options }: ArrayItemBuilderProps): JSX.Element => {
     if (schema.scHidden == true)
         throw new Error(`${callerAndfName()} ${baseKey} is hidden`);
 
@@ -32,10 +33,11 @@ const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup }: Ar
 
     const label = getIndexLabel(index, schema);
 
-    const sharedProps: AllPropsType = {
+    const sharedProps = {
         key: baseKey,
         item: setup,
         property,
+        array,
         index,
         schema,
         rawValue: array[index],
@@ -47,33 +49,34 @@ const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup }: Ar
         helperText: schema.description,
         rawHelperText: schema.scDescriptionTranslationId ?? schema.description,
         type: getType(schema),
-        onChange
+        onChange,
+        options
     };
 
-    const fieldProps: PropertyProps & WrapperProps = {
+    const fieldProps: ArrayPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-Field',
         elementKey: baseKey + '-Field'
     };
-    const labelContainerProps: PropertyProps & WrapperProps = {
+    const labelContainerProps: ArrayPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-labelContainer',
         elementKey: baseKey + '-labelContainer'
     };
-    const valueContainerProps: PropertyProps & WrapperProps = {
+    const valueContainerProps: ArrayPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-valueContainer',
         elementKey: baseKey + '-valueContainer'
     };
 
-    const labelViewProps: PropertyProps & WrapperProps = {
+    const labelViewProps: ArrayPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-labelView',
         elementKey: baseKey + '-labelView',
         contentChild: label,
     };
 
-    const valueInputProps: PropertyProps & WrapperProps = {
+    const valueInputProps: ArrayPropertyProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-valueInput',
         elementKey: baseKey + '-valueInput'
@@ -92,7 +95,7 @@ const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup }: Ar
 };
 
 
-const ArrayInput = ({ item, property, value, schema, type }: InputProps & PropertyProps): JSX.Element => {
+const ArrayInput = ({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
     if (!Array.isArray(value)) throw new Error(`${callerAndfName()} value must be an array: ${JSON.stringify(value)}`);
     if (type !== 'array') throw new Error(`${callerAndfName()} type=${type} invalid, must be array`);
     if ((typeof schema.items !== 'object') || Array.isArray(schema.items))
@@ -116,6 +119,7 @@ const ArrayInput = ({ item, property, value, schema, type }: InputProps & Proper
             cacheId={containerKey}
             elementKey={containerKey}
             key={containerKey}
+            options={options}
             >
             {value.map((valueItem, index) =>
                 <ArrayItemBuilder
@@ -126,6 +130,7 @@ const ArrayInput = ({ item, property, value, schema, type }: InputProps & Proper
                     schema={itemSchema}
                     baseKey={`${baseKey}.${index}`}
                     key={`${baseKey}-ItemBuilder.${index}`}
+                    options={options}
                 />
             )}
         </ContainerArray>

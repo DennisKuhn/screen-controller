@@ -3,12 +3,12 @@ import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { callerAndfName } from '../../../utils/debugging';
 import {
-    AllPropsType,
     PropertyProps,
     WrapperProps,
     ChangeEventArgs,
     isChangeEvent,
-    ObjectPropsWithChildren} from './Registry';
+    ObjectPropsWithChildren,
+    Options} from './Shared';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getLabel, getType } from './AbstractComponents';
 
 
@@ -19,10 +19,11 @@ interface FieldBuilderProps {
     property: string;
     schema: ScSchema7;
     setup: SetupBase;
+    options: Options;
 }
 
 
-const FieldBuilder = ({ property, schema, setup }: FieldBuilderProps): JSX.Element => {
+const FieldBuilder = ({ property, schema, setup, options }: FieldBuilderProps): JSX.Element => {
     if (schema.scHidden == true)
         throw new Error(`${callerAndfName()} ${setup.id}.${property} is hidden`);
 
@@ -37,7 +38,7 @@ const FieldBuilder = ({ property, schema, setup }: FieldBuilderProps): JSX.Eleme
     const label = getLabel(property, schema);
 
     const baseKey = `${setup.id}.${property}`;
-    const sharedProps: AllPropsType = {
+    const sharedProps /*: AllPropsType*/ = {
         key: baseKey,
         item: setup,
         rawLabel: label,
@@ -51,6 +52,7 @@ const FieldBuilder = ({ property, schema, setup }: FieldBuilderProps): JSX.Eleme
         helperText: schema.description,
         rawHelperText: schema.scDescriptionTranslationId ?? schema.description,
         type: getType(schema),
+        options,
         onChange
     };
 
@@ -99,9 +101,10 @@ const FieldBuilder = ({ property, schema, setup }: FieldBuilderProps): JSX.Eleme
 
 interface SetupObjectProps {
     setup: SetupBase;
+    options: Options;
 }
 
-const SetupObject = ({ setup }: SetupObjectProps): JSX.Element => {
+const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
     if (setup === undefined)
         throw new Error(`${callerAndfName} No setup object`);
     if (!setup.getSimpleClassSchema)
@@ -115,8 +118,10 @@ const SetupObject = ({ setup }: SetupObjectProps): JSX.Element => {
     if (properties == undefined) throw new Error(`${callerAndfName()}(${setup.id}/${setup.className}) no properties in simpleSchema`);
 
     const visibleProperties = Object.entries(properties)
-        .filter(([, schema]) =>
-            typeof schema == 'object' && (schema as ScSchema7).scHidden !== true)
+        .filter( ([, schema]) =>
+            ( typeof schema == 'object' ) &&
+            ((schema as ScSchema7).scHidden !== true) &&
+            ( (!options.ignoreViewOnly) || ( (schema as ScSchema7).scViewOnly !== true && schema.readOnly !== true)) )
         .sort(([, schemaA], [, schemaB]) => {
             if (typeof schemaA == 'object' && schemaA.type === 'object')
                 return 1;
@@ -139,10 +144,17 @@ const SetupObject = ({ setup }: SetupObjectProps): JSX.Element => {
             rawLabel={label}
             helperText={schema.description}
             rawHelperText={schema.scDescriptionTranslationId ?? schema.description}
+            options={options}
             >
             {
                 visibleProperties.map(([property, schema]) =>
-                    <FieldBuilder key={`${setup.id}.${property}-Builder`} setup={setup} property={property} schema={schema as ScSchema7} />
+                    <FieldBuilder
+                        key={`${setup.id}.${property}-Builder`}
+                        setup={setup}
+                        property={property}
+                        schema={schema as ScSchema7}
+                        options={options}
+                    />
                 )
             }
         </ContainerObject>

@@ -4,16 +4,19 @@ import SetupObject from './SetupObject';
 import { SetupItemId } from '../../../Setup/SetupInterface';
 import controller from '../../../Setup/Controller/Factory';
 import Typography from '@material-ui/core/Typography';
+import { Options } from './Shared';
 
 interface Props {
     value: SetupBase | SetupItemId;
+    options: Options;
 }
 
 interface LoaderProps {
     id: SetupItemId;
+    options: Options;
 }
 
-const Loader = ({ id }: LoaderProps): JSX.Element => {
+const Loader = ({ id, options }: LoaderProps): JSX.Element => {
     const [item, setItem] = useState(undefined as SetupBase | undefined);
 
     useEffect(() => {
@@ -21,14 +24,14 @@ const Loader = ({ id }: LoaderProps): JSX.Element => {
             .then(setItem);
     }, []);
 
-    return item ? <SetupObject setup={item} /> : <Typography>Loading {id} ...</Typography>;
+    return item ? <SetupObject setup={item} options={options} /> : <Typography>Loading {id} ...</Typography>;
 };
 
-const ObjectForm = ({ value }: Props): JSX.Element => {
+const ObjectForm = ({ value, options }: Props): JSX.Element => {
     if (typeof value == 'string') {
-        return <Loader id={value} key={value + '-Loader'} />;
+        return <Loader id={value} key={value + '-Loader'} options={options}/>;
     } else {
-        return <SetupObject setup={value} />;
+        return <SetupObject setup={value} options={options}/>;
     }
 };
 

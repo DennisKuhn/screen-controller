@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import React, { ChangeEvent } from 'react';
 import { Plugin } from '../../../Setup/Application/Plugin';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import RectangleCells from './RectangleCells';
+import RectangleEditor from '../../Fields/RectangleEditor';
 import { getCpuClass, getCpuText, getCpuUsage } from './Tools';
 
 interface Props {
@@ -66,7 +66,9 @@ const PluginLine = observer(({ plugin }: Props): JSX.Element => {
             />
         </TableCell>
         <Actions plugin={plugin} />
-        <RectangleCells rect={plugin.relativeBounds} />
+        <TableCell>
+            <RectangleEditor value={plugin.relativeBounds} />
+        </TableCell>
     </TableRow>);
 });
 
