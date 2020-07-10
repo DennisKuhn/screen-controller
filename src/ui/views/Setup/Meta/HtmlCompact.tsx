@@ -1,11 +1,12 @@
-import register from '../Registry';
+import registry from '../Registry';
 
-register.register('Object', undefined, null);
-register.register('Array', undefined, null);
-register.register('Map', undefined, null);
+registry.register('Root', undefined, null);
+registry.register('Object', undefined, null);
+registry.register('Array', undefined, null);
+registry.register('Map', undefined, null);
 
-register.register('Field', undefined, null);
-register.register('LabelContainer', undefined, null);
-register.register('LabelView', undefined, 'label', ['View']);
-register.register('ValueContainer', undefined, null);
-register.register('ValueInput', undefined, 'input', ['Input']);
+registry.register('Field', undefined, null);
+registry.register('LabelContainer', undefined, null);
+registry.register('LabelView', undefined, 'label', ['View']);
+registry.register('ValueContainer', undefined, null);
+registry.register('ValueInput', undefined, 'input', ['Input']);

@@ -2,15 +2,16 @@ import { Typography, Input } from '@material-ui/core';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridContainerItem from '../../../components/Grid/GridContainerItem';
 import GridItem from '../../../components/Grid/GridItem';
-import register from '../Registry';
+import registry from '../Registry';
 
 
-register.register('Object', undefined, GridContainer, ['None']);
-register.register('Array', undefined, GridContainer, ['None']);
-register.register('Map', undefined, GridContainer, ['None']);
+registry.register('Root', undefined, null);
+registry.register('Object', undefined, GridContainer, ['None']);
+registry.register('Array', undefined, GridContainer, ['None']);
+registry.register('Map', undefined, GridContainer, ['None']);
 
-register.register('Field', undefined, GridContainerItem, ['None']);
-register.register('LabelContainer', undefined, GridItem, ['None']);
-register.register('LabelView', undefined, Typography, ['View']);
-register.register('ValueContainer', undefined, GridItem, ['None']);
-register.register('ValueInput', undefined, Input, ['Input']);
+registry.register('Field', undefined, GridContainerItem, ['None']);
+registry.register('LabelContainer', undefined, GridItem, ['None']);
+registry.register('LabelView', undefined, Typography, ['View']);
+registry.register('ValueContainer', undefined, GridItem, ['None']);
+registry.register('ValueInput', undefined, Input, ['Input']);

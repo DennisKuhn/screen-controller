@@ -5,14 +5,16 @@ import { makeStyles } from '@material-ui/core';
 
 const useStyle = makeStyles({
     grid: {
-        padding: '0 15px !important'
+        padding: '0 15px !important',
+        // display: 'inline-flex'
+        // minWidth: 182
     }
 });
 
 function GridItem({ ...props }: any): JSX.Element {
     const { children, ...rest } = props;
     const classes = useStyle();
-    
+
     return (
         <Grid item={true} {...rest} className={classes.grid}>
             {children}

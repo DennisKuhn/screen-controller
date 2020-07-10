@@ -26,6 +26,7 @@ export const getType = (schema: ScSchema7): FieldType => {
         if (schema.oneOf.length < 1)
             throw new Error(`${callerAndfName()} oneOf.length=${schema.oneOf.length} not supported (yet): ${JSON.stringify(schema)}`);
         
+        // Get type from oneOfs and ensure it's same type
         schema.oneOf.forEach(option => {
             if (typeof option !== 'object' )
                 throw new Error(`${callerAndfName()} oneOf option is not a object/schema, not supported (yet), option=${JSON.stringify(option)} schema=${JSON.stringify(schema)}`);
@@ -39,14 +40,39 @@ export const getType = (schema: ScSchema7): FieldType => {
         if (!schema.type) throw new Error(`${callerAndfName()} no type in schema: ${JSON.stringify(schema)}`);
 
         switch (schema.type) {
-            case 'boolean':
-                type = 'checkbox';
-                break;
-            case 'string':
-                type = 'text';
-                break;
             case 'number':
-                type = 'number';
+            case 'array':
+                type = schema.type;
+                break;
+            case 'boolean': type = 'checkbox'; break;
+            case 'string':
+                switch (schema.scFormat) {
+                    case undefined:
+                        switch (schema.format) {
+                            case 'email':
+                            case 'date':
+                            case 'time':
+                                type = schema.format; break;
+                            case undefined: type = 'text'; break;
+                            case 'uri': type = 'url'; break;
+                            case 'date-time': type = 'datetime-local'; break;
+                            default:
+                                throw new Error(`${callerAndfName()} format=${schema.format} not supported (yet) in ${schema}`);
+                        }
+                        break;
+                    case 'color':
+                    case 'password':
+                        type = schema.scFormat;
+                        break;
+                    case 'localFile':
+                        type = 'file';
+                        break;
+                    case 'localFolder':
+                        type = 'file';
+                        break;
+                    default:
+                        throw new Error(`${callerAndfName()} scFormat=${schema.scFormat} not supported (yet) in ${schema}`);
+                }
                 break;
             case 'object':
                 if (typeof schema.additionalProperties == 'object') {
@@ -54,9 +80,6 @@ export const getType = (schema: ScSchema7): FieldType => {
                 } else {
                     type = 'object';
                 }
-                break;
-            case 'array':
-                type = 'array';
                 break;
             default:
                 type = 'text';
@@ -150,6 +173,16 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
 
 
 export const getProspect = (category: Category, props: BaseProps & WrapperProps): JSX.Element => {
+    if (props.schema === undefined) {
+        console.warn(`${callerAndfName()}(${category}, {${Object.keys(props).join()}}) no schema`);
+
+        return create(
+            register.get(
+                category,
+                props.cacheId,
+                []
+            ), props);
+    }
     const schemas = props.schema.scAllOf ?? [props.schema.$id];
     const types = Array.isArray(props.schema.type) ? props.schema.type : [props.schema.type];
     return create(

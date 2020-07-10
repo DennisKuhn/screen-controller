@@ -116,7 +116,15 @@ const SetupObject = ({ setup }: SetupObjectProps): JSX.Element => {
 
     const visibleProperties = Object.entries(properties)
         .filter(([, schema]) =>
-            typeof schema == 'object' && (schema as ScSchema7).scHidden !== true);
+            typeof schema == 'object' && (schema as ScSchema7).scHidden !== true)
+        .sort(([, schemaA], [, schemaB]) => {
+            if (typeof schemaA == 'object' && schemaA.type === 'object')
+                return 1;
+            if (typeof schemaB == 'object' && schemaB.type === 'object')
+                return -1;
+            return 0;
+        }
+        );
 
     //        <ContainerObject key={key} item={setup} cacheId={key}>
 

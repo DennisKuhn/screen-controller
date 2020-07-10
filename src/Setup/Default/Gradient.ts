@@ -20,10 +20,11 @@ export class Gradient extends SetupBase implements GradientInterface {
                     type: { type: 'string', enum: ['Solid', 'Circular', 'Horizontal', 'Vertical'], default: 'Circular' },
                     colors: {
                         type: 'array',
-                        items: {
+                        items: asScSchema7({
                             type: 'string',
+                            scFormat: 'color',
                             default: '#ff0000'
-                        },
+                        }),
                         minItems: 2,
                         default: ['#00ff00', '#0000ff']
                     }

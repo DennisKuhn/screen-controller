@@ -11,7 +11,7 @@ export interface ScSchema7 extends JSONSchema7 {
     /** Name of the material icon */
     scIcon?: string;
 
-    scFormat?: 'color';
+    scFormat?: 'color' | 'password' | 'localFile' | 'localFolder';
     
     /** IDs of merged allOf schema */
     scAllOf?: string[];

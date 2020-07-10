@@ -24,7 +24,7 @@ const Loader = ({ id }: LoaderProps): JSX.Element => {
     return item ? <SetupObject setup={item} /> : <Typography>Loading {id} ...</Typography>;
 };
 
-const Form = ({ value }: Props): JSX.Element => {
+const ObjectForm = ({ value }: Props): JSX.Element => {
     if (typeof value == 'string') {
         return <Loader id={value} key={value + '-Loader'} />;
     } else {
@@ -32,4 +32,4 @@ const Form = ({ value }: Props): JSX.Element => {
     }
 };
 
-export default Form;
+export default ObjectForm;

@@ -21,7 +21,7 @@ export interface BaseProps extends KeyProps {
 
     /** Simplified schema of the object, array, map or property  */
     schema: ScSchema7;
-    
+
     /** Either translated( schema.scDescriptionTranslationId ) or same a rawHelperText */
     helperText?: string;
     /** schema.scDescriptionTranslationId | schema.description */
@@ -48,7 +48,7 @@ export type { PropertyType } from '../../../Setup/SetupBase';
 export type FieldType = 'object' | 'array' | 'map' | 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'number' | 'password' | 'text' | 'time' | 'url';
 
 export type ChangeEventArgs = ChangeEvent | PropertyType;
-export type ChangeHandler  = (change: ChangeEventArgs) => void;
+export type ChangeHandler = (change: ChangeEventArgs) => void;
 export const isChangeEvent = (event: ChangeEventArgs): event is ChangeEvent => typeof event == 'object' && 'target' in event;
 
 export interface InputProps extends KeyProps {
@@ -110,7 +110,8 @@ export interface PropertyProps extends BaseProps {
 export type PropertyPropsWithChildren = PropsWithChildren<PropertyProps>;
 export const isPropertyProps = (prop: PropsType): prop is PropertyProps =>
     ((prop as PropertyProps).property !== undefined) &&
-    ((prop as PropertyProps).value !== undefined);
+    ('value' in prop) &&
+    ((prop as PropertyProps).readOnly !== undefined);
 
 export interface MapPropertyProps extends PropertyProps, MapProps {
     mapKey: string;
@@ -125,7 +126,7 @@ export type ArrayPropertyPropsWithChildren = PropsWithChildren<ArrayPropertyProp
 export type Props = 'None' | 'Base' | 'Property' | 'View' | 'Input' | 'Label' | 'Object' | 'Array' | 'Map';
 export type PropsSelection<Allowed extends Props = Props> = Extract<Props, Allowed>[];
 
-export type PropsType = KeyProps | PropertyProps | BaseProps | ViewProps | InputProps | LabelProps | ObjectProps | ArrayProps | MapProps ;
+export type PropsType = KeyProps | PropertyProps | BaseProps | ViewProps | InputProps | LabelProps | ObjectProps | ArrayProps | MapProps;
 export type AllPropsType = KeyProps & PropertyProps & BaseProps & ViewProps & InputProps & LabelProps;
 
 export type ObjectElement = React.ComponentType<ObjectPropsWithChildren & React.ComponentProps<any>> | string;
@@ -138,38 +139,45 @@ export type ElementType = ObjectElement | ArrayElement | MapElement | PropertyEl
 /**
  * Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]
  */
-export type Category = 'Object' | 'Array' | 'Map' | 'Field' | 'LabelContainer' | 'LabelView' | 'ValueContainer' | 'ValueInput';
+export type Category = 'Root' | 'Object' | 'Array' | 'Map' | 'Field' | 'LabelContainer' | 'LabelView' | 'ValueContainer' | 'ValueInput';
 
 export interface Entry {
     element: ElementType;
     props: PropsSelection;
 }
 
-export interface Registry {
-    register(category: 'Object', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
-    register(category: 'Array', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
-    register(category: 'Map', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
-    register(category: 'Field', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
-    register(category: 'LabelContainer', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
-    register(category: 'LabelView', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
-    register(category: 'ValueContainer', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
-    register(category: 'ValueInput', typeName: string | undefined, element: null, props?: PropsSelection<'None'>): void;
+type TypeName = string | undefined;
+type TypeNames = TypeName | (TypeName[]);
 
-    register(category: 'Object', typeName: string | undefined, element: ObjectElement , props: PropsSelection<'None' | 'Base'>): void;
-    register(category: 'Array', typeName: string | undefined, element: ArrayElement, props: PropsSelection<'None' | 'Base'>): void;
-    register(category: 'Map', typeName: string | undefined, element: MapElement, props: PropsSelection<'None' | 'Base'>): void;
-    register(category: 'Field', typeName: string | undefined, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
-    register(category: 'LabelContainer', typeName: string | undefined, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
-    register(category: 'LabelView', typeName: string | undefined, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property' | 'View'>): void;
-    register(category: 'ValueContainer', typeName: string | undefined, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
-    register(category: 'ValueInput', typeName: string | undefined, element: PropertyElement,
+export interface Registry {
+    register(category: 'Root', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'Object', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'Array', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'Map', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'Field', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'LabelContainer', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'LabelView', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'ValueContainer', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'ValueInput', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+
+    register(category: 'Root', typeName: TypeNames, element: ObjectElement, props: PropsSelection<'None'>): void;
+    register(category: 'Object', typeName: TypeNames, element: ObjectElement, props: PropsSelection<'None' | 'Base'>): void;
+    register(category: 'Array', typeName: TypeNames, element: ArrayElement, props: PropsSelection<'None' | 'Base'>): void;
+    register(category: 'Map', typeName: TypeNames, element: MapElement, props: PropsSelection<'None' | 'Base'>): void;
+    register(category: 'Field', typeName: TypeNames, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
+    register(category: 'LabelContainer', typeName: TypeNames, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
+    register(category: 'LabelView', typeName: TypeNames, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property' | 'View'>): void;
+    register(category: 'ValueContainer', typeName: TypeNames, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
+    register(category: 'ValueInput', typeName: TypeNames, element: PropertyElement,
         props: PropsSelection<'None' | 'Base' | 'Property' | 'Input' | 'Label'>): void;
-    
+
     get(category: Category, cacheId: string, keys: (string | undefined)[]): Entry;
 }
 
 const getName = (element: ElementType): string =>
     (element == null ? 'null' : typeof element == 'string' ? 'element' : (element.name ?? element.displayName ?? element.constructor?.name));
+
+const getNamesArray = (names: TypeNames): TypeName[] => names === undefined ? [undefined] : (typeof names == 'string' ? [names] : names);
 
 class Register {
     default: Entry | undefined;
@@ -182,18 +190,20 @@ class Register {
      * @example register( undefined,  GridContainer )
      * register( 'number', TextInput )
      */
-    register = (name: string | undefined, element: ElementType, props: PropsSelection): void => {
-        const existingField = name == undefined ? this.default : this.elements.get(name);
+    register = (names: TypeNames, element: ElementType, props: PropsSelection): void => {
+        for (const name of getNamesArray(names)) {
+            const existingField = name == undefined ? this.default : this.elements.get(name);
 
-        if (existingField) {
-            console.warn(`${callerAndfName()} change [${name ?? 'default'}] from ${getName(existingField.element)} to ${getName(element)}`);
-        } else {
-            // console.debug(`${callerAndfName()} [${name ?? 'default'}]=${element == null ? 'null' : element.name}`);
-        }
-        if (name == undefined) {
-            this.default = { element, props };
-        } else {
-            this.elements.set(name, { element, props });
+            if (existingField) {
+                console.warn(`${callerAndfName()} change [${name ?? 'default'}] from ${getName(existingField.element)} to ${getName(element)}`);
+            } else {
+                // console.debug(`${callerAndfName()} [${name ?? 'default'}]=${element == null ? 'null' : element.name}`);
+            }
+            if (name == undefined) {
+                this.default = { element, props };
+            } else {
+                this.elements.set(name, { element, props });
+            }
         }
     }
 
@@ -231,6 +241,7 @@ type Registers = {
 
 class RegistryImplementation implements Registry {
     private registers: Registers = {
+        Root: new CategoryRecord(),
         Object: new CategoryRecord(),
         Array: new CategoryRecord(),
         Map: new CategoryRecord(),
@@ -239,7 +250,7 @@ class RegistryImplementation implements Registry {
         LabelView: new CategoryRecord(),
         ValueContainer: new CategoryRecord(),
         ValueInput: new CategoryRecord()
-    };    
+    };
 
     /**
      * @param category Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]
@@ -252,12 +263,12 @@ class RegistryImplementation implements Registry {
      * register( 'ValueInput', undefined, TextInput )
      * register( 'ValueInput', 'number', TextInput )
      */
-    register(category: Category, typeName: string | undefined, element: ElementType, props?: PropsSelection): void {
+    register(category: Category, typeNames: TypeNames, element: ElementType, props?: PropsSelection): void {
         console.debug(
-            `${callerAndfName()}[${category}][${typeName ?? 'default'}]=${getName(element)} ` +
+            `${callerAndfName()}[${category}][${getNamesArray(typeNames).join()}]=${getName(element)} ` +
             `props=${props == undefined ? 'undefined=None' : props.join()}`
         );
-        this.registers[category].register.register(typeName, element, props === undefined ? ['None'] : props);
+        this.registers[category].register.register(typeNames, element, props === undefined ? ['None'] : props);
     }
 
     /**
