@@ -9,7 +9,7 @@ export class Display extends SetupBase {
         $id: Display.name,
         title: 'Display',
         description: 'Represent a monitor containing browsers',
-        scIcon: 'DesktopWindows',
+        scIcon: 'desktop_windows',
         allOf: [
             SetupBase.SCHEMA_REF,
             {

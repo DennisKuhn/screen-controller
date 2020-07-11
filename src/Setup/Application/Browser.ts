@@ -18,7 +18,7 @@ export class Browser extends SetupBase {
         $id: Browser.name,
         title: 'Browser',
         description: 'Container for plugins',
-        scIcon: 'Web',
+        scIcon: 'web',
         allOf: [
             SetupBase.SCHEMA_REF,
             {

@@ -25,7 +25,11 @@ export type CommonPropsWithChildren = PropsWithChildren<CommonProps>;
 /** Used by wrapper components to pass through key and children */
 export interface WrapperProps extends CommonProps {
     elementKey: string;
-    contentChild?: string;
+    contentChild?: string | JSX.Element;
+}
+
+export interface SchemaProps extends CommonProps {
+    
 }
 
 /** Props from item level used (e.g. only RootElement doesn't get this) */
@@ -58,6 +62,20 @@ export interface ViewProps extends KeyProps {
     children: string;
 }
 
+/** Used for component dealing with the actual value.
+ *  Must be controlled, e.g. always display value and call onChange with new value */
+export interface ActionProps extends KeyProps {
+    /**
+     * Can be either used directly by an input element or called with a new value
+     */
+    onClick: () => void;
+
+    /** default icon */
+    children: JSX.Element;
+}
+
+
+
 export type { PropertyType } from '../../../Setup/SetupBase';
 
 export type FieldType = 'object' | 'array' | 'map' | 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'number' | 'password' | 'text' | 'time' | 'url';
@@ -66,7 +84,7 @@ export type ChangeEventArgs = ChangeEvent | PropertyType;
 export type ChangeHandler = (change: ChangeEventArgs) => void;
 export const isChangeEvent = (event: ChangeEventArgs): event is ChangeEvent => typeof event == 'object' && 'target' in event;
 
-/** Used ofr component dealing with the actual value.
+/** Used for component dealing with the actual value.
  *  Must be controlled, e.g. always display value and call onChange with new value */
 export interface InputProps extends KeyProps {
     /**
@@ -141,7 +159,7 @@ export interface ArrayPropertyProps extends PropertyProps, ArrayProps {
 }
 export type ArrayPropertyPropsWithChildren = PropsWithChildren<ArrayPropertyProps>;
 
-export type Props = 'None' | 'Base' | 'Property' | 'View' | 'Input' | 'Label' | 'Object' | 'Array' | 'Map';
+export type Props = 'None' | 'Base' | 'Property' | 'View' | 'Input' | 'Action' | 'Label' | 'Object' | 'Array' | 'Map';
 export type PropsSelection<Allowed extends Props = Props> = Extract<Props, Allowed>[];
 
 export type PropsType = KeyProps | PropertyProps | BaseProps | ViewProps | InputProps | LabelProps | ObjectProps | ArrayProps | MapProps;

@@ -1,13 +1,18 @@
 import React from 'react';
-import { InputProps, PropertyProps, WrapperProps, MapPropsWithChildren, ChangeEventArgs, isChangeEvent, MapPropertyProps, Options } from './Shared';
+import { InputProps, PropertyProps, WrapperProps, MapPropsWithChildren, ChangeEventArgs, isChangeEvent, MapPropertyProps, Options,  ActionProps, BasePropsWithChildren } from './Shared';
 import { callerAndfName } from '../../../utils/debugging';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel } from './AbstractComponents';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
-import {  } from '../../../Setup/Container';
+import { } from '../../../Setup/Container';
 import { isObservableMap } from 'mobx';
+import { Delete, Add } from '@material-ui/icons';
+import { Icon, Badge } from '@material-ui/core';
 
 const ContainerMap = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('Map', props);
+
+const NewContainer = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('NewContainer', props);
+const NewItem = (props: BasePropsWithChildren & ActionProps & WrapperProps): JSX.Element => getProspect('NewItem', props);
 
 interface MapItemBuilderProps {
     mapKey: string;
@@ -34,7 +39,7 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup, options
 
     const label = getMapKeyLabel(mapKey, schema);
 
-    if (! mapKey) throw new Error(`${callerAndfName()} ${mapKey} is invalid=${mapKey}`);
+    if (!mapKey) throw new Error(`${callerAndfName()} ${mapKey} is invalid=${mapKey}`);
 
     const sharedProps/*: AllPropsType & MapPropertyProps*/ = {
         key: baseKey,
@@ -93,6 +98,7 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup, options
             <ValueContainer {...valueContainerProps} >
                 <ValueInput {...valueInputProps} />
             </ValueContainer>
+            <Delete />
         </Field>
     );
 };
@@ -106,15 +112,22 @@ const MapInput = ({ item, property, value, schema, type, options }: InputProps &
 
     const baseKey = `${item.id}.${property}`;
     const containerKey = `${baseKey}-ContainerMap`;
+    const newContainerKey = `${baseKey}-NewContainerMap`;
     const itemSchema = schema.additionalProperties;
     const label = getLabel(item.parentProperty, schema);
     const mapKeys = Array.from(value.keys());
+    const newLabel = getLabel('new', itemSchema);
+    const newItems = itemSchema.oneOf ?? [itemSchema];
+    const sharedProps = {
+        item: item,
+        property: property,
+        map: value,
+        options: options,
+    };
 
     return (
         <ContainerMap
-            item={item}
-            property={property}
-            map={value}
+            {...sharedProps}
             schema={schema}
             label={label}
             rawLabel={label}
@@ -123,8 +136,44 @@ const MapInput = ({ item, property, value, schema, type, options }: InputProps &
             cacheId={containerKey}
             elementKey={containerKey}
             key={containerKey}
-            options={options}
             >
+            <NewContainer
+                {...sharedProps}
+                key={newContainerKey}
+                schema={itemSchema}
+                cacheId={newContainerKey}
+                elementKey={newContainerKey}
+                label={newLabel}
+                rawLabel={newLabel}
+            >
+                {newItems.map((newSchema, index) => {
+                    if (typeof newSchema !== 'object') throw new Error(`${callerAndfName()} invalid new item schema ${JSON.stringify(newSchema)}`);
+                    const key = baseKey + '-new-' + newSchema.$id ?? index;
+                    const label = getLabel(property, newSchema);
+                    const scSchema = newSchema as ScSchema7;
+                    const newIcon = scSchema.scIcon ?
+                        <Badge badgeContent={'+'}>
+                            <Icon title={label}>{scSchema.scIcon}</Icon>
+                        </Badge> :
+                        <Add />;
+                    
+                    return <NewItem
+                        {...sharedProps}
+                        key={key}
+                        elementKey={key}
+                        cacheId={key}
+                        schema={scSchema}
+                        contentChild={newIcon}
+                        label={label}
+                        rawLabel={label}
+                        helperText={scSchema.description}
+                        rawHelperText={scSchema.scDescriptionTranslationId ?? scSchema.description}
+                        onClick={(): void => console.log(`${callerAndfName()} onClick ${scSchema.$id}`, scSchema)}
+                    />;
+                }
+                )
+                }
+            </NewContainer>
             {mapKeys.map(mapKey =>
                 <MapItemBuilder
                     setup={item}

@@ -4,7 +4,7 @@ import { ElementType, PropsSelection, PropertyElementWithChildren, ObjectElement
 /**
  * Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]
  */
-export type Category = 'Root' | 'Object' | 'Array' | 'Map' | 'Field' | 'LabelContainer' | 'LabelView' | 'ValueContainer' | 'ValueInput';
+export type Category = 'Root' | 'Object' | 'Array' | 'Map' | 'NewContainer' | 'NewItem' | 'Field' | 'LabelContainer' | 'LabelView' | 'ValueContainer' | 'ValueInput';
 
 export interface Entry {
     element: ElementType;
@@ -19,6 +19,8 @@ export interface Registry {
     register(category: 'Object', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
     register(category: 'Array', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
     register(category: 'Map', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'NewContainer', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
+    register(category: 'NewItem', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
     register(category: 'Field', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
     register(category: 'LabelContainer', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
     register(category: 'LabelView', typeName: TypeNames, element: null, props?: PropsSelection<'None'>): void;
@@ -29,6 +31,8 @@ export interface Registry {
     register(category: 'Object', typeName: TypeNames, element: ObjectElement, props: PropsSelection<'None' | 'Base'>): void;
     register(category: 'Array', typeName: TypeNames, element: ArrayElement, props: PropsSelection<'None' | 'Base'>): void;
     register(category: 'Map', typeName: TypeNames, element: MapElement, props: PropsSelection<'None' | 'Base'>): void;
+    register(category: 'NewContainer', typeName: TypeNames, element: MapElement, props: PropsSelection<'None' | 'Base' | 'Map'>): void;
+    register(category: 'NewItem', typeName: TypeNames, element: MapElement, props: PropsSelection<'None' | 'Base' | 'Action'>): void;
     register(category: 'Field', typeName: TypeNames, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
     register(category: 'LabelContainer', typeName: TypeNames, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property'>): void;
     register(category: 'LabelView', typeName: TypeNames, element: PropertyElementWithChildren, props: PropsSelection<'None' | 'Base' | 'Property' | 'View'>): void;
@@ -110,6 +114,8 @@ class RegistryImplementation implements Registry {
         Object: new CategoryRecord(),
         Array: new CategoryRecord(),
         Map: new CategoryRecord(),
+        NewContainer: new CategoryRecord(),
+        NewItem: new CategoryRecord(),
         Field: new CategoryRecord(),
         LabelContainer: new CategoryRecord(),
         LabelView: new CategoryRecord(),
