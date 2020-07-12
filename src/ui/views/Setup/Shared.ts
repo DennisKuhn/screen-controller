@@ -62,19 +62,19 @@ export interface ViewProps extends KeyProps {
     children: string;
 }
 
-/** Used for component dealing with the actual value.
- *  Must be controlled, e.g. always display value and call onChange with new value */
 export interface ActionProps extends KeyProps {
     /**
      * Can be either used directly by an input element or called with a new value
      */
     onClick: () => void;
+}
+export const isActionProps = (prop: PropsType): prop is ActionProps =>
+    ((prop as ActionProps).onClick !== undefined);
 
+export interface IconProps extends KeyProps {
     /** default icon */
     children: JSX.Element;
 }
-
-
 
 export type { PropertyType } from '../../../Setup/SetupBase';
 
@@ -159,11 +159,11 @@ export interface ArrayPropertyProps extends PropertyProps, ArrayProps {
 }
 export type ArrayPropertyPropsWithChildren = PropsWithChildren<ArrayPropertyProps>;
 
-export type Props = 'None' | 'Base' | 'Property' | 'View' | 'Input' | 'Action' | 'Label' | 'Object' | 'Array' | 'Map';
+export type Props = 'None' | 'Base' | 'Property' | 'View' | 'Input' | 'Action' | 'Icon' | 'Label' | 'Object' | 'Array' | 'Map';
 export type PropsSelection<Allowed extends Props = Props> = Extract<Props, Allowed>[];
 
-export type PropsType = KeyProps | PropertyProps | BaseProps | ViewProps | InputProps | LabelProps | ObjectProps | ArrayProps | MapProps;
-export type AllPropsType = KeyProps & PropertyProps & BaseProps & ViewProps & InputProps & LabelProps;
+export type PropsType = KeyProps | PropertyProps | ArrayPropertyProps | MapPropertyProps | BaseProps | ViewProps | InputProps | IconProps | ActionProps | LabelProps | ObjectProps | ArrayProps | MapProps;
+export type AllPropsType = KeyProps & PropertyProps & ArrayPropertyProps & MapPropertyProps & BaseProps & ViewProps & InputProps & IconProps & ActionProps & LabelProps & ObjectProps & ArrayProps & MapProps;
 
 export type ObjectElement = React.ComponentType<ObjectPropsWithChildren & React.ComponentProps<any>> | string;
 export type ArrayElement = React.ComponentType<ArrayPropsWithChildren & React.ComponentProps<any>> | string;

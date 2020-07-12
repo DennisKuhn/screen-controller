@@ -5,7 +5,7 @@ import { InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChild
 import registry from '../Registry';
 import GridContainer from '../../../components/Grid/GridContainer';
 import { TreeItem, TreeView } from '@material-ui/lab';
-import DisplayCard from './Material/DisplayCard';
+import DisplayCard from './MaterialSetup/DisplayCard';
 
 /** Get the width of a standard browser input control */
 let inputWidth: undefined | number;

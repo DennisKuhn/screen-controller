@@ -427,7 +427,8 @@ export const replaceAbstractRefsWithOneOfConcrets = (root: JSONSchema7, defs?: J
 const replaceAbstractSchema = (schema: JSONSchema7, root: JSONSchema7): JSONSchema7 | undefined => {
     if (schema.$id) {
         const replacement = {
-            oneOf: getConcretes(schema.$id, root)
+            oneOf: getConcretes(schema.$id, root),
+            scAbstract: schema,
         };
 
         if (replacement.oneOf.length) {

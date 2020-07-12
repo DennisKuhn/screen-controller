@@ -21,7 +21,7 @@ export class Root extends SetupBase {
                     screen: { $ref: Screen.name },
                     mainPerformanceInterval: { type: 'number', default: 1000 },
                     mainCpuUsage: asScSchema7({ type: 'number', scVolatile: true, scViewOnly: true }),
-                    mainPid: { type: 'number' },
+                    mainPid: asScSchema7({ type: 'number', scViewOnly: true }),
                 },
                 required: ['screen', 'mainPerformanceInterval']
             }

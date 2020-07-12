@@ -106,9 +106,9 @@ interface SetupObjectProps {
 
 const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
     if (setup === undefined)
-        throw new Error(`${callerAndfName} No setup object`);
+        throw new Error(`${callerAndfName()} No setup object`);
     if (!setup.getSimpleClassSchema)
-        throw new Error(`${callerAndfName} Not a setup object: ${JSON.stringify(setup)}`);
+        throw new Error(`${callerAndfName()} Not a setup object: ${JSON.stringify(setup)}`);
 
     const schema = setup.getSimpleClassSchema() as ScSchema7;
     const properties = schema.properties;

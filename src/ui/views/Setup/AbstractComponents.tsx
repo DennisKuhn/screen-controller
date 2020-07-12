@@ -11,7 +11,10 @@ import {
     BaseProps,
     InputProps,
     FieldType,
-    CommonProps
+    CommonProps,
+    AllPropsType,
+    isActionProps,
+    ActionProps
 } from './Shared';
 import { Entry, Category } from './Registry';
 
@@ -94,7 +97,38 @@ export const getType = (schema: ScSchema7): FieldType => {
 };
 export const getLabel = (property: string, schema: ScSchema7): string => schema.scTranslationId ?? schema.title ?? property;
 
+/**
+ * Make all properties in T as boolean
+ */
+type Flags<T> = {
+    [P in keyof T]: boolean;
+};
 
+const allProps: Flags<AllPropsType & WrapperProps> = {
+    array: true,
+    index: true,
+    cacheId: true,
+    contentChild: true,
+    children: true,
+    elementKey: true,    
+    item: true,
+    key: true,
+    label: true,
+    map: true,
+    mapKey: true,
+    onChange: true,
+    onClick: true,
+    options: true,
+    property: true,
+    rawLabel: true,
+    rawValue: true,
+    readOnly: true,
+    schema: true,
+    type: true,
+    value: true,
+    helperText: true,
+    rawHelperText: true
+};
 
 const getProps = (source: PropsType & WrapperProps, props: PropsSelection): PropsType => {
     let selectedProps: PropsType = { key: source.elementKey };
@@ -130,7 +164,19 @@ const getProps = (source: PropsType & WrapperProps, props: PropsSelection): Prop
     }
 
     //     if (props.includes( 'View' )) { //<-- Handled in create() using contentChild
+    //     if (props.includes( 'Icon' )) { //<-- Handled in create() using contentChild
 
+    if (props.includes('Action')) {
+        if (!isActionProps(source)) throw new Error(`${callerAndfName()} source props areN'T ActionProps`);
+
+        const newProps: ActionProps = {
+            ...selectedProps,
+            onClick: source.onClick,
+            // children: source.children, //<-- Handled in create() using contentChild
+        };
+
+        selectedProps = newProps;
+    }
     if (props.includes('Input')) {
         if (!isInputProps(source)) throw new Error(`${callerAndfName()} source props areN'T InputProps`);
 
@@ -154,6 +200,12 @@ const getProps = (source: PropsType & WrapperProps, props: PropsSelection): Prop
         };
         selectedProps = newProps;
     }
+    for (const prop in source) {
+        if ((!(prop in selectedProps)) && (!(prop in allProps))) {
+            console.log(`${callerAndfName()}(${props.join()}) add unkown prop ${prop}=${source[prop]} `, { prop, source, selectedProps, props });
+            selectedProps[prop] = source[prop];
+        }
+    }
     return selectedProps;
 };
 
@@ -176,7 +228,8 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
 
 export const getProspect = (category: Category, props: CommonProps & WrapperProps): JSX.Element => {
     if (isBaseProps(props)) {
-        const schemas = props.schema.scAllOf ?? [props.schema.$id];
+        console.log(`${callerAndfName()}(${category}, ${props.cacheId})`, props);
+        const schemas = props.schema.scAllOf ?? [props.schema.$id, props.schema.scAbstract?.$id];
         const types = Array.isArray(props.schema.type) ? props.schema.type : [props.schema.type];
         return create(
             register.get(

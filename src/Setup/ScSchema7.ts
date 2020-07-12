@@ -15,6 +15,9 @@ export interface ScSchema7 extends JSONSchema7 {
     
     /** IDs of merged allOf schema */
     scAllOf?: string[];
+
+    /** Original abstract schema before spreading into oneOF */
+    scAbstract?: any; 
 }
 
 export const asScSchema7 = (schema: ScSchema7): ScSchema7 => schema;

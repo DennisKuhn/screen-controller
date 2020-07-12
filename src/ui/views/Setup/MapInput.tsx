@@ -1,5 +1,16 @@
 import React from 'react';
-import { InputProps, PropertyProps, WrapperProps, MapPropsWithChildren, ChangeEventArgs, isChangeEvent, MapPropertyProps, Options,  ActionProps, BasePropsWithChildren } from './Shared';
+import {
+    InputProps,
+    PropertyProps,
+    WrapperProps,
+    MapPropsWithChildren,
+    ChangeEventArgs,
+    isChangeEvent,
+    MapPropertyProps,
+    Options,
+    ActionProps,
+    BasePropsWithChildren
+} from './Shared';
 import { callerAndfName } from '../../../utils/debugging';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel } from './AbstractComponents';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
@@ -7,12 +18,13 @@ import { SetupBase } from '../../../Setup/SetupBase';
 import { } from '../../../Setup/Container';
 import { isObservableMap } from 'mobx';
 import { Delete, Add } from '@material-ui/icons';
-import { Icon, Badge } from '@material-ui/core';
+import { Icon } from '@material-ui/core';
 
 const ContainerMap = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('Map', props);
 
 const NewContainer = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('NewContainer', props);
 const NewItem = (props: BasePropsWithChildren & ActionProps & WrapperProps): JSX.Element => getProspect('NewItem', props);
+const DeleteItem = (props: PropertyProps & ActionProps & WrapperProps): JSX.Element => getProspect('DeleteItem', props);
 
 interface MapItemBuilderProps {
     mapKey: string;
@@ -83,6 +95,12 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup, options
         elementKey: baseKey + '-labelView',
         contentChild: label,
     };
+    const deleteProps: MapPropertyProps & ActionProps & WrapperProps = {
+        ...sharedProps,
+        key: baseKey + '-Delete',
+        elementKey: baseKey + '-Delete',
+        onClick: () => console.log(`${callerAndfName()} Click Delete ${label}`)
+    };
 
     const valueInputProps: MapPropertyProps & WrapperProps = {
         ...sharedProps,
@@ -98,7 +116,7 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup, options
             <ValueContainer {...valueContainerProps} >
                 <ValueInput {...valueInputProps} />
             </ValueContainer>
-            <Delete />
+            <DeleteItem {...deleteProps} />
         </Field>
     );
 };
@@ -152,9 +170,7 @@ const MapInput = ({ item, property, value, schema, type, options }: InputProps &
                     const label = getLabel(property, newSchema);
                     const scSchema = newSchema as ScSchema7;
                     const newIcon = scSchema.scIcon ?
-                        <Badge badgeContent={'+'}>
-                            <Icon title={label}>{scSchema.scIcon}</Icon>
-                        </Badge> :
+                        <Icon>{scSchema.scIcon}</Icon> :
                         <Add />;
                     
                     return <NewItem
