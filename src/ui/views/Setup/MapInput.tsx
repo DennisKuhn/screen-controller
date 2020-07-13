@@ -1,23 +1,27 @@
+import { Icon } from '@material-ui/core';
+import { Add } from '@material-ui/icons';
+import { isObservableMap } from 'mobx';
 import React from 'react';
-import {
-    InputProps,
-    PropertyProps,
-    WrapperProps,
-    MapPropsWithChildren,
-    ChangeEventArgs,
-    isChangeEvent,
-    MapPropertyProps,
-    Options,
-    ActionProps,
-} from './Shared';
-import { callerAndfName } from '../../../utils/debugging';
-import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel, NewContainer, NewItem, DeleteItem } from './AbstractComponents';
+import controller from '../../..//Setup/Controller/Factory';
+import { ObservableSetupBaseMap } from '../../../Setup/Container';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
-import { } from '../../../Setup/Container';
-import { isObservableMap } from 'mobx';
-import { Add } from '@material-ui/icons';
-import { Icon } from '@material-ui/core';
+import { callerAndfName } from '../../../utils/debugging';
+import {
+    DeleteItem,
+    Field,
+    getLabel, getProspect, getType,
+    LabelContainer, LabelView,
+    NewContainer, NewItem,
+    ValueContainer, ValueInput
+} from './AbstractComponents';
+import {
+    ActionProps, ChangeEventArgs, InputProps,
+    isChangeEvent,
+    MapPropertyProps, MapPropsWithChildren,
+    Options, PropertyProps,
+    WrapperProps
+} from './Shared';
 
 const ContainerMap = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('Map', props);
 
@@ -117,6 +121,32 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup, options
     );
 };
 
+const add = (parentId: string, mapName: string, className: string): void => {
+    const parent = controller.tryGetSetupSync(parentId, 1);
+    if (!parent) throw new Error(`${callerAndfName()}(${parentId}, ${mapName}, ${className}) can't get parent ${parentId}`);
+
+    const map = parent[mapName] as ObservableSetupBaseMap<SetupBase>;
+    if (!map) throw new Error(`${callerAndfName()}(${parentId}, ${mapName}, ${className}) can't get map ${mapName} in ${JSON.stringify(parent)}`);
+
+    const newItem = SetupBase.createNew(className, parentId, mapName);
+
+    console.debug(`${callerAndfName()}(${parentId}, ${mapName}, ${className}) created ${newItem.className}@${newItem.id} add to ${newItem.parentId}.${mapName}`);
+
+    map.set(newItem.id, newItem);
+    // console.log(`DictionaryTemplate[${parentId}.${mapName}].added ${newItem.className}@${newItem.id} in ${newItem.parentId}.${mapName}`);
+};
+
+
+const addSchemaItem = (parentId: string, mapName: string, newSchema: ScSchema7): void => {
+    const className = (newSchema.properties?.className as ScSchema7)?.const;
+
+    if (typeof className != 'string') throw new Error(`${callerAndfName()}(${parentId}, ${mapName}, ${newSchema.$id}) no className.const[string]: ${JSON.stringify(newSchema)}`);
+
+    console.debug(`${callerAndfName()}(${parentId}, ${mapName}, ${newSchema.$id}) add ${className}`);
+
+    add(parentId, mapName, className);
+};
+
 
 const MapInput = ({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
     if ((!(value instanceof Map)) && (!isObservableMap(value))) throw new Error(`${callerAndfName()} value must be a map: ${JSON.stringify(value)}`);
@@ -168,7 +198,8 @@ const MapInput = ({ item, property, value, schema, type, options }: InputProps &
                     const newIcon = scSchema.scIcon ?
                         <Icon>{scSchema.scIcon}</Icon> :
                         <Add />;
-                    
+                    const onNewClick = (): void => addSchemaItem(item.id, property, scSchema);
+
                     return <NewItem
                         {...sharedProps}
                         key={key}
@@ -180,7 +211,7 @@ const MapInput = ({ item, property, value, schema, type, options }: InputProps &
                         rawLabel={label}
                         helperText={scSchema.description}
                         rawHelperText={scSchema.scDescriptionTranslationId ?? scSchema.description}
-                        onClick={(): void => console.log(`${callerAndfName()} onClick ${scSchema.$id}`, scSchema)}
+                        onClick={onNewClick}
                     />;
                 }
                 )

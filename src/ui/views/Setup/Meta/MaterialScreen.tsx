@@ -17,6 +17,7 @@ import { NewContainer, NewItem, SingleNewItem } from './MaterialSetup/NewCompone
 import NotchedOutlineContainer from './MaterialNodgedOutline';
 import { Screen } from '../../../../Setup/Application/Screen';
 import ObjectCard from './MaterialSetup/ObjectCard';
+import OpenLocal from './MaterialSetup/OpenLocal';
 
 
 const useStyles = makeStyles((theme: Theme) => {
@@ -277,6 +278,7 @@ registry.register('Map', Screen.name + '.displays', GridContainer, ['None']);
 registry.register('Map', undefined, LabeledContainer, ['Base']);
 
 registry.register('Field', undefined, null);
+registry.register('Field', 'color', GridContainer, ['None']);
 registry.register('Field', [Browser.name, Plugin.name], GridPaperContainer, ['None']);
 registry.register('LabelContainer', undefined, null);
 registry.register('LabelView', undefined, null);
@@ -289,6 +291,7 @@ registry.register('ValueInput', ['number', 'string'], TextFieldHoc, ['Input', 'L
 registry.register('ValueInput', 'checkbox', SwitchHoc, ['Input', 'Label']);
 registry.register('ValueInput', 'enum', SelectHoc, ['Base', 'Property', 'Input', 'Label']);
 registry.register('ValueInput', RelativeRectangle.name, RectangleHoc, ['Input', 'Label']);
+registry.register('ValueInput', 'file', OpenLocal, ['Property', 'Input']);
 registry.register('ValueInput', undefined, Input, ['Input']);
 
 registry.register('NewContainer', Display.name, BlackHole, ['None']);

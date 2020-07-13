@@ -1,9 +1,10 @@
-import { Button, TextField, makeStyles, createStyles, Theme } from '@material-ui/core';
+import { Button, TextField, makeStyles, createStyles, Theme, IconButton } from '@material-ui/core';
 import { WidgetProps } from '@rjsf/core';
 import { remote } from 'electron';
 import React from 'react';
 import { callerAndfName } from '../../../utils/debugging';
 import { fs2Url } from '../../../utils/Url';
+import { Image } from '@material-ui/icons';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -32,7 +33,7 @@ const showDialog = (): Promise<Electron.OpenDialogReturnValue> => remote.dialog.
 
 const OpenFile = (props: WidgetProps): JSX.Element => {
 
-    console.debug(`${callerAndfName()}`, props)
+    console.debug(`${callerAndfName()}`, props);
 
     const classes = useStyles();
     const handleDialog = async (): Promise<void> => {
@@ -46,9 +47,9 @@ const OpenFile = (props: WidgetProps): JSX.Element => {
 
 
     return (<div className={classes.root} >
-        <Button variant="contained" color="primary" onClick={handleDialog} className={classes.icon}>
-            Select
-        </Button>
+        <IconButton color="primary" onClick={handleDialog} className={classes.icon}>
+            <Image />
+        </IconButton>
         <TextField
             value={props.value}
             InputProps={{

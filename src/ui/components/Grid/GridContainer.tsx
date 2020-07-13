@@ -6,7 +6,8 @@ import { makeStyles } from '@material-ui/core';
 const useStyle = makeStyles({
     grid: {
         margin: '0 -15px !important',
-        width: 'unset'
+        width: 'unset',
+        position: 'relative',
     }
 });
 
