@@ -42,8 +42,10 @@ const DisplayCard = (props: ObjectPropsWithChildren): JSX.Element => {
                 <CardIcon color={(cpuUsage < 5) ? 'success' : (cpuUsage < 10) ? 'warning' : 'danger'}>
                     <DesktopWindows transform={`rotate(${info.rotation})`} />
                 </CardIcon>
-                <p className={classes.cardCategory}>Display</p>
-                <h4 className={classes.cardTitle}>{display.name}</h4>
+                <div className={classes.cardTitleContainer}>
+                    <p className={classes.cardCategory}>Display</p>
+                    <h4 className={classes.cardTitle}>{display.name}</h4>
+                </div>
             </CardHeader>
             <CardBody>
                 <DisplaySummary

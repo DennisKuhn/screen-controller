@@ -49,7 +49,8 @@ const dashboardStyle = createStyles({
         fontSize: '14px',
         marginTop: '0',
         paddingTop: '10px',
-        marginBottom: '0'
+        marginBottom: '0',
+        overflow: 'auto',
     },
     cardCategoryWhite: {
         color: 'rgba(' + hexToRgb(whiteColor) + ',.62)',
@@ -57,6 +58,10 @@ const dashboardStyle = createStyles({
         fontSize: '14px',
         marginTop: '0',
         marginBottom: '0'
+    },
+    cardTitleContainer: {
+        display: 'flex',
+        flexDirection: 'column',
     },
     cardTitle: {
         color: grayColor[2],
@@ -66,6 +71,7 @@ const dashboardStyle = createStyles({
         fontFamily: '\'Roboto\', \'Helvetica\', \'Arial\', sans-serif',
         marginBottom: '3px',
         textDecoration: 'none',
+        overflow: 'auto',
         '& small': {
             color: grayColor[1],
             fontWeight: 400,
@@ -114,14 +120,17 @@ const dashboardStyle = createStyles({
     },
     displayFooterCpuGood: {
         whiteSpace: 'nowrap',
+        marginRight: '5px',
         color: successColor[0],
     },
     displayFooterCpuWarning: {
         whiteSpace: 'nowrap',
+        marginRight: '5px',
         color: warningColor[0],
     },
     displayFooterCpuDanger: {
         whiteSpace: 'nowrap',
+        marginRight: '5px',
         color: dangerColor[0],
     },
     displayFooterResolution: {

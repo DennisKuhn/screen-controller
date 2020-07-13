@@ -15,7 +15,10 @@ import { SetupBase } from '../../../../../Setup/SetupBase';
 const useCardStyles = makeStyles((/*theme*/) => (
     {
         ...dashboardStyle,
-        childContainer: { display: 'flex' }
+        childContainer: {
+            display: 'flex',
+            flexWrap: 'wrap',
+        }
     }
 ));
 
@@ -35,8 +38,10 @@ const ObjectCard = (props: ObjectPropsWithChildren): JSX.Element => {
                 <CardIcon color='primary' >
                     {icon}
                 </CardIcon>
-                <p className={classes.cardCategory}>{schema.$id}</p>
-                <h4 className={classes.cardTitle}>{setup.name}</h4>
+                <div className={classes.cardTitleContainer}>
+                    <p className={classes.cardCategory}>{schema.$id}</p>
+                    <h4 className={classes.cardTitle}>{setup.name}</h4>
+                </div>
             </CardHeader>
             <CardBody>
                 <IconButton aria-label="expand row" size="small" onClick={(): void => setOpen(!open)}>

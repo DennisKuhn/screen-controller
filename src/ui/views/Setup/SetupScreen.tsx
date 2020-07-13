@@ -10,14 +10,24 @@ import './Meta/Structure';
 //import './Meta/Material';
 //import './Meta/MaterialCompact';
 import './Meta/MaterialScreen';
-import GridContainer from '../../components/Grid/GridContainer';
-import GridItem from '../../components/Grid/GridContainer';
+// import GridContainer from '../../components/Grid/GridContainer';
+// import GridItem from '../../components/Grid/GridContainer';
+import { makeStyles, Grid, Theme } from '@material-ui/core';
 
 // import './Meta/Html'; //TODO multiple imports -> no error
 // import './Meta/Html5'; //TODO spelling mistake -> no error
+const useStyles = makeStyles((theme: Theme) => ({
+    container: {
+
+    },
+    item: {
+        padding: theme.spacing(2),
+    },
+}));
 
 const SetupScreen = (): JSX.Element => {
     const [screen, setScreen] = useState(undefined as Screen | undefined);
+    const classes = useStyles();
 
     useEffect(
         () => {
@@ -29,17 +39,19 @@ const SetupScreen = (): JSX.Element => {
     );
 
     return (
-        <GridContainer>
-            <GridItem>
+        <Grid container className={classes.container}>
+            <Grid item className={classes.item}>
                 <Form value={Root.name} />
-            </GridItem>
-            <GridItem>
+            </Grid>
+            <Grid item className={classes.item}>
                 <Form value={Screen.name} />
-            </GridItem>
+            </Grid>
             {screen && screen.displays.mapKeys(displayId =>
-                <GridItem><Form value={displayId} /></GridItem>
+                <Grid item className={classes.item}>
+                    <Form value={displayId} />
+                </Grid>
             )}
-        </GridContainer>
+        </Grid>
     );
 };
 
