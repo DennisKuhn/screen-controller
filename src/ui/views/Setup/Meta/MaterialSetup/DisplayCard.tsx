@@ -43,14 +43,15 @@ const DisplayCard = (props: ObjectPropsWithChildren): JSX.Element => {
                     <DesktopWindows transform={`rotate(${info.rotation})`} />
                 </CardIcon>
                 <p className={classes.cardCategory}>Display</p>
-                <h3 className={classes.cardTitle}>{display.name}</h3>
+                <h4 className={classes.cardTitle}>{display.name}</h4>
+            </CardHeader>
+            <CardBody>
                 <DisplaySummary
                     display={display}
                     open={open}
                     setOpen={setOpen}
+                    buttonSize="small"
                 />
-            </CardHeader>
-            <CardBody>
                 <Collapse in={open} timeout="auto" unmountOnExit>
                     <Box margin={1}>
                         {props.children}
