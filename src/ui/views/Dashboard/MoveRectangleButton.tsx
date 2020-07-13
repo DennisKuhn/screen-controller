@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@material-ui/lab';
-import { RelativeRectangle } from 'src/Setup/Default/RelativeRectangle';
-import { OpenWith, ArrowUpward, ArrowDownward, ArrowRight, ArrowLeft, Edit, ArrowForward, ArrowBack,  } from '@material-ui/icons';
+import { RelativeRectangle } from '../../../Setup/Default/RelativeRectangle';
+import { OpenWith, ArrowUpward, ArrowDownward, ArrowForward, ArrowBack,  } from '@material-ui/icons';
 import { makeStyles, Theme, createStyles } from '@material-ui/core';
 
 interface Props {

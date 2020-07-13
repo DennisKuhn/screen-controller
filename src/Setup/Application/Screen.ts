@@ -33,6 +33,7 @@ export class Screen extends SetupBase {
                     startGradient: { $ref: Gradient.name },
                     activeGradient: { allOf: [{ $ref: Gradient.name }, asScSchema7({ scHidden: true, scVolatile: true })] },
                     displays: {
+                        $id: Screen.name + '.displays',
                         type: 'object',
                         additionalProperties: {
                             oneOf: [

@@ -17,7 +17,7 @@ import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { } from '../../../Setup/Container';
 import { isObservableMap } from 'mobx';
-import { Delete, Add } from '@material-ui/icons';
+import { Add } from '@material-ui/icons';
 import { Icon } from '@material-ui/core';
 
 const ContainerMap = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('Map', props);
@@ -132,9 +132,9 @@ const MapInput = ({ item, property, value, schema, type, options }: InputProps &
     const containerKey = `${baseKey}-ContainerMap`;
     const newContainerKey = `${baseKey}-NewContainerMap`;
     const itemSchema = schema.additionalProperties;
-    const label = getLabel(item.parentProperty, schema);
+    const label = getLabel( undefined, property, schema);
     const mapKeys = Array.from(value.keys());
-    const newLabel = getLabel('new', itemSchema);
+    const newLabel = getLabel( undefined, 'new', itemSchema);
     const newItems = itemSchema.oneOf ?? [itemSchema];
     const sharedProps = {
         item: item,
@@ -167,7 +167,7 @@ const MapInput = ({ item, property, value, schema, type, options }: InputProps &
                 {newItems.map((newSchema, index) => {
                     if (typeof newSchema !== 'object') throw new Error(`${callerAndfName()} invalid new item schema ${JSON.stringify(newSchema)}`);
                     const key = baseKey + '-new-' + newSchema.$id ?? index;
-                    const label = getLabel(property, newSchema);
+                    const label = getLabel(undefined, property, newSchema);
                     const scSchema = newSchema as ScSchema7;
                     const newIcon = scSchema.scIcon ?
                         <Icon>{scSchema.scIcon}</Icon> :

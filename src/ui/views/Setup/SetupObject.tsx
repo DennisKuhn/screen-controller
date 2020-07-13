@@ -35,7 +35,7 @@ const FieldBuilder = ({ property, schema, setup, options }: FieldBuilderProps): 
         }
     };
 
-    const label = getLabel(property, schema);
+    const label = getLabel(undefined, property, schema);
 
     const baseKey = `${setup.id}.${property}`;
     const sharedProps /*: AllPropsType*/ = {
@@ -113,7 +113,7 @@ const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
     const schema = setup.getSimpleClassSchema() as ScSchema7;
     const properties = schema.properties;
     const key = setup.id + '-object';
-    const label = getLabel(setup.parentProperty, schema);
+    const label = getLabel(setup.name, setup.parentProperty, schema);
 
     if (properties == undefined) throw new Error(`${callerAndfName()}(${setup.id}/${setup.className}) no properties in simpleSchema`);
 

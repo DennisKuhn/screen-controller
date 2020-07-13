@@ -104,7 +104,7 @@ const ArrayInput = ({ item, property, value, schema, type, options }: InputProps
     const baseKey = `${item.id}.${property}`;
     const containerKey = `${baseKey}-ContainerArray`;
     const itemSchema = schema.items;
-    const label = getLabel(item.parentProperty, schema);
+    const label = getLabel(undefined, item.parentProperty, schema);
 
     return (
         <ContainerArray

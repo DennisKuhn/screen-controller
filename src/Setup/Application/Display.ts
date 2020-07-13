@@ -18,6 +18,7 @@ export class Display extends SetupBase {
                     className: { const: Display.name },
                     parentId: { const: 'Screen' },
                     browsers: {
+                        $id: Display.name + '.browsers',
                         type: 'object',
                         additionalProperties: {
                             oneOf: [

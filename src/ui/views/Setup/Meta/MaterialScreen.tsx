@@ -1,19 +1,20 @@
-import React, { Fragment, PropsWithChildren, useState, ReactNode } from 'react';
-import { ExpansionPanel, TextField, Input, Switch, FormControl, InputLabel, makeStyles, Theme, Grid, Typography, Paper, IconButton, ExpansionPanelDetails, ExpansionPanelSummary, Divider } from '@material-ui/core';
-import { callerAndfName } from '../../../../utils/debugging';
-import { InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChildren, BasePropsWithChildren, ActionProps } from '../Shared';
-import registry from '../Registry';
-import GridContainer from '../../../components/Grid/GridContainer';
-import { TreeItem, TreeView } from '@material-ui/lab';
-import { ExpandLess, ExpandMore, Delete } from '@material-ui/icons';
-import { RelativeRectangle } from '../../../../Setup/Default/RelativeRectangle';
-import RectangleEditor from '../../../Fields/RectangleEditor';
-import DisplayCard from './MaterialSetup/DisplayCard';
-import { Plugin } from '../../../../Setup/Application/Plugin';
+import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Switch, TextField, Theme, Typography, OutlinedInput } from '@material-ui/core';
+import { DeleteOutlined, ExpandLess, ExpandMore } from '@material-ui/icons';
+import React, { Fragment, PropsWithChildren, ReactNode, useState } from 'react';
 import { Browser } from '../../../../Setup/Application/Browser';
 import { Display } from '../../../../Setup/Application/Display';
+import { Plugin } from '../../../../Setup/Application/Plugin';
+import { RelativeRectangle } from '../../../../Setup/Default/RelativeRectangle';
+import { callerAndfName } from '../../../../utils/debugging';
+import GridContainer from '../../../components/Grid/GridContainer';
+import RectangleEditor from '../../../Fields/RectangleEditor';
 import { getInputWidth } from '../InputWidth';
+import registry from '../Registry';
+import { ActionProps, InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChildren, BasePropsWithChildren } from '../Shared';
+import DisplayCard from './MaterialSetup/DisplayCard';
 import { NewContainer, NewItem, SingleNewItem } from './MaterialSetup/NewComponents';
+import NotchedOutlineContainer from './MaterialNodgedOutline';
+import { Screen } from '../../../../Setup/Application/Screen';
 
 
 const useStyles = makeStyles((theme: Theme) => {
@@ -21,12 +22,12 @@ const useStyles = makeStyles((theme: Theme) => {
         smallField: {
             minWidth: (getInputWidth() + 2 * theme.spacing(1) + 30) / 2,
             marginBottom: theme.spacing(2),
-            padding: '0 15px !important'
+            padding: '0 15px !important',
         },
         normalField: {
             width: getInputWidth() + 2 * theme.spacing(1) + 30,
             marginBottom: theme.spacing(2),
-            padding: '0 15px !important'
+            padding: '0 15px !important',
         },
         newField: {
             display: 'grid'
@@ -34,13 +35,19 @@ const useStyles = makeStyles((theme: Theme) => {
         objectField: {
             minWidth: getInputWidth() + 2 * theme.spacing(1) + 30,
             marginBottom: theme.spacing(2),
-            padding: '0 15px !important'
+            padding: '0 15px !important',
+            position: 'relative'
+        },
+        deleteButton: {
+            position: 'absolute',
+            top: 0,
+            right: theme.spacing(1)
         },
         expansionHeader: {
-            display: 'flex'
+            display: 'flex',
         },
         expandedTreeLabel: {
-            display: 'block'
+            display: 'block',
         },
         collapsedTreeLabel: {
             display: 'block',
@@ -116,15 +123,8 @@ const RectangleHoc = (props: LabelProps & InputProps): JSX.Element => {
         </FormControl>);
 };
 
-const ObjectTreeItem = (props: ObjectPropsWithChildren): JSX.Element => (
-    <TreeItem nodeId={props.item.id} label={props.label}>
-        <GridContainer>
-            {props.children}
-        </GridContainer>
-    </TreeItem>
-);
 
-const ExpansionItem = ({ children, title, getDetails }: { children?: ReactNode; title: string; getDetails: () => string }): JSX.Element => {
+const ExpansionItem = ({ children, title, getDetails }: { children?: ReactNode; title: string; getDetails?: () => string }): JSX.Element => {
     const [expanded, setExpanded] = useState(false);
     const classes = useStyles();
 
@@ -133,15 +133,21 @@ const ExpansionItem = ({ children, title, getDetails }: { children?: ReactNode; 
             <div>
                 <div className={classes.expansionHeader}>
                     <IconButton onClick={(): void => setExpanded(!expanded)}>
-                        {expanded ? <ExpandMore /> : <ExpandLess />}
+                        {expanded ? <ExpandLess /> : <ExpandMore />}
                     </IconButton>
                     <div className={expanded ? classes.expandedTreeLabel : classes.collapsedTreeLabel}>
                         <Typography className={expanded ? classes.expandedTreeTitle : classes.collapsedTreeTitle}>{title}</Typography>
-                        <Typography variant="overline">{getDetails()}</Typography>
+                        {getDetails ? <Typography variant="overline">{getDetails()}</Typography> : false}
                     </div>
                 </div>
-                <Divider variant="middle" />
-                {expanded && children}
+                {expanded &&
+                    <Fragment>
+                        <Divider variant="middle" />
+                        <Grid container item>
+                            {children}
+                        </Grid>
+                    </Fragment>
+                }
             </div>
         </Fragment>
     );
@@ -160,7 +166,7 @@ const BrowserTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
         <ExpansionItem
             title={props.label}
             getDetails={getDetails}
-        >
+            >
             {props.children}
         </ExpansionItem>
     );
@@ -190,7 +196,11 @@ const PluginTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
     );
 };
 
-
+const ObjectTreeItem = (props: ObjectPropsWithChildren): JSX.Element => (
+    <ExpansionItem title={props.label}>
+            {props.children}
+    </ExpansionItem>
+);
 
 const NormalValueContainer = (props: PropsWithChildren<{}>): JSX.Element => (
     <Grid item className={useStyles().normalField}>
@@ -212,33 +222,31 @@ const GridPaperContainer = (props: PropsWithChildren<{}>): JSX.Element => (
     </Grid>
 );
 
-
-
 const SmallValueContainer = (props: PropertyPropsWithChildren): JSX.Element => (
     <Grid item className={useStyles().smallField}>
         {props.children}
     </Grid>
 );
 
-const RootTreeView = (props: BasePropsWithChildren): JSX.Element => (
-    <TreeView
-        defaultCollapseIcon={<ExpandLess />}
-        defaultExpandIcon={<ExpandMore />}
-    >
-        {props.children}
-    </TreeView>
+const LabeledContainer = (props: BasePropsWithChildren): JSX.Element => (
+    <GridContainer>
+        <NotchedOutlineContainer label={props.label}>
+            {props.children}
+        </NotchedOutlineContainer>
+    </GridContainer>
 );
 
-const DeleteButton = (props: ActionProps): JSX.Element => <IconButton {...props}><Delete /></IconButton>;
+const DeleteButton = (props: ActionProps): JSX.Element => <IconButton className={useStyles().deleteButton} {...props}><DeleteOutlined fontSize="small" /></IconButton>;
 
 const BlackHole = (): JSX.Element => <Fragment />;
 
-registry.register('Root', undefined, RootTreeView, ['None']);
+registry.register('Root', undefined, null);
 registry.register('Object', undefined, ObjectTreeItem, ['Base']);
 registry.register('Object', Browser.name, BrowserTreeItem, ['Base']);
 registry.register('Object', Plugin.name, PluginTreeItem, ['Base']);
 registry.register('Array', undefined, GridContainer, ['None']);
-registry.register('Map', undefined, GridContainer, ['None']);
+registry.register('Map', Screen.name + '.displays', GridContainer, ['None']);
+registry.register('Map', undefined, LabeledContainer, ['Base']);
 
 registry.register('Field', undefined, null);
 registry.register('Field', [Browser.name, Plugin.name], GridPaperContainer, ['None']);

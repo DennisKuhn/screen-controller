@@ -1,14 +1,15 @@
-import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, Lambda, observe, IValueDidChange } from 'mobx';
+import 'fpsmeter';
+import { cloneDeep } from 'lodash';
+import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, IValueDidChange, Lambda, observe } from 'mobx';
 import { Plugin as PluginSetup } from '../Setup/Application/Plugin';
 import { Screen } from '../Setup/Application/Screen';
 import controller from '../Setup/Controller/Factory';
 import { SetupBase } from '../Setup/SetupBase';
+// import FPSMeter, { FPSMeterOptions } from 'fpsmeter';
+import { SetupItemId } from '../Setup/SetupInterface';
 import { callerAndfName } from '../utils/debugging';
 import { CanvasRegistration, HtmlRegistration, PlainRegistration, Plugin as PluginInterface, Registration, RenderPlugin } from './PluginInterface';
-import { cloneDeep } from 'lodash';
-// import FPSMeter, { FPSMeterOptions } from 'fpsmeter';
-import { SetupItemId } from 'src/Setup/SetupInterface';
-import 'fpsmeter';
+
 interface FPSMeterOptions {
     interval?: number;         // Update interval in milliseconds.
     smoothing?: number;        // Spike smoothing strength. 1 means no smoothing.

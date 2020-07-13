@@ -42,6 +42,7 @@ export class Browser extends SetupBase {
                     cpuUsage: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
                     pid: asScSchema7({ type: 'number', scViewOnly: true }),
                     plugins: {
+                        $id: Browser.name + '.plugins',
                         type: 'object',
                         additionalProperties: {
                             oneOf: [

@@ -22,6 +22,11 @@ const useStyles = makeStyles((theme: Theme) => {
             width: btnSize,
             position: 'relative'
         },
+        normalField: {
+            width: getInputWidth() + 2 * theme.spacing(1) + 30,
+            marginBottom: theme.spacing(2),
+            padding: '0 15px !important',
+        },
         smallField: {
             minWidth: (getInputWidth() + 2 * theme.spacing(1) + 30) / 2,
             marginBottom: theme.spacing(2),
@@ -87,6 +92,7 @@ export const SingleNewItem = (props: BasePropsWithChildren & ActionProps & IconP
     return (
         <Tooltip title={('Add a ' + label + ': ' + helperText)} >
             <IconButton
+            className={useStyles().normalField}
                 {...rest}
             >
                 <Badge badgeContent='+' color='primary'>
@@ -104,7 +110,7 @@ const ExpandableNewContainer = (props: BasePropsWithChildren): JSX.Element => {
     const handleOpen = (): void => setOpen(true);
     const handleClose = (): void => setOpen(false);
 
-    return (<Grid item className={classes.smallField}>
+    return (<Grid item className={classes.normalField}>
         <div className={classes.speedDialContainer}>
             <SpeedDial
                 ariaLabel="SpeedDial tooltip example"
@@ -122,7 +128,4 @@ const ExpandableNewContainer = (props: BasePropsWithChildren): JSX.Element => {
     </Grid>);
 };
 
-const SingleNewContainer = (props: BasePropsWithChildren): JSX.Element => <Fragment>{props.children}</Fragment>;
-
-//const NewContainer = (props: BasePropsWithChildren): JSX.Element => props.schema.oneOf === undefined ? SingleNewContainer(props) : ExpandableNewContainer(props);
 export const NewContainer = (props: BasePropsWithChildren): JSX.Element => ExpandableNewContainer(props);

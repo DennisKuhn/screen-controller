@@ -95,7 +95,9 @@ export const getType = (schema: ScSchema7): FieldType => {
     if (type === undefined) throw new Error(`${callerAndfName()} can't find a type in schema: ${JSON.stringify(schema)}`);
     return type;
 };
-export const getLabel = (property: string, schema: ScSchema7): string => schema.scTranslationId ?? schema.title ?? property;
+
+export const getLabel = (name: string | undefined, property: string, schema: ScSchema7): string =>
+    name ?? schema.scTranslationId ?? schema.title ?? property;
 
 /**
  * Make all properties in T as boolean
