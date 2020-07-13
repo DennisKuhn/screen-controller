@@ -1,6 +1,7 @@
 import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Switch, TextField, Theme, Typography } from '@material-ui/core';
 import { DeleteOutlined, ExpandLess, ExpandMore } from '@material-ui/icons';
 import React, { Fragment, PropsWithChildren, ReactNode, useState } from 'react';
+import { Root } from '../../../../Setup/Application/Root';
 import { Browser } from '../../../../Setup/Application/Browser';
 import { Display } from '../../../../Setup/Application/Display';
 import { Plugin } from '../../../../Setup/Application/Plugin';
@@ -15,6 +16,7 @@ import DisplayCard from './MaterialSetup/DisplayCard';
 import { NewContainer, NewItem, SingleNewItem } from './MaterialSetup/NewComponents';
 import NotchedOutlineContainer from './MaterialNodgedOutline';
 import { Screen } from '../../../../Setup/Application/Screen';
+import ObjectCard from './MaterialSetup/ObjectCard';
 
 
 const useStyles = makeStyles((theme: Theme) => {
@@ -236,6 +238,7 @@ const LabeledContainer = (props: BasePropsWithChildren): JSX.Element => (
     </GridContainer>
 );
 
+
 const DeleteButton = (props: ActionProps): JSX.Element => <IconButton className={useStyles().deleteButton} {...props}><DeleteOutlined fontSize="small" /></IconButton>;
 
 const BlackHole = (): JSX.Element => <Fragment />;
@@ -244,6 +247,8 @@ registry.register('Root', undefined, null);
 registry.register('Object', undefined, ObjectTreeItem, ['Base']);
 registry.register('Object', Browser.name, BrowserTreeItem, ['Base']);
 registry.register('Object', Plugin.name, PluginTreeItem, ['Base']);
+registry.register('Object', [Root.name, Screen.name], ObjectCard, ['Base']);
+registry.register('Object', Display.name, DisplayCard, ['Base']);
 registry.register('Array', undefined, GridContainer, ['None']);
 registry.register('Map', Screen.name + '.displays', GridContainer, ['None']);
 registry.register('Map', undefined, LabeledContainer, ['Base']);
@@ -254,6 +259,7 @@ registry.register('LabelContainer', undefined, null);
 registry.register('LabelView', undefined, null);
 registry.register('ValueContainer', 'object', ObjectValueContainer, ['None']);
 registry.register('ValueContainer', [Browser.name, Plugin.name], null);
+registry.register('ValueContainer', [Screen.name, Display.name], BlackHole, ['None']);
 registry.register('ValueContainer', ['checkbox', RelativeRectangle.name], SmallValueContainer, ['Property']);
 registry.register('ValueContainer', undefined, NormalValueContainer, ['None']);
 registry.register('ValueInput', ['number', 'string'], TextFieldHoc, ['Input', 'Label']);
@@ -268,5 +274,3 @@ registry.register('NewContainer', undefined, NewContainer, ['Base']);
 registry.register('NewItem', Browser.name, SingleNewItem, ['Base', 'Action', 'Icon']);
 registry.register('NewItem', undefined, NewItem, ['Base', 'Action', 'Icon']);
 registry.register('DeleteItem', undefined, DeleteButton, ['Action']);
-
-registry.register('Object', 'Display', DisplayCard, ['Base']);

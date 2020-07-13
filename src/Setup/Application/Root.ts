@@ -1,15 +1,15 @@
 import { SetupBase } from '../SetupBase';
 import { SetupBaseInterface } from '../SetupInterface';
 import { Screen } from './Screen';
-import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
-import { asScSchema7 } from '../ScSchema7';
+import { asScSchema7, ScSchema7 } from '../ScSchema7';
 
 export class Root extends SetupBase {
-    static schema: JSONSchema7 = {
+    static schema: ScSchema7 = {
         $id: Root.name,
         title: 'Root',
         description: 'Root element for setup',
+        scIcon: 'settings_applications',
         allOf: [
             SetupBase.SCHEMA_REF,
             {
