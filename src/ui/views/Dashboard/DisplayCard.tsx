@@ -1,12 +1,9 @@
 import {
     Box,
     Collapse,
-    IconButton,
     makeStyles,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Typography
-} from '@material-ui/core';
-import { DesktopWindows, ExpandLess, ExpandMore } from '@material-ui/icons';
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from '@material-ui/core';
+import { DesktopWindows } from '@material-ui/icons';
 import { Display as Info } from 'electron';
 import { observer } from 'mobx-react-lite';
 import React, { useState } from 'react';
@@ -18,9 +15,9 @@ import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 import CardHeader from '../../components/Card/CardHeader';
 import CardIcon from '../../components/Card/CardIcon';
-import GridContainer from '../../components/Grid/GridContainer';
 import GridItem from '../../components/Grid/GridItem';
 import BrowserLine from './BrowserLine';
+import DisplaySummary from '../../Fields/DisplaySummary';
 
 interface Props {
     display: Display;
@@ -66,18 +63,11 @@ const DisplayCard = observer((props: Props): JSX.Element => {
                     <h3 className={classes.cardTitle}>{display.name}</h3>
                 </CardHeader>
                 <CardBody>
-                    <GridContainer>
-                        <GridItem>
-                            <IconButton aria-label="expand row" size="small" onClick={(): void => setOpen(!open)}>
-                                {open ? <ExpandLess /> : <ExpandMore />}
-                            </IconButton>
-                        </GridItem>
-                        <GridItem>
-                            <Typography>
-                                {display.browsers.size + ' browser' + (display.browsers.size > 1 ? 's' : '') + ', ' + plugins + ' plugin' + (plugins > 1 ? 's' : '')}
-                            </Typography>
-                        </GridItem>
-                    </GridContainer>
+                    <DisplaySummary
+                        setOpen={setOpen}
+                        open={open}
+                        display={display}
+                    />
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box margin={1}>
                             <TableContainer>

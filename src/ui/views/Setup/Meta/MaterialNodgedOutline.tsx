@@ -6,7 +6,7 @@ import React from 'react';
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        padding: theme.spacing(2),
+        padding: theme.spacing(1),
         display: 'flex',
         flexWrap: 'wrap'
     },

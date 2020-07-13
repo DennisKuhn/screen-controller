@@ -1,20 +1,21 @@
+import { Box, Collapse, makeStyles } from '@material-ui/core';
+import { DesktopWindows } from '@material-ui/icons';
 import { remote } from 'electron';
+import React, { useState } from 'react';
+import { Display } from '../../../../../Setup/Application/Display';
 import { callerAndfName } from '../../../../../utils/debugging';
-import { ObjectPropsWithChildren } from '../../Shared';
+import dashboardStyle from '../../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import Card from '../../../../components/Card/Card';
 import CardBody from '../../../../components/Card/CardBody';
 import CardFooter from '../../../../components/Card/CardFooter';
 import CardHeader from '../../../../components/Card/CardHeader';
 import CardIcon from '../../../../components/Card/CardIcon';
-import React from 'react';
-import { DesktopWindows } from '@material-ui/icons';
-import dashboardStyle from '../../../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import { Display } from '../../../../../Setup/Application/Display';
-import { makeStyles } from '@material-ui/core';
+import DisplaySummary from '../../../../Fields/DisplaySummary';
+import { ObjectPropsWithChildren } from '../../Shared';
 
-const electronDisplays = new Map<string,Electron.Display>();
+const electronDisplays = new Map<string, Electron.Display>();
 
-remote.screen.getAllDisplays().forEach( info => electronDisplays.set(info.id.toFixed(), info));
+remote.screen.getAllDisplays().forEach(info => electronDisplays.set(info.id.toFixed(), info));
 
 const useCardStyles = makeStyles((/*theme*/) =>
     dashboardStyle
@@ -23,7 +24,8 @@ const useCardStyles = makeStyles((/*theme*/) =>
 
 const DisplayCard = (props: ObjectPropsWithChildren): JSX.Element => {
     if (!(props.item instanceof Display)) throw new Error(`${callerAndfName()} props.item is not instaceof Display`);
-   
+    const [open, setOpen] = useState(false);
+
     const display = props.item;
     const classes = useCardStyles();
 
@@ -41,9 +43,19 @@ const DisplayCard = (props: ObjectPropsWithChildren): JSX.Element => {
                     <DesktopWindows transform={`rotate(${info.rotation})`} />
                 </CardIcon>
                 <p className={classes.cardCategory}>Display</p>
+                <h3 className={classes.cardTitle}>{display.name}</h3>
+                <DisplaySummary
+                    display={display}
+                    open={open}
+                    setOpen={setOpen}
+                />
             </CardHeader>
             <CardBody>
-                {props.children}
+                <Collapse in={open} timeout="auto" unmountOnExit>
+                    <Box margin={1}>
+                        {props.children}
+                    </Box>
+                </Collapse>
             </CardBody>
             <CardFooter stats={true} className={classes.displayFooter}>
                 <span className={(cpuUsage < 5) ? classes.displayFooterCpuGood : (cpuUsage < 10) ? classes.displayFooterCpuDanger : classes.displayFooterCpuDanger}>

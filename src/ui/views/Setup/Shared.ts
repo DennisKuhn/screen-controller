@@ -162,8 +162,12 @@ export type ArrayPropertyPropsWithChildren = PropsWithChildren<ArrayPropertyProp
 export type Props = 'None' | 'Base' | 'Property' | 'View' | 'Input' | 'Action' | 'Icon' | 'Label' | 'Object' | 'Array' | 'Map';
 export type PropsSelection<Allowed extends Props = Props> = Extract<Props, Allowed>[];
 
-export type PropsType = KeyProps | PropertyProps | ArrayPropertyProps | MapPropertyProps | BaseProps | ViewProps | InputProps | IconProps | ActionProps | LabelProps | ObjectProps | ArrayProps | MapProps;
-export type AllPropsType = KeyProps & PropertyProps & ArrayPropertyProps & MapPropertyProps & BaseProps & ViewProps & InputProps & IconProps & ActionProps & LabelProps & ObjectProps & ArrayProps & MapProps;
+export type PropsType =
+    KeyProps | PropertyProps | ArrayPropertyProps | MapPropertyProps | BaseProps |
+    ViewProps | InputProps | IconProps | ActionProps | LabelProps | ObjectProps | ArrayProps | MapProps;
+export type AllPropsType =
+    KeyProps & PropertyProps & ArrayPropertyProps & MapPropertyProps & BaseProps &
+    ViewProps & InputProps & IconProps & ActionProps & LabelProps & ObjectProps & ArrayProps & MapProps;
 
 export type ObjectElement = React.ComponentType<ObjectPropsWithChildren & React.ComponentProps<any>> | string;
 export type ArrayElement = React.ComponentType<ArrayPropsWithChildren & React.ComponentProps<any>> | string;
