@@ -14,7 +14,10 @@ import {
     CommonProps,
     AllPropsType,
     isActionProps,
-    ActionProps
+    ActionProps,
+    MapPropsWithChildren,
+    BasePropsWithChildren,
+    ArrayPropsWithChildren
 } from './Shared';
 import { Entry, Category } from './Registry';
 
@@ -238,6 +241,7 @@ export const getProspect = (category: Category, props: CommonProps & WrapperProp
                 category,
                 props.cacheId,
                 [
+                    props.schema.enum ? 'enum' : undefined,
                     ...schemas,
                     props['type'],
                     ...types,
@@ -266,3 +270,6 @@ export const ValueInput = (props: PropertyProps & WrapperProps): JSX.Element => 
 export const ValueContainer = (props: PropertyProps & WrapperProps): JSX.Element => getProspect('ValueContainer', props);
 
 export const Field = (props: PropertyProps & WrapperProps): JSX.Element => getProspect('Field', props);
+export const NewContainer = (props: (MapPropsWithChildren | ArrayPropsWithChildren) & WrapperProps): JSX.Element => getProspect('NewContainer', props);
+export const NewItem = (props: BasePropsWithChildren & ActionProps & WrapperProps): JSX.Element => getProspect('NewItem', props);
+export const DeleteItem = (props: PropertyProps & ActionProps & WrapperProps): JSX.Element => getProspect('DeleteItem', props);

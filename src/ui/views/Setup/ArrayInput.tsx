@@ -1,9 +1,11 @@
 import React from 'react';
-import { InputProps, PropertyProps, WrapperProps, ArrayPropsWithChildren, ChangeEventArgs, isChangeEvent, ArrayPropertyProps, Options } from './Shared';
+import { InputProps, PropertyProps, WrapperProps, ArrayPropsWithChildren, ChangeEventArgs, isChangeEvent, ArrayPropertyProps, Options, ActionProps } from './Shared';
 import { callerAndfName } from '../../../utils/debugging';
-import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel } from './AbstractComponents';
+import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel, NewContainer, NewItem, DeleteItem } from './AbstractComponents';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
+import { Icon } from '@material-ui/core';
+import { Add } from '@material-ui/icons';
 
 const ContainerArray = (props: ArrayPropsWithChildren & WrapperProps): JSX.Element => getProspect('Array', props);
 
@@ -82,6 +84,13 @@ const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup, opti
         elementKey: baseKey + '-valueInput'
     };
 
+    const deleteProps: ArrayPropertyProps & ActionProps & WrapperProps = {
+        ...sharedProps,
+        key: baseKey + '-Delete',
+        elementKey: baseKey + '-Delete',
+        onClick: () => console.log(`${callerAndfName()} Click Delete ${label}`)
+    };
+
     return (
         <Field {...fieldProps}>
             <LabelContainer {...labelContainerProps}>
@@ -90,6 +99,7 @@ const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup, opti
             <ValueContainer {...valueContainerProps} >
                 <ValueInput {...valueInputProps} />
             </ValueContainer>
+            <DeleteItem {...deleteProps} />
         </Field>
     );
 };
@@ -103,8 +113,17 @@ const ArrayInput = ({ item, property, value, schema, type, options }: InputProps
 
     const baseKey = `${item.id}.${property}`;
     const containerKey = `${baseKey}-ContainerArray`;
+    const newContainerKey = `${baseKey}-NewContainerMap`;
     const itemSchema = schema.items;
     const label = getLabel(undefined, item.parentProperty, schema);
+    const newLabel = getLabel(undefined, 'new', itemSchema);
+    const newItems = itemSchema.oneOf ?? [itemSchema];
+    const sharedProps = {
+        item: item,
+        property: property,
+        array: value,
+        options: options,
+    };
 
     return (
         <ContainerArray
@@ -121,6 +140,41 @@ const ArrayInput = ({ item, property, value, schema, type, options }: InputProps
             key={containerKey}
             options={options}
             >
+            <NewContainer
+                {...sharedProps}
+                key={newContainerKey}
+                schema={itemSchema}
+                cacheId={newContainerKey}
+                elementKey={newContainerKey}
+                label={newLabel}
+                rawLabel={newLabel}
+            >
+                {newItems.map((newSchema, index) => {
+                    if (typeof newSchema !== 'object') throw new Error(`${callerAndfName()} invalid new item schema ${JSON.stringify(newSchema)}`);
+                    const key = baseKey + '-new-' + newSchema.$id ?? index;
+                    const label = getLabel(undefined, property, newSchema);
+                    const scSchema = newSchema as ScSchema7;
+                    const newIcon = scSchema.scIcon ?
+                        <Icon>{scSchema.scIcon}</Icon> :
+                        <Add />;
+
+                    return <NewItem
+                        {...sharedProps}
+                        key={key}
+                        elementKey={key}
+                        cacheId={key}
+                        schema={scSchema}
+                        contentChild={newIcon}
+                        label={label}
+                        rawLabel={label}
+                        helperText={scSchema.description}
+                        rawHelperText={scSchema.scDescriptionTranslationId ?? scSchema.description}
+                        onClick={(): void => console.log(`${callerAndfName()} onClick ${scSchema.$id}`, scSchema)}
+                    />;
+                }
+                )
+                }
+            </NewContainer>
             {value.map((valueItem, index) =>
                 <ArrayItemBuilder
                     setup={item}

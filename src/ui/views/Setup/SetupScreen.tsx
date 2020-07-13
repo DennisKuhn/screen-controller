@@ -40,14 +40,14 @@ const SetupScreen = (): JSX.Element => {
 
     return (
         <Grid container className={classes.container}>
-            <Grid item className={classes.item}>
+            <Grid item className={classes.item} key={Root.name}>
                 <Form value={Root.name} />
             </Grid>
-            <Grid item className={classes.item}>
+            <Grid item className={classes.item} key={Screen.name}>
                 <Form value={Screen.name} />
             </Grid>
             {screen && screen.displays.mapKeys(displayId =>
-                <Grid item className={classes.item}>
+                <Grid item className={classes.item} key={displayId}>
                     <Form value={displayId} />
                 </Grid>
             )}

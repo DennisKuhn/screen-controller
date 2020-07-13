@@ -9,10 +9,9 @@ import {
     MapPropertyProps,
     Options,
     ActionProps,
-    BasePropsWithChildren
 } from './Shared';
 import { callerAndfName } from '../../../utils/debugging';
-import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel } from './AbstractComponents';
+import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel, NewContainer, NewItem, DeleteItem } from './AbstractComponents';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { } from '../../../Setup/Container';
@@ -22,9 +21,6 @@ import { Icon } from '@material-ui/core';
 
 const ContainerMap = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('Map', props);
 
-const NewContainer = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('NewContainer', props);
-const NewItem = (props: BasePropsWithChildren & ActionProps & WrapperProps): JSX.Element => getProspect('NewItem', props);
-const DeleteItem = (props: PropertyProps & ActionProps & WrapperProps): JSX.Element => getProspect('DeleteItem', props);
 
 interface MapItemBuilderProps {
     mapKey: string;
