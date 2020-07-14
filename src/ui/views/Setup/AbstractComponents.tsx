@@ -75,7 +75,7 @@ export const getType = (schema: ScSchema7): FieldType => {
                         type = 'file';
                         break;
                     case 'localFolder':
-                        type = 'file';
+                        type = 'folder';
                         break;
                     default:
                         throw new Error(`${callerAndfName()} scFormat=${schema.scFormat} not supported (yet) in ${schema}`);

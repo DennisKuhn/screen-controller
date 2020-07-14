@@ -78,7 +78,9 @@ export interface IconProps extends KeyProps {
 
 export type { PropertyType } from '../../../Setup/SetupBase';
 
-export type FieldType = 'object' | 'array' | 'map' | 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'number' | 'password' | 'text' | 'time' | 'url';
+export type FieldType =
+    'object' | 'array' | 'map' | 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' |
+    'file' | 'folder' | 'number' | 'password' | 'text' | 'time' | 'url';
 
 export type ChangeEventArgs = ChangeEvent | PropertyType;
 export type ChangeHandler = (change: ChangeEventArgs) => void;

@@ -1,4 +1,4 @@
-import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Switch, TextField, Theme, Typography, Select, MenuItem } from '@material-ui/core';
+import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Theme, Typography } from '@material-ui/core';
 import { DeleteOutlined, ExpandLess, ExpandMore } from '@material-ui/icons';
 import React, { Fragment, PropsWithChildren, ReactNode, useState } from 'react';
 import { Root } from '../../../../Setup/Application/Root';
@@ -11,13 +11,14 @@ import GridContainer from '../../../components/Grid/GridContainer';
 import RectangleEditor from '../../../Fields/RectangleEditor';
 import { getInputWidth } from '../InputWidth';
 import registry from '../Registry';
-import { ActionProps, InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChildren, BasePropsWithChildren, BaseProps, PropertyProps } from '../Shared';
+import { ActionProps, InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChildren, BasePropsWithChildren } from '../Shared';
 import DisplayCard from './MaterialSetup/DisplayCard';
 import { NewContainer, NewItem, SingleNewItem } from './MaterialSetup/NewComponents';
 import NotchedOutlineContainer from './MaterialNodgedOutline';
 import { Screen } from '../../../../Setup/Application/Screen';
 import ObjectCard from './MaterialSetup/ObjectCard';
 import OpenLocal from './MaterialSetup/OpenLocal';
+import { TextFieldHoc, SelectHoc, SwitchHoc } from '../Material/StandardHocs';
 
 
 const useStyles = makeStyles((theme: Theme) => {
@@ -78,67 +79,6 @@ const useStyles = makeStyles((theme: Theme) => {
 });
 
 console.log(`${callerAndfName()} Register`);
-
-const TextFieldHoc = (props: LabelProps & InputProps): JSX.Element => {
-    const classes = useStyles();
-
-    return <TextField
-        className={classes.input}
-        label={props.label}
-        value={props.value}
-        type={props.type}
-        onChange={props.onChange}
-        InputProps={{ readOnly: props.readOnly }}
-    />;
-};
-
-const SwitchHoc = (props: LabelProps & InputProps): JSX.Element => {
-    if (!((typeof props.value == 'boolean') || (typeof props.value == 'undefined')))
-        throw new Error(`${callerAndfName()} typeof value=${typeof props.value} must be boolean or undefined`);
-    const classes = useStyles();
-
-    return (
-        <FormControl>
-            <InputLabel shrink={props.value !== undefined}>{props.label}</InputLabel>
-            <Switch
-                className={classes.switch}
-                checked={props.value}
-                onChange={props.onChange}
-                color="primary"
-                readOnly={props.readOnly}
-            />
-        </FormControl>);
-};
-
-const SelectHoc = (props: BaseProps & PropertyProps & LabelProps & InputProps): JSX.Element => {
-    const classes = useStyles();
-    const labelId = `${props.item.id}.${props.property}.inputlabel`;
-
-    return (
-        <FormControl>
-            <InputLabel id={labelId}>{props.label}</InputLabel>
-            <Select
-                className={classes.input}
-                labelId={labelId}
-                onChange={props.onChange}
-                readOnly={props.readOnly}
-                value={props.value}
-            >
-                {props.schema.enum?.map((entry, index) => {
-                    switch (typeof entry) {
-                        case 'string':
-                        case 'number':
-                            return <MenuItem key={index} value={entry}>{entry}</MenuItem>;
-                            break;
-                        default:
-                            throw new Error(`${callerAndfName()} typeof enum entry=${typeof entry} is not supported yet`);
-                    }
-                }
-                )}
-            </Select>
-        </FormControl>
-    );
-};
 
 const RectangleHoc = (props: LabelProps & InputProps): JSX.Element => {
     if (!((typeof props.value == 'object') && (props.value instanceof RelativeRectangle)))
@@ -289,9 +229,9 @@ registry.register('ValueContainer', ['checkbox', RelativeRectangle.name], SmallV
 registry.register('ValueContainer', undefined, NormalValueContainer, ['None']);
 registry.register('ValueInput', ['number', 'string'], TextFieldHoc, ['Input', 'Label']);
 registry.register('ValueInput', 'checkbox', SwitchHoc, ['Input', 'Label']);
-registry.register('ValueInput', 'enum', SelectHoc, ['Base', 'Property', 'Input', 'Label']);
+registry.register('ValueInput', 'enum', SelectHoc, ['Base', 'Input', 'Label']);
 registry.register('ValueInput', RelativeRectangle.name, RectangleHoc, ['Input', 'Label']);
-registry.register('ValueInput', 'file', OpenLocal, ['Property', 'Input']);
+registry.register('ValueInput', ['file', 'folder'], OpenLocal, ['Property', 'Input']);
 registry.register('ValueInput', undefined, Input, ['Input']);
 
 registry.register('NewContainer', Display.name, BlackHole, ['None']);

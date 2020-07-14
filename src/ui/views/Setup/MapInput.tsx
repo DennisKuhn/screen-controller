@@ -121,10 +121,13 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup, options
     );
 };
 
-const add = (parentId: string, mapName: string, className: string): void => {
-    const parent = controller.tryGetSetupSync(parentId, 1);
-    if (!parent) throw new Error(`${callerAndfName()}(${parentId}, ${mapName}, ${className}) can't get parent ${parentId}`);
-
+const add = async (parentId: string, mapName: string, className: string): Promise<void> => {
+    let parent = controller.tryGetSetupSync(parentId, 1);
+    if (!parent) {
+        console.debug(`${callerAndfName()}(${parentId}, ${mapName}, ${className}) can't get parent ${parentId}`);
+        parent = await controller.getSetup(parentId, 1);
+        if (!parent) throw new Error(`${callerAndfName()}(${parentId}, ${mapName}, ${className}) can't get parent ${parentId}`);
+    }
     const map = parent[mapName] as ObservableSetupBaseMap<SetupBase>;
     if (!map) throw new Error(`${callerAndfName()}(${parentId}, ${mapName}, ${className}) can't get map ${mapName} in ${JSON.stringify(parent)}`);
 
@@ -135,6 +138,7 @@ const add = (parentId: string, mapName: string, className: string): void => {
     map.set(newItem.id, newItem);
     // console.log(`DictionaryTemplate[${parentId}.${mapName}].added ${newItem.className}@${newItem.id} in ${newItem.parentId}.${mapName}`);
 };
+
 
 
 const addSchemaItem = (parentId: string, mapName: string, newSchema: ScSchema7): void => {
