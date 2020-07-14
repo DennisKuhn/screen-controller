@@ -1,5 +1,5 @@
 import { callerAndfName } from '../../../utils/debugging';
-import { ElementType, PropsSelection, PropertyElementWithChildren, ObjectElement, ArrayElement, MapElement, PropertyElement } from './Shared';
+import { ElementType, PropsSelection, PropertyElementWithChildren, ObjectElement, ArrayElement, MapElement, PropertyElement } from './PropTypes';
 
 /**
  * Field[ LabelContainer[LabelView], ValueContainer[LabelView] ]

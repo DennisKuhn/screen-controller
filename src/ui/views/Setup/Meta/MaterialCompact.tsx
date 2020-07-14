@@ -1,40 +1,17 @@
 import React from 'react';
-import { TextField, Input, Switch, FormControl, InputLabel, makeStyles, Theme, Grid, IconButton } from '@material-ui/core';
+import { TextField, Input, Switch, FormControl, InputLabel, makeStyles, Grid, IconButton } from '@material-ui/core';
 import { callerAndfName } from '../../../../utils/debugging';
-import { InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChildren } from '../Shared';
+import { InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChildren } from '../PropTypes';
 import registry from '../Registry';
 import GridContainer from '../../../components/Grid/GridContainer';
 import { TreeItem, TreeView } from '@material-ui/lab';
 import DisplayCard from './MaterialSetup/DisplayCard';
+import { ExtendedTheme } from '../../../assets/Theme';
 
-/** Get the width of a standard browser input control */
-let inputWidth: undefined | number;
 
-const getInputWidth = (): number => {
-    if (inputWidth === undefined) {
-        const input = document.createElement('input');
-        window.document.body.append(input);
-        inputWidth = input.getBoundingClientRect().width;
-        window.document.body.removeChild(input);
-    }
-    return inputWidth;
-};
-
-const useStyles = makeStyles((theme: Theme) => {
+const useStyles = makeStyles((theme: ExtendedTheme) => {
     return ({
-        smallField: {
-            minWidth: (getInputWidth() + 2 * theme.spacing(1) + 30) / 2,
-            marginBottom: theme.spacing(2),
-            padding: '0 15px !important'
-        },
-        normalField: {
-            minWidth: getInputWidth() + 2 * theme.spacing(1) + 30,
-            marginBottom: theme.spacing(2),
-            padding: '0 15px !important'
-        },
-        input: {
-            minWidth: getInputWidth() + 2 * theme.spacing(1),
-        },
+        ...theme.columnDefaults,
         switch: {
             marginTop: theme.spacing(2)
         },
@@ -47,7 +24,7 @@ const TextFieldHoc = (props: LabelProps & InputProps): JSX.Element => {
     const classes = useStyles();
 
     return <TextField
-        className={classes.input}
+        className={classes.defaultField}
         label={props.label}
         value={props.value}
         type={props.type}
@@ -83,13 +60,13 @@ const ObjectTreeItem = (props: ObjectPropsWithChildren): JSX.Element => (
 );
 
 const NormalValueContainer = (props: PropertyPropsWithChildren): JSX.Element => (
-    <Grid item className={useStyles().normalField}>
+    <Grid item className={useStyles().largeFieldContainer}>
         {props.children}
     </Grid>
 );
 
 const SmallValueContainer = (props: PropertyPropsWithChildren): JSX.Element => (
-    <Grid item className={useStyles().smallField}>
+    <Grid item className={useStyles().defaultFieldContainer}>
         {props.children}
     </Grid>
 );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { InputProps, PropertyProps, WrapperProps, ArrayPropsWithChildren, ChangeEventArgs, isChangeEvent, ArrayPropertyProps, Options, ActionProps } from './Shared';
+import { InputProps, PropertyProps, WrapperProps, ArrayPropsWithChildren, ChangeEventArgs, isChangeEvent, ArrayPropertyProps, Options, ActionProps } from './PropTypes';
 import { callerAndfName } from '../../../utils/debugging';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getType, getLabel, NewContainer, NewItem, DeleteItem } from './AbstractComponents';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
@@ -84,11 +84,13 @@ const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup, opti
         elementKey: baseKey + '-valueInput'
     };
 
+    const deleteItem = (): any[] => array.splice(index, 1);
+
     const deleteProps: ArrayPropertyProps & ActionProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-Delete',
         elementKey: baseKey + '-Delete',
-        onClick: () => console.log(`${callerAndfName()} Click Delete ${label}`)
+        onClick: () => deleteItem,
     };
 
     return (
@@ -104,6 +106,19 @@ const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup, opti
     );
 };
 
+const addSchemaItem = (parentItem: SetupBase, arrayName: string, newSchema: ScSchema7): void => {
+
+    console.debug(`${callerAndfName()}(${parentItem?.id}, ${arrayName}, ${newSchema.type})`, {parentItem, arrayName, newSchema});
+
+    switch (newSchema.type) {
+        case 'string':
+            parentItem[arrayName].push('');
+            break;
+        default:
+            throw new Error(`${callerAndfName()} type=${newSchema.type} not supported yet`);
+    }
+};
+
 
 const ArrayInput = ({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
     if (!Array.isArray(value)) throw new Error(`${callerAndfName()} value must be an array: ${JSON.stringify(value)}`);
@@ -113,7 +128,7 @@ const ArrayInput = ({ item, property, value, schema, type, options }: InputProps
 
     const baseKey = `${item.id}.${property}`;
     const containerKey = `${baseKey}-ContainerArray`;
-    const newContainerKey = `${baseKey}-NewContainerMap`;
+    const newContainerKey = `${baseKey}-NewContainerarray`;
     const itemSchema = schema.items;
     const label = getLabel(undefined, item.parentProperty, schema);
     const newLabel = getLabel(undefined, 'new', itemSchema);
@@ -169,7 +184,7 @@ const ArrayInput = ({ item, property, value, schema, type, options }: InputProps
                         rawLabel={label}
                         helperText={scSchema.description}
                         rawHelperText={scSchema.scDescriptionTranslationId ?? scSchema.description}
-                        onClick={(): void => console.log(`${callerAndfName()} onClick ${scSchema.$id}`, scSchema)}
+                        onClick={(): void => addSchemaItem(item, property, scSchema)}
                     />;
                 }
                 )

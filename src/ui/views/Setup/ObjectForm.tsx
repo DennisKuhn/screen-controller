@@ -4,7 +4,7 @@ import SetupObject from './SetupObject';
 import { SetupItemId } from '../../../Setup/SetupInterface';
 import controller from '../../../Setup/Controller/Factory';
 import Typography from '@material-ui/core/Typography';
-import { Options } from './Shared';
+import { Options } from './PropTypes';
 
 interface Props {
     value: SetupBase | SetupItemId;

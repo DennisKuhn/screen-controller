@@ -1,16 +1,18 @@
 /** Show Title. description and icon */
 
-import { BasePropsWithChildren, ActionProps, IconProps } from '../../Shared';
+import { BasePropsWithChildren, ActionProps, IconProps } from '../../PropTypes';
 import { Tooltip, Grid, makeStyles, Theme, IconButton, Badge } from '@material-ui/core';
-import React, { useState, Fragment } from 'react';
+import React, { useState } from 'react';
 import { SpeedDialAction, SpeedDial, SpeedDialIcon } from '@material-ui/lab';
 import { ExpandLess, Add } from '@material-ui/icons';
-import { getInputWidth } from '../../InputWidth';
+import { ExtendedTheme } from '../../../../assets/Theme';
+
 
 const btnSize = 40;
 
-const useStyles = makeStyles((theme: Theme) => {
+const useStyles = makeStyles((theme: ExtendedTheme) => {
     return ({
+        ...theme.columnDefaults,
         speedDial: {
             position: 'absolute',
             bottom: 0,// theme.spacing(2),
@@ -21,16 +23,6 @@ const useStyles = makeStyles((theme: Theme) => {
             height: btnSize,
             width: btnSize,
             position: 'relative'
-        },
-        normalField: {
-            width: getInputWidth() + 2 * theme.spacing(1) + 30,
-            marginBottom: theme.spacing(2),
-            padding: '0 15px !important',
-        },
-        smallField: {
-            minWidth: (getInputWidth() + 2 * theme.spacing(1) + 30) / 2,
-            marginBottom: theme.spacing(2),
-            padding: '0 15px !important'
         },
         newButton: {
             marginLeft: '35px',
@@ -92,7 +84,7 @@ export const SingleNewItem = (props: BasePropsWithChildren & ActionProps & IconP
     return (
         <Tooltip title={('Add a ' + label + ': ' + helperText)} >
             <IconButton
-            className={useStyles().normalField}
+            className={useStyles().largeField}
                 {...rest}
             >
                 <Badge badgeContent='+' color='primary'>
@@ -110,7 +102,7 @@ const ExpandableNewContainer = (props: BasePropsWithChildren): JSX.Element => {
     const handleOpen = (): void => setOpen(true);
     const handleClose = (): void => setOpen(false);
 
-    return (<Grid item className={classes.normalField}>
+    return (<Grid item className={classes.largeField}>
         <div className={classes.speedDialContainer}>
             <SpeedDial
                 ariaLabel="SpeedDial tooltip example"

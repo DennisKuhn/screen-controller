@@ -1,14 +1,15 @@
-import { TextField, makeStyles, createStyles, Theme, IconButton, InputAdornment } from '@material-ui/core';
+import { TextField, makeStyles, createStyles, IconButton, InputAdornment } from '@material-ui/core';
 import { Image } from '@material-ui/icons';
 import { remote } from 'electron';
 import React from 'react';
 import { callerAndfName } from '../../../../../utils/debugging';
 import { fs2Url } from '../../../../../utils/Url';
-import { PropertyProps, InputProps, FieldType } from '../../Shared';
-import { getInputWidth } from '../../InputWidth';
+import { PropertyProps, InputProps, FieldType } from '../../PropTypes';
+import { ExtendedTheme } from '../../../../assets/Theme';
 
-const useStyles = makeStyles((theme: Theme) =>
+const useStyles = makeStyles((theme: ExtendedTheme) =>
     createStyles({
+        ...theme.columnDefaults,
         root: {
             margin: theme.spacing(1),
             display: 'flex'
@@ -18,9 +19,6 @@ const useStyles = makeStyles((theme: Theme) =>
         },
         icon: {
             flexGrow: 0
-        },
-        container: {
-            minWidth: getInputWidth() + 2 * theme.spacing(1),
         },
         input: {
             direction: 'rtl',
@@ -60,6 +58,7 @@ const OpenLocal = (props: PropertyProps & InputProps): JSX.Element => {
 
     return (
             <TextField
+                className={classes.largeField}
                 label={props.label}
                 helperText={props.helperText}
                 value={props.value}
@@ -74,7 +73,6 @@ const OpenLocal = (props: PropertyProps & InputProps): JSX.Element => {
                         </InputAdornment>
                     ),
                 }}
-                className={classes.container}
             />
     );
 };

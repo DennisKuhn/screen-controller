@@ -21,7 +21,7 @@ import {
     MapPropertyProps, MapPropsWithChildren,
     Options, PropertyProps,
     WrapperProps
-} from './Shared';
+} from './PropTypes';
 
 const ContainerMap = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('Map', props);
 
@@ -95,11 +95,14 @@ const MapItemBuilder = ({ map, mapKey, baseKey, property, schema, setup, options
         elementKey: baseKey + '-labelView',
         contentChild: label,
     };
+
+    const deleteItem = (): boolean => map.delete(mapKey);
+    
     const deleteProps: MapPropertyProps & ActionProps & WrapperProps = {
         ...sharedProps,
         key: baseKey + '-Delete',
         elementKey: baseKey + '-Delete',
-        onClick: () => console.log(`${callerAndfName()} Click Delete ${label}`)
+        onClick: deleteItem,
     };
 
     const valueInputProps: MapPropertyProps & WrapperProps = {

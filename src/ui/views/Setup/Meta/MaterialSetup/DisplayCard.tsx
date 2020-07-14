@@ -11,7 +11,7 @@ import CardFooter from '../../../../components/Card/CardFooter';
 import CardHeader from '../../../../components/Card/CardHeader';
 import CardIcon from '../../../../components/Card/CardIcon';
 import DisplaySummary from '../../../../Fields/DisplaySummary';
-import { ObjectPropsWithChildren } from '../../Shared';
+import { ObjectPropsWithChildren } from '../../PropTypes';
 
 const electronDisplays = new Map<string, Electron.Display>();
 

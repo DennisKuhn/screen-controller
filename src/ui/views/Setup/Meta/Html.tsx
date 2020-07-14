@@ -1,5 +1,5 @@
 import React from 'react';
-import { ObjectPropsWithChildren } from '../Shared';
+import { ObjectPropsWithChildren } from '../PropTypes';
 import registry from '../Registry';
 
 const TableAndBody = (props: ObjectPropsWithChildren): JSX.Element => <table><tbody>{props.children}</tbody></table>;

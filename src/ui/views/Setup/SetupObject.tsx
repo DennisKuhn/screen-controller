@@ -8,7 +8,7 @@ import {
     ChangeEventArgs,
     isChangeEvent,
     ObjectPropsWithChildren,
-    Options} from './Shared';
+    Options} from './PropTypes';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getLabel, getType } from './AbstractComponents';
 
 

@@ -8,19 +8,23 @@ import CardBody from '../../../../components/Card/CardBody';
 import CardFooter from '../../../../components/Card/CardFooter';
 import CardHeader from '../../../../components/Card/CardHeader';
 import CardIcon from '../../../../components/Card/CardIcon';
-import { ObjectPropsWithChildren } from '../../Shared';
+import { ObjectPropsWithChildren } from '../../PropTypes';
 import { SetupBase } from '../../../../../Setup/SetupBase';
+import { ExtendedTheme } from '../../../../assets/Theme';
 
 
-const useCardStyles = makeStyles((/*theme*/) => (
-    {
-        ...dashboardStyle,
-        childContainer: {
-            display: 'flex',
-            flexWrap: 'wrap',
+const useCardStyles = makeStyles((theme: ExtendedTheme) => {
+    return (
+        {
+            ...theme.columnDefaults,
+            ...dashboardStyle,
+            childContainer: {
+                display: 'flex',
+                flexWrap: 'wrap',
+            }
         }
-    }
-));
+    );
+});
 
 
 const ObjectCard = (props: ObjectPropsWithChildren): JSX.Element => {

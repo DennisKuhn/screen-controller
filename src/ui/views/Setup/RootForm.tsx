@@ -3,9 +3,9 @@ import { SetupBase } from '../../../Setup/SetupBase';
 import { SetupItemId } from '../../../Setup/SetupInterface';
 import { getProspect } from './AbstractComponents';
 import ObjectForm from './ObjectForm';
-import { WrapperProps, CommonPropsWithChildren } from './Shared';
+import { WrapperProps, CommonPropsWithChildren } from './PropTypes';
 import { merge } from 'lodash';
-import { Options } from './Shared';
+import { Options } from './PropTypes';
 
 
 const defaults: Options = {

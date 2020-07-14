@@ -18,7 +18,7 @@ import {
     MapPropsWithChildren,
     BasePropsWithChildren,
     ArrayPropsWithChildren
-} from './Shared';
+} from './PropTypes';
 import { Entry, Category } from './Registry';
 
 import { callerAndfName } from '../../../utils/debugging';

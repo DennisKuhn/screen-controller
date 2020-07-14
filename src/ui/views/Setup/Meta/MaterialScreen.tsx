@@ -1,4 +1,4 @@
-import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Theme, Typography } from '@material-ui/core';
+import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Typography } from '@material-ui/core';
 import { DeleteOutlined, ExpandLess, ExpandMore } from '@material-ui/icons';
 import React, { Fragment, PropsWithChildren, ReactNode, useState } from 'react';
 import { Root } from '../../../../Setup/Application/Root';
@@ -9,9 +9,8 @@ import { RelativeRectangle } from '../../../../Setup/Default/RelativeRectangle';
 import { callerAndfName } from '../../../../utils/debugging';
 import GridContainer from '../../../components/Grid/GridContainer';
 import RectangleEditor from '../../../Fields/RectangleEditor';
-import { getInputWidth } from '../InputWidth';
 import registry from '../Registry';
-import { ActionProps, InputProps, LabelProps, ObjectPropsWithChildren, PropertyPropsWithChildren, BasePropsWithChildren } from '../Shared';
+import { ActionProps, InputProps, LabelProps, ObjectPropsWithChildren, BasePropsWithChildren } from '../PropTypes';
 import DisplayCard from './MaterialSetup/DisplayCard';
 import { NewContainer, NewItem, SingleNewItem } from './MaterialSetup/NewComponents';
 import NotchedOutlineContainer from './MaterialNodgedOutline';
@@ -19,27 +18,16 @@ import { Screen } from '../../../../Setup/Application/Screen';
 import ObjectCard from './MaterialSetup/ObjectCard';
 import OpenLocal from './MaterialSetup/OpenLocal';
 import { TextFieldHoc, SelectHoc, SwitchHoc } from '../Material/StandardHocs';
+import { ExtendedTheme } from '../../../assets/Theme';
 
-
-const useStyles = makeStyles((theme: Theme) => {
+const useStyles = makeStyles((theme: ExtendedTheme) => {
     return ({
-        smallField: {
-            minWidth: (getInputWidth() + 2 * theme.spacing(1) + 30) / 2,
-            marginBottom: theme.spacing(2),
-            padding: '0 15px !important',
-        },
-        normalField: {
-            width: getInputWidth() + 2 * theme.spacing(1) + 30,
-            marginBottom: theme.spacing(2),
-            padding: '0 15px !important',
-        },
+        ...theme.columnDefaults,
         newField: {
             display: 'grid'
         },
         objectField: {
-            minWidth: getInputWidth() + 2 * theme.spacing(1) + 30,
-            marginBottom: theme.spacing(2),
-            padding: '0 15px !important',
+            ...theme.columnDefaults.largeGrowableFieldContainer,
             position: 'relative'
         },
         deleteButton: {
@@ -50,27 +38,8 @@ const useStyles = makeStyles((theme: Theme) => {
         expansionHeader: {
             display: 'flex',
         },
-        expandedTreeLabel: {
+        treeLabel: {
             display: 'block',
-        },
-        collapsedTreeLabel: {
-            display: 'block',
-        },
-        expandedTreeTitle: {
-            //display: 'inline',
-            // flexGrow: 1
-        },
-        collapsedTreeTitle: {
-
-        },
-        treeInfo: {
-
-        },
-        input: {
-            minWidth: getInputWidth() + 2 * theme.spacing(1),
-        },
-        switch: {
-            marginTop: theme.spacing(2)
         },
         rectangle: {
             marginTop: theme.spacing(2)
@@ -107,8 +76,8 @@ const ExpansionItem = ({ children, title, getDetails }: { children?: ReactNode; 
                     <IconButton onClick={(): void => setExpanded(!expanded)}>
                         {expanded ? <ExpandLess /> : <ExpandMore />}
                     </IconButton>
-                    <div className={expanded ? classes.expandedTreeLabel : classes.collapsedTreeLabel}>
-                        <Typography className={expanded ? classes.expandedTreeTitle : classes.collapsedTreeTitle}>{title}</Typography>
+                    <div className={classes.treeLabel}>
+                        <Typography>{title}</Typography>
                         {getDetails ? <Typography variant="overline">{getDetails()}</Typography> : false}
                     </div>
                 </div>
@@ -168,8 +137,14 @@ const ObjectTreeItem = (props: ObjectPropsWithChildren): JSX.Element => (
     </ExpansionItem>
 );
 
-const NormalValueContainer = (props: PropsWithChildren<{}>): JSX.Element => (
-    <Grid item className={useStyles().normalField}>
+const DefaultValueContainer = (props: PropsWithChildren<{}>): JSX.Element => (
+    <Grid item className={useStyles().defaultFieldContainer}>
+        {props.children}
+    </Grid>
+);
+
+const LargeValueContainer = (props: PropsWithChildren<{}>): JSX.Element => (
+    <Grid item className={useStyles().largeFieldContainer}>
         {props.children}
     </Grid>
 );
@@ -185,12 +160,6 @@ const GridPaperContainer = (props: PropsWithChildren<{}>): JSX.Element => (
         <Paper>
             {props.children}
         </Paper>
-    </Grid>
-);
-
-const SmallValueContainer = (props: PropertyPropsWithChildren): JSX.Element => (
-    <Grid item className={useStyles().smallField}>
-        {props.children}
     </Grid>
 );
 
@@ -223,10 +192,11 @@ registry.register('Field', [Browser.name, Plugin.name], GridPaperContainer, ['No
 registry.register('LabelContainer', undefined, null);
 registry.register('LabelView', undefined, null);
 registry.register('ValueContainer', 'object', ObjectValueContainer, ['None']);
+registry.register('ValueContainer', ['file', 'folder'], LargeValueContainer, ['None']);
 registry.register('ValueContainer', [Browser.name, Plugin.name], null);
 registry.register('ValueContainer', [Screen.name, Display.name], BlackHole, ['None']);
-registry.register('ValueContainer', ['checkbox', RelativeRectangle.name], SmallValueContainer, ['Property']);
-registry.register('ValueContainer', undefined, NormalValueContainer, ['None']);
+registry.register('ValueContainer', ['checkbox', RelativeRectangle.name], DefaultValueContainer, ['Property']);
+registry.register('ValueContainer', undefined, DefaultValueContainer, ['None']);
 registry.register('ValueInput', ['number', 'string'], TextFieldHoc, ['Input', 'Label']);
 registry.register('ValueInput', 'checkbox', SwitchHoc, ['Input', 'Label']);
 registry.register('ValueInput', 'enum', SelectHoc, ['Base', 'Input', 'Label']);
