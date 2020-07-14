@@ -498,8 +498,24 @@ export abstract class SetupBase {
         this.name = source.name;
         SetupBase.instances[this.id] = this;
         SetupBase.mobxInstances[this[$mobx].name] = this;
+
+        this.connectToParentMap();
     }
 
+    private connectToParentMap(): void { 
+        const parentProspect = this.parent;
+
+        if (parentProspect) {
+            const parentProperty = parentProspect[this.parentProperty];
+
+            if (parentProperty instanceof ObservableSetupBaseMap) {
+                console.log(`${callerAndfName()} connect ${this.id}/${this.className} in ${parentProspect.id}/${parentProspect.className}.${this.parentProperty}`);
+
+                parentProperty.set(this.id, this);
+            }
+        }
+    }
+        
 
     get parent(): (SetupBase | undefined) {
         return SetupBase.instances[this.parentId];
