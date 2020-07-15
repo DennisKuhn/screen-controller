@@ -25,6 +25,7 @@ import { callerAndfName } from '../../../utils/debugging';
 import React, { Fragment } from 'react';
 import register from './Registry';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
+import { observer } from 'mobx-react-lite';
 
 export const getType = (schema: ScSchema7): FieldType => {
     let type: FieldType | undefined;
@@ -222,11 +223,24 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
         const selected = getProps(props, entry.props);
         console.log(`${callerAndfName()}`, { entry, props, selected, children: props['children'], contentChild: props.contentChild });
 
-        if ((props['children'] === undefined) && (props.contentChild === undefined)) {
-            return React.createElement(entry.element, selected);
-        } else {
-            return React.createElement(entry.element, selected, props['children'], props.contentChild);
+        switch (typeof entry.element) {
+            case 'function': {
+                if ((props['children'] === undefined) && (props.contentChild === undefined)) {
+                    return React.createElement(observer(entry.element), selected);
+                } else {
+                    return React.createElement(observer(entry.element), selected, props['children'], props.contentChild);
+                }
+            }
+            default:
+                console.log(`${callerAndfName()} no observer for ${typeof entry.element}/${props.elementKey}`)
+                if ((props['children'] === undefined) && (props.contentChild === undefined)) {
+                    return React.createElement(entry.element, selected);
+                } else {
+                    return React.createElement(entry.element, selected, props['children'], props.contentChild);
+                }
+                break;
         }
+
     }
 };
 

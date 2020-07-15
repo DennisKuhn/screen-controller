@@ -6,6 +6,7 @@ import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { Icon } from '@material-ui/core';
 import { Add } from '@material-ui/icons';
+import { observer } from 'mobx-react-lite';
 
 const ContainerArray = (props: ArrayPropsWithChildren & WrapperProps): JSX.Element => getProspect('Array', props);
 
@@ -21,7 +22,7 @@ interface ArrayItemBuilderProps {
 
 const getIndexLabel = (index: number, schema: ScSchema7): string => schema.scTranslationId ?? schema.title ?? index.toFixed();
 
-const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup, options }: ArrayItemBuilderProps): JSX.Element => {
+const ArrayItemBuilder = observer( ({ array, index, baseKey, property, schema, setup, options }: ArrayItemBuilderProps): JSX.Element => {
     if (schema.scHidden == true)
         throw new Error(`${callerAndfName()} ${baseKey} is hidden`);
 
@@ -104,7 +105,7 @@ const ArrayItemBuilder = ({ array, index, baseKey, property, schema, setup, opti
             <DeleteItem {...deleteProps} />
         </Field>
     );
-};
+});
 
 const addSchemaItem = (parentItem: SetupBase, arrayName: string, newSchema: ScSchema7): void => {
 
@@ -120,7 +121,7 @@ const addSchemaItem = (parentItem: SetupBase, arrayName: string, newSchema: ScSc
 };
 
 
-const ArrayInput = ({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
+const ArrayInput = observer( ({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
     if (!Array.isArray(value)) throw new Error(`${callerAndfName()} value must be an array: ${JSON.stringify(value)}`);
     if (type !== 'array') throw new Error(`${callerAndfName()} type=${type} invalid, must be array`);
     if ((typeof schema.items !== 'object') || Array.isArray(schema.items))
@@ -204,6 +205,6 @@ const ArrayInput = ({ item, property, value, schema, type, options }: InputProps
             )}
         </ContainerArray>
     );
-};
+});
 
 export default ArrayInput;

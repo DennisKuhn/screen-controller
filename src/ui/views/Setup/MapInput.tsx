@@ -22,6 +22,7 @@ import {
     Options, PropertyProps,
     WrapperProps
 } from './PropTypes';
+import { observer } from 'mobx-react-lite';
 
 const ContainerMap = (props: MapPropsWithChildren & WrapperProps): JSX.Element => getProspect('Map', props);
 
@@ -155,7 +156,7 @@ const addSchemaItem = (parentId: string, mapName: string, newSchema: ScSchema7):
 };
 
 
-const MapInput = ({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
+const MapInput = observer(({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
     if ((!(value instanceof Map)) && (!isObservableMap(value))) throw new Error(`${callerAndfName()} value must be a map: ${JSON.stringify(value)}`);
     if (type !== 'map') throw new Error(`${callerAndfName()} type=${type} invalid, must be map`);
     if (typeof schema.additionalProperties !== 'object')
@@ -238,6 +239,6 @@ const MapInput = ({ item, property, value, schema, type, options }: InputProps &
             )}
         </ContainerMap>
     );
-};
+});
 
 export default MapInput;

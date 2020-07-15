@@ -10,6 +10,7 @@ import {
     ObjectPropsWithChildren,
     Options} from './PropTypes';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getLabel, getType } from './AbstractComponents';
+import { observer } from 'mobx-react-lite';
 
 
 
@@ -23,13 +24,18 @@ interface FieldBuilderProps {
 }
 
 
-const FieldBuilder = ({ property, schema, setup, options }: FieldBuilderProps): JSX.Element => {
+const FieldBuilder = observer( ({ property, schema, setup, options }: FieldBuilderProps): JSX.Element => {
     if (schema.scHidden == true)
         throw new Error(`${callerAndfName()} ${setup.id}.${property} is hidden`);
 
     const onChange = (change: ChangeEventArgs): void => {
         if (isChangeEvent(change)) {
-            setup[property] = change.target.nodeValue;
+            const { target } = change;
+            if ('checked' in target) {
+                setup[property] = target['checked'];    
+            } else {
+                setup[property] = target.nodeValue;
+            }
         } else {
             setup[property] = change;
         }
@@ -96,7 +102,7 @@ const FieldBuilder = ({ property, schema, setup, options }: FieldBuilderProps): 
             </ValueContainer>
         </Field>
     );
-};
+});
 
 
 interface SetupObjectProps {
