@@ -1,7 +1,7 @@
 /** Show Title. description and icon */
 
 import { BasePropsWithChildren, ActionProps, IconProps } from '../../PropTypes';
-import { Tooltip, Grid, makeStyles, Theme, IconButton, Badge } from '@material-ui/core';
+import { Tooltip, Grid, makeStyles, IconButton, Badge } from '@material-ui/core';
 import React, { useState } from 'react';
 import { SpeedDialAction, SpeedDial, SpeedDialIcon } from '@material-ui/lab';
 import { ExpandLess, Add } from '@material-ui/icons';
@@ -13,6 +13,11 @@ const btnSize = 40;
 const useStyles = makeStyles((theme: ExtendedTheme) => {
     return ({
         ...theme.columnDefaults,
+        container: {
+            ...theme.columnDefaults.largeFieldContainer,
+            display: 'flex',
+            alignItems: 'center',
+        },
         speedDial: {
             position: 'absolute',
             bottom: 0,// theme.spacing(2),
@@ -23,6 +28,9 @@ const useStyles = makeStyles((theme: ExtendedTheme) => {
             height: btnSize,
             width: btnSize,
             position: 'relative'
+        },
+        actionsContainer: {
+//            flexWrap: 'wrap',
         },
         newButton: {
             marginLeft: '35px',
@@ -102,7 +110,7 @@ const ExpandableNewContainer = (props: BasePropsWithChildren): JSX.Element => {
     const handleOpen = (): void => setOpen(true);
     const handleClose = (): void => setOpen(false);
 
-    return (<Grid item className={classes.largeField}>
+    return (<Grid item className={classes.container}>
         <div className={classes.speedDialContainer}>
             <SpeedDial
                 ariaLabel="SpeedDial tooltip example"
@@ -113,6 +121,7 @@ const ExpandableNewContainer = (props: BasePropsWithChildren): JSX.Element => {
                 onOpen={handleOpen}
                 open={open}
                 direction="right"
+                // classes={{actions: classes.actionsContainer}}
             >
                 {props.children}
             </SpeedDial>
