@@ -232,7 +232,7 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
                 }
             }
             default:
-                console.log(`${callerAndfName()} no observer for ${typeof entry.element}/${props.elementKey}`)
+                console.log(`${callerAndfName()} no observer for ${typeof entry.element}/${props.elementKey}`);
                 if ((props['children'] === undefined) && (props.contentChild === undefined)) {
                     return React.createElement(entry.element, selected);
                 } else {

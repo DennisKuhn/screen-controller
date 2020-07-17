@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { callerAndfName } from '../../../utils/debugging';
@@ -8,9 +8,11 @@ import {
     ChangeEventArgs,
     isChangeEvent,
     ObjectPropsWithChildren,
-    Options} from './PropTypes';
+    Options
+} from './PropTypes';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getLabel, getType } from './AbstractComponents';
 import { observer } from 'mobx-react-lite';
+import ErrorNotification from './ErrorNotification';
 
 
 
@@ -24,7 +26,7 @@ interface FieldBuilderProps {
 }
 
 
-const FieldBuilder = observer( ({ property, schema, setup, options }: FieldBuilderProps): JSX.Element => {
+const FieldBuilder = observer(({ property, schema, setup, options }: FieldBuilderProps): JSX.Element => {
     if (schema.scHidden == true)
         throw new Error(`${callerAndfName()} ${setup.id}.${property} is hidden`);
 
@@ -32,7 +34,7 @@ const FieldBuilder = observer( ({ property, schema, setup, options }: FieldBuild
         if (isChangeEvent(change)) {
             const { target } = change;
             if ('checked' in target) {
-                setup[property] = target['checked'];    
+                setup[property] = target['checked'];
             } else {
                 setup[property] = target.nodeValue;
             }
@@ -42,7 +44,7 @@ const FieldBuilder = observer( ({ property, schema, setup, options }: FieldBuild
     };
 
     const label = getLabel(undefined, property, schema);
-
+    const value = setup[property];
     const baseKey = `${setup.id}.${property}`;
     const sharedProps /*: AllPropsType*/ = {
         key: baseKey,
@@ -51,8 +53,8 @@ const FieldBuilder = observer( ({ property, schema, setup, options }: FieldBuild
         label,
         property,
         schema,
-        rawValue: setup[property],
-        value: setup[property],
+        rawValue: value,
+        value,
         cacheId: baseKey,
         readOnly: schema.readOnly === true || schema.scViewOnly === true,
         helperText: schema.description,
@@ -92,7 +94,12 @@ const FieldBuilder = observer( ({ property, schema, setup, options }: FieldBuild
         elementKey: baseKey + '-valueInput'
     };
 
+
     return (
+        <Fragment>
+            {value instanceof SetupBase &&
+                <ErrorNotification item={value} />}
+
         <Field {...fieldProps}>
             <LabelContainer {...labelContainerProps}>
                 <LabelView {...labelViewProps} />
@@ -100,7 +107,8 @@ const FieldBuilder = observer( ({ property, schema, setup, options }: FieldBuild
             <ValueContainer {...valueContainerProps} >
                 <ValueInput {...valueInputProps} />
             </ValueContainer>
-        </Field>
+            </Field>
+        </Fragment>
     );
 });
 
@@ -124,10 +132,10 @@ const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
     if (properties == undefined) throw new Error(`${callerAndfName()}(${setup.id}/${setup.className}) no properties in simpleSchema`);
 
     const visibleProperties = Object.entries(properties)
-        .filter( ([, schema]) =>
-            ( typeof schema == 'object' ) &&
+        .filter(([, schema]) =>
+            (typeof schema == 'object') &&
             ((schema as ScSchema7).scHidden !== true) &&
-            ( (!options.ignoreViewOnly) || ( (schema as ScSchema7).scViewOnly !== true && schema.readOnly !== true)) )
+            ((!options.ignoreViewOnly) || ((schema as ScSchema7).scViewOnly !== true && schema.readOnly !== true)))
         .sort(([, schemaA], [, schemaB]) => {
             if (typeof schemaA == 'object' && schemaA.type === 'object')
                 return 1;

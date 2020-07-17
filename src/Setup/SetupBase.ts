@@ -507,19 +507,19 @@ export abstract class SetupBase extends EventEmitter {
         setTimeout( () => this.connectValidator(), 0 );
     }
 
-    on(event: 'error', listener: (event: Event, item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
+    on(event: 'error', listener: (item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
         return super.on(event, listener);
     }
 
-    once(event: 'error', listener: (event: Event, item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
+    once(event: 'error', listener: (item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
         return super.once(event, listener);
     }
 
-    addListener(event: 'error', listener: (event: Event, item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
+    addListener(event: 'error', listener: (item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
         return super.addListener(event, listener);
     }
 
-    removeListener(event: 'error', listener: (event: Event, item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
+    removeListener(event: 'error', listener: (item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
         return super.removeListener(event, listener);
     }
 
@@ -544,7 +544,7 @@ export abstract class SetupBase extends EventEmitter {
             } else {
                 console.error(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })}): no error listener:`, errors);
             }
-            
+            console.timeEnd('validate' + this.id);            
             return null;
         } else {
             console.timeEnd('validate' + this.id);

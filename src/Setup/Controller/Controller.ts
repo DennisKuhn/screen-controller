@@ -1,4 +1,4 @@
-import { intercept, ObservableMap, IMapWillChange, isObservableArray, IArrayWillChange, IArrayWillSplice, IObservableArray, IObjectWillChange } from 'mobx';
+import { ObservableMap, isObservableArray, IObservableArray, isObservableProp, observe, IValueDidChange, IMapDidChange, IArrayChange, IArraySplice } from 'mobx';
 import { EventEmitter } from 'events';
 import { IpcRendererEvent, IpcMainEvent } from 'electron';
 import { isEqual } from 'lodash';
@@ -20,7 +20,6 @@ import '../Application/Browser';
 import '../Application/Display';
 import '../Application/Screen';
 import '../Application/Root';
-
 
 
 export declare interface Controller {
@@ -278,52 +277,67 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
 
         if (!this.configs.has(item.id)) {
-            const onObjectChange = (change: IObjectWillChange): IObjectWillChange => {
-                const { name } = change;
+            // const onObjectChange = (change: IObjectWillChange): IObjectWillChange => {
+            //     const { name } = change;
 
-                if (typeof name !== 'string') throw new Error(`${callerAndfName()} typeof name == ${typeof name} is not supported, must be string`);
+            //     if (typeof name !== 'string') throw new Error(`${callerAndfName()} typeof name == ${typeof name} is not supported, must be string`);
 
-                // console.debug(`${callerAndfName()} change(${item.id}, ${name}, ${change.type}): ${change['newValue']}`);
+            //     // console.debug(`${callerAndfName()} change(${item.id}, ${name}, ${change.type}): ${change['newValue']}`);
 
-                switch (change.type) {
-                    case 'add':
-                        this.onItemChanged({ item, name, type: change.type, newValue: change.newValue });
-                        break;
-                    case 'update':
-                        this.onItemChanged({ item, name, type: change.type, newValue: change.newValue, oldValue: item[name] });
-                        break;
-                    case 'remove':
-                        this.onItemChanged({ item, name, type: change.type });
-                        break;
-                }
-                return change;
-            };
+            //     switch (change.type) {
+            //         case 'add':
+            //             this.onItemChanged({ item, name, type: change.type, newValue: change.newValue });
+            //             break;
+            //         case 'update':
+            //             this.onItemChanged({ item, name, type: change.type, newValue: change.newValue, oldValue: item[name] });
+            //             break;
+            //         case 'remove':
+            //             this.onItemChanged({ item, name, type: change.type });
+            //             break;
+            //     }
+            //     return change;
+            // };
             // console.log( `${callerAndfName()}( ${item.className}[${item.id}]` );
 
             this.configs.set(item.id, item);
 
-            intercept(
-                item,
-                onObjectChange
-            );
+            // intercept(
+            //     item,
+            //     onObjectChange
+            // );
 
             for (const [propertyName, value] of Object.entries(item)) {
                 if (value instanceof ObservableSetupBaseMap) {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
-                    intercept(
+                    observe(
                         value as ObservableMap,
-                        (changes: IMapWillChange<string, SetupBase | null>) => {
+                        (changes: IMapDidChange<string, SetupBase | null>) => {
                             this.onMapChange({ ...changes, item, map: propertyName } as LocalMapChangeArgsType);
-                            return changes;
                         }
                     );
                 } else if (isObservableArray(value)) {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
-                    value.intercept(
-                        (changes: IArrayWillChange | IArrayWillSplice) => {
+                    value.observe(
+                        (changes: IArrayChange | IArraySplice) => {
                             this.onArrayChange({ ...changes, item, array: propertyName } as LocalArrayChangeArgsType);
-                            return changes;
                         }
+                    );
+                } else if (isObservableProp(item, propertyName)) {
+                    const onPropertyChange = (change: IValueDidChange<any>): void => {
+                        // console.debug(`${callerAndfName()} change(${item.id}, ${propertyName}, ${change.type}): ${change['newValue']}`);
+
+                        switch (change.type) {
+                            case 'update':
+                                this.onItemChanged({ item, name: propertyName, type: change.type, newValue: change.newValue, oldValue: item[propertyName] });
+                                break;
+                        }
+                    };
+
+                    console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableProp`);
+                    observe(
+                        item,
+                        propertyName as any,
+                        onPropertyChange
                     );
                 }
             }

@@ -40,21 +40,21 @@ const RectangleButton = observer(({ rect, moveNotSize, className }: Props): JSX.
 
     const handleOpen = (): void => setOpen(true);
     const handleClose = (): void => setOpen(false);
-    let handleUp: () => void;
-    let handleDown: () => void;
-    let handleLeft: () => void;
-    let handleRight: () => void;
+    let handleUpTaller: () => void;
+    let handleDownShort: () => void;
+    let handleLeftWider: () => void;
+    let handleRightNarrow: () => void;
 
     if (moveNotSize) {
-        handleUp = (): number => rect.y -= 0.1;
-        handleDown = (): number => rect.y += 0.1;
-        handleLeft = (): number => rect.x -= 0.1;
-        handleRight = (): number => rect.x += 0.1;
+        handleUpTaller = (): number => rect.y = Number( (rect.y - 0.1).toFixed(10) );
+        handleDownShort = (): number => rect.y = Number( (rect.y + 0.1).toFixed(10) );
+        handleLeftWider = (): number => rect.x = Number( (rect.x - 0.1).toFixed(10) );
+        handleRightNarrow = (): number => rect.x = Number( (rect.x + 0.1).toFixed(10) );
     } else {
-        handleUp = (): number => rect.height -= 0.1;
-        handleDown = (): number => rect.height += 0.1;
-        handleLeft = (): number => rect.width -= 0.1;
-        handleRight = (): number => rect.width += 0.1;
+        handleUpTaller = (): number => rect.height = Number( (rect.height + 0.1).toFixed(10) );
+        handleDownShort = (): number => rect.height = Number( (rect.height - 0.1).toFixed(10) );
+        handleLeftWider = (): number => rect.width = Number( (rect.width + 0.1).toFixed(10) );
+        handleRightNarrow = (): number => rect.width = Number( (rect.width - 0.1).toFixed(10) );
     }
 
     return (
@@ -78,25 +78,25 @@ const RectangleButton = observer(({ rect, moveNotSize, className }: Props): JSX.
                         key={rect.id + 'right'}
                         tooltipTitle={moveNotSize ? 'right' : 'narrow'}
                         icon={moveNotSize ? <ArrowForward /> : <Height fontSize="small" style={{ transform: 'rotate(90deg)' }} />}
-                        onClick={handleRight}
+                        onClick={handleRightNarrow}
                     />
                     <SpeedDialAction
                         key={rect.id + 'left'}
                         tooltipTitle={moveNotSize ? 'left' : 'wider'}
                         icon={moveNotSize ? <ArrowBack /> : <Height fontSize="large" style={{ transform: 'rotate(90deg)' }} />}
-                        onClick={handleLeft}
+                        onClick={handleLeftWider}
                     />
                     <SpeedDialAction
                         key={rect.id + 'down'}
                         tooltipTitle={moveNotSize ? 'down' : 'shorter'}
                         icon={moveNotSize ? <ArrowDownward /> : <Height fontSize="small" />}
-                        onClick={handleDown}
+                        onClick={handleDownShort}
                     />
                     <SpeedDialAction
                         key={rect.id + 'up'}
                         tooltipTitle={moveNotSize ? 'up' : 'taller'}
                         icon={moveNotSize ? <ArrowUpward /> : <Height fontSize="large" />}
-                        onClick={handleUp}
+                        onClick={handleUpTaller}
                     />
                 </SpeedDial>
             </div>
