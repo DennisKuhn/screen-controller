@@ -12,6 +12,7 @@ import { Screen } from '../Application/Screen';
 import { Plugin } from '../Application/Plugin';
 import { cloneDeep } from 'lodash';
 import { caller, fName, callerAndfName } from '../../utils/debugging';
+import { getLocalChangeArgsLog } from '../Tools';
 
 export class Renderer extends ControllerImpl {
     protected ipc: IpcRenderer = electronIpcRenderer;
@@ -233,7 +234,7 @@ export class Renderer extends ControllerImpl {
         const { item } = change;
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
-            throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: Invalid object: ${JSON.stringify(item)}`);
+            throw new Error(`${callerAndfName()}${getLocalChangeArgsLog(change)}: Invalid object: ${JSON.stringify(item)}`);
 
         const array = (change as LocalArrayChangeArgsType).array;
         const index = (change as LocalArrayChangeArgsType).index;
@@ -241,7 +242,7 @@ export class Renderer extends ControllerImpl {
         const name = (change as LocalItemChangeArgsType).name;
 
 
-        // console.log( `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}`/*, cloneDeep(change), cloneDeep(item) */);
+        // console.log( `${callerAndfName()}${getLocalChangeArgsLog(change)}`/*, cloneDeep(change), cloneDeep(item) */);
 
         const shallow = item.getShallow();
 
@@ -271,7 +272,7 @@ export class Renderer extends ControllerImpl {
 
         Renderer.createLinks(shallow);
         localStorage.setItem(item.id, JSON.stringify(shallow));
-        // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} stored ${item.id}=${JSON.stringify(shallow)}`);
+        // console.log(`${callerAndfName()}${getLocalChangeArgsLog(change)} stored ${item.id}=${JSON.stringify(shallow)}`);
 
         const newSetup = newValue instanceof SetupBase ? newValue as SetupBase : undefined;
         const oldValue = 'oldValue' in change ? change.oldValue : undefined;
@@ -279,7 +280,7 @@ export class Renderer extends ControllerImpl {
 
         if (newSetup) {
             if (oldSetup && (oldSetup.id != newSetup.id)) {
-                console.debug(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}=${newSetup.id}, remove from storage ${oldSetup.id}`);
+                console.debug(`${callerAndfName()}${getLocalChangeArgsLog(change)}=${newSetup.id}, remove from storage ${oldSetup.id}`);
                 localStorage.removeItem(oldSetup.id);
             }
 
@@ -296,9 +297,9 @@ export class Renderer extends ControllerImpl {
                 this.persist({ item: newSetup, name: 'id', type: 'add', newValue: newSetup.id });
             }
         } else if (change.type == 'delete') {
-            console.debug(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} delete ${change.name}`);
+            console.debug(`${callerAndfName()}${getLocalChangeArgsLog(change)} delete ${change.name}`);
             const toBeDeleted: SetupBase | undefined = item[change.map].get(change.name) ?? this.tryGetSetupSync(change.map, 0);
-            if (!toBeDeleted) throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}can't get ${change.name}`);
+            if (!toBeDeleted) throw new Error(`${callerAndfName()}${getLocalChangeArgsLog(change)}can't get ${change.name}`);
 
             this.delete(toBeDeleted);
         } else if (name === '') {

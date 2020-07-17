@@ -5,7 +5,7 @@ import { JSONSchema7 } from 'json-schema';
 import deref from 'json-schema-deref-sync';
 import mergeAllOf from 'json-schema-merge-allof';
 import { cloneDeep, Dictionary } from 'lodash';
-import { $mobx, isObservableArray, observable, toJS } from 'mobx';
+import { $mobx, isObservableArray, observable, toJS, intercept, IValueWillChange, isObservableProp } from 'mobx';
 import shortid from 'shortid';
 import { callerAndfName } from '../utils/debugging';
 import { ObservableArray, ObservableSetupBaseMap } from './Container';
@@ -24,6 +24,8 @@ import {
 import { asScSchema7, ScSchema7 } from './ScSchema7';
 import { create, register } from './SetupFactory';
 import { PropertyKey, PropertyType as InterfacePropertyType, SetupBaseInterface, SetupItemId } from './SetupInterface';
+import { getLocalChangeArgsLog } from './Tools';
+import { EventEmitter } from 'events';
 
 switch (process.type) {
     case 'browser': // Main
@@ -56,20 +58,19 @@ export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
 }
 
-interface PropertyInfos {
-    [key: string]: ScSchema7;
-}
-
 interface ClassInfo {
     schema: JSONSchema7;
     uiSchema: UiSchema;
     plainSchema?: JSONSchema7;
     simpleClassSchema?: JSONSchema7;
     validate?: ValidateFunction;
-    properties?: PropertyInfos;
 }
 
-export abstract class SetupBase {
+
+
+export abstract class SetupBase extends EventEmitter {
+
+
     readonly id: SetupItemId;
     readonly parentId: SetupItemId;
     readonly className: string;
@@ -77,7 +78,7 @@ export abstract class SetupBase {
 
     @observable name: string;
 
-    private static notSerialisedProperties = ['_parent', 'parent', 'notPersisted', 'info'];
+    private static notSerialisedProperties = ['_parent', 'parent', 'notPersisted', 'info', 'source', 'observedOptionals', 'optionalsObserver'];
 
     static readonly schemaUri = 'https://github.com/maoriora/screen-controller/schemas/SetupSchema.json#';
 
@@ -117,11 +118,11 @@ export abstract class SetupBase {
     };
 
     public static ajv = (new Ajv())
-        .addKeyword( 'scVolatile', { valid: true })
-        .addKeyword( 'scViewOnly', { valid: true })
-        .addKeyword( 'scHidden', { valid: true })
-        .addKeyword( 'scTranslationId', { valid: true })
-        .addKeyword( 'scFormat', { valid: true } );
+        .addKeyword('scVolatile', { valid: true })
+        .addKeyword('scViewOnly', { valid: true })
+        .addKeyword('scHidden', { valid: true })
+        .addKeyword('scTranslationId', { valid: true })
+        .addKeyword('scFormat', { valid: true });
 
     public volatile(property: string): boolean {
         if (this.info.simpleClassSchema == undefined)
@@ -132,7 +133,7 @@ export abstract class SetupBase {
         if (this.info.simpleClassSchema.properties[property] == undefined)
             throw new Error(
                 `${callerAndfName()}[${this.constructor.name}](${this.className}) no ${property} in simpleClassSchema.properties:` +
-                `${JSON.stringify(this.info.simpleClassSchema.properties) }`);
+                `${JSON.stringify(this.info.simpleClassSchema.properties)}`);
 
         return (this.info.simpleClassSchema.properties[property] as ScSchema7)?.scVolatile == true;
     }
@@ -375,7 +376,7 @@ export abstract class SetupBase {
          * Resolve root Element
          * @example { $ref: 'AnalogClock' } => { $id: 'AnalogClock', allOf ....}
          */
-        const simpleSchema: ScSchema7 =toJS( resolve(info.schema, info.schema), {recurseEverything: true } );
+        const simpleSchema: ScSchema7 = toJS(resolve(info.schema, info.schema), { recurseEverything: true });
 
         forEachShallow(simpleSchema, resolveRef, info.schema);
 
@@ -385,7 +386,7 @@ export abstract class SetupBase {
 
         forEach(simpleSchema, registerAllOfs);
 
-        info.simpleClassSchema = mergeAllOf(simpleSchema, {resolvers: {scAllOf: resolveScAllOf} as any });
+        info.simpleClassSchema = mergeAllOf(simpleSchema, { resolvers: { scAllOf: resolveScAllOf } as any });
         console.debug(
             `${callerAndfName()}[${info.schema.$ref}] merged AllOf: `,
             process.type == 'renderer' ? { merged: cloneDeep(info.simpleClassSchema), root: cloneDeep(info.schema) } : ':-)');
@@ -455,7 +456,9 @@ export abstract class SetupBase {
 
     protected info: ClassInfo;
 
-    protected constructor(source: SetupBaseInterface) {
+    protected constructor(private source: SetupBaseInterface) {
+        super();
+
         if (source.id in SetupBase.instances)
             throw new Error(`SetupBase[${this.constructor.name}] id=${source.id} already in use`);
 
@@ -500,9 +503,82 @@ export abstract class SetupBase {
         SetupBase.mobxInstances[this[$mobx].name] = this;
 
         this.connectToParentMap();
+
+        setTimeout( () => this.connectValidator(), 0 );
     }
 
-    private connectToParentMap(): void { 
+    on(event: 'error', listener: (event: Event, item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
+        return super.on(event, listener);
+    }
+
+    once(event: 'error', listener: (event: Event, item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
+        return super.once(event, listener);
+    }
+
+    addListener(event: 'error', listener: (event: Event, item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
+        return super.addListener(event, listener);
+    }
+
+    removeListener(event: 'error', listener: (event: Event, item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
+        return super.removeListener(event, listener);
+    }
+
+    private validate(change: IValueWillChange<any>, property: string): IValueWillChange<any> | null {
+        console.debug(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })})`);
+
+        if (!this.info.validate) throw new Error(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })}) no validator`);
+
+        console.time('validate' + this.id);
+
+        const previous = this.source[property];
+        this.source[property] = change.newValue;
+
+        if (this.info.validate(this.source) !== true) {
+            this.source[property] = previous;
+
+            const errors = cloneDeep(this.info.validate.errors);
+            console.warn(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })}): `, errors);
+
+            if (super.listenerCount('error') > 0) {
+                super.emit('error', this, errors);
+            } else {
+                console.error(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })}): no error listener:`, errors);
+            }
+            
+            return null;
+        } else {
+            console.timeEnd('validate' + this.id);
+            return change;
+        }
+    }
+
+    private connectValidator(): void {
+        if (!this.info.simpleClassSchema) throw new Error(`${callerAndfName()}(${this.id}) simpleSchema doesn't exist`);
+        if (!this.info.simpleClassSchema.properties) throw new Error(`${callerAndfName()}(${this.id}) simpleSchema.properties doesn't exist`);
+
+        for (const [property, propertySchema] of Object.entries(this.info.simpleClassSchema.properties)) {
+            const schema = propertySchema as ScSchema7;
+
+            // console.info(`${callerAndfName()}(${this.id}) ${property}`);
+
+            if (!(property in this)) throw new Error(`${callerAndfName()}(${this.id}) ${property} doesn't exist`);
+            
+            if (schema.scViewOnly === true || schema.scVolatile === true) {
+                // console.debug(`${callerAndfName()}(${this.id}) ignore ${property} viewOnly=${schema.scViewOnly} volatile=${schema.scVolatile}`);
+            // } else if (isObservableMap(this[property])) {
+            //     // console.debug(`${callerAndfName()}(${this.id}) ignore not observable map ${property}`);
+            } else if (!isObservableProp(this, property)) {
+                // console.debug(`${callerAndfName()}(${this.id}) ignore not observable prop ${property}`);
+            } else {
+                // console.debug(`${callerAndfName()}(${this.id}) connect ${property}`);
+                intercept(this, property as any, change =>
+                    this.validate(change, property)
+                );
+            }
+        }
+    }
+
+    private connectToParentMap(): void {
         const parentProspect = this.parent;
 
         if (parentProspect) {
@@ -515,7 +591,7 @@ export abstract class SetupBase {
             }
         }
     }
-        
+
 
     get parent(): (SetupBase | undefined) {
         return SetupBase.instances[this.parentId];
@@ -582,8 +658,10 @@ export abstract class SetupBase {
      */
     getShallow(): SetupBaseInterface {
         const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, parentProperty: this.parentProperty, className: this.className, name: this.name };
+        const properties = this.info.simpleClassSchema?.properties;
+        if (!properties) throw Error(`${callerAndfName()} no properties in schema`);
 
-        for (const propertyName in this) {
+        for (const propertyName of Object.keys(properties)) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
             } else if (SetupBase.notSerialisedProperties.includes(propertyName)) {
@@ -640,8 +718,10 @@ export abstract class SetupBase {
 
     getPlain(depth: number): SetupBaseInterface {
         const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, parentProperty: this.parentProperty, className: this.className, name: this.name };
+        const properties = this.info.simpleClassSchema?.properties;
+        if (!properties) throw Error(`${callerAndfName()}(${depth}) no properties in schema`);
 
-        for (const propertyName in this) {
+        for (const propertyName of Object.keys( properties )) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getPlain: ${propertyName} exists`);
             } else if (SetupBase.notSerialisedProperties.includes(propertyName)) {

@@ -81,7 +81,7 @@ export class Plugin extends SetupBase implements PluginInterface {
         const observables = {};
 
         for (const propertyName in setup) {
-            if (!(propertyName in this)) {
+            if (this[propertyName] === undefined) {
                 const value = setup[propertyName];
                 const type = typeof value;
 
@@ -101,6 +101,7 @@ export class Plugin extends SetupBase implements PluginInterface {
                             // /*, updateSetup */);
                             observables[propertyName] = create(value as SetupBaseInterface);
                         } else {
+                            //TODO Implement array
                             console.warn(`${this.constructor.name}[${setup.className}][${this.id}].init:[${propertyName}/Dictionary]=create` /*, updateSetup */);
                             this[propertyName] = this.createMap<SetupBase>(value as Dictionary<SetupBaseInterface>, propertyName);
                         }

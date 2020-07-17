@@ -11,6 +11,7 @@ import { SetupItemId } from '../SetupInterface';
 import { UpdateChannel } from './UpdateChannel';
 import { ControllerImpl, LocalChangeArgsType, SetupPromise } from './Controller';
 import { IpcAddSchemaArgs, IpcChangeArgsType, IpcInitArgs, IpcMain, IpcRegisterArgs, IpcWindow } from './IpcInterface';
+import { getLocalChangeArgsLog } from '../Tools';
 
 
 interface Renderer {
@@ -372,22 +373,22 @@ export class Main extends ControllerImpl {
 
         if (!(item.id != undefined && item.className != undefined && item.parentId != undefined))
             throw new Error(
-                `${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: Invalid object: ${JSON.stringify(item)}`);
+                `${callerAndfName()}${getLocalChangeArgsLog(change)}: Invalid object: ${JSON.stringify(item)}`);
 
         if (this.ipcStorage == undefined)
-            throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: no ipcStorage`);
+            throw new Error(`${callerAndfName()}${getLocalChangeArgsLog(change)}: no ipcStorage`);
 
         if (this.ipcStorage.isDestroyed()) {
-            console.warn(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: ipcStorage is destroyed`);
+            console.warn(`${callerAndfName()}${getLocalChangeArgsLog(change)}: ipcStorage is destroyed`);
             return;
         }
 
         const channel = this.renderers[this.ipcStorage.id]?.channel;
 
         if (channel == undefined)
-            throw new Error(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)}: no channel for ${this.ipcStorage.id}`);
+            throw new Error(`${callerAndfName()}${getLocalChangeArgsLog(change)}: no channel for ${this.ipcStorage.id}`);
 
-        // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} -> [${this.ipcStorage.id}]`);
+        // console.log(`${callerAndfName()}${getLocalChangeArgsLog(change)} -> [${this.ipcStorage.id}]`);
 
         channel.send(
             'change',

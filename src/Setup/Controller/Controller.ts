@@ -8,6 +8,8 @@ import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap, SetupBaseInterfaceDictionary } from '../Container';
 import { IpcChangeArgsType, IpcArrayChangeArgsType, IpcMapChangeArgsType, IpcItemChangeArgsType, getIpcArgsLog, IpcArrayUpdateArgs, IpcArraySpliceArgs } from './IpcInterface';
 import { callerAndfName } from '../../utils/debugging';
+import { Root } from '../Application/Root';
+import { getLocalChangeArgsLog } from '../Tools';
 
 import '../Default/Time';
 import '../Default/Gradient';
@@ -18,7 +20,6 @@ import '../Application/Browser';
 import '../Application/Display';
 import '../Application/Screen';
 import '../Application/Root';
-import { Root } from '../Application/Root';
 
 
 
@@ -394,10 +395,10 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         // console.log(`ControllerImpl[${this.constructor.name}].onItemchanged(${item.id}.${name}, ${type} ) = ${change['newValue']}`);
 
         if (isEqual(itemPlainValue, remotePlainValue)) {
-            // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} skip remoteUpdate=` +
+            // console.log(`${callerAndfName()}${getLocalChangeArgsLog(change)} skip remoteUpdate=` +
             //     `${remotePlainValue && remotePlainValue['id'] ? remotePlainValue['id'] : remotePlainValue}`);
         } else {
-            // console.debug(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(change)} != ` +
+            // console.debug(`${callerAndfName()}${getLocalChangeArgsLog(change)} != ` +
             //     `${remotePlainValue && remotePlainValue['id'] ? remotePlainValue['id'] : remotePlainValue}`);
 
             const ipcChange = {
@@ -453,7 +454,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             this.oncePersisted.set(key, null );
             shouldPersist = true;            
         }
-        shouldPersist && console.debug(`${callerAndfName()}(${ControllerImpl.getLocalArgsLog(change)}) shouldPersist[${key}]=${shouldPersist}`, this.oncePersisted);
+        shouldPersist && console.debug(`${callerAndfName()}(${getLocalChangeArgsLog(change)}) shouldPersist[${key}]=${shouldPersist}`, this.oncePersisted);
         return shouldPersist;
     };
 
@@ -466,7 +467,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
     private onArrayChange = (changes: LocalArrayChangeArgsType): void => {
         const { item, array, index } = changes;
 
-        // console.debug(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)}`/*, changes*/);
+        // console.debug(`${callerAndfName()}${getLocalChangeArgsLog(changes)}`/*, changes*/);
         const newValue = changes['newValue'];
         const itemPlainValue = newValue != undefined ? SetupBase.getPlainValue(newValue) : undefined;
         const hasRemote = this.remoteUpdates.has(item.id) && this.remoteUpdates.get(item.id)?.[array]?.[index] !== undefined;
@@ -480,16 +481,16 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             const hasUpdate = (remoteArray !== undefined) && (remoteArray.length == (localArray.length + added.length - removedCount));
 
             if (hasUpdate) {
-                // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip remoteUpdate`);    
+                // console.log(`${callerAndfName()}${getLocalChangeArgsLog(changes)} skip remoteUpdate`);    
             } else {
-                // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`/*, changes*/);
+                // console.log(`${callerAndfName()}${getLocalChangeArgsLog(changes)} propagate & persist`/*, changes*/);
                 this.propagate && this.propagate(ControllerImpl.local2Ipc(changes));
                 this.tryPersist(changes);
             }
         } else if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
-            // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip remoteUpdate ${remotePlainValue}`);
+            // console.log(`${callerAndfName()}${getLocalChangeArgsLog(changes)} skip remoteUpdate ${remotePlainValue}`);
         } else {
-            // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate & persist`/*, changes*/);
+            // console.log(`${callerAndfName()}${getLocalChangeArgsLog(changes)} propagate & persist`/*, changes*/);
 
             this.propagate && this.propagate(ControllerImpl.local2Ipc(changes));
             this.tryPersist(changes);
@@ -508,12 +509,12 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         const remotePlainValue = hasRemote ? this.remoteUpdates.get(item.id)?.[map][name] : undefined;
 
         if (hasRemote && isEqual(itemPlainValue, remotePlainValue)) {
-            // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip remoteUpdate ${remotePlainValue}`);
+            // console.log(`${callerAndfName()}${getLocalChangeArgsLog(changes)} skip remoteUpdate ${remotePlainValue}`);
         } else {
             switch (type) {
                 case 'add':
                     if (newSetup != undefined) {
-                        // console.log( `${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} connect, propagate and persist ${newSetup.id}`);
+                        // console.log( `${callerAndfName()}${getLocalChangeArgsLog(changes)} connect, propagate and persist ${newSetup.id}`);
                         this.connectPersistPropagate({ item: newSetup });
                         this.propagate && this.propagate({
                             item: item.id,
@@ -525,20 +526,20 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                         this.tryPersist(changes);
                     } else if (newValue) {
                         console.error(
-                            `${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip undefined newSetup but newValue is defined`,
+                            `${callerAndfName()}${getLocalChangeArgsLog(changes)} skip undefined newSetup but newValue is defined`,
                             changes,
                             itemPlainValue,
                             remotePlainValue
                         );
                     } else {
-                        console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} skip null`);
+                        console.log(`${callerAndfName()}${getLocalChangeArgsLog(changes)} skip null`);
                     }
                     break;
                 case 'update':
-                    console.warn(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} ignore`);
+                    console.warn(`${callerAndfName()}${getLocalChangeArgsLog(changes)} ignore`);
                     break;
                 case 'delete':
-                    // console.log(`${callerAndfName()}${ControllerImpl.getLocalArgsLog(changes)} propagate and persist`);
+                    // console.log(`${callerAndfName()}${getLocalChangeArgsLog(changes)} propagate and persist`);
                     this.propagate && this.propagate({
                         item: item.id,
                         map,
@@ -561,21 +562,6 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
 
 
-    protected static getLocalArgsLog = (update: LocalChangeArgsType): string => {
-        const { item, type } = update;
-        const itemUpdate = (update as LocalItemChangeArgsType).name ? (update as LocalItemChangeArgsType) : undefined;
-        const mapUpdate = (update as LocalMapChangeArgsType).map ? (update as LocalMapChangeArgsType) : undefined;
-        const arrayUpdate = (update as LocalArrayChangeArgsType).array ? (update as LocalArrayChangeArgsType) : undefined;
-        const name = itemUpdate?.name;
-        const map = mapUpdate?.map;
-        const array = arrayUpdate?.array;
-        const newValue = update['newValue'];
-
-        return (
-            `(${item.id}.${map ?? array ?? ''}${mapUpdate ? '.' + mapUpdate.name : arrayUpdate ? '[' + arrayUpdate.index + ']' : name} ,${type})` +
-            `${newValue ? '=' + (newValue instanceof SetupBase ? '[' + newValue.id + '/' + newValue.className + ']' : newValue) : ''}`
-        );
-    }
 
     protected static local2Ipc = (local: LocalChangeArgsType): IpcChangeArgsType => {
         let result: IpcChangeArgsType;

@@ -25,7 +25,6 @@ app.whenReady().then(
         DisplaysManager.run();
         WallpapersManager.run();
         Windows.start();
-        
     }
 );
 
