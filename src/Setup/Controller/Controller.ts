@@ -333,7 +333,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                         }
                     };
 
-                    console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableProp`);
+                    // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableProp`);
                     observe(
                         item,
                         propertyName as any,

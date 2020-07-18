@@ -410,9 +410,9 @@ export abstract class SetupBase extends EventEmitter {
         forEach(simpleSchema, registerAllOfs);
 
         info.simpleClassSchema = mergeAllOf(simpleSchema, { resolvers: { scAllOf: resolveScAllOf } as any });
-        console.debug(
-            `${callerAndfName()}[${info.schema.$ref}] merged AllOf: `,
-            process.type == 'renderer' ? { merged: cloneDeep(info.simpleClassSchema), root: cloneDeep(info.schema) } : ':-)');
+        console.debug(`${callerAndfName()}[${info.schema.$ref}] merged AllOf: `
+        //    , process.type == 'renderer' ? { merged: cloneDeep(info.simpleClassSchema), root: cloneDeep(info.schema) } : ':-)'
+        );
     }
 
     public getSimpleClassSchema(): JSONSchema7 {
@@ -547,7 +547,7 @@ export abstract class SetupBase extends EventEmitter {
     }
 
     private validate(change: IValueWillChange<any>, property: string): IValueWillChange<any> | null {
-        console.debug(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property, oldValue: undefined })})`);
+        // console.debug(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property, oldValue: undefined })})`);
 
         const timeLabel = 'validate ' + this.id;
 
@@ -567,6 +567,7 @@ export abstract class SetupBase extends EventEmitter {
             console.warn(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property, oldValue: undefined })}): `, errors);
 
             if (super.listenerCount('error') > 0) {
+                //TODO: Make async
                 super.emit('error', this, errors);
             } else {
                 console.error(
