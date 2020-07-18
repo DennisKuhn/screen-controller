@@ -17,10 +17,10 @@ export class RelativeRectangle extends Rectangle {
                 properties: {
                     className: { const: RelativeRectangle.name },
                     name: asScSchema7({ scHidden: true }),
-                    x: { allOf: [SetupBase.PERCENT_REF, { default: 0 }] },
-                    y: { allOf: [SetupBase.PERCENT_REF, { default: 0 }] },
-                    width: { allOf: [SetupBase.PERCENT_REF, { default: 1 }] },
-                    height: { allOf: [SetupBase.PERCENT_REF, { default: 1 }] }
+                    x: { allOf: [SetupBase.PERCENT_REF, asScSchema7({ default: 0, scOneWith: { $data: '1/width'} })] },
+                    y: { allOf: [SetupBase.PERCENT_REF, asScSchema7({ default: 0, scOneWith: { $data: '1/height' } })] },
+                    width: { allOf: [SetupBase.PERCENT_REF, asScSchema7({ default: 1, scOneWith: { $data: '1/x' } })] },
+                    height: { allOf: [SetupBase.PERCENT_REF, asScSchema7({ default: 1, scOneWith: { $data: '1/y' } })] }
                 },
                 required: ['x', 'y', 'width', 'height']
             }

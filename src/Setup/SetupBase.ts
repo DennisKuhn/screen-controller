@@ -1,5 +1,5 @@
 import { UiSchema } from '@rjsf/core';
-import Ajv, { ValidateFunction } from 'ajv';
+import Ajv, { ValidateFunction, SchemaValidateFunction, ErrorObject } from 'ajv';
 import { remote } from 'electron';
 import { JSONSchema7 } from 'json-schema';
 import deref from 'json-schema-deref-sync';
@@ -66,8 +66,9 @@ interface ClassInfo {
     validate?: ValidateFunction;
 }
 
-
-
+interface UserSchemaValidateFunction extends Omit<SchemaValidateFunction, 'errors'> {
+    errors?: Array<Partial<ErrorObject>>;
+}
 export abstract class SetupBase extends EventEmitter {
 
 
@@ -77,6 +78,7 @@ export abstract class SetupBase extends EventEmitter {
     readonly parentProperty: PropertyKey;
 
     @observable name: string;
+
 
     private static notSerialisedProperties = ['_parent', 'parent', 'notPersisted', 'info', 'source', 'observedOptionals', 'optionalsObserver'];
 
@@ -117,12 +119,33 @@ export abstract class SetupBase extends EventEmitter {
         className: { 'ui:widget': 'hidden' },
     };
 
-    public static ajv = (new Ajv())
-        .addKeyword('scVolatile', { valid: true })
-        .addKeyword('scViewOnly', { valid: true })
-        .addKeyword('scHidden', { valid: true })
-        .addKeyword('scTranslationId', { valid: true })
-        .addKeyword('scFormat', { valid: true });
+    public static validateOneWith: SchemaValidateFunction = function(schema: ScSchema7, data: NumberConstructor): boolean {
+        if (typeof schema !== 'number') throw new Error(`${callerAndfName()} typeof schema==${typeof schema} must be number`);
+        if (typeof data !== 'number') throw new Error(`${callerAndfName()} typeof data==${typeof data} must be number`);
+
+        const valid = data + schema <= 1;
+
+        if (!valid) {
+            (SetupBase.validateOneWith as UserSchemaValidateFunction).errors = [{
+                params: { a: data, b: schema },
+                keyword: 'scOneWith',
+                message: 'Must be within bounds'
+            }];
+        }
+        return valid;
+    };
+
+    public static ajv = (new Ajv({ $data: true }))
+        .addKeyword('scVolatile', { valid: true, errors: false })
+        .addKeyword('scViewOnly', { valid: true, errors: false })
+        .addKeyword('scHidden', { valid: true, errors: false })
+        .addKeyword('scTranslationId', { valid: true, errors: false })
+        .addKeyword('scFormat', { valid: true, errors: false })
+        .addKeyword('scOneWith', {
+            $data: true,
+            validate: SetupBase.validateOneWith,
+            errors: true
+        });
 
     public volatile(property: string): boolean {
         if (this.info.simpleClassSchema == undefined)
@@ -504,7 +527,7 @@ export abstract class SetupBase extends EventEmitter {
 
         this.connectToParentMap();
 
-        setTimeout( () => this.connectValidator(), 0 );
+        setTimeout(() => this.connectValidator(), 0);
     }
 
     on(event: 'error', listener: (item: SetupBase, errors: Ajv.ErrorObject[]) => void): this {
@@ -524,11 +547,15 @@ export abstract class SetupBase extends EventEmitter {
     }
 
     private validate(change: IValueWillChange<any>, property: string): IValueWillChange<any> | null {
-        console.debug(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })})`);
+        console.debug(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property, oldValue: undefined })})`);
 
-        if (!this.info.validate) throw new Error(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })}) no validator`);
+        const timeLabel = 'validate ' + this.id;
 
-        console.time('validate' + this.id);
+        console.time(timeLabel);
+
+        if (!this.info.validate) throw new Error(
+            `${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property, oldValue: undefined })}) no validator`);
+
 
         const previous = this.source[property];
         this.source[property] = change.newValue;
@@ -537,17 +564,18 @@ export abstract class SetupBase extends EventEmitter {
             this.source[property] = previous;
 
             const errors = cloneDeep(this.info.validate.errors);
-            console.warn(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })}): `, errors);
+            console.warn(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property, oldValue: undefined })}): `, errors);
 
             if (super.listenerCount('error') > 0) {
                 super.emit('error', this, errors);
             } else {
-                console.error(`${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property })}): no error listener:`, errors);
+                console.error(
+                    `${callerAndfName()}[${this.id}](${getLocalChangeArgsLog({ ...change, item: this, name: property, oldValue: undefined })}): no error listener:`, errors);
             }
-            console.timeEnd('validate' + this.id);            
+            console.timeEnd(timeLabel);
             return null;
         } else {
-            console.timeEnd('validate' + this.id);
+            console.timeEnd(timeLabel);
             return change;
         }
     }
@@ -562,11 +590,11 @@ export abstract class SetupBase extends EventEmitter {
             // console.info(`${callerAndfName()}(${this.id}) ${property}`);
 
             if (!(property in this)) throw new Error(`${callerAndfName()}(${this.id}) ${property} doesn't exist`);
-            
+
             if (schema.scViewOnly === true || schema.scVolatile === true) {
                 // console.debug(`${callerAndfName()}(${this.id}) ignore ${property} viewOnly=${schema.scViewOnly} volatile=${schema.scVolatile}`);
-            // } else if (isObservableMap(this[property])) {
-            //     // console.debug(`${callerAndfName()}(${this.id}) ignore not observable map ${property}`);
+                // } else if (isObservableMap(this[property])) {
+                //     // console.debug(`${callerAndfName()}(${this.id}) ignore not observable map ${property}`);
             } else if (!isObservableProp(this, property)) {
                 // console.debug(`${callerAndfName()}(${this.id}) ignore not observable prop ${property}`);
             } else {
@@ -721,7 +749,7 @@ export abstract class SetupBase extends EventEmitter {
         const properties = this.info.simpleClassSchema?.properties;
         if (!properties) throw Error(`${callerAndfName()}(${depth}) no properties in schema`);
 
-        for (const propertyName of Object.keys( properties )) {
+        for (const propertyName of Object.keys(properties)) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getPlain: ${propertyName} exists`);
             } else if (SetupBase.notSerialisedProperties.includes(propertyName)) {

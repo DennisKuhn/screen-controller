@@ -10,8 +10,8 @@ import Close from '@material-ui/icons/Close';
 // core components
 import snackbarContentStyle from '../../assets/jss/material-dashboard-react/components/snackbarContentStyle';
 
-function SnackbarContent({ ...props }: any) {
-    const { classes, message, color, close, icon, rtlActive } = props;
+function SnackbarContent({ ...props }: any): JSX.Element {
+    const { classes, message, color, close, icon, rtlActive, closeNotification } = props;
     let action: any[] = [];
     const messageClasses = classNames({
         [classes.iconMessage]: icon !== undefined
@@ -24,6 +24,7 @@ function SnackbarContent({ ...props }: any) {
         key="close"
         aria-label="Close"
         color="inherit"
+        onClick={(): void => closeNotification()}
           >
         <Close className={classes.close} />
       </IconButton>

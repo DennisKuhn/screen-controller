@@ -18,6 +18,8 @@ export interface ScSchema7 extends JSONSchema7 {
 
     /** Original abstract schema before spreading into oneOF */
     scAbstract?: any; 
+
+    scOneWith?: { $data: string };
 }
 
 export const asScSchema7 = (schema: ScSchema7): ScSchema7 => schema;

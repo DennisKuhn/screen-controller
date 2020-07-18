@@ -1,5 +1,5 @@
 import Snackbar from '../../components/Snackbar/Snackbar';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import React from 'react';
 import { AddAlert } from '@material-ui/icons';
 import { ErrorObject } from 'ajv';
@@ -17,10 +17,24 @@ const ErrorNotification = ({ item }: { item: SetupBase }): JSX.Element => {
         setErrors(errors);
         setTimeout(close, 10000);
     };
-    item.on('error', handleErrors);
+
+    useEffect(
+        () => {
+            console.log(`${callerAndfName()} connect`);
+            item.on('error', handleErrors);
+
+            return ((): void => {
+                console.log(`${callerAndfName()} disconnect`);
+                item.removeListener('error', handleErrors);
+            });
+        },
+        []
+    );
+
+    
     return (
         <Snackbar
-            place="tr"
+            place="br"
             color="danger"
             icon={AddAlert}
             message={

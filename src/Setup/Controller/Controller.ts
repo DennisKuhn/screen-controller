@@ -328,7 +328,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
                         switch (change.type) {
                             case 'update':
-                                this.onItemChanged({ item, name: propertyName, type: change.type, newValue: change.newValue, oldValue: item[propertyName] });
+                                this.onItemChanged({ item, name: propertyName, type: change.type, newValue: change.newValue, oldValue: change.oldValue });
                                 break;
                         }
                     };
