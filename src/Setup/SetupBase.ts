@@ -1,8 +1,6 @@
-import { UiSchema } from '@rjsf/core';
 import Ajv, { ValidateFunction, SchemaValidateFunction, ErrorObject } from 'ajv';
 import { remote } from 'electron';
 import { JSONSchema7 } from 'json-schema';
-import deref from 'json-schema-deref-sync';
 import mergeAllOf from 'json-schema-merge-allof';
 import { cloneDeep, Dictionary } from 'lodash';
 import { $mobx, isObservableArray, observable, toJS, intercept, IValueWillChange, isObservableProp } from 'mobx';
@@ -13,7 +11,6 @@ import {
     forEach,
     forEachShallow,
     registerAllOfs,
-    replaceAbstractRefsWithOneOfConcrets,
     replaceAbstractWithOneOfConcrets,
     replaceEach,
     resolve,
@@ -60,8 +57,6 @@ export interface SetupConstructor<SetupType extends SetupBase> {
 
 interface ClassInfo {
     schema: JSONSchema7;
-    uiSchema: UiSchema;
-    plainSchema?: JSONSchema7;
     simpleClassSchema?: JSONSchema7;
     validate?: ValidateFunction;
 }
@@ -112,12 +107,6 @@ export abstract class SetupBase extends EventEmitter {
         }
     });
 
-    public static readonly uiSchema: UiSchema = {
-        id: { 'ui:widget': 'hidden' },
-        parentId: { 'ui:widget': 'hidden' },
-        parentProperty: { 'ui:widget': 'hidden' },
-        className: { 'ui:widget': 'hidden' },
-    };
 
     public static validateOneWith: SchemaValidateFunction = function(schema: ScSchema7, data: NumberConstructor): boolean {
         if (typeof schema !== 'number') throw new Error(`${callerAndfName()} typeof schema==${typeof schema} must be number`);
@@ -167,7 +156,7 @@ export abstract class SetupBase extends EventEmitter {
     protected static infos: { [key: string]: ClassInfo } = {};
 
 
-    protected static addSchema(schema: JSONSchema7, uiSchema: UiSchema): void {
+    protected static addSchema(schema: JSONSchema7): void {
         if (!SetupBase.activeSchema.definitions) throw new Error(`SetupBase.addSchema(${schema.$id}) no definitions`);
 
         if (!schema.$id) throw new Error(`SetupBase.addSchema() no $id: ${JSON.stringify(schema)}`);
@@ -185,8 +174,7 @@ export abstract class SetupBase extends EventEmitter {
                 schema: {
                     definitions: SetupBase.activeSchema.definitions,
                     $ref: '#/definitions/' + schema.$id
-                },
-                uiSchema: { ...SetupBase.uiSchema, ...uiSchema }
+                }
             };
         }
     }
@@ -422,59 +410,8 @@ export abstract class SetupBase extends EventEmitter {
         return this.info.simpleClassSchema;
     }
 
-    public getPlainSchema(): JSONSchema7 {
-        if (this.info.plainSchema == undefined) {
-            const plainSchema = toJS(this.info.schema, { recurseEverything: true });
-
-            replaceAbstractRefsWithOneOfConcrets(plainSchema);
-            // console.log(`${callerAndfName()}[${this.constructor.name}](${this.className}).replaced AbstractRefsWithOneOfConcrets:`, { ...plainSchema });
-
-            SetupBase.fixRefs(plainSchema);
-
-            const derefed = deref(plainSchema);
-
-            if (derefed instanceof Error) {
-                console.error(`${callerAndfName()}[${this.constructor.name}](${this.className}).resolved error: ${derefed}`, derefed, { ...plainSchema });
-            } else {
-                // console.log(`${callerAndfName()}[${this.constructor.name}](${this.className}).resolved schema:`, { ...derefed }, { ...plainSchema });
-
-                const merged = mergeAllOf(derefed) as JSONSchema7;
-
-                // console.log(
-                //     `${callerAndfName()}[${this.constructor.name}](${this.className}).merged schema:`,
-                //     { ...merged }, { ...derefed }, { ...plainSchema });
-
-                SetupBase.fixDuplicateIds(merged);
-                // console.log(
-                //     `${callerAndfName()}[${this.constructor.name}](${this.className}).fixedDuplicateIds:`,
-                //     { ...merged });
-
-                SetupBase.mergeOneOfNulls(merged);
-                // console.log(
-                //     `${callerAndfName()}[${this.constructor.name}](${this.className}).mergedOneOfNulls:`,
-                //     { ...merged });
-
-                SetupBase.moveRefsToDefsToDefs(merged);
-
-                console.log(`${callerAndfName()}[${this.constructor.name}](${this.className})`
-                    // , { ...merged }, toJS(info.schema, { recurseEverything: true })
-                );
-
-                this.info.plainSchema = merged;
-            }
-        }
-        if (this.info.plainSchema == undefined)
-            throw new Error(`SetupBase[${this.constructor.name}][${this.className}]: no plainSchema`);
-
-        return this.info.plainSchema;
-    }
-
     public getSchema(): JSONSchema7 {
         return this.info.schema;
-    }
-
-    public static getUiSchema(className: string): UiSchema {
-        return SetupBase.infos[className].uiSchema;
     }
 
     protected info: ClassInfo;
@@ -524,8 +461,6 @@ export abstract class SetupBase extends EventEmitter {
         this.name = source.name;
         SetupBase.instances[this.id] = this;
         SetupBase.mobxInstances[this[$mobx].name] = this;
-
-        this.connectToParentMap();
 
         setTimeout(() => this.connectValidator(), 0);
     }
@@ -607,19 +542,6 @@ export abstract class SetupBase extends EventEmitter {
         }
     }
 
-    private connectToParentMap(): void {
-        const parentProspect = this.parent;
-
-        if (parentProspect) {
-            const parentProperty = parentProspect[this.parentProperty];
-
-            if (parentProperty instanceof ObservableSetupBaseMap) {
-                console.log(`${callerAndfName()} connect ${this.id}/${this.className} in ${parentProspect.id}/${parentProspect.className}.${this.parentProperty}`);
-
-                parentProperty.set(this.id, this);
-            }
-        }
-    }
 
 
     get parent(): (SetupBase | undefined) {
@@ -861,12 +783,12 @@ export abstract class SetupBase extends EventEmitter {
         return prefix + '-' + shortid.generate();
     }
 
-    protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7, uiSchema: UiSchema): void {
+    protected static register<SetupClass extends SetupBase>(factory: SetupConstructor<SetupClass>, schema: JSONSchema7): void {
         if (!schema.$id) throw new Error(`SetupBase.register() no $id: ${JSON.stringify(schema)}`);
 
         // if (schema.$id != ('#' + factory.name))
         //     throw new Error(`SetupBase.register(): (Class name) #factory.name != schema.$id: #${factory.name} != ${schema.$id} schema=${JSON.stringify(schema)}`);
-        SetupBase.addSchema(schema, uiSchema);
+        SetupBase.addSchema(schema);
 
         if (schema.$id != factory.name) {
             console.warn(`SetupBase.register: register ${factory.name} as ${schema.$id}`);
@@ -874,9 +796,5 @@ export abstract class SetupBase extends EventEmitter {
         } else {
             register(factory);
         }
-    }
-
-    deleteChild(id: SetupItemId): void {
-        throw new Error(`SetupBase[${this.constructor.name}, ${this.id}] has no deleteChild(${id}) method`);
     }
 }

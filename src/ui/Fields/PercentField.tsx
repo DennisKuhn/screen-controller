@@ -10,6 +10,16 @@ export const useStyles = makeStyles((reqtheme) => ({
     }
 }));
 
+// schema: {
+//     ...schema,
+//     ...(typeof schema.default == 'number' ? { default: schema.default * 100 } : {}),
+//     ...(typeof schema.maximum == 'number' ? { maximum: schema.maximum * 100 } : {}),
+//     ...(typeof schema.minimum == 'number' ? { minimum: schema.minimum * 100 } : {}),
+//     ...(typeof schema.exclusiveMaximum == 'number' ? { exclusiveMaximum: schema.exclusiveMaximum * 100 } : {}),
+//     ...(typeof schema.exclusiveMinimum == 'number' ? { exclusiveMinimum: schema.exclusiveMinimum * 100 } : {}),
+//     ...(typeof schema.multipleOf == 'number' ? { multipleOf: schema.multipleOf * 100 } : {})
+// }
+
 export function PercentField(props: TextFieldProps): React.ReactElement {
     const classes = useStyles();
     return (

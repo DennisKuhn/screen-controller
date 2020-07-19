@@ -11,19 +11,19 @@ let root: Root | undefined;
 const update = (): void => {
     if (!root) throw new Error(`${callerAndfName()} no root`);
 
-    root.mainCpuUsage = process.getCPUUsage().percentCPUUsage / 100;
+    root.mainPerformance.timePerSecond = process.getCPUUsage().percentCPUUsage / 100;
 };
 
 const updateInterval = (): void => {
     if (!root) throw new Error(`${callerAndfName()} no root`);
 
-    console.debug(`${callerAndfName()} setInterval=${root.mainPerformanceInterval} ${interval !== undefined ? 'clearInterval(' + interval + ')' : ''}`);
+    console.debug(`${callerAndfName()} setInterval=${root.performanceSettings.updateInterval} ${interval !== undefined ? 'clearInterval(' + interval + ')' : ''}`);
     if (interval !== undefined) {
         clearInterval(interval);
     }
     interval = setInterval(
         update,
-        root.mainPerformanceInterval
+        root.performanceSettings.updateInterval
     );
 };
 

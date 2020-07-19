@@ -272,6 +272,41 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
     protected onItemConnected: ((item: SetupBase) => void) | undefined;
 
+    private connectToParentMap(item: SetupBase): void {
+        const parentProspect = item.parent;
+
+        if (parentProspect) {
+            const parentProperty = parentProspect[item.parentProperty];
+
+            if (parentProperty instanceof ObservableSetupBaseMap) {
+                console.log(`${callerAndfName()} connect ${item.id}/${item.className} in ${parentProspect.id}/${parentProspect.className}.${item.parentProperty}`);
+                const existing = (parentProperty as ObservableSetupBaseMap<SetupBase>).get(item.id);
+                
+                switch (existing) {
+                    case null:
+                        console.debug(
+                            `${callerAndfName()} connect null/unloaded ${item.id}/${item.className} in ${parentProspect.id}/${parentProspect.className}.${item.parentProperty}`);
+                        parentProperty.set(item.id, item);
+                        break;
+                    case undefined:
+                        console.warn(`${callerAndfName()} connect new ${item.id}/${item.className} in ${parentProspect.id}/${parentProspect.className}.${item.parentProperty}`);
+                        parentProperty.set(item.id, item);
+                        break;
+                    default:
+                        if (existing.id === item.id) {
+                            // console.debug(`${callerAndfName()} connect skip existing ${item.id}/${item.className} ` +
+                            //     `in ${parentProspect.id}/${parentProspect.className}.${item.parentProperty}`);
+                        } else {
+                            console.error(`${callerAndfName()} connect replace ${existing?.id}/${existing?.className} with ${item.id}/${item.className} ` +
+                                `in ${parentProspect.id}/${parentProspect.className}.${item.parentProperty}`);
+                            parentProperty.set(item.id, item);
+                        }
+                        break;
+                }
+            }
+        }
+    }
+
     protected connectPersistPropagate(args: ConnectItemArgs): void {
         const { item } = args;
 
@@ -300,7 +335,7 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             // console.log( `${callerAndfName()}( ${item.className}[${item.id}]` );
 
             this.configs.set(item.id, item);
-
+            this.connectToParentMap(item);
             // intercept(
             //     item,
             //     onObjectChange

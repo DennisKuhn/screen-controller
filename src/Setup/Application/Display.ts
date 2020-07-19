@@ -41,32 +41,6 @@ export class Display extends SetupBase {
         this.browsers = this.createMap<Browser>(source['browsers'], 'browsers');
     }
 
-    addBrowser = (): void => {
-        const newBrowser = Browser.create(
-            this.id,
-            'browsers',
-            {
-                x: 0,
-                y: 0,
-                height: 1,
-                width: 1
-            }
-        );
-        this.browsers.set(
-            newBrowser.id,
-            newBrowser
-        );
-    }
-
-    deleteChild(id: SetupItemId): void {
-        console.log(`${this.constructor.name}[${this.id}].deleteChild(${id})`);
-
-        if (!this.browsers.has(id))
-            throw new Error(`${this.constructor.name}[${this.id}].deleteChild(${id}) not found in [${Array.from(this.browsers.keys()).join(', ')}]`);
-        
-        this.browsers.delete(id);
-    }
-
 
     static createNew(displayId: SetupItemId, parentId: SetupItemId, parentProperty: PropertyKey): Display {
         return new Display(
@@ -78,7 +52,7 @@ export class Display extends SetupBase {
     }
 
     static register(): void {
-        SetupBase.register(Display, Display.schema, {});
+        SetupBase.register(Display, Display.schema);
     }
 }
 

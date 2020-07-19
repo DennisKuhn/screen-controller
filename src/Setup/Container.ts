@@ -37,9 +37,9 @@ class ObservableArrayMap<K, V> extends ObservableMap<K, V> {
     }
 }
 
-export class ObservableSetupBaseMap<V extends SetupBase> extends ObservableArrayMap<SetupItemId, V | null> {
+export class ObservableSetupBaseMap<V extends SetupBase = SetupBase> extends ObservableArrayMap<SetupItemId, V | null> {
 }
 
-export type SetupBaseInterfaceDictionary<V extends SetupBaseInterface> = Dictionary<V | null>;
+export type SetupBaseInterfaceDictionary<V extends SetupBaseInterface = SetupBaseInterface> = Dictionary<V | null>;
 
 export type ObservableArray<T> = IObservableArray<T>;

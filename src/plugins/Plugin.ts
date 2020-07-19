@@ -5,68 +5,15 @@ import { Plugin as PluginSetup } from '../Setup/Application/Plugin';
 import { Screen } from '../Setup/Application/Screen';
 import controller from '../Setup/Controller/Factory';
 import { SetupBase } from '../Setup/SetupBase';
-// import FPSMeter, { FPSMeterOptions } from 'fpsmeter';
-import { SetupItemId } from '../Setup/SetupInterface';
 import { callerAndfName } from '../utils/debugging';
 import { CanvasRegistration, HtmlRegistration, PlainRegistration, Plugin as PluginInterface, Registration, RenderPlugin } from './PluginInterface';
-
-interface FPSMeterOptions {
-    interval?: number;         // Update interval in milliseconds.
-    smoothing?: number;        // Spike smoothing strength. 1 means no smoothing.
-    monitorInterval: number; // Interval to update monitorFps and monitorUsage: 1000
-    show?: string;            // Whether to show 'fps', or 'ms' = frame duration in milliseconds.
-    toggleOn?: string;        // Toggle between show 'fps' and 'ms' on this event.
-    decimals?: number;        // Number of decimals in FPS number. 1 = 59.9, 2 = 59.94, ...
-    maxFps?: number;        // Max expected FPS value.
-    threshold?: number;        // Minimal tick reporting interval in milliseconds.
-    label?: string;         // Label to distinguish several fps meter
-    position?: string;        // Meter position.
-    zIndex?: number;        // Meter Z index.
-    left?: string;            // Meter left offset.
-    top?: string;            // Meter top offset.
-    right?: string;            // Meter right offset.
-    bottom?: string;        // Meter bottom offset.
-    margin?: string;        // Meter margin. Helps with centering the counter when left: 50%;
-
-    theme?: string;            // Meter theme. Build in: 'dark', 'light', 'transparent', 'colorful'.
-    heat?: number;            // Allow themes to use coloring by FPS heat. 0 FPS = red, maxFps = green.
-
-    graph?: number;            // Whether to show history graph.
-    history?: number;        // How many history states to show in a graph.
-}
-
-declare class FPSMeter {
-    constructor(anchor?: HTMLElement, options?: FPSMeterOptions);
-    public options: FPSMeterOptions;
-    public tick(): void;
-    public skip(): void;
-    public tickStart(): void;
-    public render(): void;
-    public pause(): FPSMeter;
-    public resume(): FPSMeter;
-    public isPaused: number;
-    public usage: number;
-    public duration: number;
-    public fps: number;
-    public monitorUsage: number;
-    public monitorFps: number;
-    public monitorSkipped: number;
-    public set(name: string, value: any): FPSMeter;
-    public showDuration(): FPSMeter;
-    public showFps(): FPSMeter;
-    public toggle(): FPSMeter;
-    public hide(): FPSMeter;
-    public show(): FPSMeter;
-    public destroy(): void;
-}
-
+import Monitor from '../Performance/Monitor';
 
 /**
  * Wrapper for plugin instance.
  */
 export class Plugin {
 
-    private fpsMeter?: FPSMeter;
     private plugin?: PluginInterface;
 
     private render?: (screen: Screen, gradient?: CanvasGradient | string) => void;
@@ -89,7 +36,6 @@ export class Plugin {
     private screen?: Screen;
 
     private interval?: NodeJS.Timeout;
-    private static browserMeters: { [key: string]: SetupItemId[] } = {};
 
     createElement = (): void => {
 
@@ -157,25 +103,6 @@ export class Plugin {
             controller.getSetup(Screen.name, 0)
                 .then(setup => {
                     this.screen = setup as Screen;
-
-                    if (!(this.setup.parentId in Plugin.browserMeters)) {
-                        Plugin.browserMeters[this.setup.parentId] = new Array<string>();
-                    }
-                    const position = Plugin.browserMeters[this.setup.parentId].push(this.setup.id) - 1;
-
-                    const options: FPSMeterOptions = {
-                        label: this.setup.name,
-                        interval: 5000,
-                        smoothing: 30,
-                        heat: 1,
-                        graph: 1,
-                        maxFps: this.screen.fps,
-                        left: (position * (5 + 119)) + 'px',
-                        theme: 'transparent',
-                        monitorInterval: 5000
-                    };
-                    this.fpsMeter = new FPSMeter(this.wrapper, options);
-                    // this.fpsMeter.pause();
                     this.startRender();
                 });
         }
@@ -287,17 +214,8 @@ export class Plugin {
         if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
 
         if (this.rendering === true) {
-            this.continuesSkipped += 1;
-            this.fpsMeter != undefined && this.fpsMeter.skip();
-            this.setup.continuesSkipped = this.continuesSkipped;
+            this.monitor.fail();
         } else {
-            if (this.continuesSkipped > 1)  {
-                console.warn(`${callerAndfName()}[${this.setup.id}]: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} `);                
-                this.setup.continuesSkipped = this.continuesSkipped = 0;
-            } if (this.continuesSkipped > 0) {
-                console.debug(`${callerAndfName()}[${this.setup.id}]: continuesSkipped=${this.continuesSkipped} fps=${this.screen.fps} `);
-                this.setup.continuesSkipped = this.continuesSkipped = 0;
-            }
             this.rendering = true;
 
             this.requestedAnimationFrame = requestAnimationFrame(this.renderNow);
@@ -311,7 +229,7 @@ export class Plugin {
 
     private renderNow = (/*time: number*/): void => {
         // console.debug(`${callerAndfName()}[${this.setup.id}] renderNow start=${this.start}`);
-        this.fpsMeter != undefined && this.fpsMeter.tickStart();
+        this.monitor.startTick();
         try {
             if (this.screen == undefined) throw new Error(`${callerAndfName()}: this.screen is undefined`);
             if (this.render == undefined) throw new Error(`${callerAndfName()}: this.render is undefined`);
@@ -324,31 +242,9 @@ export class Plugin {
             } else if (this.div) {
                 this.render(this.screen);
             }
-
-            this.rendering = false;
         } finally {
-            if (this.fpsMeter != undefined) {
-                this.fpsMeter.tick();
-                if (this.setup.showFpsMeter) {
-                    if (this.fpsMeter.isPaused == 1) {
-                        this.fpsMeter.show();
-                    }
-                    this.fpsMeter.render();
-                } else if (this.fpsMeter.isPaused == 0) {
-                    this.fpsMeter.hide();
-                }
-                if (this.lastUsage != this.fpsMeter.monitorUsage) {
-                    this.setup.cpuUsage = this.lastUsage = this.fpsMeter.monitorUsage;
-                }
-                if (this.lastFps != this.fpsMeter.monitorFps) {
-                    this.setup.fps = this.lastFps = this.fpsMeter.monitorFps;
-                }
-                if (this.lastSkipped != this.fpsMeter.monitorSkipped) {
-                    this.setup.skipped = this.lastSkipped = this.fpsMeter.monitorSkipped;
-                }
-            } else {
-                console.error(`${callerAndfName()}[${this.setup.id}] no this.fpsMeter`);
-            }
+            this.rendering = false;
+            this.monitor.tick();
         }
     }
 
@@ -409,7 +305,10 @@ export class Plugin {
     private renderAutorunDisposers: IReactionDisposer[] = [];
     private setBoundsDisposer: IReactionDisposer | undefined;
 
+    private monitor: Monitor;
+
     constructor(protected setup: PluginSetup, protected registration: Registration) {
+        this.monitor = new Monitor(setup.performance);        
         this.createElement();
         this.createPlugin();
     }
@@ -464,9 +363,6 @@ export class Plugin {
         this.setBoundsDisposer &&
             this.setBoundsDisposer();
         this.setBoundsDisposer = undefined;
-
-        this.fpsMeter && this.fpsMeter.destroy();
-        this.fpsMeter = undefined;
 
         this.wrapper &&
             window.document.body.removeChild(this.wrapper);

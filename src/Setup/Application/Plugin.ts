@@ -5,11 +5,11 @@ import { JSONSchema7 } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
 import { create } from '../SetupFactory';
 import { extendObservable, observable } from 'mobx';
-import { UiSchema } from '@rjsf/core';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
 import { setOptionals } from '../JsonSchemaTools';
 import {  } from '../../utils/debugging';
 import { asScSchema7 } from '../ScSchema7';
+import Performance from './Performance';
 
 /**
  * Template for plugin setup. Registered under plugin-className
@@ -17,11 +17,7 @@ import { asScSchema7 } from '../ScSchema7';
 export class Plugin extends SetupBase implements PluginInterface {
     @observable relativeBounds: RelativeRectangle;
     @observable scaledBounds?: Rectangle;
-    @observable showFpsMeter: boolean;
-    @observable fps?: number;
-    @observable cpuUsage?: number;
-    @observable continuesSkipped?: number;
-    @observable skipped?: number;
+    @observable performance: Performance;
 
     private static readonly schema: JSONSchema7 = {
         $id: Plugin.name,
@@ -33,44 +29,23 @@ export class Plugin extends SetupBase implements PluginInterface {
                 type: 'object',
                 properties: {
                     relativeBounds: { $ref: RelativeRectangle.name },
-                    scaledBounds: {allOf: [{ $ref: Rectangle.name }, asScSchema7({scHidden: true })]},
-                    showFpsMeter: { type: 'boolean', default: true },
-                    fps: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
-                    skipped: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
-                    cpuUsage: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
-                    continuesSkipped: asScSchema7({ type: 'number', scHidden: true, scVolatile: true }),
+                    scaledBounds: { allOf: [{ $ref: Rectangle.name }, asScSchema7({ scHidden: true })] },
+                    performance: { $ref: Performance.name },
                 },
-                required: ['relativeBounds', 'showFpsMeter' ]
+                required: ['relativeBounds', 'performance' ]
             }
         ]
     }
-
-    public static readonly uiSchema: UiSchema = {
-        scaledBounds: { 'ui:widget': 'hidden' },
-        fps: { 'ui:readonly': true },
-        cpuUsage: { 'ui:readonly': true },
-        continuesSkipped: { 'ui:widget': 'hidden' },
-        skipped: { 'ui:readonly': true }
-    };
 
     constructor(setup: SetupBaseInterface) {        
         super(setup);
         const source = setup as PluginInterface;
 
         this.relativeBounds = new RelativeRectangle(source.relativeBounds);
-        this.showFpsMeter = source.showFpsMeter;
+        this.performance = new Performance(source.performance);
 
         if (source.scaledBounds) {
             this.scaledBounds = new Rectangle(source.scaledBounds);
-        }
-        if (source.continuesSkipped) {
-            this.continuesSkipped = source.continuesSkipped;
-        }
-        if (source.cpuUsage) {
-            this.cpuUsage = source.cpuUsage;
-        }
-        if (source.fps) {
-            this.fps = source.fps;
         }
         this.init(setup);
     }
@@ -218,7 +193,7 @@ export class Plugin extends SetupBase implements PluginInterface {
             console.warn(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}` /* , schema */);
         //throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}`);
 
-        SetupBase.register(Plugin, schema, Plugin.uiSchema);
+        SetupBase.register(Plugin, schema);
 
         Plugin.pluginSchemaIds.includes(schema.$id) || Plugin.pluginSchemaIds.push(schema.$id);
 
@@ -274,7 +249,7 @@ export class Plugin extends SetupBase implements PluginInterface {
     }
 
     static register(): void {
-        SetupBase.addSchema(Plugin.schema, Plugin.uiSchema);
+        SetupBase.addSchema(Plugin.schema);
 
         if (process.type == 'renderer') {
             Plugin.loadAllSchemas();

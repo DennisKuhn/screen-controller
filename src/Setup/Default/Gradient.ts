@@ -2,7 +2,6 @@ import { SetupBase } from '../SetupBase';
 import { SetupBaseInterface } from '../SetupInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
-import { UiSchema } from '@rjsf/core';
 import { Gradient as GradientInterface } from './GradientInterface';
 import { ObservableArray } from '../Container';
 import { asScSchema7 } from '../ScSchema7';
@@ -34,12 +33,6 @@ export class Gradient extends SetupBase implements GradientInterface {
         ]
     }
 
-    public static readonly uiSchema: UiSchema = {
-        ...SetupBase.uiSchema,
-        name: { 'ui:widget': 'hidden' },
-        colors: { items: { 'ui:widget': 'color' }}
-    };
-
     @observable type: 'Solid' | 'Circular' | 'Horizontal' | 'Vertical';
     @observable colors: ObservableArray<string>;
 
@@ -52,7 +45,7 @@ export class Gradient extends SetupBase implements GradientInterface {
 
 
     static register(): void {
-        SetupBase.register(Gradient, Gradient.schema, Gradient.uiSchema);
+        SetupBase.register(Gradient, Gradient.schema);
     }
 }
 

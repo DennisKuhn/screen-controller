@@ -6,7 +6,6 @@ import { ObservableSetupBaseMap } from '../Container';
 import { JSONSchema7 } from 'json-schema';
 import { Gradient } from '../Default/Gradient';
 import { observable } from 'mobx';
-import { UiSchema } from '@rjsf/core';
 import { create } from '../SetupFactory';
 import { Time } from '../Default/Time';
 import { asScSchema7 } from '../ScSchema7';
@@ -46,11 +45,6 @@ export class Screen extends SetupBase {
                 required: ['displays', 'fps', 'rotateColors', 'startGradient' ]
             }
         ]
-    };
-
-    public static readonly uiSchema: UiSchema = {
-        ...SetupBase.uiSchema,
-        activeGradient: { 'ui:widget': 'hidden' }
     };
 
     displays: ObservableSetupBaseMap<Display>;
@@ -108,7 +102,7 @@ export class Screen extends SetupBase {
         );
 
     static register(): void {
-        SetupBase.register(Screen, Screen.schema, Screen.uiSchema);
+        SetupBase.register(Screen, Screen.schema);
     }
 }
 

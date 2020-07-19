@@ -3,6 +3,9 @@ import { SetupBaseInterface } from '../SetupInterface';
 import { Screen } from './Screen';
 import { observable } from 'mobx';
 import { asScSchema7, ScSchema7 } from '../ScSchema7';
+import { PerformanceSettings } from './PerformanceSettings';
+import Performance from './Performance';
+import { ObservableSetupBaseMap } from '../Container';
 
 export class Root extends SetupBase {
     static schema: ScSchema7 = {
@@ -19,36 +22,51 @@ export class Root extends SetupBase {
                     className: { const: Root.name },
                     parentId: { const: Root.name },
                     screen: { $ref: Screen.name },
-                    mainPerformanceInterval: { type: 'number', default: 1000 },
-                    mainCpuUsage: asScSchema7({ type: 'number', scVolatile: true, scViewOnly: true }),
+                    performanceSettings: { $ref: PerformanceSettings.name },
+                    mainPerformance: { $ref: Performance.name },
                     mainPid: asScSchema7({ type: 'number', scViewOnly: true }),
+                    performanceMonitors: asScSchema7( {
+                        $id: Screen.name + '.displays',
+                        type: 'object',
+                        scViewOnly: true,
+                        additionalProperties: {
+                            oneOf: [
+                                { $ref: Performance.name },
+                                { type: 'null' }
+                            ]
+                        }
+                    }),
                 },
-                required: ['screen', 'mainPerformanceInterval']
+                required: ['screen', 'mainPerformance', 'performanceMonitors', 'performanceSettings']
             }
         ]
     };
 
     screen: Screen;
-    @observable mainPerformanceInterval: number;
-    @observable mainCpuUsage?: number;
+    mainPerformance: Performance;
+    performanceSettings: PerformanceSettings;
+    performanceMonitors: ObservableSetupBaseMap<Performance>;
     @observable mainPid?: number;
 
     constructor(source: SetupBaseInterface) {
         super(source);
-        this.mainPerformanceInterval = source['mainPerformanceInterval'];
+        this.mainPerformance = new Performance(source['mainPerformance']);
+        this.performanceSettings = new PerformanceSettings(source['performanceSettings']);
         this.screen = new Screen(source['screen']);
+        this.performanceMonitors = super.createMap(source['performanceMonitors'], 'performanceMonitors');
     }
 
     static createNewBlank = (): Root => new Root(
         {
             ...SetupBase.createNewInterface(Root.name, Root.name, 'parentId', Root.name),
             screen: Screen.newInterface(Root.name, 'screen'),
-            mainPerformanceInterval: 1000
+            mainPerformance: Performance.newInterface(Root.name, 'mainPerformance', 'mainPerformance'),
+            performanceSettings: PerformanceSettings.newInterface(Root.name, 'performanceSettings', PerformanceSettings.name),
         } as SetupBaseInterface
     );
 
     static register(): void {
-        SetupBase.register(Root, Root.schema, {});
+        SetupBase.register(Root, Root.schema);
     }
 }
 

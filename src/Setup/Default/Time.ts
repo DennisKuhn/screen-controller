@@ -3,7 +3,6 @@ import { SetupBaseInterface } from '../SetupInterface';
 import { Time as TimeInterface } from './TimeInterface';
 import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
-import { UiSchema } from '@rjsf/core';
 import { asScSchema7 } from '../ScSchema7';
 
 export enum SunPositions {
@@ -55,7 +54,7 @@ export class Time extends SetupBase implements TimeInterface {
                     minute: asScSchema7({ type: 'number', scViewOnly: true }),
                     hour12: asScSchema7({ type: 'number', scViewOnly: true }),
                     hour24: asScSchema7({ type: 'number', scViewOnly: true }),
-                    isAm: { type: 'boolean' },
+                    isAm: asScSchema7({ type: 'boolean', scViewOnly: true }),
                     dayOfTheWeek: asScSchema7({ type: 'number', scViewOnly: true }),
                     dayOfTheMonth: asScSchema7({ type: 'number', scViewOnly: true }),
                     month: asScSchema7({ type: 'number', scViewOnly: true }),
@@ -67,24 +66,7 @@ export class Time extends SetupBase implements TimeInterface {
             }
         ]
     }
-
-    public static readonly uiSchema: UiSchema = {
-        ...SetupBase.uiSchema,
-        name: { 'ui:widget': 'hidden' },
-        local: { 'ui:readonly': true },
-        second: { 'ui:readonly': true },
-        minute: { 'ui:readonly': true },
-        hour12: { 'ui:readonly': true },
-        hour24: { 'ui:readonly': true },
-        isAm: { 'ui:readonly': true },
-        dayOfTheWeek: { 'ui:readonly': true },
-        dayOfTheMonth: { 'ui:readonly': true },
-        month: { 'ui:readonly': true },
-        yearShort: { 'ui:readonly': true },
-        yearFull: { 'ui:readonly': true },
-        sunPosition: { 'ui:readonly': true }
-    };
-
+    
     @observable local: number;
     @observable second: number;
     @observable minute: number;
@@ -117,7 +99,7 @@ export class Time extends SetupBase implements TimeInterface {
 
 
     static register(): void {
-        SetupBase.register(Time, Time.schema, Time.uiSchema);
+        SetupBase.register(Time, Time.schema);
     }
 }
 

@@ -1,7 +1,4 @@
-import { UiSchema } from '@rjsf/core';
-import { JSONSchema7 } from 'json-schema';
 import { observable } from 'mobx';
-import { callerAndfName } from '../../utils/debugging';
 import { ObservableSetupBaseMap } from '../Container';
 import { Rectangle } from '../Default/Rectangle';
 import { SimpleRectangle } from '../Default/RectangleInterface';
@@ -11,6 +8,7 @@ import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface'
 import { Browser as BrowserInterface } from './BrowserInterface';
 import { Plugin } from './Plugin';
 import { asScSchema7, ScSchema7 } from '../ScSchema7';
+import Performance from './Performance';
 
 export class Browser extends SetupBase {
 
@@ -38,8 +36,8 @@ export class Browser extends SetupBase {
                             asScSchema7({ scHidden: true })
                         ]
                     },
-                    performanceInterval: { type: 'number', default: 1000 },
-                    cpuUsage: asScSchema7({ type: 'number', scViewOnly: true, scVolatile: true }),
+                    performance: { $ref: Performance.name },
+
                     pid: asScSchema7({ type: 'number', scViewOnly: true }),
                     plugins: {
                         $id: Browser.name + '.plugins',
@@ -52,24 +50,16 @@ export class Browser extends SetupBase {
                         }
                     }
                 },
-                required: ['relative', 'plugins', 'performanceInterval']
+                required: ['relative', 'plugins', 'performance']
             }
         ]
-    };
-
-    public static readonly uiSchema: UiSchema = {
-        scaled: { 'ui:widget': 'hidden' },
-        device: { 'ui:widget': 'hidden' },
-        pid: { 'ui:readonly': true },
-        cpuUsage: { 'ui:readonly': true }
     };
 
 
     @observable relative: RelativeRectangle;
     @observable scaled?: Rectangle;
     @observable device?: Rectangle;
-    @observable performanceInterval: number;
-    @observable cpuUsage?: number;
+    @observable performance: Performance;
     @observable pid?: number;
 
     plugins: ObservableSetupBaseMap<Plugin>;
@@ -78,9 +68,10 @@ export class Browser extends SetupBase {
         super(source);
         const setup = source as BrowserInterface;
         
-        this.performanceInterval = setup.performanceInterval;        
+        this.performance = new Performance(setup.performance);
 
-        this.relative = new RelativeRectangle(source['relative']);
+        this.relative = new RelativeRectangle(setup.relative);
+
         if (setup.scaled !== undefined) {
             this.scaled = new Rectangle(setup.scaled);
         }
@@ -89,9 +80,6 @@ export class Browser extends SetupBase {
         }
         if (setup.pid !== undefined) {
             this.pid = setup.pid;
-        }
-        if (setup.cpuUsage !== undefined) {
-            this.cpuUsage = setup.cpuUsage;
         }
         this.plugins = this.createMap<Plugin>(setup.plugins, 'plugins');
     }
@@ -110,27 +98,8 @@ export class Browser extends SetupBase {
     }
 
     static register(): void {
-        SetupBase.register(Browser, Browser.schema, Browser.uiSchema);
+        SetupBase.register(Browser, Browser.schema);
     }
-
-    addPlugin = (schema: JSONSchema7 ): void => { 
-        const plugin = Plugin.create(this.id, 'plugins', schema);
-
-        this.plugins.set(
-            plugin.id,
-            plugin
-        );
-    }
-
-    deleteChild(id: SetupItemId): void {
-        console.log(`${this.constructor.name}[${this.id}].deleteChild(${id})`);
-
-        if (!this.plugins.has(id))
-            throw new Error(`${callerAndfName()}(${id}) not found in [${Array.from(this.plugins.keys()).join(', ')}]`);
-
-        this.plugins.delete(id);
-    }
-
 }
 
 Browser.register();

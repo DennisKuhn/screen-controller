@@ -35,12 +35,12 @@ const DisplayCard = observer((props: Props): JSX.Element => {
     const [open, setOpen] = useState(false);
 
     const cpuUsage = (display.browsers
-        .map(browser => browser?.cpuUsage ?? 0)
-        .reduce((result, usage) => result + usage) * 100);
+        .map(browser => browser?.performance.timePerSecond ?? 0)
+        .reduce((result, usage) => result + usage, 0) * 100);
 
     const plugins = display.browsers
         .map(browser => browser?.plugins.size ?? 0)
-        .reduce((result, size) => result + size);
+        .reduce((result, size) => result + size, 0);
 
     const loadedPlugins = plugins > 0 && display.browsers
         .map(browser => browser?.plugins)

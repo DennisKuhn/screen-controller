@@ -1,5 +1,5 @@
 import Snackbar from '../../components/Snackbar/Snackbar';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, EffectCallback } from 'react';
 import React from 'react';
 import { AddAlert } from '@material-ui/icons';
 import { ErrorObject } from 'ajv';
@@ -12,25 +12,33 @@ const ErrorNotification = ({ item }: { item: SetupBase }): JSX.Element => {
 
     const close = useCallback((): void => setErrors(undefined), []);
 
-    const handleErrors = (item, errors: ErrorObject[]): void => {
-        console.log(`${callerAndfName()}(${item.id}) error`, {item, errors});
-        setErrors(errors);
-        setTimeout(close, 10000);
+    const closeSoon: EffectCallback = () => {
+        console.log(`${callerAndfName()}(${item.id}) closeSoon ${errors === undefined}`);
+        if (errors === undefined)
+            return undefined;
+        
+        const timeout = setTimeout(close, 10000);
+
+        return ((): void => clearTimeout(timeout));
     };
 
-    useEffect(
-        () => {
-            console.log(`${callerAndfName()} connect`);
-            item.on('error', handleErrors);
+    const handleErrors = (item, errors: ErrorObject[]): void => {
+        console.log(`${callerAndfName()}(${item.id}) error`, { item, errors });        
+        setErrors(errors);
+    };
 
-            return ((): void => {
-                console.log(`${callerAndfName()} disconnect`);
-                item.removeListener('error', handleErrors);
-            });
-        },
-        []
-    );
+    const connectEvent: EffectCallback = () => {
+        console.log(`${callerAndfName()} connect`);
+        item.on('error', handleErrors);
 
+        return ((): void => {
+            console.log(`${callerAndfName()} disconnect`);
+            item.removeListener('error', handleErrors);
+        });
+    };
+
+    useEffect( connectEvent, [] );
+    useEffect( closeSoon, [errors]);        
     
     return (
         <Snackbar

@@ -101,7 +101,8 @@ const BrowserTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
     if (!((typeof browser == 'object') && (browser instanceof Browser)))
         throw new Error(`${callerAndfName()} typeof value=${typeof browser} must be object/Browser`);
 
-    const getDetails = (): string => browser.cpuUsage ? (browser.cpuUsage * 100).toFixed(browser.cpuUsage < 10 ? 1 : 0) + '%CPU' : '';
+    const getDetails = (): string =>
+        browser.performance.timePerSecond ? (browser.performance.timePerSecond * 100).toFixed(browser.performance.timePerSecond < 10 ? 1 : 0) + '%CPU' : '';
 
     return (
         <ExpansionItem title={props.label} getDetails={getDetails}>
@@ -117,9 +118,9 @@ const PluginTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
         throw new Error(`${callerAndfName()} typeof value=${typeof plugin} must be object/Plugin`);
 
     const getDetails = (): string => {
-        const cpuUsage = plugin.cpuUsage ? plugin.cpuUsage * 100 : undefined;
+        const cpuUsage = plugin.performance.timePerSecond ? plugin.performance.timePerSecond * 100 : undefined;
         const cpuUsageText = cpuUsage ? cpuUsage.toFixed(cpuUsage < 10 ? 1 : 0) + '%CPU' : '';
-        const fps = plugin.fps;
+        const fps = plugin.performance.ticksPerSecond;
         const fpsText = fps ? fps.toFixed(0) + ' fps' : '';
         return cpuUsageText + (cpuUsageText.length && fpsText.length ? ' ' : '') + fpsText;
     };

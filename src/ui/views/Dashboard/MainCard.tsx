@@ -1,7 +1,4 @@
-import {
-    makeStyles,
-    Typography
-} from '@material-ui/core';
+import { makeStyles } from '@material-ui/core';
 import { SettingsApplications } from '@material-ui/icons';
 import { observer } from 'mobx-react-lite';
 import React, { useState, useEffect } from 'react';
@@ -28,7 +25,7 @@ const MainCard = observer((props: Props): JSX.Element => {
     const { root } = props;
     const classes = useCardStyles();
 
-    const cpuUsage = getCpuUsage(root.mainCpuUsage);
+    const cpuUsage = getCpuUsage(root.mainPerformance.timePerSecond);
     const cpuText = getCpuText(cpuUsage);
     const cpuClass = classes[getCpuClass(cpuUsage)];
 

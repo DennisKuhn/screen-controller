@@ -27,7 +27,7 @@ const useStyles = makeStyles((/*theme: Theme*/) => ({
 const DisplaySummary = ({ display, setOpen, open, buttonSize }: DisplaySummaryProps): JSX.Element => {
     const plugins = display.browsers
         .map(browser => browser?.plugins.size ?? 0)
-        .reduce((result, size) => result + size);
+        .reduce((result, size) => result + size, 0);
 
     const classes = useStyles();
 

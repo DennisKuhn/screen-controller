@@ -9,6 +9,8 @@ import { callerAndfName } from '../utils/debugging';
 import { Plugin } from './Plugin';
 import { Registration } from './PluginInterface';
 import { setInterval, clearInterval } from 'timers';
+import controller from '../Setup/Controller/Factory';
+import { PerformanceSettings } from '../Setup/Application/PerformanceSettings';
 
 const pluginDir = 'D:\\Dennis\\Projects\\wallpaper-plugins\\dist\\src\\';
 
@@ -111,18 +113,23 @@ export class Manager {
 
     private performanceInterval;
     private updatePerformance = (): void => {
-        this.browser.cpuUsage = process.getCPUUsage().percentCPUUsage / 100;
+        this.browser.performance.timePerSecond = process.getCPUUsage().percentCPUUsage / 100;
     }
 
-    private setPerformanceInterval = (): void => {
+    private setPerformanceInterval = (settings: PerformanceSettings): void => {
         this.performanceInterval && clearInterval(this.performanceInterval);
 
-        this.performanceInterval = setInterval(this.updatePerformance, this.browser.performanceInterval);
+        this.performanceInterval = setInterval(this.updatePerformance, settings.updateInterval);
     }
 
     constructor(private browser: Browser) {
         browser.pid = process.pid;
-        autorun(this.setPerformanceInterval);
+
+        controller.getSetup(PerformanceSettings.name, 0)
+            .then(settings =>
+                autorun(() =>
+                    this.setPerformanceInterval(settings as PerformanceSettings))
+            );
 
         this.loadPlugins().then(() => {
             // console.log(`${this.constructor.name}[${browser.id}] loaded Plugins()`);

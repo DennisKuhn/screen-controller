@@ -30,8 +30,8 @@ const DisplayCard = (props: ObjectPropsWithChildren): JSX.Element => {
     const classes = useCardStyles();
 
     const cpuUsage = (display.browsers
-        .map(browser => browser?.cpuUsage ?? 0)
-        .reduce((result, usage) => result + usage) * 100);
+        .map(browser => browser?.performance.timePerSecond ?? 0)
+        .reduce((result, usage) => result + usage, 0) * 100);
 
     const info = electronDisplays.get(display.id);
     if (!info) throw new Error(`${callerAndfName()} can't get electron display info for ${display.id}`);

@@ -1,5 +1,5 @@
 import { IconButton, makeStyles, TableCell, TableRow, TextField, Typography } from '@material-ui/core';
-import { PausePresentation, Slideshow, Visibility, VisibilityOff } from '@material-ui/icons';
+import { PausePresentation, Slideshow, Visibility, VisibilityOff, Alarm } from '@material-ui/icons';
 import { observer } from 'mobx-react-lite';
 import React, { ChangeEvent } from 'react';
 import { Plugin } from '../../../Setup/Application/Plugin';
@@ -17,7 +17,7 @@ const useStyles = makeStyles((/*theme*/) =>
 
 const Performance = observer(({ plugin }: Props): JSX.Element => {
     const classes = useStyles();
-    const cpuUsage = getCpuUsage(plugin.cpuUsage);
+    const cpuUsage = getCpuUsage(plugin.performance.timePerSecond);
     const cpuText = getCpuText(cpuUsage);
     const cpuClass = classes[getCpuClass(cpuUsage)];
 
@@ -28,12 +28,13 @@ const Performance = observer(({ plugin }: Props): JSX.Element => {
             </TableCell>
             <TableCell>
                 <Typography>
-                    {(plugin.fps ?? 0).toFixed(1)}
+                    {(plugin.performance.ticksPerSecond ?? 0).toFixed(1)}
                 </Typography>
             </TableCell>
             <TableCell>
+                {plugin.performance.failing === true && <Alarm />}
                 <Typography>
-                    {plugin.skipped}
+                    {plugin.performance.failsPerSecond}
                 </Typography>
             </TableCell>
         </>

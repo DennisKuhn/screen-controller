@@ -38,7 +38,7 @@ export class RelativeRectangle extends Rectangle {
             RelativeRectangle.newInterface(parentId, parentProperty, source));
 
     static register(): void {
-        SetupBase.register(RelativeRectangle, RelativeRectangle.schema, Rectangle.uiSchema);
+        SetupBase.register(RelativeRectangle, RelativeRectangle.schema);
     }
 }
 

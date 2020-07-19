@@ -16,18 +16,18 @@ interface Props {
 }
 
 const BrowserPerformanceCells = observer(({ browser, addFiller }: Props): JSX.Element => {
-    const usages = browser.plugins.map(plugin => plugin?.cpuUsage);
+    const usages = browser.plugins.map(plugin => plugin?.performance.timePerSecond);
     const pluginsUsage = usages && usages.length > 0 ?
         usages.reduce((total, usage) =>
             usage === undefined ? undefined : (total ?? 0) + usage
         ) : undefined;
 
     const classes = useStyles();
-    const cpuUsage = getCpuUsage(browser.cpuUsage);
+    const cpuUsage = getCpuUsage(browser.performance.timePerSecond);
     const cpuText = getCpuText(cpuUsage);
     const cpuClass = classes[getCpuClass(cpuUsage)];
 
-    if ((pluginsUsage === undefined) || (browser.cpuUsage == undefined)) {
+    if ((pluginsUsage === undefined) || (browser.performance.timePerSecond == undefined)) {
         return (
             <Fragment>
                 <TableCell>
@@ -37,11 +37,11 @@ const BrowserPerformanceCells = observer(({ browser, addFiller }: Props): JSX.El
             </Fragment>
         );
     }
-    const pluginsCpuUsage = getCpuUsage(pluginsUsage / browser.cpuUsage);
+    const pluginsCpuUsage = getCpuUsage(pluginsUsage / browser.performance.timePerSecond);
     const pluginsCpuText = getCpuText(pluginsCpuUsage);
     // const pluginsCpuClass = classes[getCpuClass(pluginsCpuUsage)];
 
-    const otherCpuUsage = getCpuUsage((browser.cpuUsage - pluginsUsage) / browser.cpuUsage);
+    const otherCpuUsage = getCpuUsage((browser.performance.timePerSecond - pluginsUsage) / browser.performance.timePerSecond);
     const otherCpuText = getCpuText(otherCpuUsage);
     // const otherCpuClass = classes.;
 
