@@ -134,7 +134,7 @@
         "history": "^4.10.1",
         "json-schema-deref-sync": "^0.13.0",
         "json-schema-merge-allof": "^0.7.0",
-        "lodash": "^4.17.15",
+        "lodash": "^4.17.19",
         "mobx": "^5.15.4",
         "mobx-react-lite": "^2.0.6",
         "node-addon-api": "^3.0.0",
