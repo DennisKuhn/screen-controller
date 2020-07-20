@@ -1,10 +1,9 @@
 import { observable } from 'mobx';
 import { ObservableSetupBaseMap } from '../Container';
 import { Rectangle } from '../Default/Rectangle';
-import { SimpleRectangle } from '../Default/RectangleInterface';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
 import { SetupBase } from '../SetupBase';
-import { PropertyKey, SetupBaseInterface, SetupItemId } from '../SetupInterface';
+import { SetupBaseInterface } from '../SetupInterface';
 import { Browser as BrowserInterface } from './BrowserInterface';
 import { Plugin } from './Plugin';
 import { asScSchema7, ScSchema7 } from '../ScSchema7';
@@ -36,7 +35,12 @@ export class Browser extends SetupBase {
                             asScSchema7({ scHidden: true })
                         ]
                     },
-                    performance: { $ref: Performance.name },
+                    performance: {
+                        allOf: [
+                            { $ref: Performance.name },
+                            asScSchema7({ scViewOnly: true })
+                        ]
+                    },
 
                     pid: asScSchema7({ type: 'number', scViewOnly: true }),
                     plugins: {
@@ -84,18 +88,6 @@ export class Browser extends SetupBase {
         this.plugins = this.createMap<Plugin>(setup.plugins, 'plugins');
     }
 
-
-    static create(parentId: SetupItemId, parentProperty: PropertyKey, relative: SimpleRectangle): Browser {
-        const newConfig = SetupBase.createNewInterface(Browser.name, parentId, parentProperty);
-
-        return new Browser( 
-            {
-                ...newConfig,
-                plugins: {},
-                relative: RelativeRectangle.newInterface(newConfig.id, 'relative', relative)
-            } as SetupBaseInterface
-        );
-    }
 
     static register(): void {
         SetupBase.register(Browser, Browser.schema);

@@ -1,5 +1,5 @@
 import { SetupBase } from '../SetupBase';
-import { PropertyKey, SetupBaseInterface, SetupItemId, Dictionary } from '../SetupInterface';
+import { SetupBaseInterface, Dictionary } from '../SetupInterface';
 import { Rectangle } from '../Default/Rectangle';
 import { JSONSchema7 } from 'json-schema';
 import { PluginInterface } from './PluginInterface';
@@ -7,9 +7,10 @@ import { create } from '../SetupFactory';
 import { extendObservable, observable } from 'mobx';
 import { RelativeRectangle } from '../Default/RelativeRectangle';
 import { setOptionals } from '../JsonSchemaTools';
-import {  } from '../../utils/debugging';
+import { callerAndfName } from '../../utils/debugging';
 import { asScSchema7 } from '../ScSchema7';
 import Performance from './Performance';
+import { resolve } from '../JsonSchemaTools';
 
 /**
  * Template for plugin setup. Registered under plugin-className
@@ -30,7 +31,12 @@ export class Plugin extends SetupBase implements PluginInterface {
                 properties: {
                     relativeBounds: { $ref: RelativeRectangle.name },
                     scaledBounds: { allOf: [{ $ref: Rectangle.name }, asScSchema7({ scHidden: true })] },
-                    performance: { $ref: Performance.name },
+                    performance: {
+                        allOf: [
+                            { $ref: Performance.name },
+                            asScSchema7({ scViewOnly: true })
+                        ]
+                    },
                 },
                 required: ['relativeBounds', 'performance' ]
             }
@@ -107,30 +113,6 @@ export class Plugin extends SetupBase implements PluginInterface {
         return this;
     }
 
-    static get pluginSchemas(): JSONSchema7[] {
-        if (!SetupBase.activeSchema.definitions)
-            throw new Error('Plugin.schemas: no SetupBase.activeSchema.definitions');
-
-        const schemas = Object.entries(SetupBase.infos)
-            .filter(([className,]) => Plugin.pluginSchemaIds.includes(className))
-            .map(([, info]) => info.schema);
-
-        console.log(`Plugin.pluginSchemas [${Plugin.pluginSchemaIds.length}]`, { ...schemas });
-
-        return schemas;
-    }
-
-    static get hasPluginSchemas(): boolean {
-        if (!SetupBase.activeSchema.definitions)
-            throw new Error('Plugin.hasSchemas: no SetupBase.activeSchema.definitions');
-
-        const result = Plugin.pluginSchemaIds.length > 0;
-
-        console.log(`Plugin.hasPluginSchemas ${result}/${Plugin.pluginSchemaIds.length}`);
-
-        return result;
-    }
-
 
     static storagePrefix = 'PluginSchema-';
     static storageListKey = Plugin.storagePrefix + 'List';
@@ -163,15 +145,37 @@ export class Plugin extends SetupBase implements PluginInterface {
         if (storedSchemaKeysString) {
             try {
                 Plugin.storedSchemaKeys = JSON.parse(storedSchemaKeysString);
+                const schemas = new Array<JSONSchema7>();
 
                 for (const key of Plugin.storedSchemaKeys) {
                     const schemaString = localStorage.getItem(key);
 
                     if (schemaString) {
-                        Plugin.add(JSON.parse(schemaString));
+                        schemas.push(JSON.parse(schemaString));
                     } else {
                         console.error(`Plugin.loadAllSchemas() null for ${key}`, storedSchemaKeysString);
                     }
+                }
+                // console.log(`${callerAndfName()} add direct plugins [${schemas.length}]`);
+
+                /// First add all schema directly referencing Plugin
+                for (let i = 0; i < schemas.length; i++) {
+                    const schema = schemas[i]
+                    if (schema.allOf === undefined) throw new Error(`${callerAndfName()} no allOf in loaded plugin schema: ${JSON.stringify(schema)}`);
+
+                    if (schema.allOf.some(oneSchema => typeof oneSchema === 'object' && oneSchema.$ref === Plugin.name)) {
+                        console.log(`${callerAndfName()} add direct plugin ${schema.$id} @${i}/${schemas.length}`);
+                        Plugin.add(schema);
+                        schemas.splice(i, 1);
+                        i -= 1;
+                    }
+                }
+                // console.log(`${callerAndfName()} add indirect plugins [${schemas.length}]`);
+                for (const schema of schemas) {
+                    if (schema.allOf === undefined) throw new Error(`${callerAndfName()} no allOf in loaded plugin schema: ${JSON.stringify(schema)}`);
+
+                    console.log(`${callerAndfName()} add indirect plugin ${schema.$id}`);
+                    Plugin.add(schema);
                 }
             } catch (error) {
                 console.error(`Plugin.loadAllSchemas(): caught ${error}`, error);
@@ -185,12 +189,19 @@ export class Plugin extends SetupBase implements PluginInterface {
 
     private static pluginSchemaIds: string[] = [];
 
+    static isPluginSchema = (schema: JSONSchema7, root: JSONSchema7): boolean =>
+        schema.allOf != undefined
+        && schema.allOf.some(pluginRefProspect =>
+            (typeof pluginRefProspect == 'object')
+            && ((pluginRefProspect.$ref == Plugin.name)
+                || Plugin.isPluginSchema(resolve(pluginRefProspect, root), root))
+        );
+
     static add(schema: JSONSchema7): void {
         if (!schema.$id) throw new Error(`Plugin.add() no $id: ${JSON.stringify(schema)}`);
 
-        if (!schema.allOf?.some(pluginRefProspect =>
-            ((pluginRefProspect as JSONSchema7).$ref == Plugin.SCHEMA_REF_VALUE)))
-            console.warn(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}` /* , schema */);
+        if (!Plugin.isPluginSchema( schema, SetupBase.activeSchema))
+            console.error(`Plugin.addSchema(${schema.$id}) not a plugin schema`, schema);
         //throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}`);
 
         SetupBase.register(Plugin, schema);
@@ -203,50 +214,6 @@ export class Plugin extends SetupBase implements PluginInterface {
         }
     }
 
-    static create(parentId: SetupItemId, parentProperty: PropertyKey, schema: JSONSchema7): Plugin {
-
-        if (!schema.$id) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.$id`);
-        if (!schema.allOf) throw new Error(`Plugin.createNew(${parentId}, ${schema.$id}) no schema.allOf`);
-
-        const className = schema.$id;
-
-        const baseSetup = SetupBase.createNewInterface(className, parentId, parentProperty);
-        const defaultSetup = {};
-
-        for (const entry of schema.allOf) {
-            const subschema = entry as JSONSchema7;
-            if (subschema.properties) {
-                for (const [name, value] of Object.entries(subschema.properties)) {
-                    const propertyDescriptor = value as JSONSchema7;
-
-                    if (propertyDescriptor.default) {
-                        defaultSetup[name] = propertyDescriptor.default;
-                    }
-                }
-            }
-        }
-
-        // console.log(`Plugin.createNew(${parentId}, ${schema.$id}) defaults=`, { ...defaultSetup });
-
-        const plain: SetupBaseInterface = {
-            ...defaultSetup,
-            ...baseSetup,
-            relativeBounds: RelativeRectangle.newInterface(
-                baseSetup.id,
-                'relativeBounds',
-                {
-                    x: 0,
-                    y: 0,
-                    width: 1,
-                    height: 1
-                }
-            )
-        } as SetupBaseInterface;
-
-        // console.log(`Plugin.createNew(${parentId}, ${schema.$id})`, { ...plain });
-
-        return new Plugin(plain);
-    }
 
     static register(): void {
         SetupBase.addSchema(Plugin.schema);

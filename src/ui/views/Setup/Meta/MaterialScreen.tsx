@@ -1,4 +1,4 @@
-import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Typography } from '@material-ui/core';
+import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Typography, Collapse, Box } from '@material-ui/core';
 import { DeleteOutlined, ExpandLess, ExpandMore } from '@material-ui/icons';
 import React, { Fragment, PropsWithChildren, ReactNode, useState } from 'react';
 import { Root } from '../../../../Setup/Application/Root';
@@ -19,6 +19,7 @@ import ObjectCard from './MaterialSetup/ObjectCard';
 import OpenLocal from './MaterialSetup/OpenLocal';
 import { TextFieldHoc, SelectHoc, SwitchHoc } from '../Material/StandardHocs';
 import { ExtendedTheme } from '../../../assets/Theme';
+import { observer } from 'mobx-react-lite';
 
 const useStyles = makeStyles((theme: ExtendedTheme) => {
     return ({
@@ -65,7 +66,7 @@ const RectangleHoc = (props: LabelProps & InputProps): JSX.Element => {
         </FormControl>);
 };
 
-const ExpansionItem = ({ children, title, getDetails }: { children?: ReactNode; title: string; getDetails?: () => string }): JSX.Element => {
+const ExpansionItem = observer(({ children, title, getDetails }: { children?: ReactNode; title: string; getDetails?: () => string }): JSX.Element => {
     const [expanded, setExpanded] = useState(false);
     const classes = useStyles();
 
@@ -81,18 +82,16 @@ const ExpansionItem = ({ children, title, getDetails }: { children?: ReactNode; 
                         {getDetails ? <Typography variant="overline">{getDetails()}</Typography> : false}
                     </div>
                 </div>
-                {expanded &&
-                    <Fragment>
-                        <Divider variant="middle" />
-                        <Grid container item>
-                            {children}
-                        </Grid>
-                    </Fragment>
-                }
+                <Collapse in={expanded} timeout="auto" unmountOnExit>
+                    <Divider variant="middle" />
+                    <Grid container item>
+                        {children}
+                    </Grid>
+                </Collapse>
             </div>
         </Fragment>
     );
-};
+});
 
 /** Show label with cpu usage, GridContainer for the children */
 const BrowserTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
@@ -102,7 +101,7 @@ const BrowserTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
         throw new Error(`${callerAndfName()} typeof value=${typeof browser} must be object/Browser`);
 
     const getDetails = (): string =>
-        browser.performance.timePerSecond ? (browser.performance.timePerSecond * 100).toFixed(browser.performance.timePerSecond < 10 ? 1 : 0) + '%CPU' : '';
+        browser.performance.timePerSecond !== undefined ? (browser.performance.timePerSecond * 100).toFixed(browser.performance.timePerSecond < 10 ? 1 : 0) + '%CPU' : '';
 
     return (
         <ExpansionItem title={props.label} getDetails={getDetails}>
@@ -119,7 +118,7 @@ const PluginTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
 
     const getDetails = (): string => {
         const cpuUsage = plugin.performance.timePerSecond ? plugin.performance.timePerSecond * 100 : undefined;
-        const cpuUsageText = cpuUsage ? cpuUsage.toFixed(cpuUsage < 10 ? 1 : 0) + '%CPU' : '';
+        const cpuUsageText = cpuUsage !== undefined ? cpuUsage.toFixed(cpuUsage < 10 ? 1 : 0) + '%CPU' : '';
         const fps = plugin.performance.ticksPerSecond;
         const fpsText = fps ? fps.toFixed(0) + ' fps' : '';
         return cpuUsageText + (cpuUsageText.length && fpsText.length ? ' ' : '') + fpsText;

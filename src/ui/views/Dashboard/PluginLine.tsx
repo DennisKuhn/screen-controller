@@ -5,7 +5,8 @@ import React, { ChangeEvent } from 'react';
 import { Plugin } from '../../../Setup/Application/Plugin';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import RectangleEditor from '../../Fields/RectangleEditor';
-import { getCpuClass, getCpuText, getCpuUsage } from './Tools';
+import { getCpuClass, getCpuText, getCpuUsage, getTicksText } from './Tools';
+import { callerAndfName } from '../../../utils/debugging';
 
 interface Props {
     plugin: Plugin;
@@ -28,13 +29,13 @@ const Performance = observer(({ plugin }: Props): JSX.Element => {
             </TableCell>
             <TableCell>
                 <Typography>
-                    {(plugin.performance.ticksPerSecond ?? 0).toFixed(1)}
+                    {getTicksText(plugin.performance.ticksPerSecond)}
                 </Typography>
             </TableCell>
             <TableCell>
                 {plugin.performance.failing === true && <Alarm />}
                 <Typography>
-                    {plugin.performance.failsPerSecond}
+                    {getTicksText( plugin.performance.failsPerSecond )}
                 </Typography>
             </TableCell>
         </>

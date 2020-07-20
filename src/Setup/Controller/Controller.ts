@@ -132,7 +132,8 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
     private test(item: SetupBase, depth: number): boolean {
         if (depth != 0) {
-            for (const [/*propertyName*/, value] of Object.entries(item)) {
+            for (const propertyName of Object.keys(item.properties)) {
+                const value = item[propertyName];
                 if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                     const container = value as ObservableSetupBaseMap<SetupBase>;
                     // console.log(`ControllerImpl[${this.constructor.name}].test(${item.id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap#${container.size}`);
@@ -219,7 +220,8 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
 
         if (responseItem) {
             if (depth != 0) {
-                for (const [/*propertyName*/, value] of Object.entries(responseItem)) {
+                for (const propertyName of Object.keys(responseItem.properties)) {
+                    const value = responseItem[propertyName];
                     if (typeof value == 'object' && value instanceof ObservableSetupBaseMap) {
                         // console.log(`ControllerImpl[${this.constructor.name}].getTree(${id}, ${depth}): process ${propertyName} as ObservableSetupBaseMap`);
                         const container = value as ObservableSetupBaseMap<SetupBase>;
@@ -341,7 +343,9 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
             //     onObjectChange
             // );
 
-            for (const [propertyName, value] of Object.entries(item)) {
+            for (const propertyName of Object.keys(item.properties)) {
+                const value = item[propertyName];
+
                 if (value instanceof ObservableSetupBaseMap) {
                     // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): observe ${propertyName} as ObservableSetupBaseMap`);
                     observe(
@@ -385,7 +389,8 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
         }
 
         // Connect child objects (SetupBase) in maps and properties
-        for (const [ /*propertyName*/, value] of Object.entries(item)) {
+        for (const propertyName of Object.keys(item.properties)) {
+            const value = item[propertyName];
             if (value instanceof ObservableSetupBaseMap) {
                 // console.log(`ControllerImpl[${this.constructor.name}].connectPersistPropagate(${item.id}): connect children ${propertyName} as ObservableSetupBaseMap`);
                 const container = value as ObservableSetupBaseMap<SetupBase>;
@@ -757,14 +762,12 @@ export abstract class ControllerImpl extends EventEmitter implements Controller 
                 case 'remove':
                     // console.log(`${callerAndfName()}${getIpcArgsLog(update)} = undefined`);
                     remoteTarget[key] = undefined;
-                    // delete remoteItem[update.name];
                     break;
                 case 'delete':
                     if (!mapUpdate)
                         throw new Error(`${callerAndfName()}${getIpcArgsLog(update)} = no map: ${JSON.stringify(update)}`);
                     // console.log(`${callerAndfName()}${getIpcArgsLog(update)} = undefined`);
                     remoteTarget[key] = undefined;
-                    // delete (remoteItem[mapUpdate.map] as ObservableSetupBaseMap<SetupBase>).delete(update.name);
                     break;
                 case 'splice':
                     // console.debug(`${callerAndfName()}${getIpcArgsLog(update)} ==${remoteTarget[key]}`);

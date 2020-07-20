@@ -61,7 +61,8 @@ export class Renderer extends ControllerImpl {
 
     protected loadChildren(item: SetupBase, depth: number): void {
         if (depth != 0) {
-            for (const value of Object.values(item)) {
+            for (const propertyName of Object.keys(item.properties)) {
+                const value = item[propertyName];
                 if (value instanceof ObservableSetupBaseMap) {
                     // console.log(`${callerAndfName()}(${item.id}, ${depth}): get children in ${propertyName}`);
                     const container = value as ObservableSetupBaseMap<SetupBase>;
@@ -166,7 +167,7 @@ export class Renderer extends ControllerImpl {
     }
 
     protected readonly propagate = (update: IpcChangeArgsType): void => {
-        // console.debug(`${callerAndfName()}${getIpcArgsLog(update)}) send to main`/*, item*/);
+        // console.debug(`${callerAndfName()}${getIpcArgsLog(update)}) send to main`);
         this.ipc.send('change', update);
     }
 
@@ -196,7 +197,8 @@ export class Renderer extends ControllerImpl {
     private delete = (item: SetupBase): void => {
         console.debug(`${callerAndfName()}(${item.id})`);
         localStorage.removeItem(item.id);
-        for (const [propertyName, propertyChild] of Object.entries(item)) {
+        for (const propertyName of Object.keys(item.properties)) {
+            const propertyChild = item[propertyName];
             if (propertyChild instanceof SetupBase) {
                 console.debug(`${callerAndfName()}(${item.id}) delete child ${propertyName}==${propertyChild.id}`);
                 this.delete(propertyChild);
@@ -287,7 +289,8 @@ export class Renderer extends ControllerImpl {
             let persistedChild = false;
 
             /// Persists properties children
-            for (const [propertyName, child] of Object.entries(newSetup)) {
+            for (const propertyName of Object.keys(newSetup.properties)) {
+                const child = newSetup[propertyName];
                 if (child instanceof SetupBase) {
                     this.persist({ item: newSetup, type: 'add', name: propertyName, newValue: child });
                     persistedChild = true;
@@ -304,7 +307,8 @@ export class Renderer extends ControllerImpl {
             this.delete(toBeDeleted);
         } else if (name === '') {
             /// Persists properties children
-            for (const child of Object.values(item)) {
+            for (const propertyName of Object.keys(item.properties)) {
+                const child = item[propertyName];
                 if (child instanceof SetupBase) {
                     this.persist({ item: child, type: 'add', name: '', newValue: '' });
                 }

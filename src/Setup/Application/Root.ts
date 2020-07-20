@@ -23,7 +23,12 @@ export class Root extends SetupBase {
                     parentId: { const: Root.name },
                     screen: { $ref: Screen.name },
                     performanceSettings: { $ref: PerformanceSettings.name },
-                    mainPerformance: { $ref: Performance.name },
+                    mainPerformance: {
+                        allOf: [
+                            { $ref: Performance.name },
+                            asScSchema7({ scViewOnly: true })
+                        ]
+                    },
                     mainPid: asScSchema7({ type: 'number', scViewOnly: true }),
                     performanceMonitors: asScSchema7( {
                         $id: Screen.name + '.displays',

@@ -33,9 +33,6 @@ export class RelativeRectangle extends Rectangle {
             ...source
         });
 
-    static create = (parentId: SetupItemId, parentProperty: PropertyKey, source: SimpleRectangle): RelativeRectangle =>
-        new RelativeRectangle(
-            RelativeRectangle.newInterface(parentId, parentProperty, source));
 
     static register(): void {
         SetupBase.register(RelativeRectangle, RelativeRectangle.schema);

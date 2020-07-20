@@ -28,6 +28,7 @@ export default class Monitor {
     private lastTime: number | undefined;
 
     private disposers: Lambda[] = [];
+
     constructor(private setup: Performance) {
         controller.getSetup(PerformanceSettings.name, 0)
             .then(settings => {
@@ -40,6 +41,7 @@ export default class Monitor {
             }
             );
         if (setup.failing == true) {
+            console.log(`${callerAndfName()} => failing=false`);
             setup.failing = false;
         }
     }
@@ -100,9 +102,13 @@ export default class Monitor {
 
         if (this.continuesFailed) {
             if (this.continuesFailed > this.maxFails) {
+                console.log(`${callerAndfName()} ${this.continuesFailed} > ${this.maxFails} => failing=false`);
+                this.continuesFailed = 0;
                 this.setup.failing = false;
+            } else {
+                console.log(`${callerAndfName()} ${this.continuesFailed} <= ${this.maxFails} => failing still=${this.setup.failing}`);
+                this.continuesFailed = 0;
             }
-            this.continuesFailed = 0;
         }
     }
 
@@ -110,7 +116,10 @@ export default class Monitor {
         this.click(false);
         this.continuesFailed = (this.continuesFailed ?? 0) + 1;
         if (this.continuesFailed === (this.maxFails + 1)) {
+            console.log(`${callerAndfName()} ${this.continuesFailed} === ${this.maxFails}+1 => failing=true`);
             this.setup.failing = true;
+        } else {
+            console.log(`${callerAndfName()} ${this.continuesFailed} != ${this.maxFails}+1 => failing still=${this.setup.failing}`);
         }
     }
 

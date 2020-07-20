@@ -2,6 +2,7 @@ import { screen as electronScreen, Display as ElectronDisplay } from 'electron';
 import controller from '../Setup/Controller/Factory';
 import { Screen } from '../Setup/Application/Screen';
 import { Display } from '../Setup/Application/Display';
+import { SetupBase } from 'src/Setup/SetupBase';
 
 
 
@@ -43,7 +44,8 @@ export default class DisplaysManager {
                 // console.log(`DisplaysManager.checkDisplays: add ${displayId}`);
                 screen.displays.set(
                     displayId,
-                    Display.createNew(displayId, screen.id, 'displays' )
+                    SetupBase.createNew(Display.name, screen.id, 'displays', displayId) as Display
+                    // Display.createNew(displayId, screen.id, 'displays' )
                 );
             }
         }

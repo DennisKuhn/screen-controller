@@ -4,7 +4,6 @@ import { IArrayChange, IArraySplice, IMapDidChange, isObservableArray, isObserva
 import { callerAndfName } from '../../utils/debugging';
 import { Plugin } from '../Application/Plugin';
 import { ObservableSetupBaseMap } from '../Container';
-import { resolve } from '../JsonSchemaTools';
 import { SetupBase } from '../SetupBase';
 import { create } from '../SetupFactory';
 import { SetupItemId } from '../SetupInterface';
@@ -149,7 +148,8 @@ export class Main extends ControllerImpl {
 
         this.connectChangeListener(item, renderer);
 
-        for (const value of Object.values(item)) {
+        for (const propertyName of Object.keys(item.properties)) {
+            const value = item[propertyName];
             if (((subscription.depth == -1) || (depth < subscription.depth)) && (value instanceof ObservableSetupBaseMap)) {
                 // console.log(
                 //     `${callerAndfName()}[${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}]:` +
@@ -181,7 +181,8 @@ export class Main extends ControllerImpl {
             disposers = new Array<Lambda>();
             renderer.disposers.set(item.id, disposers);
 
-            for (const [propertyName, value] of Object.entries(item)) {
+            for (const propertyName of Object.keys(item.properties)) {
+                const value = item[propertyName];
                 if (value instanceof ObservableSetupBaseMap) {
                     // console.log(
                     //     `${callerAndfName()}[${renderer.channel.ipc.id},${subscription.itemId},${subscription.depth}]:` +
@@ -287,13 +288,6 @@ export class Main extends ControllerImpl {
         this.connectChangeListeners(item);
     }
 
-    static isPluginSchema = (schema: JSONSchema7, root: JSONSchema7): boolean =>
-        schema.allOf != undefined
-        && schema.allOf.some(pluginRefProspect =>
-            (typeof pluginRefProspect == 'object')
-            && ((pluginRefProspect.$ref == Plugin.name)
-                || Main.isPluginSchema(resolve(pluginRefProspect, root), root))
-        );
 
 
     private onInit = (e: IpcMainEvent, init: IpcInitArgs): void => {
@@ -307,7 +301,7 @@ export class Main extends ControllerImpl {
 
         Object.values(schema.definitions)
             .filter(schemaDef =>
-                Main.isPluginSchema(schemaDef as JSONSchema7, schema)
+                Plugin.isPluginSchema(schemaDef as JSONSchema7, schema)
             )
             .forEach(definition =>
                 Plugin.add(definition as JSONSchema7));

@@ -1,6 +1,6 @@
 import { Browser } from './Browser';
 import { SetupBase } from '../SetupBase';
-import { PropertyKey, SetupItemId, SetupBaseInterface } from '../SetupInterface';
+import { SetupBaseInterface } from '../SetupInterface';
 import { ObservableSetupBaseMap } from '../Container';
 import { ScSchema7 } from '../ScSchema7';
 
@@ -39,16 +39,6 @@ export class Display extends SetupBase {
         super(source);
 
         this.browsers = this.createMap<Browser>(source['browsers'], 'browsers');
-    }
-
-
-    static createNew(displayId: SetupItemId, parentId: SetupItemId, parentProperty: PropertyKey): Display {
-        return new Display(
-            {
-                ...SetupBase.createNewInterface(Display.name, parentId, parentProperty, displayId ),
-                browsers: {}
-            } as SetupBaseInterface
-        );
     }
 
     static register(): void {

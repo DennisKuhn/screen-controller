@@ -1,6 +1,6 @@
 import Ajv, { ValidateFunction, SchemaValidateFunction, ErrorObject } from 'ajv';
 import { remote } from 'electron';
-import { JSONSchema7 } from 'json-schema';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import mergeAllOf from 'json-schema-merge-allof';
 import { cloneDeep, Dictionary } from 'lodash';
 import { $mobx, isObservableArray, observable, toJS, intercept, IValueWillChange, isObservableProp } from 'mobx';
@@ -64,6 +64,11 @@ interface ClassInfo {
 interface UserSchemaValidateFunction extends Omit<SchemaValidateFunction, 'errors'> {
     errors?: Array<Partial<ErrorObject>>;
 }
+
+export interface SchemaProperties {
+    [key: string]: JSONSchema7Definition;
+}
+
 export abstract class SetupBase extends EventEmitter {
 
 
@@ -73,9 +78,6 @@ export abstract class SetupBase extends EventEmitter {
     readonly parentProperty: PropertyKey;
 
     @observable name: string;
-
-
-    private static notSerialisedProperties = ['_parent', 'parent', 'notPersisted', 'info', 'source', 'observedOptionals', 'optionalsObserver'];
 
     static readonly schemaUri = 'https://github.com/maoriora/screen-controller/schemas/SetupSchema.json#';
 
@@ -181,25 +183,6 @@ export abstract class SetupBase extends EventEmitter {
 
     private static readonly DEF_REF_PREFIX = '#/definitions/';
 
-    private static fixRefs(item: JSONSchema7): JSONSchema7 {
-
-        if (item.$ref) {
-            if (item.$ref.startsWith(SetupBase.DEF_REF_PREFIX)) {
-                // console.log(`${module.id}.fixRefs: skip ${item.$id} = ${item.$ref}`);
-            } else {
-                // console.log(`${module.id}.fixRefs: ${item.$id} ${item.$ref} => ${'#/definitions/' + item.$ref}`);
-                item.$ref = SetupBase.DEF_REF_PREFIX + item.$ref;
-            }
-        }
-        for (const child of Object.values(item)) {
-            if (child instanceof Object) {
-                SetupBase.fixRefs(child);
-            }
-        }
-
-        return item;
-    }
-
 
     private initClassInfo(source: SetupBaseInterface): ClassInfo {
         if (!(source.className in SetupBase.infos))
@@ -253,27 +236,6 @@ export abstract class SetupBase extends EventEmitter {
         }
     }
 
-    private static moveDuplicateIdsToDefinitions(schema: JSONSchema7, idsDictionary: Dictionary<JSONSchema7[]>): void {
-        for (const [id, occurances] of Object.entries(idsDictionary)) {
-            /// First occurance becomes definition
-            const definition = cloneDeep(occurances[0]);
-
-            schema.definitions = schema.definitions ?? {};
-
-            /// Set first occurance as definition
-            schema.definitions[id] = definition;
-
-            // Replace existing (duplicate) declarations
-            // by reference to definition
-            for (const occurance of occurances) {
-                // Delete existing declarations
-                Object.keys(occurance)
-                    .map(key => delete occurance[key]);
-
-                occurance.$ref = SetupBase.DEF_REF_PREFIX + id;
-            }
-        }
-    }
 
     private static getOtherOneOfNull(schema: JSONSchema7): JSONSchema7 | undefined {
         if (schema.oneOf?.length == 2) {
@@ -304,25 +266,6 @@ export abstract class SetupBase extends EventEmitter {
                     && console.log('mergeOneOfNull: removed null from', { ...subSchema.oneOf })
                 )
         );
-    }
-
-    private static fixDuplicateIds(schema: JSONSchema7): void {
-        const idsDictionary: Dictionary<JSONSchema7[]> = {};
-
-        SetupBase.buildIdDictionary(schema, idsDictionary);
-
-        for (const [id, schemas] of Object.entries(idsDictionary)) {
-            if (schemas.length == 1) {
-                // console.log(`SetupBase.fixDuplicateIds(${schema.$id}) remove not duplicate ${id}`);
-                delete idsDictionary[id];
-            } else {
-                // console.log(`SetupBase.fixDuplicateIds(${schema.$id}) keep duplicate ${id} * ${schemas.length}`);
-            }
-        }
-
-        SetupBase.moveDuplicateIdsToDefinitions(schema, idsDictionary);
-
-        // console.log(`SetupBase.fixDuplicateIds(${schema.$id})`, idsDictionary, schema);
     }
 
     private static hasRefs = (schema: JSONSchema7): boolean => {
@@ -408,6 +351,13 @@ export abstract class SetupBase extends EventEmitter {
             throw new Error(`${callerAndfName()}[${this.constructor.name}](${this.className}): no simpleClassSchema`);
 
         return this.info.simpleClassSchema;
+    }
+
+    public get properties(): SchemaProperties {
+        if (undefined == this.info.simpleClassSchema?.properties)
+            throw new Error(`${callerAndfName()} no simple schema or properties: ${JSON.stringify(this.info)}`);
+        
+        return this.info.simpleClassSchema.properties;
     }
 
     public getSchema(): JSONSchema7 {
@@ -615,8 +565,6 @@ export abstract class SetupBase extends EventEmitter {
         for (const propertyName of Object.keys(properties)) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
-            } else if (SetupBase.notSerialisedProperties.includes(propertyName)) {
-                // console.log(`SetupBase[${this.constructor.name}].getShallow: ignore ${propertyName}`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
@@ -675,8 +623,6 @@ export abstract class SetupBase extends EventEmitter {
         for (const propertyName of Object.keys(properties)) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getPlain: ${propertyName} exists`);
-            } else if (SetupBase.notSerialisedProperties.includes(propertyName)) {
-                // console.log(`SetupBase[${this.constructor.name}].getPlain: ignore ${propertyName}`);
             } else {
                 const value = this[propertyName];
                 switch (typeof value) {
@@ -768,8 +714,8 @@ export abstract class SetupBase extends EventEmitter {
         return plain;
     }
 
-    public static createNew(className: string, parentId: SetupItemId, parentProperty: PropertyKey): SetupBase {
-        const plain = SetupBase.createNewInterface(className, parentId, parentProperty);
+    public static createNew(className: string, parentId: SetupItemId, parentProperty: PropertyKey, id?: SetupItemId): SetupBase {
+        const plain = SetupBase.createNewInterface(className, parentId, parentProperty, id);
 
         const newItem = create(plain);
 

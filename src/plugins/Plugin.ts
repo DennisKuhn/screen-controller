@@ -223,9 +223,6 @@ export class Plugin {
     }
 
     private rendering = false;
-    private lastFps: number | undefined;
-    private lastUsage: number | undefined;
-    private lastSkipped: number | undefined;
 
     private renderNow = (/*time: number*/): void => {
         // console.debug(`${callerAndfName()}[${this.setup.id}] renderNow start=${this.start}`);

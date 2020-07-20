@@ -33,11 +33,21 @@ const FieldBuilder = observer(({ property, schema, setup, options }: FieldBuilde
     const onChange = (change: ChangeEventArgs): void => {
         if (isChangeEvent(change)) {
             const { target } = change;
-            if ('checked' in target) {
-                setup[property] = target['checked'];
-            } else {
-                setup[property] = target.nodeValue;
+            const type: string = target['type'] ?? target.nodeType;
+            let value;
+
+            switch (type) {
+                case 'number':
+                    value = target['valueAsNumber'] !== undefined ? target['valueAsNumber'] : target['value'] !== undefined ? Number( target['value'] ) : target.nodeValue;
+                    break;
+                case 'checkbox':
+                    value = target['checked'];
+                    break;
+                default:
+                    value = target['value'] !== undefined ? target['value'] : target.nodeValue;
+                    break;
             }
+            setup[property] = value;
         } else {
             setup[property] = change;
         }
@@ -137,9 +147,9 @@ const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
             ((schema as ScSchema7).scHidden !== true) &&
             ((!options.ignoreViewOnly) || ((schema as ScSchema7).scViewOnly !== true && schema.readOnly !== true)))
         .sort(([, schemaA], [, schemaB]) => {
-            if (typeof schemaA == 'object' && schemaA.type === 'object')
+            if (typeof schemaA === 'object' && schemaA.type === 'object')
                 return 1;
-            if (typeof schemaB == 'object' && schemaB.type === 'object')
+            if (typeof schemaB === 'object' && schemaB.type === 'object')
                 return -1;
             return 0;
         }
@@ -160,6 +170,7 @@ const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
             rawHelperText={schema.scDescriptionTranslationId ?? schema.description}
             options={options}
             >
+            <ErrorNotification item={setup} />
             {
                 visibleProperties.map(([property, schema]) =>
                     <FieldBuilder
