@@ -160,11 +160,11 @@ export class Plugin extends SetupBase implements PluginInterface {
 
                 /// First add all schema directly referencing Plugin
                 for (let i = 0; i < schemas.length; i++) {
-                    const schema = schemas[i]
+                    const schema = schemas[i];
                     if (schema.allOf === undefined) throw new Error(`${callerAndfName()} no allOf in loaded plugin schema: ${JSON.stringify(schema)}`);
 
                     if (schema.allOf.some(oneSchema => typeof oneSchema === 'object' && oneSchema.$ref === Plugin.name)) {
-                        console.log(`${callerAndfName()} add direct plugin ${schema.$id} @${i}/${schemas.length}`);
+                        // console.log(`${callerAndfName()} add direct plugin ${schema.$id} @${i}/${schemas.length}`);
                         Plugin.add(schema);
                         schemas.splice(i, 1);
                         i -= 1;
@@ -174,7 +174,7 @@ export class Plugin extends SetupBase implements PluginInterface {
                 for (const schema of schemas) {
                     if (schema.allOf === undefined) throw new Error(`${callerAndfName()} no allOf in loaded plugin schema: ${JSON.stringify(schema)}`);
 
-                    console.log(`${callerAndfName()} add indirect plugin ${schema.$id}`);
+                    // console.log(`${callerAndfName()} add indirect plugin ${schema.$id}`);
                     Plugin.add(schema);
                 }
             } catch (error) {
@@ -201,19 +201,16 @@ export class Plugin extends SetupBase implements PluginInterface {
         if (!schema.$id) throw new Error(`Plugin.add() no $id: ${JSON.stringify(schema)}`);
 
         if (!Plugin.isPluginSchema( schema, SetupBase.activeSchema))
-            console.error(`Plugin.addSchema(${schema.$id}) not a plugin schema`, schema);
-        //throw new Error(`Plugin.addSchema(${schema.$id}) missing: allOf $ref = ${Plugin.SCHEMA_REF_VALUE}`);
+            throw new Error(`Plugin.addSchema(${schema.$id}) not a plugin schema ${JSON.stringify(schema)}`);
 
         SetupBase.register(Plugin, schema);
 
         Plugin.pluginSchemaIds.includes(schema.$id) || Plugin.pluginSchemaIds.push(schema.$id);
 
-
         if (process.type == 'renderer') {
             Plugin.persistSchema(schema);
         }
     }
-
 
     static register(): void {
         SetupBase.addSchema(Plugin.schema);
@@ -225,4 +222,5 @@ export class Plugin extends SetupBase implements PluginInterface {
         }
     }
 }
+
 Plugin.register();

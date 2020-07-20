@@ -14,6 +14,14 @@ const useStyles = makeStyles((theme: ExtendedTheme) => ({
 export const TextFieldHoc = (props: LabelProps & InputProps): JSX.Element => {
     const classes = useStyles();
 
+    // ///TODO
+    // React.useEffect(() => {
+    //     console.log(`Mount ${props.label} `)
+    //     return (): void => {
+    //         console.log(`Unmount ${props.label} `);
+    //     };
+    // }, []);
+
     return <TextField
         className={classes.defaultField}
         label={props.label}

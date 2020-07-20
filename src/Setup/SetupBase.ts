@@ -3,7 +3,7 @@ import { remote } from 'electron';
 import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 import mergeAllOf from 'json-schema-merge-allof';
 import { cloneDeep, Dictionary } from 'lodash';
-import { $mobx, isObservableArray, observable, toJS, intercept, IValueWillChange, isObservableProp } from 'mobx';
+import { $mobx, isObservableArray, observable, toJS, intercept, IValueWillChange, isObservableProp, computed } from 'mobx';
 import shortid from 'shortid';
 import { callerAndfName } from '../utils/debugging';
 import { ObservableArray, ObservableSetupBaseMap } from './Container';
@@ -16,7 +16,8 @@ import {
     resolve,
     resolveRef,
     resolveScAllOf,
-    setDefaults
+    setDefaults,
+    concretesBuffer
 } from './JsonSchemaTools';
 import { asScSchema7, ScSchema7 } from './ScSchema7';
 import { create, register } from './SetupFactory';
@@ -55,10 +56,13 @@ export interface SetupConstructor<SetupType extends SetupBase> {
     new(config: SetupBaseInterface): SetupType;
 }
 
-interface ClassInfo {
-    schema: JSONSchema7;
-    simpleClassSchema?: JSONSchema7;
+class ClassInfo {
+    @observable simpleSchema?: JSONSchema7;
     validate?: ValidateFunction;
+
+    constructor(public schema: ScSchema7) {
+
+    }
 }
 
 interface UserSchemaValidateFunction extends Omit<SchemaValidateFunction, 'errors'> {
@@ -139,17 +143,12 @@ export abstract class SetupBase extends EventEmitter {
         });
 
     public volatile(property: string): boolean {
-        if (this.info.simpleClassSchema == undefined)
-            throw new Error(`${callerAndfName()}[${this.constructor.name}](${this.className}) no simpleClassSchema: ${JSON.stringify(this.info)}`);
-        if (this.info.simpleClassSchema.properties == undefined)
-            throw new Error(`${callerAndfName()}[${this.constructor.name}](${this.className}) no properties in simpleClassSchema: ${JSON.stringify(this.info.simpleClassSchema)}`);
-
-        if (this.info.simpleClassSchema.properties[property] == undefined)
+        if (this.properties[property] == undefined)
             throw new Error(
                 `${callerAndfName()}[${this.constructor.name}](${this.className}) no ${property} in simpleClassSchema.properties:` +
-                `${JSON.stringify(this.info.simpleClassSchema.properties)}`);
+                `${JSON.stringify(this.properties)}`);
 
-        return (this.info.simpleClassSchema.properties[property] as ScSchema7)?.scVolatile == true;
+        return (this.properties[property] as ScSchema7)?.scVolatile == true;
     }
 
     public static readonly SCHEMA_REF = { $ref: SetupBase.name };
@@ -157,6 +156,17 @@ export abstract class SetupBase extends EventEmitter {
 
     protected static infos: { [key: string]: ClassInfo } = {};
 
+    private static resetSimpleSchema = (): void => {
+        SetupBase.resetSimpleSchemaHandle = undefined;
+        for (const [, info] of Object.entries(SetupBase.infos)) {
+            if (info.simpleSchema !== undefined) {
+                console.log(`${callerAndfName()} create ${info.simpleSchema.$id}`);
+                SetupBase.createSimpleClassSchema(info);
+            }
+        }
+    };
+
+    private static resetSimpleSchemaHandle: undefined | NodeJS.Immediate;
 
     protected static addSchema(schema: JSONSchema7): void {
         if (!SetupBase.activeSchema.definitions) throw new Error(`SetupBase.addSchema(${schema.$id}) no definitions`);
@@ -172,12 +182,21 @@ export abstract class SetupBase extends EventEmitter {
             if (schema.$id in SetupBase.infos)
                 throw new Error(`SetupBase.addSchema(${schema.$id}) info already exists: ${JSON.stringify(SetupBase.infos)}`);
 
-            SetupBase.infos[schema.$id] = {
-                schema: {
-                    definitions: SetupBase.activeSchema.definitions,
-                    $ref: '#/definitions/' + schema.$id
+            SetupBase.infos[schema.$id] = new ClassInfo({
+                definitions: SetupBase.activeSchema.definitions,
+                $ref: '#/definitions/' + schema.$id
+            });
+
+            for (const [, info] of Object.entries(SetupBase.infos)) {
+                if (info.simpleSchema !== undefined) {
+                    if (SetupBase.resetSimpleSchemaHandle === undefined) {
+                        console.log(`${callerAndfName()} trigger reset simpleClassSchema`);
+                        SetupBase.resetSimpleSchemaHandle = setImmediate(SetupBase.resetSimpleSchema);
+                        concretesBuffer.clear();
+                    }
+                    break;
                 }
-            };
+            }
         }
     }
 
@@ -195,45 +214,10 @@ export abstract class SetupBase extends EventEmitter {
 
             info.validate = SetupBase.ajv.compile(info.schema);
         }
-        if (info.simpleClassSchema == undefined) {
+        if (info.simpleSchema == undefined) {
             SetupBase.createSimpleClassSchema(info);
         }
         return info;
-    }
-
-    private static buildIdDictionary(schema: JSONSchema7, dictionary: Dictionary<JSONSchema7[]>): void {
-        if (schema.$id) {
-            dictionary[schema.$id] = dictionary[schema.$id] ?? [];
-
-            dictionary[schema.$id].push(schema);
-        }
-        if (schema.properties) {
-            for (const property of Object.values(schema.properties)) {
-                if (typeof property == 'object')
-                    this.buildIdDictionary(property, dictionary);
-            }
-        }
-        if (typeof schema.additionalProperties == 'object')
-            this.buildIdDictionary(schema.additionalProperties, dictionary);
-
-        if (schema.oneOf) {
-            for (const subSchema of schema.oneOf) {
-                if (typeof subSchema == 'object')
-                    this.buildIdDictionary(subSchema, dictionary);
-            }
-        }
-        if (schema.allOf) {
-            for (const subSchema of schema.allOf) {
-                if (typeof subSchema == 'object')
-                    this.buildIdDictionary(subSchema, dictionary);
-            }
-        }
-        if (schema.anyOf) {
-            for (const subSchema of schema.anyOf) {
-                if (typeof subSchema == 'object')
-                    this.buildIdDictionary(subSchema, dictionary);
-            }
-        }
     }
 
 
@@ -340,24 +324,23 @@ export abstract class SetupBase extends EventEmitter {
 
         forEach(simpleSchema, registerAllOfs);
 
-        info.simpleClassSchema = mergeAllOf(simpleSchema, { resolvers: { scAllOf: resolveScAllOf } as any });
+        info.simpleSchema = mergeAllOf(simpleSchema, { resolvers: { scAllOf: resolveScAllOf } as any });
         console.debug(`${callerAndfName()}[${info.schema.$ref}] merged AllOf: `
-        //    , process.type == 'renderer' ? { merged: cloneDeep(info.simpleClassSchema), root: cloneDeep(info.schema) } : ':-)'
+            //    , process.type == 'renderer' ? { merged: cloneDeep(info.simpleClassSchema), root: cloneDeep(info.schema) } : ':-)'
         );
     }
 
-    public getSimpleClassSchema(): JSONSchema7 {
-        if (this.info.simpleClassSchema == undefined)
-            throw new Error(`${callerAndfName()}[${this.constructor.name}](${this.className}): no simpleClassSchema`);
 
-        return this.info.simpleClassSchema;
+    @computed public get simpleSchema(): ScSchema7 {
+        if (this.info.simpleSchema === undefined) throw new Error(`${callerAndfName()}[${this.id}] no simpleSchema`);
+
+        return this.info.simpleSchema;
     }
 
-    public get properties(): SchemaProperties {
-        if (undefined == this.info.simpleClassSchema?.properties)
-            throw new Error(`${callerAndfName()} no simple schema or properties: ${JSON.stringify(this.info)}`);
-        
-        return this.info.simpleClassSchema.properties;
+    @computed public get properties(): SchemaProperties {
+        if (undefined == this.info.simpleSchema?.properties) throw new Error(`${callerAndfName()} no properties: ${JSON.stringify(this.info)}`);
+
+        return this.info.simpleSchema.properties;
     }
 
     public getSchema(): JSONSchema7 {
@@ -382,11 +365,6 @@ export abstract class SetupBase extends EventEmitter {
                 throw new Error(`SetupBase[${this.constructor.name}] does not match className=${source.className}: ${JSON.stringify(source)}`);
 
         this.info = this.initClassInfo(source);
-
-        if (this.info.simpleClassSchema == undefined) {
-            this.info.simpleClassSchema = this.getSimpleClassSchema();
-        }
-
 
         //TODO remove:> source.name = source.name ?? source.id;
         source.name = source.name ?? source.id;
@@ -467,10 +445,7 @@ export abstract class SetupBase extends EventEmitter {
     }
 
     private connectValidator(): void {
-        if (!this.info.simpleClassSchema) throw new Error(`${callerAndfName()}(${this.id}) simpleSchema doesn't exist`);
-        if (!this.info.simpleClassSchema.properties) throw new Error(`${callerAndfName()}(${this.id}) simpleSchema.properties doesn't exist`);
-
-        for (const [property, propertySchema] of Object.entries(this.info.simpleClassSchema.properties)) {
+        for (const [property, propertySchema] of Object.entries(this.properties)) {
             const schema = propertySchema as ScSchema7;
 
             // console.info(`${callerAndfName()}(${this.id}) ${property}`);
@@ -559,10 +534,8 @@ export abstract class SetupBase extends EventEmitter {
      */
     getShallow(): SetupBaseInterface {
         const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, parentProperty: this.parentProperty, className: this.className, name: this.name };
-        const properties = this.info.simpleClassSchema?.properties;
-        if (!properties) throw Error(`${callerAndfName()} no properties in schema`);
 
-        for (const propertyName of Object.keys(properties)) {
+        for (const propertyName of Object.keys(this.properties)) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getShallow: ${propertyName} exists`);
             } else {
@@ -617,10 +590,8 @@ export abstract class SetupBase extends EventEmitter {
 
     getPlain(depth: number): SetupBaseInterface {
         const shallow: SetupBaseInterface = { id: this.id, parentId: this.parentId, parentProperty: this.parentProperty, className: this.className, name: this.name };
-        const properties = this.info.simpleClassSchema?.properties;
-        if (!properties) throw Error(`${callerAndfName()}(${depth}) no properties in schema`);
 
-        for (const propertyName of Object.keys(properties)) {
+        for (const propertyName of Object.keys(this.properties)) {
             if (propertyName in shallow) {
                 // console.log(`SetupBase[${this.constructor.name}].getPlain: ${propertyName} exists`);
             } else {

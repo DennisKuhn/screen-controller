@@ -156,11 +156,14 @@ const addSchemaItem = (parentId: string, mapName: string, newSchema: ScSchema7):
 };
 
 
-const MapInput = observer(({ item, property, value, schema, type, options }: InputProps & PropertyProps): JSX.Element => {
+const MapInput = observer(({ item, property, value/*, schema*/, type, options }: InputProps & PropertyProps): JSX.Element => {
     if ((!(value instanceof Map)) && (!isObservableMap(value))) throw new Error(`${callerAndfName()} value must be a map: ${JSON.stringify(value)}`);
     if (type !== 'map') throw new Error(`${callerAndfName()} type=${type} invalid, must be map`);
-    if (typeof schema.additionalProperties !== 'object')
-        throw new Error(`${callerAndfName()} schema.additionalProperties must be an object(Schema), ${typeof schema.additionalProperties} is not supported`);
+
+    const schema: boolean | ScSchema7 | undefined = item.simpleSchema.properties?.[property];
+
+    if (typeof schema !== 'object' || typeof schema.additionalProperties !== 'object')
+        throw new Error(`${callerAndfName()} schema.additionalProperties must be an object(Schema), ${typeof schema?.['additionalProperties']} is not supported`);
 
     const baseKey = `${item.id}.${property}`;
     const containerKey = `${baseKey}-ContainerMap`;

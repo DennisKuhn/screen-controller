@@ -35,32 +35,41 @@ export class Manager {
     private static processImports = (imports: PluginImports, path: string): void => {
         // console.log(`Manager.processImports(${path}) current=${Manager.registrations.size} got=${Object.keys(imports).length}`);
 
-        for (const [id, mix] of Object.entries(imports)) {
-            const fullId = path + id;
+        for (const loadDirect of [true, false]) {
+            console.log(`${callerAndfName()}(${path}) process ${loadDirect ? 'direct' : 'indirect'}`);
+            for (const [id, mix] of Object.entries(imports)) {
+                const fullId = path + id;
 
-            if (!Manager.registrations.has(fullId)) {
-                const registration = (mix as InnerPlugin).default ?? mix as PluginReg;
+                if (!Manager.registrations.has(fullId)) {
+                    const registration = (mix as InnerPlugin).default ?? mix as PluginReg;
 
-                if (registration.schema) {
-                    console.log(`Manager.processImports(${path}, ${id}): add ${fullId}`);
+                    if (registration.schema) {
+                        console.log(`Manager.processImports(${path}, ${id}): test ${loadDirect ? 'direct' : 'indirect'} ${fullId}`);
 
-                    try {
-                        Setup.add(registration.schema);
-                        Manager.registrations.set(fullId, registration);
-                    } catch (error) {
-                        console.error(`Manager.processImports(${path}, ${id}): add ${fullId}.schema caused: ${error}`, mix, registration, error);
+                        if (registration.schema.allOf === undefined)
+                            throw new Error(`${callerAndfName()} no allOf in loaded plugin schema: ${JSON.stringify(registration.schema)}`);
+
+                        if (loadDirect === registration.schema.allOf.some(oneSchema => typeof oneSchema === 'object' && oneSchema.$ref === Plugin.name)) {
+                            console.log(`Manager.processImports(${path}, ${id}): try add ${loadDirect ? 'direct' : 'indirect'} ${fullId}`);
+                            try {
+                                Setup.add(registration.schema);
+                                Manager.registrations.set(fullId, registration);
+                            } catch (error) {
+                                console.error(
+                                    `Manager.processImports(${path}, ${id}): add ${loadDirect ? 'direct' : 'indirect'} ${fullId}.schema caused: ${error}`,
+                                    mix, registration, error);
+                            }
+                        }
+                    } else if (typeof mix == 'object') {
+                        Manager.processImports(mix as PluginImports, fullId + '/');
+                    } else {
+                        console.error(`Manager.processImports(${path}, ${id}): ${fullId} has no schema nor object:`, mix, registration);
                     }
-
-                } else if (typeof mix == 'object') {
-                    Manager.processImports(mix as PluginImports, fullId + '/');
                 } else {
-                    console.error(`Manager.processImports(${path}, ${id}): ${fullId} has no schema nor object:`, mix, registration);
+                    console.warn(`Manager.processImports(${path}, ${id}): ${fullId} already registered`);
                 }
-            } else {
-                console.warn(`Manager.processImports(${path}, ${id}): ${fullId} already registered`);
             }
         }
-
     }
 
     /**

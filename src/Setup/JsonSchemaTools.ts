@@ -347,7 +347,7 @@ export const replaceEach = (schema: JSONSchema7, root: JSONSchema7, replacer: (s
     }
 };
 
-const concretesBuffer = new Map<string, JSONSchema7[]>();
+export const concretesBuffer = new Map<string, JSONSchema7[]>();
 
 export const getConcretes = (abstractId: string, root: JSONSchema7): JSONSchema7[] => {
     if (!root.definitions)

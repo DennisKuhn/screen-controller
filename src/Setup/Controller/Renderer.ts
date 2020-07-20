@@ -5,7 +5,7 @@ import { SetupItemId, SetupBaseInterface, SetupLinkInterface, PropertyType } fro
 import { ControllerImpl, LocalChangeArgsType, LocalMapChangeArgsType, LocalItemChangeArgsType, LocalArrayChangeArgsType } from './Controller';
 import { create } from '../SetupFactory';
 import { ObservableSetupBaseMap } from '../Container';
-import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs, getIpcArgsLog } from './IpcInterface';
+import { IpcChangeArgsType, IpcRenderer, IpcAddSchemaArgs } from './IpcInterface';
 
 import { Root } from '../Application/Root';
 import { Screen } from '../Application/Screen';
@@ -301,8 +301,8 @@ export class Renderer extends ControllerImpl {
             }
         } else if (change.type == 'delete') {
             console.debug(`${callerAndfName()}${getLocalChangeArgsLog(change)} delete ${change.name}`);
-            const toBeDeleted: SetupBase | undefined = item[change.map].get(change.name) ?? this.tryGetSetupSync(change.map, 0);
-            if (!toBeDeleted) throw new Error(`${callerAndfName()}${getLocalChangeArgsLog(change)}can't get ${change.name}`);
+            const toBeDeleted = this.tryGetSetupSync(change.name, 0);
+            if (toBeDeleted === undefined) throw new Error(`${callerAndfName()}${getLocalChangeArgsLog(change)} can't get ${change.name}`);
 
             this.delete(toBeDeleted);
         } else if (name === '') {

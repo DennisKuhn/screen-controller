@@ -16,7 +16,7 @@ import ErrorNotification from './ErrorNotification';
 
 
 
-const ContainerObject = (props: ObjectPropsWithChildren & WrapperProps): JSX.Element => getProspect('Object', props);
+const ContainerObject = observer( (props: ObjectPropsWithChildren & WrapperProps): JSX.Element => getProspect('Object', props));
 
 interface FieldBuilderProps {
     property: string;
@@ -131,11 +131,9 @@ interface SetupObjectProps {
 const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
     if (setup === undefined)
         throw new Error(`${callerAndfName()} No setup object`);
-    if (!setup.getSimpleClassSchema)
-        throw new Error(`${callerAndfName()} Not a setup object: ${JSON.stringify(setup)}`);
 
-    const schema = setup.getSimpleClassSchema() as ScSchema7;
-    const properties = schema.properties;
+    const schema = setup.simpleSchema;
+    const properties = setup.properties;
     const key = setup.id + '-object';
     const label = getLabel(setup.name, setup.parentProperty, schema);
 
