@@ -1,25 +1,24 @@
-import { Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Typography, Collapse, Box } from '@material-ui/core';
+import { Collapse, Divider, FormControl, Grid, IconButton, Input, InputLabel, makeStyles, Paper, Typography } from '@material-ui/core';
 import { DeleteOutlined, ExpandLess, ExpandMore } from '@material-ui/icons';
 import React, { Fragment, PropsWithChildren, ReactNode, useState } from 'react';
-import { Root } from '../../../../Setup/Application/Root';
 import { Browser } from '../../../../Setup/Application/Browser';
 import { Display } from '../../../../Setup/Application/Display';
 import { Plugin } from '../../../../Setup/Application/Plugin';
+import { Root } from '../../../../Setup/Application/Root';
+import { Screen } from '../../../../Setup/Application/Screen';
 import { RelativeRectangle } from '../../../../Setup/Default/RelativeRectangle';
 import { callerAndfName } from '../../../../utils/debugging';
+import { ExtendedTheme } from '../../../assets/Theme';
 import GridContainer from '../../../components/Grid/GridContainer';
 import RectangleEditor from '../../../Fields/RectangleEditor';
+import { SelectHoc, SwitchHoc, TextFieldHoc } from '../Material/StandardHocs';
+import { ActionProps, BasePropsWithChildren, InputProps, LabelProps, ObjectPropsWithChildren } from '../PropTypes';
 import registry from '../Registry';
-import { ActionProps, InputProps, LabelProps, ObjectPropsWithChildren, BasePropsWithChildren } from '../PropTypes';
+import NotchedOutlineContainer from './MaterialNodgedOutline';
 import DisplayCard from './MaterialSetup/DisplayCard';
 import { NewContainer, NewItem, SingleNewItem } from './MaterialSetup/NewComponents';
-import NotchedOutlineContainer from './MaterialNodgedOutline';
-import { Screen } from '../../../../Setup/Application/Screen';
 import ObjectCard from './MaterialSetup/ObjectCard';
 import OpenLocal from './MaterialSetup/OpenLocal';
-import { TextFieldHoc, SelectHoc, SwitchHoc } from '../Material/StandardHocs';
-import { ExtendedTheme } from '../../../assets/Theme';
-import { observer } from 'mobx-react-lite';
 
 const useStyles = makeStyles((theme: ExtendedTheme) => {
     return ({
@@ -66,7 +65,7 @@ const RectangleHoc = (props: LabelProps & InputProps): JSX.Element => {
         </FormControl>);
 };
 
-const ExpansionItem = observer(({ children, title, getDetails }: { children?: ReactNode; title: string; getDetails?: () => string }): JSX.Element => {
+const ExpansionItem = ({ children, title, getDetails }: { children?: ReactNode; title: string; getDetails?: () => string }): JSX.Element => {
     const [expanded, setExpanded] = useState(false);
     const classes = useStyles();
 
@@ -82,7 +81,7 @@ const ExpansionItem = observer(({ children, title, getDetails }: { children?: Re
                         {getDetails ? <Typography variant="overline">{getDetails()}</Typography> : false}
                     </div>
                 </div>
-                <Collapse in={expanded} timeout="auto" unmountOnExit>
+                <Collapse in={expanded} timeout="auto">
                     <Divider variant="middle" />
                     <Grid container item>
                         {children}
@@ -91,9 +90,9 @@ const ExpansionItem = observer(({ children, title, getDetails }: { children?: Re
             </div>
         </Fragment>
     );
-});
+};
 
-/** Show label with cpu usage, GridContainer for the children */
+/** Show label with cpu usage, children inside ExpsionItem */
 const BrowserTreeItem = (props: ObjectPropsWithChildren): JSX.Element => {
     const browser = props.item;
 

@@ -129,7 +129,7 @@ class WallpaperWindow extends EventEmitter {
 
     private attach(): void {
         if (!this._attached) {
-            this.browserWindow.webContents.openDevTools({ mode: 'detach' });
+            // this.browserWindow.webContents.openDevTools({ mode: 'detach' });
 
             this.nativeHandle = this.browserWindow.getNativeWindowHandle();
             nodeWinWallpaper.attachWindow(this.nativeHandle);

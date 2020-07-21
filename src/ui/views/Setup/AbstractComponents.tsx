@@ -25,7 +25,6 @@ import { callerAndfName } from '../../../utils/debugging';
 import React, { Fragment } from 'react';
 import register from './Registry';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
-import { observer } from 'mobx-react-lite';
 
 export const getType = (schema: ScSchema7): FieldType => {
     let type: FieldType | undefined;
@@ -33,10 +32,10 @@ export const getType = (schema: ScSchema7): FieldType => {
     if (schema.oneOf) {
         if (schema.oneOf.length < 1)
             throw new Error(`${callerAndfName()} oneOf.length=${schema.oneOf.length} not supported (yet): ${JSON.stringify(schema)}`);
-        
+
         // Get type from oneOfs and ensure it's same type
         schema.oneOf.forEach(option => {
-            if (typeof option !== 'object' )
+            if (typeof option !== 'object')
                 throw new Error(`${callerAndfName()} oneOf option is not a object/schema, not supported (yet), option=${JSON.stringify(option)} schema=${JSON.stringify(schema)}`);
 
             const optionType = getType(option);
@@ -116,7 +115,7 @@ const allProps: Flags<AllPropsType & WrapperProps> = {
     cacheId: true,
     contentChild: true,
     children: true,
-    elementKey: true,    
+    elementKey: true,
     item: true,
     key: true,
     label: true,
@@ -208,7 +207,7 @@ const getProps = (source: PropsType & WrapperProps, props: PropsSelection): Prop
     }
     for (const prop in source) {
         if ((!(prop in selectedProps)) && (!(prop in allProps))) {
-            console.log(`${callerAndfName()}(${props.join()}) add unkown prop ${prop}=${source[prop]} `, { prop, source, selectedProps, props });
+            // console.log(`${callerAndfName()}(${props.join()}) add unkown prop ${prop}=${source[prop]} `, { prop, source, selectedProps, props });
             selectedProps[prop] = source[prop];
         }
     }
@@ -221,26 +220,34 @@ const create = (entry: Entry, props: PropsType & WrapperProps): JSX.Element => {
         return <Fragment key={props.elementKey}>{props['children']}</Fragment>;
     } else {
         const selected = getProps(props, entry.props);
-        console.log(`${callerAndfName()}`, { entry, props, selected, children: props['children'], contentChild: props.contentChild });
+        console.log(`${callerAndfName()}(${props.elementKey}, [${entry.props.join()}])`, { entry, props, selected, children: props['children'], contentChild: props.contentChild });
 
-        switch (typeof entry.element) {
-            case 'function': {
-                if ((props['children'] === undefined) && (props.contentChild === undefined)) {
-                    return React.createElement(observer(entry.element), selected);
-                } else {
-                    return React.createElement(observer(entry.element), selected, props['children'], props.contentChild);
+        if (entry.props.includes('Property') || entry.props.includes('Base') || entry.props.includes('Object') || entry.props.includes('Map') || entry.props.includes('Array') ) {
+            switch (typeof entry.element) {
+                case 'function': {
+                    if ((props['children'] === undefined) && (props.contentChild === undefined)) {
+                        return React.createElement(entry.element, selected);
+                    } else {
+                        return React.createElement(entry.element, selected, props['children'], props.contentChild);
+                    }
                 }
+                default:
+                    console.warn(`${callerAndfName()} no observer for ${typeof entry.element}/${props.elementKey} with PropertyProps`);
+                    if ((props['children'] === undefined) && (props.contentChild === undefined)) {
+                        return React.createElement(entry.element, selected);
+                    } else {
+                        return React.createElement(entry.element, selected, props['children'], props.contentChild);
+                    }
+                    break;
             }
-            default:
-                console.log(`${callerAndfName()} no observer for ${typeof entry.element}/${props.elementKey}`);
-                if ((props['children'] === undefined) && (props.contentChild === undefined)) {
-                    return React.createElement(entry.element, selected);
-                } else {
-                    return React.createElement(entry.element, selected, props['children'], props.contentChild);
-                }
-                break;
+        } else {
+            console.log(`${callerAndfName()} no observer for ${typeof entry.element}/${props.elementKey}`);
+            if ((props['children'] === undefined) && (props.contentChild === undefined)) {
+                return React.createElement(entry.element, selected);
+            } else {
+                return React.createElement(entry.element, selected, props['children'], props.contentChild);
+            }
         }
-
     }
 };
 

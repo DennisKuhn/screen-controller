@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { ScSchema7 } from '../../../Setup/ScSchema7';
 import { SetupBase } from '../../../Setup/SetupBase';
 import { callerAndfName } from '../../../utils/debugging';
@@ -11,12 +11,10 @@ import {
     Options
 } from './PropTypes';
 import { getProspect, Field, LabelContainer, LabelView, ValueContainer, ValueInput, getLabel, getType } from './AbstractComponents';
-import { observer } from 'mobx-react-lite';
+import { autorun } from 'mobx';
 import ErrorNotification from './ErrorNotification';
+import { observer } from 'mobx-react-lite';
 
-
-
-const ContainerObject = observer( (props: ObjectPropsWithChildren & WrapperProps): JSX.Element => getProspect('Object', props));
 
 interface FieldBuilderProps {
     property: string;
@@ -24,7 +22,6 @@ interface FieldBuilderProps {
     setup: SetupBase;
     options: Options;
 }
-
 
 const FieldBuilder = observer(({ property, schema, setup, options }: FieldBuilderProps): JSX.Element => {
     if (schema.scHidden == true)
@@ -38,7 +35,7 @@ const FieldBuilder = observer(({ property, schema, setup, options }: FieldBuilde
 
             switch (type) {
                 case 'number':
-                    value = target['valueAsNumber'] !== undefined ? target['valueAsNumber'] : target['value'] !== undefined ? Number( target['value'] ) : target.nodeValue;
+                    value = target['valueAsNumber'] !== undefined ? target['valueAsNumber'] : target['value'] !== undefined ? Number(target['value']) : target.nodeValue;
                     break;
                 case 'checkbox':
                     value = target['checked'];
@@ -104,19 +101,18 @@ const FieldBuilder = observer(({ property, schema, setup, options }: FieldBuilde
         elementKey: baseKey + '-valueInput'
     };
 
-
     return (
         <Fragment>
             {value instanceof SetupBase &&
                 <ErrorNotification item={value} />}
 
-        <Field {...fieldProps}>
-            <LabelContainer {...labelContainerProps}>
-                <LabelView {...labelViewProps} />
-            </LabelContainer>
-            <ValueContainer {...valueContainerProps} >
-                <ValueInput {...valueInputProps} />
-            </ValueContainer>
+            <Field {...fieldProps}>
+                <LabelContainer {...labelContainerProps}>
+                    <LabelView {...labelViewProps} />
+                </LabelContainer>
+                <ValueContainer {...valueContainerProps} >
+                    <ValueInput {...valueInputProps} />
+                </ValueContainer>
             </Field>
         </Fragment>
     );
@@ -127,6 +123,7 @@ interface SetupObjectProps {
     setup: SetupBase;
     options: Options;
 }
+const ContainerObject = (props: ObjectPropsWithChildren & WrapperProps): JSX.Element => getProspect('Object', props);
 
 const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
     if (setup === undefined)
@@ -135,7 +132,15 @@ const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
     const schema = setup.simpleSchema;
     const properties = setup.properties;
     const key = setup.id + '-object';
-    const label = getLabel(setup.name, setup.parentProperty, schema);
+    //    const label = getLabel(setup.name, setup.parentProperty, schema);
+    const [label, setLabel] = useState(getLabel(setup.name, setup.parentProperty, schema));
+
+  
+    useEffect(() =>
+        autorun(() =>
+            setLabel(
+                getLabel(setup.name, setup.parentProperty, schema))
+        ), []);
 
     if (properties == undefined) throw new Error(`${callerAndfName()}(${setup.id}/${setup.className}) no properties in simpleSchema`);
 
@@ -153,8 +158,6 @@ const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
         }
         );
 
-    //        <ContainerObject key={key} item={setup} cacheId={key}>
-
     return (
         <ContainerObject
             key={key}
@@ -167,6 +170,7 @@ const SetupObject = ({ setup, options }: SetupObjectProps): JSX.Element => {
             helperText={schema.description}
             rawHelperText={schema.scDescriptionTranslationId ?? schema.description}
             options={options}
+            // getLabel={(): string => getLabel(setup.name, setup.parentProperty, schema)}
             >
             <ErrorNotification item={setup} />
             {
