@@ -2,7 +2,7 @@ import { Rectangle as ElectronRectangle, BrowserWindow, BrowserWindowConstructor
 import nodeWinWallpaper from 'node-win-wallpaper';
 import ScreenBounds, { DisplayBounds } from './ScreenBounds';
 import { EventEmitter } from 'events';
-import { Browser } from '../Setup/Application/Browser';
+import { Browser } from '../Setup/Browser';
 import { SimpleRectangle } from '../Setup/Default/RectangleInterface';
 import { Rectangle } from '../Setup/Default/Rectangle';
 import { autorun } from 'mobx';

@@ -11,7 +11,7 @@ import {
 import { ExpandLess, ExpandMore, Slideshow, PausePresentation, Visibility, VisibilityOff } from '@material-ui/icons';
 import { observer } from 'mobx-react-lite';
 import React, { ChangeEvent, Fragment, useState } from 'react';
-import { Browser } from '../../../Setup/Application/Browser';
+import { Browser } from '../../../Setup/Browser';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import BrowserPlugins from './BrowserPlugins';
 import RectangleEditor from '../../Fields/RectangleEditor';

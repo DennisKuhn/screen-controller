@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { getCpuUsage, getCpuText, getCpuClass } from './Tools';
 import React from 'react';
 import { TableCell, Typography, makeStyles } from '@material-ui/core';
-import { Browser } from '../../../Setup/Application/Browser';
+import { Browser } from '../../../Setup/Browser';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
 
 const useStyles = makeStyles((/*theme*/) =>

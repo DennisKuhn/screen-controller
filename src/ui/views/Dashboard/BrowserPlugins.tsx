@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import React, { useState, useEffect } from 'react';
 import { ObservableSetupBaseMap } from '../../../Setup/Container';
-import { Browser } from '../../../Setup/Application/Browser';
+import { Browser } from '../../../Setup/Browser';
 import { Plugin } from '../../../Setup/Application/Plugin';
 import controller from '../../../Setup/Controller/Factory';
 import PluginLine from './PluginLine';

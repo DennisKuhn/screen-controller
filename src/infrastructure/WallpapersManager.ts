@@ -1,7 +1,7 @@
 import { protocol } from 'electron';
 import { IMapDidChange } from 'mobx';
 import WallpaperWindow, { WallpaperWindowConstructorOptions } from '../ElectronWallpaperWindow/WallpaperWindow';
-import { Browser } from '../Setup/Application/Browser';
+import { Browser } from '../Setup/Browser';
 import { Display } from '../Setup/Application/Display';
 import { Screen } from '../Setup/Application/Screen';
 import controller from '../Setup/Controller/Factory';

@@ -63,7 +63,7 @@ export class Root extends SetupBase {
 
     static createNewBlank = (): Root => new Root(
         {
-            ...SetupBase.createNewInterface(Root.name, Root.name, 'parentId', Root.name),
+            ...SetupBase.createNewInterface(Root.name, Root.name, 'parent', Root.name),
             screen: Screen.newInterface(Root.name, 'screen'),
             mainPerformance: Performance.newInterface(Root.name, 'mainPerformance', 'mainPerformance'),
             performanceSettings: PerformanceSettings.newInterface(Root.name, 'performanceSettings', PerformanceSettings.name),

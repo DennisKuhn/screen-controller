@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash';
 import { autorun, IMapDidChange } from 'mobx';
 import requireGlob from 'require-glob';
-import { Browser } from '../Setup/Application/Browser';
+import { Browser } from '../Setup/Browser';
 import { Plugin as Setup } from '../Setup/Application/Plugin';
 import { Rectangle } from '../Setup/Default/Rectangle';
 import { SimpleRectangle } from '../Setup/Default/RectangleInterface';

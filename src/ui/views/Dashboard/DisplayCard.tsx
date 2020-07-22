@@ -7,7 +7,7 @@ import { DesktopWindows } from '@material-ui/icons';
 import { Display as Info } from 'electron';
 import { observer } from 'mobx-react-lite';
 import React, { useState } from 'react';
-import { Browser } from '../../../Setup/Application/Browser';
+import { Browser } from '../../../Setup/Browser';
 import { Display } from '../../../Setup/Application/Display';
 import dashboardStyle from '../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import Card from '../../components/Card/Card';
