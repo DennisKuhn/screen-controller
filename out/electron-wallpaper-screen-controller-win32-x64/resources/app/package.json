@@ -1,0 +1,24 @@
+{
+  "name": "electron-wallpaper-screen-controller",
+  "version": "0.0.1",
+  "description": "Manages browsers on each display/monitor.",
+  "main": ".webpack/main",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts ."
+  },
+  "keywords": [],
+  "author": {
+    "name": "Corey Sewell",
+    "email": "corey@sewell.net.nz"
+  },
+  "license": "MIT",
+  "config": {},
+  "devDependencies": {},
+  "dependencies": {},
+  "optionalDependencies": {},
+  "peerDependencies": {}
+}
