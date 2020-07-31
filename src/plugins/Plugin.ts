@@ -1,4 +1,3 @@
-import 'fpsmeter';
 import { cloneDeep } from 'lodash';
 import { autorun, getDependencyTree, IDependencyTree, IReactionDisposer, IValueDidChange, Lambda, observe } from 'mobx';
 import { Plugin as PluginSetup } from '../Setup/Application/Plugin';
